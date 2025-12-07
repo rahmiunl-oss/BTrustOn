@@ -3477,8 +3477,9 @@ async function fetchAllPublicProfiles() {
       // Kayıt olanlar için varsayılan değerler
       trust: "emerging", 
       meta: { references: 60, delivery: 70, years: 1, financial: 60, digital: 50 }, 
+      // ...
       assets: profile.assets || [],
-      projects: []
+      projects: profile.projects || [] // <--- DÜZELTİLDİ (Veritabanından okuyor)
     };
 
     if (!exists) {
@@ -3554,8 +3555,9 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     services: profile.services ? profile.services.split(',') : [],
     trust: "verified",
     meta: { references: 50, delivery: 50, years: 1, financial: 50, digital: 50 },
+    // ...
     assets: profile.assets || [],
-    projects: [] 
+    projects: profile.projects || [] // <--- DÜZELTİLDİ
   };
 
   if (typeof database !== 'undefined') {
