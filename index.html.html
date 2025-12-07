@@ -1008,11 +1008,19 @@
         </div>
 
         <div id="content-certs" class="hidden-view">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="certs_title">Certifications</h3>
-            <span class="text-[11px] text-gray-400" data-i18n="certs_sub">Declared certificates</span>
+          
+          <div class="flex flex-wrap items-center justify-between mb-6 border-b border-gray-100 pb-4">
+            <div>
+               <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="certs_title">Certifications</h3>
+               <span class="text-[11px] text-gray-400" data-i18n="certs_sub">Declared certificates & compliances</span>
+            </div>
+            
+            <button id="btn-add-cert" type="button" onclick="openCertModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+                <i class="fa-solid fa-plus"></i> <span>ADD CERTIFICATE</span>
+            </button>
           </div>
-          <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+          <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
 
         <div id="content-assets" class="hidden-view">
@@ -2612,31 +2620,70 @@ function renderTopCompanies() {
       `;
     }
 
-    // --- CERTIFICATES (Dynamic) ---
+// --- SERTİFİKALARI LİSTELE (GÜNCELLENMİŞ - SİLME BUTONLU) ---
     function renderCertificates(company) {
       const certList = document.getElementById("p-certs-list");
-      if (!certList) return;
       
+      // Yetki Kontrolü: Bu profil benim mi?
+      const myId = localStorage.getItem("BTrustOn_my_company_id");
+      const isMyProfile = (myId && String(company.id) === String(myId));
+
+      // "ADD CERTIFICATE" butonunu bul ve gizle/göster
+      const btnAddCert = document.getElementById("btn-add-cert");
+      if(btnAddCert) {
+        if(isMyProfile) btnAddCert.classList.remove("hidden-view");
+        else btnAddCert.classList.add("hidden-view");
+      }
+
+      if (!certList) return;
       certList.innerHTML = "";
 
       if (!company.certificates || company.certificates.length === 0) {
-        certList.innerHTML = `
-          <div class="col-span-2 bg-white border border-gray-200 rounded-xl p-5 text-gray-500 text-sm italic">
-            ${t("no_certs")}
-          </div>`;
+        certList.innerHTML = `<div class="col-span-1 md:col-span-3 text-center py-8 text-gray-400 text-xs italic">Henüz sertifika eklenmemiş.</div>`;
         return;
       }
 
-      company.certificates.forEach(cert => {
-        certList.innerHTML += `
-          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition">
-            <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0">
-               <i class="fa-solid fa-award text-cyan-600 text-sm"></i>
+      company.certificates.forEach((certRaw, index) => {
+        // Veriyi parçala (Kaydederken "İsim | Kurum" formatında kaydetmiştik)
+        let certName = certRaw;
+        let certIssuer = "";
+        
+        // Eğer veri string ise ve içinde | işareti varsa böl
+        if (typeof certRaw === 'string' && certRaw.includes('|')) {
+            const parts = certRaw.split('|');
+            certName = parts[0].trim();
+            certIssuer = parts[1].trim();
+        }
+
+        // SİLME BUTONU (Sadece sahibi görür)
+        let deleteBtn = "";
+        if (isMyProfile) {
+            deleteBtn = `
+                <button onclick="deleteCert(${index})" class="text-gray-300 hover:text-red-500 transition ml-2 p-2" title="Sil">
+                    <i class="fa-solid fa-trash text-[10px]"></i>
+                </button>
+            `;
+        }
+
+        const card = document.createElement("div");
+        card.className = "bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center justify-between gap-3 hover:shadow-md hover:border-BTrustOn-accent transition group";
+        
+        card.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0 border border-cyan-100 text-cyan-600">
+                   <i class="fa-solid fa-certificate"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-BTrustOn-primary font-bold text-sm leading-tight truncate" title="${certName}">
+                      ${certName}
+                    </div>
+                    ${certIssuer ? `<div class="text-[10px] text-gray-400 mt-0.5 truncate">${certIssuer}</div>` : ''}
+                </div>
             </div>
-            <div class="text-BTrustOn-primary font-bold text-sm">
-              ${cert}
-            </div>
-          </div>`;
+            ${deleteBtn}
+        `;
+        
+        certList.appendChild(card);
       });
     }
 
@@ -3383,6 +3430,108 @@ async function deleteProject(projectId) {
         alert("Silme hatası: " + error.message);
     }
 }
+/* --- SERTİFİKA YÖNETİMİ (EKLE - KAYDET - SİL) --- */
+
+// 1. MODALI AÇ/KAPAT
+function openCertModal() {
+  const modal = document.getElementById("cert-modal");
+  const form = document.getElementById("cert-form");
+  if (!modal) return;
+  
+  modal.classList.remove("pointer-events-none", "opacity-0");
+  if(form) form.reset();
+}
+
+function closeCertModal() {
+  const modal = document.getElementById("cert-modal");
+  if (modal) modal.classList.add("pointer-events-none", "opacity-0");
+}
+
+// 2. KAYDET (Supabase)
+async function saveCert() {
+  const btn = document.querySelector("#cert-form button[type='submit']");
+  const originalText = btn.textContent;
+  btn.textContent = "Kaydediliyor...";
+  btn.disabled = true;
+
+  try {
+    const name = document.getElementById("cert-name").value.trim();
+    const issuer = document.getElementById("cert-issuer").value.trim(); 
+
+    if (!name) { alert("Sertifika adı giriniz."); return; }
+
+    // Mevcut sertifikaları al
+    // Not: Veritabanında sertifikalar bazen string listesi, bazen text olabilir. Dizi olduğundan emin olalım.
+    let currentCerts = [];
+    if (selectedCompany.certificates && Array.isArray(selectedCompany.certificates)) {
+        currentCerts = [...selectedCompany.certificates];
+    }
+
+    // Veriyi string formatında birleştir: "Sertifika Adı | Kurum"
+    const certString = issuer ? `${name} | ${issuer}` : name;
+    
+    currentCerts.push(certString);
+
+    // Supabase Güncelleme
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Oturum yok.");
+    
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ certificates: currentCerts, updated_at: new Date() })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    // Arayüzü Güncelle
+    selectedCompany.certificates = currentCerts;
+    const localRef = database.find(c => c.id == user.id);
+    if(localRef) localRef.certificates = currentCerts;
+
+    openProfile(user.id);
+    switchProfileTab('certs');
+    closeCertModal();
+
+  } catch (error) {
+    console.error(error);
+    alert("Hata: " + error.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+// 3. SİL
+async function deleteCert(index) {
+    if(!confirm("Bu sertifikayı silmek istiyor musunuz?")) return;
+
+    try {
+        let currentCerts = [...selectedCompany.certificates];
+        
+        // Listeden ilgili sıradakini çıkar
+        currentCerts.splice(index, 1); 
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ certificates: currentCerts, updated_at: new Date() })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        // Ekranı güncelle
+        selectedCompany.certificates = currentCerts;
+        const localRef = database.find(c => c.id == user.id);
+        if(localRef) localRef.certificates = currentCerts;
+
+        openProfile(user.id);
+        switchProfileTab('certs');
+
+    } catch (error) {
+        alert("Hata: " + error.message);
+    }
+}
   </script>
 <script>
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
@@ -3642,5 +3791,35 @@ function editMyProfile() {
   // 2. Editör ekranını aç
   showEditorView();
 }
+</div> 
+
+<div id="cert-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCertModal()"></div>
+  <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
+    <div class="bg-BTrustOn-primary text-white px-6 py-4 flex justify-between items-center">
+      <h3 class="font-bold font-header tracking-wide">Add Certificate</h3>
+      <button onclick="closeCertModal()" class="text-white/70 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+    <div class="p-6">
+      <form id="cert-form" onsubmit="event.preventDefault(); saveCert();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Certificate Name</label>
+          <input type="text" id="cert-name" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. ISO 9001" required>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Issued By</label>
+          <input type="text" id="cert-issuer" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. TUV NORD">
+        </div>
+        <div class="pt-4 flex gap-3">
+          <button type="button" onclick="closeCertModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">CANCEL</button>
+          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">SAVE</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script> 
+  // Burası senin mevcut kodların, sakın silme!
+  // Login modalını aç/kapat...
 </script>
 </html>
