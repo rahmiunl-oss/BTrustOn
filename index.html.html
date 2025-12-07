@@ -3281,7 +3281,52 @@ async function handleJoin() {
     btn.disabled = false;
   }
 }
+// --- YENİ EKLENECEK FONKSİYON BAŞLANGIÇ ---
+async function fetchAllPublicProfiles() {
+  // 1. Supabase'den profilleri çek
+  const { data: profiles, error } = await supabaseClient
+    .from('profiles')
+    .select('*');
 
+  if (error || !profiles) {
+    console.log("Henüz kayıtlı şirket yok veya hata oluştu.");
+    return;
+  }
+
+  // 2. Gelen veriyi site formatına uydur
+  profiles.forEach(profile => {
+    // Listede zaten var mı? Varsa üstüne yazmayalım, sadece eksikleri güncelleyelim.
+    const exists = database.find(c => c.id == profile.id);
+    
+    const formattedProfile = {
+      id: profile.id,
+      name: profile.company_name || "New Company",
+      city: profile.city || "Konum Yok",
+      sector: profile.sector || "construction",
+      desc: profile.description || "",
+      type_label: profile.company_type || "Industrial Supplier",
+      size_label: profile.company_size || "Size N/A",
+      year_label: profile.founded_year || "",
+      services: profile.services ? profile.services.split(',') : [],
+      
+      // Kayıt olanlar için varsayılan değerler
+      trust: "emerging", 
+      meta: { references: 60, delivery: 70, years: 1, financial: 60, digital: 50 }, 
+      assets: profile.assets || [],
+      projects: []
+    };
+
+    if (!exists) {
+      // Listede yoksa en başa ekle
+      database.unshift(formattedProfile);
+    }
+  });
+
+  // 3. Ekranı yenile ki yeni şirket görünsün
+  renderCards(""); 
+  renderTopCompanies();
+}
+// --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
 // ✅ BUNU YAPIŞTIR
 // ✅ 2. GÜNCELLENMİŞ VERİ ÇEKME FONKSİYONU
 // ✅ YENİ GÜNCELLENMİŞ VERSİYON (Grup Kontrollü)
@@ -3361,10 +3406,12 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 document.addEventListener("DOMContentLoaded", () => {
     
-    // Sayfa açıldıktan yarım saniye sonra kontrol et
+    // YENİ EKLEDİĞİMİZ SATIR: Herkesi veritabanından çek
+    setTimeout(fetchAllPublicProfiles, 100);
+
+    // SENDEKİ MEVCUT KOD:
     setTimeout(checkUserAndOpenProfile, 500);
 });
-
 // Oturum durumu değişirse (Giriş/Çıkış) tetikle
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN') {
