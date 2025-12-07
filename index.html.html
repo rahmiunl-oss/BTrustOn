@@ -106,20 +106,25 @@
   ></div>
 
   <nav
-    class="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-white/50 h-18 transition-all">
+    class="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-white/50 h-24 transition-all">
     <div
       class="max-w-7xl mx-auto px-4 h-full flex justify-between items-center"
     >
-     <div
-        onclick="showMainView()"
-        class="cursor-pointer group select-none flex items-center h-full py-1 pr-4"
-      >
-        <img 
-          src="https://ncssozhpwzvzeneaumlz.supabase.co/storage/v1/object/public/logos/logo.png.png" 
-          alt="BTrustOn Logo" 
-          class="h-[65px] w-auto object-contain hover:opacity-90 transition-opacity mt-1"
-        />
-      </div>
+    <div 
+  onclick="showMainView()" 
+  class="cursor-pointer select-none flex items-center h-full pr-4 gap-0.5"
+>
+    <span class="text-4xl font-sans font-bold text-[#1565C0] tracking-tight leading-none">
+        BTrust
+    </span>
+
+    <span 
+      class="text-4xl font-sans font-bold text-transparent leading-none"
+      style="-webkit-text-stroke: 1.5px #1565C0;"
+    >
+        On
+    </span>
+</div>
 
     <div class="flex items-center gap-3 text-sm font-medium">
 
@@ -190,75 +195,69 @@
         class="text-xl text-gray-500 mb-12 max-w-2xl mx-auto font-light leading-relaxed"
       ></p>
 
-      <div
-        class="max-w-3xl mx-auto relative mb-16 z-20 transition-all duration-300 hover:scale-[1.01]"
-      >
+      <div class="w-[95%] md:max-w-3xl mx-auto relative mb-12 md:mb-16 z-20 transition-all duration-300">
+        
+        <div class="absolute inset-0 bg-BTrustOn-accent/20 blur-2xl rounded-full opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+
         <div
-          class="bg-white/90 backdrop-blur-xl p-2 rounded-full shadow-float flex items-center border border-white/50 ring-1 ring-gray-100"
+          class="relative bg-white/90 backdrop-blur-xl p-1.5 md:p-2 rounded-full shadow-2xl flex items-center border border-white/80 ring-4 ring-transparent focus-within:ring-cyan-50/50 focus-within:scale-[1.02] transition-all duration-300"
         >
-          <div class="pl-6 pr-4 text-BTrustOn-accent">
-            <i class="fa-solid fa-magnifying-glass text-xl"></i>
+          <div class="pl-4 pr-3 text-BTrustOn-accent shrink-0">
+            <i class="fa-solid fa-magnifying-glass text-lg md:text-xl animate-pulse"></i>
           </div>
+          
           <input
             type="text"
             id="search-input"
             onkeyup="renderCards(this.value)"
-            class="flex-grow bg-transparent outline-none text-gray-700 text-lg placeholder-gray-400 font-light h-14"
+            class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-12 md:h-14"
             placeholder=""
           />
+          
           <button
-            class="bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full px-8 py-4 font-bold transition shadow-glow flex items-center gap-2 group"
+            class="shrink-0 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-12 h-12 md:w-auto md:h-14 md:px-8 font-bold transition shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-2 group"
           >
-            <span data-i18n="btn_discover">DISCOVER</span>
-            <i
-              class="fa-solid fa-compass group-hover:rotate-45 transition-transform duration-300"
-            ></i>
+            <span class="hidden md:inline" data-i18n="btn_discover">DISCOVER</span>
+            
+            <i class="fa-solid fa-compass text-lg group-hover:rotate-45 transition-transform duration-300"></i>
           </button>
         </div>
       </div>
 
-      <div class="flex flex-wrap justify-center gap-4">
-        <button
-          onclick="filterSector('all', this)"
-          class="filter-btn group px-6 py-2.5 rounded-full border border-BTrustOn-accent bg-BTrustOn-accent/10 text-BTrustOn-accent text-sm font-bold transition-all shadow-glow"
-        >
+      <div class="flex flex-wrap justify-center gap-3 md:gap-4">
+        <button onclick="filterSector('all', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-BTrustOn-accent bg-BTrustOn-accent/10 text-BTrustOn-accent text-sm font-bold transition-all shadow-glow">
           <i class="fa-solid fa-layer-group mr-2"></i>
           <span data-i18n="sec_all">All Sectors</span>
         </button>
-        <button
-          onclick="filterSector('construction', this)"
-          class="filter-btn group px-6 py-2.5 rounded-full border border-gray-300 bg-transparent text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all"
-        >
+
+        <button onclick="filterSector('construction', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
           <i class="fa-solid fa-trowel-bricks mr-2"></i>
           <span data-i18n="sec_const">Construction</span>
         </button>
-        <button
-          onclick="filterSector('mining', this)"
-          class="filter-btn group px-6 py-2.5 rounded-full border border-gray-300 bg-transparent text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all"
-        >
-          <i class="fa-solid fa-gem mr-2"></i>
-          <span data-i18n="sec_mine">Mining</span>
-        </button>
-        <button
-          onclick="filterSector('energy', this)"
-          class="filter-btn group px-6 py-2.5 rounded-full border border-gray-300 bg-transparent text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all"
-        >
+
+        <button onclick="filterSector('energy', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
           <i class="fa-solid fa-bolt mr-2"></i>
           <span data-i18n="sec_energy">Energy</span>
         </button>
-        <button
-          onclick="filterSector('drilling', this)"
-          class="filter-btn group px-6 py-2.5 rounded-full border border-gray-300 bg-transparent text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all"
-        >
-          <i class="fa-solid fa-bullseye mr-2"></i>
-          <span data-i18n="sec_drill">Drilling</span>
+
+        <button onclick="filterSector('mining', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-gem mr-2"></i>
+          <span data-i18n="sec_mine">Mining</span>
         </button>
-        <button
-          onclick="filterSector('equipment', this)"
-          class="filter-btn group px-6 py-2.5 rounded-full border border-gray-300 bg-transparent text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all"
-        >
-          <i class="fa-solid fa-truck-monster mr-2"></i>
-          <span data-i18n="sec_equip">Equipment</span>
+
+        <button onclick="filterSector('manufacturing', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-industry mr-2"></i>
+          <span data-i18n="sec_manu">Manufacturing</span>
+        </button>
+
+        <button onclick="filterSector('technology', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-microchip mr-2"></i>
+          <span data-i18n="sec_tech">Technology</span>
+        </button>
+
+        <button onclick="filterSector('logistics', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-truck-fast mr-2"></i>
+          <span data-i18n="sec_logi">Logistics</span>
         </button>
       </div>
     </header>
@@ -1584,7 +1583,7 @@
         hero_desc:
           "Discover verified industrial companies, trust scores and real project references – all on a single screen.",
         search_ph:
-          "Search companies, equipment or services... (e.g. EPC, mining, CAT, drilling)",
+          "Search companies, equipment & services...",
         btn_discover: "DISCOVER",
         join: "JOIN NETWORK",
         tab_certs: "CERTIFICATES",
@@ -1605,6 +1604,9 @@
         sec_mine: "Mining",
         sec_energy: "Energy",
         sec_drill: "Drilling",
+        sec_manu: "Manufacturing",
+        sec_tech: "Technology",
+        sec_logi: "Logistics",
         sec_equip: "Equipment",
         tab_overview: "OVERVIEW",
         tab_projects: "PROJECTS",
@@ -1680,7 +1682,7 @@
         hero_desc:
           "Endüstriyel şirketleri tek ekranda toplayın; görünürlüklerini, güven skorlarını ve doğrulanmış referanslarını birlikte görün.",
         search_ph:
-          "Firma, ekipman veya hizmet ara... (Örn: EPC, maden, CAT, sondaj)",
+         "Firma, ekipman ve hizmet ara...",
         btn_discover: "KEŞFET",
         join: "AĞA KATIL",
         asset_categories: "Varlık kategorileri:",
@@ -1699,6 +1701,9 @@
         sec_mine: "Maden",
         sec_energy: "Enerji",
         sec_drill: "Sondaj",
+        sec_manu: "Üretim",
+        sec_tech: "Teknoloji",
+        sec_logi: "Lojistik",
         sec_equip: "Ekipman",
         tab_certs: "SERTİFİKALAR",
         no_certs: "Bu tedarikçi için listelenen sertifika yok.",
@@ -2143,6 +2148,50 @@
         projects: [],
         assets: [],
       },
+// const database = [ dizisinin içine, diğer şirketlerin altına virgül koyup bunları ekle:
+
+      {
+        id: 112,
+        name: "ABB Industrial",
+        city: "Zurich, CH",
+        sector: "technology",  // YENİ SEKTÖR
+        type: "tech",
+        trust: "global",
+        meta: { references: 96, delivery: 95, years: 98, financial: 94, digital: 92 },
+        desc: "Industrial automation, robotics and electrification technology leader.",
+        services: ["Robotics", "Automation", "Electrification"],
+        certificates: ["ISO 9001", "ISO 14001", "IEC 62443"],
+        projects: [],
+        assets: []
+      },
+      {
+        id: 113,
+        name: "Kuehne+Nagel",
+        city: "Hamburg, DE",
+        sector: "logistics", // YENİ SEKTÖR
+        type: "service",
+        trust: "global",
+        meta: { references: 94, delivery: 98, years: 95, financial: 92, digital: 88 },
+        desc: "Global transport and logistics company specialized in sea and air freight.",
+        services: ["Project Logistics", "Sea Freight", "Heavy Lift Transport"],
+        certificates: ["ISO 9001", "AEO Status", "IATA Agent"],
+        projects: [],
+        assets: []
+      },
+      {
+        id: 114,
+        name: "ArcelorMittal",
+        city: "Luxembourg",
+        sector: "manufacturing", // YENİ SEKTÖR
+        type: "manufacturer",
+        trust: "global",
+        meta: { references: 95, delivery: 92, years: 94, financial: 90, digital: 85 },
+        desc: "The world's leading steel and mining company.",
+        services: ["Steel Production", "Mining", "R&D"],
+        certificates: ["IATF 16949", "ISO 14001", "ResponsibleSteel"],
+        projects: [],
+        assets: []
+      },
     ];
 
     function t(key) {
@@ -2202,11 +2251,24 @@
     }
 
     function sectorToTr(sector) {
+      if (currentLang === "en") {
+        // İngilizce modda baş harfi büyütüp döndürür
+        if (sector === "manufacturing") return "Manufacturing";
+        if (sector === "technology") return "Technology";
+        if (sector === "logistics") return "Logistics";
+        return sector.charAt(0).toUpperCase() + sector.slice(1);
+      }
+      
+      // Türkçe mod için karşılıklar
       if (sector === "construction") return "İnşaat";
       if (sector === "mining") return "Maden";
       if (sector === "energy") return "Enerji";
       if (sector === "drilling") return "Sondaj";
       if (sector === "equipment") return "Ekipman";
+      if (sector === "manufacturing") return "Üretim & Sanayi";
+      if (sector === "technology") return "Teknoloji";
+      if (sector === "logistics") return "Lojistik";
+      
       return sector;
     }
 
@@ -2240,7 +2302,7 @@
       );
     }
 
-    function renderTopCompanies() {
+function renderTopCompanies() {
       const container = document.getElementById("top-companies");
       if (!container) return;
       container.innerHTML = "";
@@ -2249,9 +2311,18 @@
         initTopCompaniesOrder();
       }
 
-      const top = topCompaniesOrder.slice(0, 5);
+      // AKILLI LİSTELEME MANTIĞI:
+      // Eğer veritabanında az şirket varsa (10'dan az), ekran dolsun ve animasyon aksın diye listeyi çoğaltıyoruz.
+      // Eğer zaten çok şirket varsa, sistemi yormamak için olduğu gibi bırakıyoruz.
+      let topList;
+      if (topCompaniesOrder.length < 10) {
+         const baseTop = topCompaniesOrder.slice(0, 5); // En iyi 5 şirketi al
+         topList = [...baseTop, ...baseTop, ...baseTop, ...baseTop]; // 4 kere arka arkaya ekle
+      } else {
+         topList = topCompaniesOrder.slice(0, 20); // Zaten çok varsa ilk 20 tanesi yeter
+      }
 
-      top.forEach((company) => {
+      topList.forEach((company) => {
         const score = computeScore(company.meta);
         const desc =
           currentLang === "tr" && company.desc_tr
@@ -2259,28 +2330,30 @@
             : company.desc;
 
         const card = document.createElement("button");
+        // Mobilde ve PC'de düzgün durması için genişlik ayarı
         card.className =
-          "min-w-[220px] bg-slate-900 text-white rounded-xl px-4 py-3 flex flex-col justify-between shadow-md hover:shadow-lg hover:-translate-y-0.5 transition transform";
+          "min-w-[260px] bg-slate-900 text-white rounded-xl px-4 py-3 flex flex-col justify-between shadow-md hover:shadow-lg hover:-translate-y-0.5 transition transform border border-slate-700/50";
         card.onclick = () => openProfile(company.id);
 
         card.innerHTML = `
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[11px] font-bold line-clamp-1">
+            <span class="text-[13px] font-bold line-clamp-1 text-cyan-50">
               ${company.name}
             </span>
-            <span class="text-[11px] font-semibold bg-white/10 px-2 py-0.5 rounded-full">
-              ${score}/100
+            <span class="text-[11px] font-semibold bg-cyan-900/50 text-cyan-200 px-2 py-0.5 rounded-full border border-cyan-800">
+              ${score}
             </span>
           </div>
-          <p class="text-[11px] text-slate-300 line-clamp-2 mb-2">
+          <p class="text-[11px] text-slate-400 line-clamp-2 mb-2 text-left font-light leading-relaxed">
             ${desc}
           </p>
-          <div class="flex items-center justify-between mt-auto">
-            <span class="flex items-center gap-1 text-[11px] text-cyan-300">
-              <i class="fa-solid fa-location-dot text-cyan-400"></i>
-              <span class="line-clamp-1">${company.city}</span>
+          <div class="flex items-center justify-between mt-auto w-full">
+            <span class="flex items-center gap-1.5 text-[10px] text-slate-500">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="line-clamp-1 max-w-[80px]">${company.city}</span>
             </span>
-            <span class="text-[10px] font-bold text-emerald-300">
+            <span class="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
               ${getScoreLabel(score)}
             </span>
           </div>
@@ -2303,22 +2376,27 @@
       if (topScrollInterval) clearInterval(topScrollInterval);
       if (topRotateInterval) clearInterval(topRotateInterval);
 
-      // Yumuşak kayma – gözü yormayacak hız
+      // AKIŞ HIZI AYARI BURADA:
+      // 20 = Çok Hızlı | 30 = İdeal/Akıcı | 50 = Yavaş
+      const speed = 30; 
+
       topScrollInterval = setInterval(() => {
         if (!container) return;
-        container.scrollLeft += 1;
+        container.scrollLeft += 1; // Her seferinde 1 piksel kaydır
+        
+        // Sona geldiyse başa sar (Sonsuz döngü hissi)
         if (
           container.scrollLeft >=
           container.scrollWidth - container.clientWidth - 1
         ) {
           container.scrollLeft = 0;
         }
-      }, 40); // 40ms → yavaş, sakin kayma
+      }, speed); // <-- Hız değişkenini buraya verdik
 
-      // 10 saniyede bir şirketleri canlı biçimde döndür
+      // Kartların içindeki verileri (Skor, İsim vb.) belirli aralıklarla karıştırıp canlılık katmak için:
       topRotateInterval = setInterval(() => {
         rotateTopCompanies();
-      }, 10000);
+      }, 10000); // 10 saniyede bir veri yenileme (Bu kalabilir)
     }
 
     // MAIN GRID
