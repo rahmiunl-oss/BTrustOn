@@ -1095,18 +1095,31 @@
   <div class="grid grid-cols-2 gap-4">
     <div>
       <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_sector">Sector</label>
-      <select id="join-sector" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none">
+      <select id="join-sector" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer">
         <option value="construction">Construction</option>
         <option value="mining">Mining</option>
         <option value="energy">Energy</option>
-        <option value="drilling">Drilling</option>
-        <option value="equipment">Equipment</option>
+        <option value="manufacturing">Manufacturing</option>
+        <option value="technology">Technology</option>
+        <option value="logistics">Logistics</option>
       </select>
     </div>
+    
     <div>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5">Company Type</label>
+      <select id="join-type" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer">
+        <option value="Industrial Supplier">Industrial Supplier (Tedarikçi)</option>
+        <option value="Manufacturer">Manufacturer (Üretici)</option>
+        <option value="Contractor">Contractor (Yüklenici)</option>
+        <option value="Distributor">Distributor (Distribütör)</option>
+        <option value="Service Provider">Service Provider (Hizmet)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="mt-4">
       <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_city">City</label>
       <input type="text" id="join-city" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" required />
-    </div>
   </div>
 
   <div>
@@ -3303,6 +3316,7 @@ async function deleteProject(projectId) {
   </script>
 <script>
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
+// GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
 async function handleJoin() {
   const btn = document.querySelector("#join-form button");
   const originalText = btn.textContent;
@@ -3313,14 +3327,17 @@ async function handleJoin() {
     const email = document.getElementById("join-email").value;
     const password = document.getElementById("join-password").value;
     const companyName = document.getElementById("join-companyName").value;
+    
     const sector = document.getElementById("join-sector").value;
+    const typeVal = document.getElementById("join-type").value; // YENİ: Type bilgisini al
     const city = document.getElementById("join-city").value;
+    
     const services = document.getElementById("join-services").value;
     const errEl = document.getElementById("join-error");
 
     if(errEl) errEl.classList.add("hidden");
 
-    // Supabase Kayıt
+    // 1. Kullanıcı Oluştur (Auth)
     const { data: authData, error: authError } = await supabaseClient.auth.signUp({
       email,
       password,
@@ -3328,17 +3345,19 @@ async function handleJoin() {
 
     if (authError) throw authError;
 
-    // Profil Oluşturma
+    // 2. Profil Oluştur (Database)
+    // company_type alanını da ekledik
     const { error: dbError } = await supabaseClient.from('profiles').insert([
       {
         id: authData.user.id,
         email: email,
         company_name: companyName,
         sector: sector,
+        company_type: typeVal, // <-- ARTIK VERİTABANINA KAYDEDİLİYOR
         city: city,
         services: services,
         description: "",
-        size: "1-10"
+        size: "1-10" // Varsayılan boyut
       }
     ]);
 
@@ -3347,6 +3366,7 @@ async function handleJoin() {
     alert("Registration successful! Profile created.");
     toggleModal('modal-join');
     
+    // Giriş yap ve profili aç
     checkUserAndOpenProfile();
 
   } catch (error) {
