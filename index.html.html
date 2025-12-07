@@ -838,12 +838,12 @@
     <!-- FOOTER BUTTONS -->
     <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-3">
       <button
-        type="button"
-        onclick="showMainView()"
-        class="px-6 py-3 rounded-lg font-bold text-gray-500 hover:bg-gray-100 transition"
-      >
-        Cancel
-      </button>
+  type="button"
+  onclick="openProfile(selectedCompany.id)" 
+  class="px-6 py-3 rounded-lg font-bold text-gray-500 hover:bg-gray-100 transition"
+>
+  Cancel
+</button>
 
       <button
         type="submit"
@@ -961,8 +961,7 @@
       </div>
     </div>
   </div>
-
-  <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+<main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
       
       <div class="lg:col-span-8 space-y-8">
         
@@ -990,14 +989,21 @@
             Core Services
           </h3>
           <div id="p-services-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"></div>
-          
-          </div>
+        </div>
 
         <div id="content-projects" class="hidden-view">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="proj_key_ref">Key Reference Projects</h3>
-            <span class="text-[11px] text-gray-400" data-i18n="proj_selected_from_supplier">Selected projects</span>
+          
+          <div class="flex flex-wrap items-center justify-between mb-6 border-b border-gray-100 pb-4">
+            <div>
+               <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="proj_key_ref">Key Reference Projects</h3>
+               <span class="text-[11px] text-gray-400" data-i18n="proj_selected_from_supplier">Selected projects from this supplier</span>
+            </div>
+            
+            <button id="btn-add-project" type="button" onclick="openProjectModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+                <i class="fa-solid fa-plus"></i> <span>ADD NEW PROJECT</span>
+            </button>
           </div>
+
           <div id="p-projects-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
 
@@ -1008,15 +1014,19 @@
           </div>
           <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
-<div id="content-assets" class="hidden-view">
+
+        <div id="content-assets" class="hidden-view">
           <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             
             <div class="flex flex-wrap items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50/30">
               <div class="flex flex-col gap-2">
                 <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider">Equipment & Assets</h3>
-                <div class="flex flex-wrap items-center gap-2 text-[10px]">
+               <div class="flex flex-wrap items-center gap-2 text-[10px]">
                    <span class="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">Available</span>
-                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">Maintenance</span>
+                   
+                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">Under Maintenance</span>
+                   
+                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-100">Out of Service</span>
                 </div>
               </div>
               <button id="btn-add-asset" type="button" onclick="openAssetModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
@@ -1026,7 +1036,6 @@
 
             <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar relative">
               <table class="min-w-full text-sm text-left border-collapse">
-                
                 <thead class="bg-gray-50 text-gray-400 uppercase font-bold text-[10px] tracking-wider sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th class="py-3 px-6 bg-gray-50">Item Name</th>
@@ -1037,37 +1046,13 @@
                     <th class="py-3 px-6 bg-gray-50 text-right w-24">Actions</th>
                   </tr>
                 </thead>
-                
                 <tbody id="p-assets-list" class="divide-y divide-gray-100 bg-white"></tbody>
               </table>
             </div>
           </div>
         </div>
 
-              <button id="btn-add-asset" type="button" onclick="openAssetModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
-                <i class="fa-solid fa-plus"></i> <span>ADD NEW ASSET</span>
-              </button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="min-w-full text-sm text-left">
-                <thead class="bg-gray-50 text-gray-400 uppercase font-bold text-[10px] tracking-wider">
-                  <tr>
-                    <th class="py-3 px-6">Item Name</th>
-                    <th class="py-3 px-6">Specs</th>
-                    <th class="py-3 px-6 text-center">Qty</th>
-                    <th class="py-3 px-6">Location</th>
-                    <th class="py-3 px-6">Status</th>
-                    <th class="py-3 px-6 text-right w-24">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="p-assets-list" class="divide-y divide-gray-100"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="lg:col-span-4 space-y-6">
+      </div> <div class="lg:col-span-4 space-y-6">
         
         <div class="sticky top-28">
             <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-6 shadow-2xl relative overflow-hidden border border-slate-700/50 group hover:scale-[1.02] transition-transform duration-500">
@@ -1130,8 +1115,8 @@
              </div>
         </div>
         
-      </div>
-  </main>
+      </main>
+  
   </div>
 
   <div
@@ -1459,6 +1444,48 @@
           </button>
           <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
             SAVE ASSET
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<div id="project-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeProjectModal()"></div>
+  
+  <div class="bg-white w-full max-w-lg mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
+    <div class="bg-BTrustOn-primary text-white px-6 py-4 flex justify-between items-center">
+      <h3 id="project-modal-title" class="font-bold font-header tracking-wide">Add New Project</h3>
+      <button onclick="closeProjectModal()" class="text-white/70 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="p-6">
+      <form id="project-form" onsubmit="event.preventDefault(); saveProject();" class="space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Title</label>
+          <input type="text" id="proj-title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Copper Mine Expansion" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
+          <input type="text" id="proj-loc" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Erzincan, TR" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+          <textarea id="proj-desc" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="Short details about the scope..."></textarea>
+        </div>
+
+        <div class="pt-4 flex gap-3">
+          <button type="button" onclick="closeProjectModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+            CANCEL
+          </button>
+          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+            SAVE PROJECT
           </button>
         </div>
 
@@ -2696,49 +2723,71 @@ function renderTopCompanies() {
         }
       }
 
+      // --- PROJELERİ LİSTELE (GÜNCELLENMİŞ - BUTONLU VERSİYON) ---
       const pProjectsList = document.getElementById("p-projects-list");
+
+      // Yetki Kontrolü: Bu profil benim mi?
+      const isMyProfileForProj = (localStorage.getItem("BTrustOn_my_company_id") && String(companyId) === String(localStorage.getItem("BTrustOn_my_company_id")));
+
+      // "ADD NEW PROJECT" butonunu bul ve duruma göre gizle/göster
+      const btnAddProject = document.getElementById("btn-add-project");
+      if(btnAddProject) {
+        if(isMyProfileForProj) btnAddProject.classList.remove("hidden-view");
+        else btnAddProject.classList.add("hidden-view");
+      }
+
       if (pProjectsList) {
         pProjectsList.innerHTML = "";
         const projects = company.projects || [];
+        
         if (projects.length === 0) {
-          pProjectsList.innerHTML =
-            '<p class="text-xs text-gray-500">' +
-            (currentLang === "tr"
-              ? "Kayıtlı proje bulunmuyor."
-              : "No projects listed.") +
-            "</p>";
+          pProjectsList.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400 text-xs italic">Henüz proje eklenmemiş.</div>';
         } else {
           projects.forEach((p) => {
-            const title =
-              currentLang === "tr" && p.title_tr ? p.title_tr : p.title;
-            const loc =
-              currentLang === "tr" && p.loc_tr ? p.loc_tr : p.loc;
-            const desc =
-              currentLang === "tr" && p.desc_tr ? p.desc_tr : p.desc;
+            const title = currentLang === "tr" && p.title_tr ? p.title_tr : p.title;
+            const loc = currentLang === "tr" && p.loc_tr ? p.loc_tr : p.loc;
+            const desc = currentLang === "tr" && p.desc_tr ? p.desc_tr : p.desc;
+            const pId = p.id;
+
+            // DÜZENLEME BUTONLARI (Sadece sahibiysen kartın üstüne ekle)
+            let actionBtns = "";
+            if(isMyProfileForProj) {
+                actionBtns = `
+                  <div class="flex gap-2 ml-2 shrink-0">
+                    <button onclick="openProjectModal(${pId})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition" title="Düzenle">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <button onclick="deleteProject(${pId})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition" title="Sil">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                  </div>
+                `;
+            }
 
             const card = document.createElement("div");
-            card.className =
-              "bg-white/90 border border-gray-100 rounded-2xl p-4 shadow-glass flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md hover:border-BTrustOn-accent transition";
+            // Kart tasarımı (flex-col ve h-full ile hizayı koruduk)
+            card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-BTrustOn-accent transition group relative flex flex-col h-full";
 
             card.innerHTML = `
-              <div class="flex items-start justify-between gap-2">
+              <div class="flex items-start justify-between mb-3">
                 <div class="flex items-start gap-3">
-                  <div class="mt-0.5 w-8 h-8 rounded-xl bg-cyan-50 flex items-center justify-center">
-                    <i class="fa-solid fa-diagram-project text-BTrustOn-accent text-xs"></i>
+                  <div class="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-diagram-project text-BTrustOn-accent"></i>
                   </div>
                   <div>
-                    <h4 class="text-sm font-bold text-BTrustOn-primary leading-snug">
+                    <h4 class="text-sm font-bold text-BTrustOn-primary leading-snug pr-2 line-clamp-2">
                       ${title}
                     </h4>
                     <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                      <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
-                      <span>${loc}</span>
+                      <i class="fa-solid fa-location-dot text-BTrustOn-accent text-[10px]"></i>
+                      <span class="line-clamp-1">${loc}</span>
                     </p>
                   </div>
                 </div>
+                ${actionBtns}
               </div>
 
-              <p class="text-xs text-gray-600 leading-relaxed">
+              <p class="text-xs text-gray-600 leading-relaxed pl-1 line-clamp-3">
                 ${desc}
               </p>
             `;
@@ -3184,6 +3233,151 @@ async function deleteAsset(assetId) {
 
         openProfile(user.id);
         switchProfileTab('assets');
+
+    } catch (error) {
+        alert("Silme hatası: " + error.message);
+    }
+}
+/* --- PROJECT YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
+
+let currentEditingProjectId = null;
+
+// 1. MODALI AÇ
+function openProjectModal(projectId = null) {
+  const modal = document.getElementById("project-modal");
+  const form = document.getElementById("project-form");
+  const title = document.getElementById("project-modal-title");
+  
+  if (!modal) return;
+  modal.classList.remove("pointer-events-none", "opacity-0");
+  
+  // Formu temizle
+  if(form) form.reset();
+  
+  if (projectId) {
+    // --- DÜZENLEME MODU ---
+    currentEditingProjectId = projectId;
+    if(title) title.textContent = "Edit Project";
+    
+    // Veriyi bul ve doldur
+    // Not: selectedCompany global değişkeni açık olan profili tutar
+    if (selectedCompany && selectedCompany.projects) {
+        const proj = selectedCompany.projects.find(p => p.id === projectId);
+        if (proj) {
+            document.getElementById("proj-title").value = proj.title || proj.title_tr || "";
+            document.getElementById("proj-loc").value = proj.loc || proj.loc_tr || "";
+            document.getElementById("proj-desc").value = proj.desc || proj.desc_tr || "";
+        }
+    }
+  } else {
+    // --- EKLEME MODU ---
+    currentEditingProjectId = null;
+    if(title) title.textContent = "Add New Project";
+  }
+}
+
+function closeProjectModal() {
+  const modal = document.getElementById("project-modal");
+  if (modal) modal.classList.add("pointer-events-none", "opacity-0");
+  currentEditingProjectId = null;
+}
+
+// 2. KAYDET (Supabase)
+async function saveProject() {
+  const btn = document.querySelector("#project-form button[type='submit']");
+  const originalText = btn.textContent;
+  btn.textContent = "Kaydediliyor...";
+  btn.disabled = true;
+
+  try {
+    const title = document.getElementById("proj-title").value.trim();
+    const loc = document.getElementById("proj-loc").value.trim();
+    const desc = document.getElementById("proj-desc").value.trim();
+
+    if (!title) { alert("Proje başlığı giriniz."); return; }
+
+    // Mevcut listeyi kopyala (Hata almamak için boş dizi kontrolü)
+    let currentProjects = [...(selectedCompany.projects || [])];
+
+    if (currentEditingProjectId) {
+        // --- GÜNCELLEME ---
+        const index = currentProjects.findIndex(p => p.id === currentEditingProjectId);
+        if (index > -1) {
+            currentProjects[index] = {
+                ...currentProjects[index], // ID değişmesin
+                title: title,
+                loc: loc,
+                desc: desc
+            };
+        }
+    } else {
+        // --- YENİ EKLEME ---
+        const newProj = {
+            id: Date.now(), // Basit benzersiz ID
+            title: title,
+            loc: loc,
+            desc: desc
+        };
+        currentProjects.push(newProj);
+    }
+
+    // Supabase Veritabanına Yaz
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Oturum süresi dolmuş, lütfen tekrar giriş yapın.");
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ projects: currentProjects, updated_at: new Date() })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    // Arayüzü Güncelle (Sayfa yenilemeden)
+    selectedCompany.projects = currentProjects;
+    
+    // Ana veritabanı dizisini de güncelle
+    const localRef = database.find(c => c.id == user.id);
+    if(localRef) localRef.projects = currentProjects;
+
+    // Profil ekranını yenile (Yeni proje görünsün)
+    openProfile(user.id);
+    switchProfileTab('projects'); // Proje sekmesine geç
+    closeProjectModal(); // Pencereyi kapat
+
+  } catch (error) {
+    console.error(error);
+    alert("Hata: " + error.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+// 3. SİLME İŞLEMİ
+async function deleteProject(projectId) {
+    if(!confirm("Bu projeyi silmek istediğinize emin misiniz?")) return;
+
+    try {
+        // Silinecek olanı çıkar
+        let currentProjects = (selectedCompany.projects || []).filter(p => p.id !== projectId);
+        
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Oturum yok.");
+
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ projects: currentProjects, updated_at: new Date() })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        // Ekranı güncelle
+        selectedCompany.projects = currentProjects;
+        const localRef = database.find(c => c.id == user.id);
+        if(localRef) localRef.projects = currentProjects;
+
+        openProfile(user.id);
+        switchProfileTab('projects');
 
     } catch (error) {
         alert("Silme hatası: " + error.message);
