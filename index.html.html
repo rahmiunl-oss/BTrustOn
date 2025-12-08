@@ -794,12 +794,17 @@
                   <div class="col-span-2 p-8">
                       <form id="editor-form" onsubmit="event.preventDefault(); saveProfileData();">
 <div class="flex items-center gap-6 mb-8 border-b border-gray-100 pb-6">
-    <div id="edit-logo-preview-container" class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group">
-        <i id="edit-logo-icon" class="fa-solid fa-building text-3xl text-gray-300"></i>
+    <div id="edit-logo-preview-container" 
+         class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group cursor-pointer"
+         onclick="document.getElementById('edit-logo-input').click()">
+        
+        <i id="edit-logo-icon" class="fa-solid fa-building text-3xl text-gray-300 group-hover:scale-110 transition-transform duration-300"></i>
+        
         <img id="edit-logo-img" class="hidden w-full h-full object-cover" />
         
-        <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white text-xs font-bold pointer-events-none">
-            Change
+        <div class="absolute inset-0 bg-slate-900/60 hidden group-hover:flex flex-col items-center justify-center text-white transition-all backdrop-blur-[1px]">
+            <i class="fa-solid fa-pen-to-square text-xl mb-1"></i>
+            <span class="text-[9px] font-bold uppercase tracking-widest">CHANGE</span>
         </div>
     </div>
 
