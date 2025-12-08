@@ -312,19 +312,19 @@
   </nav>
 
   <div id="view-dashboard" class="fade-in">
-    <header
-      class="pt-14 pb-16 px-4 text-center relative overflow-hidden z-10"
-    >
+    <header class="pt-4 pb-4 px-4 text-center relative overflow-hidden z-10">
+      
       <h1
         id="hero-title"
-        class="text-5xl md:text-7xl font-header font-bold text-BTrustOn-primary mb-8 leading-snug tracking-tight drop-shadow-sm py-2"
+        class="text-4xl md:text-6xl font-header font-bold text-BTrustOn-primary mb-3 leading-tight tracking-tight drop-shadow-sm py-1"
       ></h1>
+      
       <p
         id="hero-desc"
-        class="text-xl text-gray-500 mb-12 max-w-2xl mx-auto font-light leading-relaxed"
+        class="text-base md:text-lg text-gray-500 mb-6 max-w-2xl mx-auto font-light leading-relaxed"
       ></p>
 
-      <div class="w-[95%] md:max-w-3xl mx-auto relative mb-12 md:mb-16 z-20 transition-all duration-300">
+      <div class="w-[95%] md:max-w-3xl mx-auto relative mb-6 z-20 transition-all duration-300">
         
         <div class="absolute inset-0 bg-BTrustOn-accent/20 blur-2xl rounded-full opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -338,112 +338,108 @@
           <input
             type="text"
             id="search-input"
-            onkeyup="renderCards(this.value)"
-            onkeydown="if(event.key === 'Enter') document.querySelector('main').scrollIntoView({ behavior: 'smooth' });"
-            class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-12 md:h-14"
+            onkeyup="handleSearchInput(this.value)" 
+            onkeydown="if(event.key === 'Enter') { handleSearchInput(this.value); document.querySelector('main').scrollIntoView({ behavior: 'smooth' }); }"
+            class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-10 md:h-12"
             placeholder=""
           />
           
           <button
             onclick="document.querySelector('main').scrollIntoView({ behavior: 'smooth' });"
-            class="shrink-0 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-12 h-12 md:w-auto md:h-14 md:px-8 font-bold transition shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-2 group"
+            class="shrink-0 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-10 h-10 md:w-auto md:h-12 md:px-6 font-bold transition shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-2 group"
           >
             <span class="hidden md:inline" data-i18n="btn_discover">DISCOVER</span>
-            
             <i class="fa-solid fa-compass text-lg group-hover:rotate-45 transition-transform duration-300"></i>
           </button>
         </div>
       </div>
+      
+      </header>
 
-      <div class="flex flex-wrap justify-center gap-3 md:gap-4">
-        <button onclick="filterSector('all', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-BTrustOn-accent bg-BTrustOn-accent/10 text-BTrustOn-accent text-sm font-bold transition-all shadow-glow">
-          <i class="fa-solid fa-layer-group mr-2"></i>
-          <span data-i18n="sec_all">All Sectors</span>
-        </button>
-
-        <button onclick="filterSector('construction', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
-          <i class="fa-solid fa-trowel-bricks mr-2"></i>
-          <span data-i18n="sec_const">Construction</span>
-        </button>
-
-        <button onclick="filterSector('energy', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
-          <i class="fa-solid fa-bolt mr-2"></i>
-          <span data-i18n="sec_energy">Energy</span>
-        </button>
-
-        <button onclick="filterSector('mining', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
-          <i class="fa-solid fa-gem mr-2"></i>
-          <span data-i18n="sec_mine">Mining</span>
-        </button>
-
-        <button onclick="filterSector('manufacturing', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
-          <i class="fa-solid fa-industry mr-2"></i>
-          <span data-i18n="sec_manu">Manufacturing</span>
-        </button>
-
-        <button onclick="filterSector('technology', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
-          <i class="fa-solid fa-microchip mr-2"></i>
-          <span data-i18n="sec_tech">Technology</span>
-        </button>
-
-        <button onclick="filterSector('logistics', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
-          <i class="fa-solid fa-truck-fast mr-2"></i>
-          <span data-i18n="sec_logi">Logistics</span>
-        </button>
-      </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 py-8 pb-24">
-      <div class="flex flex-col gap-6 mb-10 border-b border-gray-200/50 pb-8">
-        <div class="flex justify-between items-end">
-          <div>
-            <span
-              class="text-xs font-bold text-BTrustOn-accent uppercase tracking-wider mb-1 block flex items-center gap-2"
-            >
-              <span
-                class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
-              ></span>
-              <span data-i18n="live_db">Live Database</span>
-            </span>
-            <span
-              id="result-count"
-              class="text-2xl font-bold text-BTrustOn-primary"
-              >Loading...</span
-            >
-          </div>
-        </div>
-
-        <div
-          class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4"
-        >
+    <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
+      
+      <div class="flex flex-col gap-4 mb-5 border-b border-gray-200/50 pb-4">
+        
+        <div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
           <div class="flex justify-between items-center mb-3">
-            <h3
-              class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2"
-            >
+            <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
               <i class="fa-solid fa-star text-amber-400"></i>
-              <span data-i18n="top_title"
-                >Top Verified Companies by Trust Score</span
-              >
+              <span data-i18n="top_title">Top Verified Companies by Trust Score</span>
             </h3>
-            <span
-              class="text-[11px] text-gray-400"
-              data-i18n="top_sub"
-              >Updated in real-time</span
-            >
+            <span class="text-[11px] text-gray-400" data-i18n="top_sub">Updated in real-time</span>
           </div>
-          <div
-            id="top-companies"
-            class="flex gap-4 overflow-x-auto no-scrollbar pb-1"
-          ></div>
+          <div id="top-companies" class="flex gap-4 overflow-x-auto no-scrollbar pb-1"></div>
         </div>
-      </div>
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-4">
+            
+            <div>
+              <span id="result-count" class="text-2xl font-bold text-BTrustOn-primary tracking-tight">Loading...</span>
+            </div>
 
-      <div
-        id="card-container"
-        class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16"
-      ></div>
+            <div class="flex flex-wrap gap-3">
+                
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-layer-group text-gray-400 text-xs"></i>
+                    </div>
+                    <select 
+                        id="sector-filter" 
+                        onchange="filterSector(this.value)"
+                        class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]"
+                    >
+                        <option value="all">All Sectors</option>
+                        <option value="construction">Construction</option>
+                        <option value="energy">Energy</option>
+                        <option value="mining">Mining</option>
+                        <option value="manufacturing">Manufacturing</option>
+                        <option value="technology">Technology</option>
+                        <option value="logistics">Logistics</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
+                    </div>
+                </div>
 
-      <section class="mt-10 mb-16">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-earth-americas text-gray-400 text-xs"></i>
+                    </div>
+                    <select 
+                        id="country-filter" 
+                        onchange="handleCountryChange(this.value)"
+                        class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]"
+                    >
+                        <option value="all">All Countries</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-arrow-down-short-wide text-gray-400 text-xs"></i>
+                    </div>
+                    <select 
+                        id="sort-select" 
+                        onchange="handleSortChange(this.value)"
+                        class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition"
+                    >
+                        <option value="score_desc">Trust Score: High to Low</option>
+                        <option value="score_asc">Trust Score: Low to High</option>
+                        <option value="year_oldest">Experience: Oldest First</option>
+                        <option value="year_newest">Experience: Newest First</option>
+                        <option value="name_asc">Name: A to Z</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
+                    </div>
+                </div>
+            </div>
+        </div>        
+      <div id="card-container" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16"></div>
+
+      <section class="mt-4 mb-8">
         <div
           class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8"
         >
@@ -465,283 +461,87 @@
         </div>
 
         <div class="grid md:grid-cols-3 gap-6">
-          <div
-            class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass"
-          >
-            <div
-              class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4"
-            >
+          <div class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass">
+            <div class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4">
               <span class="text-xs font-bold text-BTrustOn-accent">01</span>
             </div>
-            <h3
-              class="text-sm font-bold text-BTrustOn-primary mb-2"
-              data-i18n="how_step1_title"
-            >
-              Create your profile
-            </h3>
-            <p
-              class="text-xs text-gray-500 leading-relaxed"
-              data-i18n="how_step1_desc"
-            >
-              Add your company details, sectors, core services, assets and
-              project highlights.
-            </p>
+            <h3 class="text-sm font-bold text-BTrustOn-primary mb-2" data-i18n="how_step1_title">Create your profile</h3>
+            <p class="text-xs text-gray-500 leading-relaxed" data-i18n="how_step1_desc">Add your company details, sectors, core services, assets and project highlights.</p>
           </div>
-
-          <div
-            class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass"
-          >
-            <div
-              class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4"
-            >
+          <div class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass">
+            <div class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4">
               <span class="text-xs font-bold text-BTrustOn-accent">02</span>
             </div>
-            <h3
-              class="text-sm font-bold text-BTrustOn-primary mb-2"
-              data-i18n="how_step2_title"
-            >
-              Verify references
-            </h3>
-            <p
-              class="text-xs text-gray-500 leading-relaxed"
-              data-i18n="how_step2_desc"
-            >
-              Send verification requests to past clients and partners to build a
-              verified track record.
-            </p>
+            <h3 class="text-sm font-bold text-BTrustOn-primary mb-2" data-i18n="how_step2_title">Verify references</h3>
+            <p class="text-xs text-gray-500 leading-relaxed" data-i18n="how_step2_desc">Send verification requests to past clients and partners to build a verified track record.</p>
           </div>
-
-          <div
-            class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass"
-          >
-            <div
-              class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4"
-            >
+          <div class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass">
+            <div class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4">
               <span class="text-xs font-bold text-BTrustOn-accent">03</span>
             </div>
-            <h3
-              class="text-sm font-bold text-BTrustOn-primary mb-2"
-              data-i18n="how_step3_title"
-            >
-              Grow with Trust Score™
-            </h3>
-            <p
-              class="text-xs text-gray-500 leading-relaxed"
-              data-i18n="how_step3_desc"
-            >
-              Higher Strabon Trust Scores mean higher visibility in search
-              results and more qualified leads.
-            </p>
+            <h3 class="text-sm font-bold text-BTrustOn-primary mb-2" data-i18n="how_step3_title">Grow with Trust Score™</h3>
+            <p class="text-xs text-gray-500 leading-relaxed" data-i18n="how_step3_desc">Higher Strabon Trust Scores mean higher visibility in search results and more qualified leads.</p>
           </div>
         </div>
       </section>
 
-      <section class="mt-10">
-        <div class="text-center mb-10">
-          <h2
-            class="text-2xl md:text-3xl font-header font-bold text-BTrustOn-primary mb-3"
-            data-i18n="pricing_title"
-          >
-            Pricing for Industrial Networks
-          </h2>
-          <p
-            class="text-sm text-gray-500 max-w-2xl mx-auto"
-            data-i18n="pricing_sub"
-          >
-            Start free, then upgrade as your company grows. Every plan includes
-            a public profile and access to the Strabon Trust Score™ framework.
-          </p>
+      <section class="mt-4">
+  <div class="text-center mb-6">
+          <h2 class="text-2xl md:text-3xl font-header font-bold text-BTrustOn-primary mb-3" data-i18n="pricing_title">Pricing for Industrial Networks</h2>
+          <p class="text-sm text-gray-500 max-w-2xl mx-auto" data-i18n="pricing_sub">Start free, then upgrade as your company grows. Every plan includes a public profile and access to the Strabon Trust Score™ framework.</p>
         </div>
 
         <div class="grid md:grid-cols-3 gap-6">
-          <div
-            class="bg-white/90 border border-gray-200 rounded-2xl p-7 shadow-glass flex flex-col"
-          >
+          <div class="bg-white/90 border border-gray-200 rounded-2xl p-7 shadow-glass flex flex-col">
             <h3 class="text-sm font-bold text-BTrustOn-primary mb-1">Free</h3>
-            <p
-              class="text-xs text-gray-500 mb-4"
-              data-i18n="price_free_tag"
-            >
-              For small teams getting started.
-            </p>
+            <p class="text-xs text-gray-500 mb-4" data-i18n="price_free_tag">For small teams getting started.</p>
             <div class="mb-6">
-              <span
-                class="text-3xl font-header font-bold text-BTrustOn-primary"
-                >$0</span
-              >
-              <span
-                class="text-xs text-gray-400 ml-1"
-                data-i18n="price_month"
-                >/month</span
-              >
+              <span class="text-3xl font-header font-bold text-BTrustOn-primary">$0</span>
+              <span class="text-xs text-gray-400 ml-1" data-i18n="price_month">/month</span>
             </div>
             <ul class="text-xs text-gray-600 space-y-2 mb-6">
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_free_1">Public company profile</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_free_2"
-                  >Up to 3 listed services</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_free_3"
-                  >Basic Strabon Trust Score™</span
-                >
-              </li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_free_1">Public company profile</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_free_2">Up to 3 listed services</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_free_3">Basic Strabon Trust Score™</span></li>
             </ul>
-            <button
-              class="mt-auto w-full border border-gray-300 text-xs font-bold text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition"
-              onclick="toggleModal('modal-join')"
-              data-i18n="btn_get_started"
-            >
-              GET STARTED
-            </button>
+            <button class="mt-auto w-full border border-gray-300 text-xs font-bold text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition" onclick="toggleModal('modal-join')" data-i18n="btn_get_started">GET STARTED</button>
           </div>
 
-          <div
-            class="bg-BTrustOn-primary text-white rounded-2xl p-7 shadow-float relative overflow-hidden flex flex-col"
-          >
-            <div
-              class="absolute inset-0 bg-gradient-to-br from-BTrustOn-primary via-slate-900 to-cyan-700 opacity-80"
-            ></div>
-            <div
-              class="relative z-10 flex justify-between items-start mb-4"
-            >
+          <div class="bg-BTrustOn-primary text-white rounded-2xl p-7 shadow-float relative overflow-hidden flex flex-col">
+            <div class="absolute inset-0 bg-gradient-to-br from-BTrustOn-primary via-slate-900 to-cyan-700 opacity-80"></div>
+            <div class="relative z-10 flex justify-between items-start mb-4">
               <div>
                 <h3 class="text-sm font-bold mb-1">Pro</h3>
-                <p
-                  class="text-xs text-cyan-200"
-                  data-i18n="price_pro_tag"
-                >
-                  For growth-focused industrial suppliers.
-                </p>
+                <p class="text-xs text-cyan-200" data-i18n="price_pro_tag">For growth-focused industrial suppliers.</p>
               </div>
-              <span
-                class="text-[10px] font-bold bg-amber-400 text-slate-900 px-2 py-1 rounded-full"
-                data-i18n="badge_popular"
-                >MOST POPULAR</span
-              >
+              <span class="text-[10px] font-bold bg-amber-400 text-slate-900 px-2 py-1 rounded-full" data-i18n="badge_popular">MOST POPULAR</span>
             </div>
             <div class="relative z-10 mb-6">
               <span class="text-3xl font-header font-bold">$79</span>
-              <span
-                class="text-xs text-cyan-100 ml-1"
-                data-i18n="price_month"
-                >/month</span
-              >
+              <span class="text-xs text-cyan-100 ml-1" data-i18n="price_month">/month</span>
             </div>
             <ul class="relative z-10 text-xs text-cyan-50 space-y-2 mb-6">
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-400 text-[10px]"
-                ></i>
-                <span data-i18n="price_pro_1"
-                  >Unlimited services & assets</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-400 text-[10px]"
-                ></i>
-                <span data-i18n="price_pro_2"
-                  >Verified reference module</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-400 text-[10px]"
-                ></i>
-                <span data-i18n="price_pro_3"
-                  >Priority ranking in search</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-400 text-[10px]"
-                ></i>
-                <span data-i18n="price_pro_4"
-                  >Advanced Trust Score™ insights</span
-                >
-              </li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i><span data-i18n="price_pro_1">Unlimited services & assets</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i><span data-i18n="price_pro_2">Verified reference module</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i><span data-i18n="price_pro_3">Priority ranking in search</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px]"></i><span data-i18n="price_pro_4">Advanced Trust Score™ insights</span></li>
             </ul>
-            <button
-              class="relative z-10 mt-auto w-full bg-white text-BTrustOn-primary text-xs font-bold py-3 rounded-xl hover:bg-cyan-100 transition"
-              onclick="toggleModal('modal-join')"
-              data-i18n="btn_choose_pro"
-            >
-              CHOOSE PRO
-            </button>
+            <button class="relative z-10 mt-auto w-full bg-white text-BTrustOn-primary text-xs font-bold py-3 rounded-xl hover:bg-cyan-100 transition" onclick="toggleModal('modal-join')" data-i18n="btn_choose_pro">CHOOSE PRO</button>
           </div>
 
-          <div
-            class="bg-white/90 border border-gray-200 rounded-2xl p-7 shadow-glass flex flex-col"
-          >
-            <h3 class="text-sm font-bold text-BTrustOn-primary mb-1">
-              Enterprise
-            </h3>
-            <p
-              class="text-xs text-gray-500 mb-4"
-              data-i18n="price_ent_tag"
-            >
-              For EPCs and global industrial groups.
-            </p>
+          <div class="bg-white/90 border border-gray-200 rounded-2xl p-7 shadow-glass flex flex-col">
+            <h3 class="text-sm font-bold text-BTrustOn-primary mb-1">Enterprise</h3>
+            <p class="text-xs text-gray-500 mb-4" data-i18n="price_ent_tag">For EPCs and global industrial groups.</p>
             <div class="mb-6">
-              <span
-                class="text-3xl font-header font-bold text-BTrustOn-primary"
-                >Custom</span
-              >
+              <span class="text-3xl font-header font-bold text-BTrustOn-primary">Custom</span>
             </div>
             <ul class="text-xs text-gray-600 space-y-2 mb-6">
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_ent_1"
-                  >Multi-user access & SSO</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_ent_2"
-                  >API access to supplier data</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_ent_3"
-                  >Dedicated success manager</span
-                >
-              </li>
-              <li class="flex items-center gap-2">
-                <i
-                  class="fa-solid fa-check text-emerald-500 text-[10px]"
-                ></i>
-                <span data-i18n="price_ent_4"
-                  >Custom Trust Score™ models</span
-                >
-              </li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_ent_1">Multi-user access & SSO</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_ent_2">API access to supplier data</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_ent_3">Dedicated success manager</span></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500 text-[10px]"></i><span data-i18n="price_ent_4">Custom Trust Score™ models</span></li>
             </ul>
-            <button
-              class="mt-auto w-full border border-BTrustOn-primary text-xs font-bold text-BTrustOn-primary py-3 rounded-xl hover:bg-BTrustOn-primary hover:text-white transition"
-              onclick="toggleModal('modal-join')"
-              data-i18n="btn_contact_sales"
-            >
-              CONTACT SALES
-            </button>
+            <button class="mt-auto w-full border border-BTrustOn-primary text-xs font-bold text-BTrustOn-primary py-3 rounded-xl hover:bg-BTrustOn-primary hover:text-white transition" onclick="toggleModal('modal-join')" data-i18n="btn_contact_sales">CONTACT SALES</button>
           </div>
         </div>
       </section>
@@ -2615,10 +2415,36 @@
 
     // TOP COMPANIES BAND
 
+    // TOP COMPANIES (AKILLI ROTASYON MANTIĞI)
     function initTopCompaniesOrder() {
-      topCompaniesOrder = [...database].sort(
-        (a, b) => computeScore(b.meta) - computeScore(a.meta)
-      );
+      // 1. ADIM: HAVUZU OLUŞTUR (Kriterlere uyan herkesi al)
+      let qualifiedCompanies = database.filter(company => {
+          const score = computeScore(company.meta);
+          
+          // Kriter 1: Puanı 80 ve üzeri olsun (Barajı biraz esnetebiliriz)
+          if (score < 80) return false;
+
+          // Kriter 2: Statüsü güvenilir olsun
+          const validTrustLevels = ["verified", "premium", "global"];
+          if (!validTrustLevels.includes(company.trust)) return false;
+
+          return true; 
+      });
+
+      // Güvenlik Önlemi: Eğer veritabanı çok yeniyse ve kimse kriteri geçemediyse,
+      // vitrin boş kalmasın diye en yüksek puanlıları mecburen al.
+      if (qualifiedCompanies.length < 5) {
+         qualifiedCompanies = [...database].sort((a, b) => computeScore(b.meta) - computeScore(a.meta));
+      }
+
+      // 2. ADIM: KARIŞTIR (SHUFFLE)
+      // Bu sayede her sayfa yenilemede farklı firmalar şans bulur.
+      qualifiedCompanies.sort(() => Math.random() - 0.5);
+
+      // 3. ADIM: LİMİTLE (Performans İçin)
+      // Havuzda 1000 kişi olsa bile o an sadece şanslı 30 kişiyi göster.
+      // Bir sonraki giren kişi diğer 30'u görecek.
+      topCompaniesOrder = qualifiedCompanies.slice(0, 30);
     }
 
 function renderTopCompanies() {
@@ -2861,40 +2687,42 @@ function renderTopCompanies() {
       }, 15000); // 15 sn'de bir hafif değişim
     }
 
-    function filterSector(sector, btnEl) {
+function filterSector(sector, btnEl) {
       currentSector = sector;
 
+      // 1. Butonların renklerini sıfırla/ayarla
       document.querySelectorAll(".filter-btn").forEach((btn) => {
-        btn.classList.remove(
-          "border-BTrustOn-accent",
-          "bg-BTrustOn-accent/10",
-          "text-BTrustOn-accent",
-          "shadow-glow"
-        );
-        btn.classList.add(
-          "border-gray-300",
-          "bg-transparent",
-          "text-gray-500"
-        );
+        btn.classList.remove("border-BTrustOn-accent", "bg-BTrustOn-accent/10", "text-BTrustOn-accent", "shadow-glow");
+        btn.classList.add("border-gray-300", "bg-transparent", "text-gray-500");
       });
 
+      // Tıklanan butonu boya
       if (btnEl) {
-        btnEl.classList.remove(
-          "border-gray-300",
-          "bg-transparent",
-          "text-gray-500"
-        );
-        btnEl.classList.add(
-          "border-BTrustOn-accent",
-          "bg-BTrustOn-accent/10",
-          "text-BTrustOn-accent",
-          "shadow-glow"
-        );
+        btnEl.classList.remove("border-gray-300", "bg-transparent", "text-gray-500");
+        btnEl.classList.add("border-BTrustOn-accent", "bg-BTrustOn-accent/10", "text-BTrustOn-accent", "shadow-glow");
       }
 
+      // 2. Arama ve Listeleme Mantığı
       const searchInput = document.getElementById("search-input");
       const value = searchInput ? searchInput.value : "";
-      renderCards(value);
+      
+      if (sector === "all" && value.trim() === "") {
+          isSearchActive = false;
+          renderShowcase();
+      } else {
+          isSearchActive = true;
+          renderSearchResults(value);
+      }
+
+      // 3. 👇 AŞAĞI KAYDIRMA KODU (YENİ EKLENDİ) 👇
+      // Sonuçların olduğu ana kısma yumuşakça in
+      const mainSection = document.querySelector("main");
+      if(mainSection) {
+          // Biraz gecikmeli yapıyoruz ki önce filtreleme işlemi bitsin, göz yormasın
+          setTimeout(() => {
+              mainSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+      }
     }
     // Status badge renkleri (Available / Under Maintenance / Out of Service)
     function getStatusBadge(baseStatusRaw, displayStatus) {
@@ -3578,13 +3406,14 @@ async function saveProfileData() {
       applyTranslations();
       initTopCompaniesOrder();
       renderTopCompanies();
-      renderCards("");
+      
 
       startTopAnimations();
-      startGridShuffle();
+      
 
       switchLanguage("en");
       initRealData();
+      initShowcaseSystem();
     });
 /* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
 
@@ -5012,6 +4841,7 @@ async function initRealData() {
   // 4. Ekranı Yenile
   renderCards(""); 
   renderTopCompanies();
+  populateCountryFilter();
 
   // Eğer şu an bir profil açıksa, onu da güncelle (böylece F5 atınca boş kalmaz)
   if (selectedCompany) {
@@ -5043,5 +4873,282 @@ function markAllInboxRead() {
   
   showToast("Success", "All messages marked as read.", "success");
 }
+/* --- AKILLI VİTRİN VE ARAMA SİSTEMİ --- */
+
+    let showcaseInterval = null; // 5 saniyelik zamanlayıcı
+    let isSearchActive = false;  // Arama modunda mıyız?
+
+    // 1. ANA RENDER FONKSİYONU (Kartları Çizer)
+    // Bu fonksiyon sadece "Verilen Listeyi Ekrana Basmakla" görevlidir.
+    // 1. ANA RENDER FONKSİYONU (Kartları Çizer) - DÜZELTİLMİŞ VERSİYON
+    function drawCardsToScreen(companyList, mode = "showcase") {
+        const container = document.getElementById("card-container");
+        const resultCount = document.getElementById("result-count");
+        
+        if (!container) return;
+        container.innerHTML = "";
+
+        // Başlık ve Sayı Güncelleme
+        if (resultCount) {
+            if (mode === "search") {
+                resultCount.innerHTML = `
+                    <span class="text-sm text-gray-500 font-normal">Search Results:</span> 
+                    <span class="text-BTrustOn-accent">${companyList.length}</span> 
+                    <span class="text-sm text-gray-500 font-normal">companies found</span>`;
+            } else {
+                resultCount.innerHTML = `
+                    <span class="text-sm text-gray-500 font-normal">Live Showcase:</span> 
+                    <span class="text-emerald-600 animate-pulse">Active</span> 
+                    <span class="text-[10px] text-gray-400 ml-2">(Refreshing every 5s)</span>`;
+            }
+        }
+
+        if (companyList.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <p class="text-gray-500">No companies found matching your criteria.</p>
+                </div>`;
+            return;
+        }
+
+        companyList.forEach((company) => {
+            const score = computeScore(company.meta);
+            const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
+            const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
+
+            const card = document.createElement("div");
+            
+            // DÜZELTME 1: "justify-between" kaldırıldı, "h-full" eklendi.
+            // Bu sayede kart uzasa bile içerikler birbirinden kopmaz.
+            card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-glass flex flex-col h-full hover:border-BTrustOn-accent hover:shadow-lg hover:-translate-y-1 transition cursor-pointer fade-in";
+            
+            card.onclick = () => openProfile(company.id);
+
+            card.innerHTML = `
+              <div class="flex-1 flex flex-col gap-3"> 
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 class="text-sm font-bold text-BTrustOn-primary mb-0.5 line-clamp-1">
+                        ${company.name}
+                      </h3>
+                      <p class="text-[11px] text-gray-400 mb-1 line-clamp-1">
+                        ${company.city}
+                      </p>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <div class="text-xs font-header font-bold text-BTrustOn-primary leading-none">
+                        ${score}<span class="text-[10px] text-gray-400">/100</span>
+                      </div>
+                      <div class="text-[10px] text-emerald-500 font-semibold mt-0.5">
+                        ${getScoreLabel(score)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                    ${desc}
+                  </p>
+
+                  <div class="flex flex-wrap gap-1.5">
+                    ${(services || []).slice(0, 3).map(s => `
+                      <span class="text-[10px] px-2 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600">${s}</span>
+                    `).join("")}
+                  </div>
+              </div>
+
+              <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
+                <div class="flex items-center gap-2">
+                  ${getTrustBadge(company)}
+                </div>
+                <button class="text-[11px] font-bold text-BTrustOn-accent flex items-center gap-1 group">
+                  <span>${t("btn_view")}</span> <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                </button>
+              </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // 2. VİTRİN MODU (Rastgele 12 Şirket)
+    function renderShowcase() {
+        // Eğer arama yapılıyorsa vitrin çalışmasın
+        if (isSearchActive) return;
+
+        // Veritabanını karıştır
+        const shuffled = [...database].sort(() => Math.random() - 0.5);
+        
+        // İlk 12 tanesini al
+        const showcaseList = shuffled.slice(0, 12);
+        
+        drawCardsToScreen(showcaseList, "showcase");
+    }
+
+    // 3. ARAMA MODU (Filtreli Liste)
+    // 3. ARAMA VE LİSTELEME MODU (GÜNCELLENMİŞ)
+    function renderSearchResults(query) {
+        const q = (query || "").toLowerCase().trim();
+
+        // A. FİLTRELEME
+        let filtered = database.filter((company) => {
+            // 1. Sektör Filtresi
+            if (currentSector !== "all" && company.sector !== currentSector) return false;
+            
+            // 2. Ülke Filtresi (YENİ)
+            if (currentCountryFilter !== "all") {
+                const companyCountry = getCountryFromCity(company.city);
+                if (companyCountry !== currentCountryFilter) return false;
+            }
+
+            // 3. Metin Araması
+            if (!q) return true; // Metin yoksa geç
+
+            const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
+            const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
+            
+            const haystack = [
+                company.name, company.city, company.sector, desc, ...(services || [])
+            ].join(" ").toLowerCase();
+
+            return haystack.includes(q);
+        });
+
+        // B. SIRALAMA (YENİ)
+        filtered = sortCompanyList(filtered);
+
+        // C. EKRANA BASMA
+        drawCardsToScreen(filtered, "search");
+    }
+
+    // 4. BAŞLATICI VE YÖNETİCİ (Controller)
+    function initShowcaseSystem() {
+        // İlk açılışta bir kere vitrini göster
+        renderShowcase();
+
+        // 5 Saniyede bir değiştiren zamanlayıcıyı başlat
+        startShowcaseTimer();
+    }
+
+    function startShowcaseTimer() {
+        if (showcaseInterval) clearInterval(showcaseInterval);
+        
+        showcaseInterval = setInterval(() => {
+            // Sadece arama yapılmıyorsa vitrini yenile
+            if (!isSearchActive) {
+                renderShowcase();
+            }
+        }, 5000); // 5000 ms = 5 saniye
+    }
+
+    // Arama kutusuna her basıldığında bu çalışacak
+    // (Eski renderCards yerine bunu kullanacağız)
+    function handleSearchInput(value) {
+        const query = value.trim();
+
+        if (query === "" && currentSector === "all") {
+            // Arama kutusu boşaldı -> VİTRİN MODUNA DÖN
+            isSearchActive = false;
+            renderShowcase();
+            // Zamanlayıcı devam etsin
+        } else {
+            // Bir şeyler yazıldı -> ARAMA MODUNA GEÇ
+            isSearchActive = true;
+            // Otomatik değiştirmeyi durdur (Kullanıcı okuyabilsin diye)
+            // İsterseniz clearInterval yapabiliriz ama isSearchActive bayrağı yeterli.
+            renderSearchResults(query);
+        }
+    }
+    
+    // Sektör Butonları için Güncelleme
+    // (Mevcut filterSector fonksiyonunuzun içinden burayı çağıracağız)
+    // Aşağıdaki fonksiyonu eskisiyle değiştirin veya entegre edin.
+/* --- FİLTRELEME VE SIRALAMA SİSTEMİ (ÜLKE & SORT) --- */
+    
+    let currentCountryFilter = "all";
+    let currentSortOption = "score_desc";
+
+    // 1. Şehirden Ülkeyi Ayıkla (Örn: "Ankara, TR" -> "TR")
+    function getCountryFromCity(cityString) {
+        if (!cityString) return "";
+        if (cityString.includes(",")) {
+            return cityString.split(",")[1].trim(); 
+        }
+        return cityString.trim(); // Virgül yoksa direkt kendisini al
+    }
+
+    // 2. Ülke Kutusunu Doldur
+    function populateCountryFilter() {
+        const countrySet = new Set();
+        
+        // Tüm şirketleri tara ve ülkeleri bul
+        database.forEach(c => {
+            const country = getCountryFromCity(c.city);
+            if(country && country.length < 20) { // Çok uzun hatalı verileri alma
+                countrySet.add(country);
+            }
+        });
+
+        const select = document.getElementById("country-filter");
+        if(select) {
+            // Önce temizle
+            select.innerHTML = '<option value="all">All Countries</option>';
+            
+            // Alfabetik sırayla ekle
+            Array.from(countrySet).sort().forEach(country => {
+                const option = document.createElement("option");
+                option.value = country;
+                option.textContent = country;
+                select.appendChild(option);
+            });
+        }
+    }
+
+    // 3. Ülke Değişince Çalışır
+    function handleCountryChange(countryVal) {
+        currentCountryFilter = countryVal;
+        
+        // Vitrini durdur, arama moduna geç (Çünkü filtreliyoruz)
+        isSearchActive = true; 
+        
+        // Listeyi yenile
+        const searchInput = document.getElementById("search-input");
+        const query = searchInput ? searchInput.value.trim() : "";
+        renderSearchResults(query);
+    }
+
+    // 4. Sıralama Değişince Çalışır
+    function handleSortChange(sortValue) {
+        currentSortOption = sortValue;
+        
+        // Vitrini durdur, arama moduna geç (Sıralı listeyi görmek istiyor)
+        isSearchActive = true;
+        
+        // Listeyi yenile
+        const searchInput = document.getElementById("search-input");
+        const query = searchInput ? searchInput.value.trim() : "";
+        renderSearchResults(query);
+    }
+
+    // 5. Listeyi Sıralayan Yardımcı Fonksiyon
+    function sortCompanyList(list) {
+        let sorted = [...list]; // Kopyasını al
+        switch (currentSortOption) {
+            case "score_desc": // Puan: Yüksekten Düşüğe
+                sorted.sort((a, b) => computeScore(b.meta) - computeScore(a.meta));
+                break;
+            case "score_asc": // Puan: Düşükten Yükseğe
+                sorted.sort((a, b) => computeScore(a.meta) - computeScore(b.meta));
+                break;
+            case "year_oldest": // Yıl: Eskiden Yeniye
+                sorted.sort((a, b) => (parseInt(a.year_label)||2023) - (parseInt(b.year_label)||2023));
+                break;
+            case "year_newest": // Yıl: Yeniden Eskiye
+                sorted.sort((a, b) => (parseInt(b.year_label)||2023) - (parseInt(a.year_label)||2023));
+                break;
+            case "name_asc": // İsim: A-Z
+                sorted.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+        }
+        return sorted;
+    }
 </script>
 </html>
