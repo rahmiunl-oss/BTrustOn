@@ -1104,12 +1104,19 @@
         </div>
 
         <div id="content-certs" class="hidden-view">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="certs_title">Certifications</h3>
-            <span class="text-[11px] text-gray-400" data-i18n="certs_sub">Declared certificates</span>
-          </div>
-          <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </div>
+  <div class="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+    <div>
+      <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="certs_title">Certifications</h3>
+      <span class="text-[11px] text-gray-400" data-i18n="certs_sub">Declared certificates</span>
+    </div>
+
+    <button id="btn-add-cert" type="button" onclick="openCertModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+        <i class="fa-solid fa-plus"></i> <span>ADD CERTIFICATE</span>
+    </button>
+  </div>
+  
+  <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+</div>
 
         <div id="content-assets" class="hidden-view">
           <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -1616,6 +1623,44 @@
     </div>
   </div>
 </div>
+<div id="cert-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCertModal()"></div>
+  
+  <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
+    <div class="bg-BTrustOn-primary text-white px-6 py-4 flex justify-between items-center">
+      <h3 id="cert-modal-title" class="font-bold font-header tracking-wide">Add Certificate</h3>
+      <button onclick="closeCertModal()" class="text-white/70 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="p-6">
+      <form id="cert-form" onsubmit="event.preventDefault(); saveCert();" class="space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Certificate Name</label>
+          <input type="text" id="cert-name" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. ISO 9001:2015" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Issuer / Organization</label>
+          <input type="text" id="cert-issuer" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. TUV NORD">
+        </div>
+
+        <div class="pt-4 flex gap-3">
+          <button type="button" onclick="closeCertModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+            CANCEL
+          </button>
+          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+            SAVE
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="inbox-overlay" onclick="toggleInbox()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-[9990] hidden transition-opacity opacity-0"></div>
 
 <div id="inbox-panel" class="flex flex-col">
@@ -2864,29 +2909,76 @@ function renderTopCompanies() {
     }
 
     // --- CERTIFICATES (Dynamic) ---
+    // --- CERTIFICATES (Dynamic with Edit/Delete) ---
+    // --- CERTIFICATES (GÜNCELLENMİŞ TASARIM - KUTULU BUTONLAR) ---
     function renderCertificates(company) {
       const certList = document.getElementById("p-certs-list");
+      const btnAddCert = document.getElementById("btn-add-cert");
+      const myId = localStorage.getItem("BTrustOn_my_company_id");
+      const isOwner = (myId && String(company.id) === String(myId));
+
+      // Ekle butonu kontrolü
+      if (btnAddCert) {
+         if (isOwner) btnAddCert.classList.remove("hidden-view");
+         else btnAddCert.classList.add("hidden-view");
+      }
+
       if (!certList) return;
-      
       certList.innerHTML = "";
 
-      if (!company.certificates || company.certificates.length === 0) {
+      const certs = company.certificates || [];
+
+      if (certs.length === 0) {
         certList.innerHTML = `
-          <div class="col-span-2 bg-white border border-gray-200 rounded-xl p-5 text-gray-500 text-sm italic">
+          <div class="col-span-2 bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 text-xs italic">
             ${t("no_certs")}
           </div>`;
         return;
       }
 
-      company.certificates.forEach(cert => {
+      certs.forEach((cert, index) => {
+        // Veri yapısı kontrolü
+        let name = "";
+        let issuer = "";
+        let id = null;
+
+        if (typeof cert === 'string') {
+            name = cert;
+            id = index;
+        } else {
+            name = cert.name;
+            issuer = cert.issuer || "";
+            id = cert.id;
+        }
+
+        // Düzenleme Butonları (GÜNCELLENEN KISIM BURASI)
+        let actionBtns = "";
+        if(isOwner) {
+            actionBtns = `
+              <div class="flex gap-2 ml-auto pl-3 border-l border-gray-100 items-center">
+                <button onclick="openCertModal(${typeof cert === 'object' ? id : -1})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition" title="Edit">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                </button>
+                
+                <button onclick="deleteCert(${typeof cert === 'object' ? id : -1}, '${name}')" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition" title="Delete">
+                    <i class="fa-solid fa-trash text-[10px]"></i>
+                </button>
+              </div>
+            `;
+        }
+
         certList.innerHTML += `
-          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition">
-            <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0">
-               <i class="fa-solid fa-award text-cyan-600 text-sm"></i>
+          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition group">
+            <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0 border border-cyan-100">
+               <i class="fa-solid fa-award text-cyan-600 text-lg"></i>
             </div>
-            <div class="text-BTrustOn-primary font-bold text-sm">
-              ${cert}
+            <div class="flex-grow">
+              <div class="text-BTrustOn-primary font-bold text-sm leading-tight">
+                ${name}
+              </div>
+              ${issuer ? `<div class="text-[10px] text-gray-400 mt-0.5">${issuer}</div>` : ''}
             </div>
+            ${actionBtns}
           </div>`;
       });
     }
@@ -3455,6 +3547,7 @@ async function saveProfileData() {
       startGridShuffle();
 
       switchLanguage("en");
+      initRealData();
     });
 /* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
 
@@ -4597,6 +4690,215 @@ async function uploadLogoDirectly(input) {
       console.error(error);
       showToast("Error", "Logo upload failed: " + error.message, "error");
       // Hata olursa eski haline döndürmek için sayfayı yenileyebilir veya eski URL'i geri yükleyebiliriz
+  }
+}
+/* --- SERTİFİKA YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
+
+let currentEditingCertId = null;
+
+// 1. MODALI AÇ
+function openCertModal(certId = null) {
+  const modal = document.getElementById("cert-modal");
+  const form = document.getElementById("cert-form");
+  const title = document.getElementById("cert-modal-title");
+  
+  if (!modal) return;
+  modal.classList.remove("pointer-events-none", "opacity-0");
+  
+  if(form) form.reset();
+  
+  // Eğer certId -1 ise (string veri düzenlenmeye çalışılıyorsa) veya yeni ekleme ise
+  if (certId && certId !== -1) {
+    // --- DÜZENLEME MODU (Sadece Obje veriler için) ---
+    currentEditingCertId = certId;
+    if(title) title.textContent = "Edit Certificate";
+    
+    // Veriyi bul
+    const cert = selectedCompany.certificates.find(c => c.id === certId);
+    if (cert) {
+        document.getElementById("cert-name").value = cert.name || "";
+        document.getElementById("cert-issuer").value = cert.issuer || "";
+    }
+  } else {
+    // --- EKLEME MODU ---
+    currentEditingCertId = null;
+    if(title) title.textContent = "Add New Certificate";
+  }
+}
+
+function closeCertModal() {
+  const modal = document.getElementById("cert-modal");
+  if (modal) modal.classList.add("pointer-events-none", "opacity-0");
+  currentEditingCertId = null;
+}
+
+// 2. KAYDET (Supabase)
+async function saveCert() {
+  const btn = document.querySelector("#cert-form button[type='submit']");
+  const originalText = btn.textContent;
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+
+  try {
+    const name = document.getElementById("cert-name").value.trim();
+    const issuer = document.getElementById("cert-issuer").value.trim();
+
+    if (!name) { showToast("Missing Info", "Certificate name is required.", "error"); return; }
+
+    // Mevcut sertifikaları al (Eğer string array ise objeye çevirmemiz gerekebilir ama şimdilik karışık destekleyelim)
+    let currentCerts = [...(selectedCompany.certificates || [])];
+
+    if (currentEditingCertId) {
+        // Düzenleme
+        const index = currentCerts.findIndex(c => c.id === currentEditingCertId);
+        if (index > -1) {
+            currentCerts[index] = { ...currentCerts[index], name: name, issuer: issuer };
+        }
+    } else {
+        // Yeni Ekleme
+        // Eski string verileri bozmamak için yeni veriyi obje olarak ekliyoruz
+        const newCert = { 
+            id: Date.now(), 
+            name: name, 
+            issuer: issuer 
+        };
+        currentCerts.push(newCert);
+    }
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Session expired.");
+
+    // Supabase Update
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ certificates: currentCerts, updated_at: new Date() })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    // Local Update
+    selectedCompany.certificates = currentCerts;
+    const localRef = database.find(c => c.id == user.id);
+    if(localRef) localRef.certificates = currentCerts;
+
+    openProfile(user.id);
+    switchProfileTab('certs');
+    closeCertModal();
+    showToast("Success", "Certificate saved successfully.", "success");
+
+  } catch (error) {
+    showToast("Error", error.message, "error");
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+// 3. SİLME
+async function deleteCert(certId, certName) {
+    if(!confirm("Are you sure you want to delete this certificate?")) return;
+
+    try {
+        let currentCerts = [];
+        
+        if (certId === -1) {
+            // Eski tip string veriyi isme göre sil (Fallback)
+            currentCerts = selectedCompany.certificates.filter(c => c !== certName);
+        } else {
+            // Yeni tip obje veriyi ID'ye göre sil
+            currentCerts = selectedCompany.certificates.filter(c => c.id !== certId);
+        }
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ certificates: currentCerts, updated_at: new Date() })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        selectedCompany.certificates = currentCerts;
+        const localRef = database.find(c => c.id == user.id);
+        if(localRef) localRef.certificates = currentCerts;
+
+        openProfile(user.id);
+        
+    } catch (error) {
+        showToast("Error", "Delete failed: " + error.message, "error");
+    }
+}
+// --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
+async function initRealData() {
+  console.log("Supabase'den veriler çekiliyor...");
+  
+  // 1. Supabase'den tüm profilleri al
+  const { data: profiles, error } = await supabaseClient
+    .from('profiles')
+    .select('*');
+
+  if (error) {
+    console.error("Veri çekme hatası:", error);
+    return;
+  }
+
+  if (!profiles) return;
+
+  // 2. Gelen verileri bizim 'database' formatımıza uydur
+  profiles.forEach(p => {
+    // Profilin bizdeki ID'si (Auth ID'si)
+    const pId = p.id;
+
+    // Supabase verisini bizim formata çevir
+    const realData = {
+      id: pId,
+      name: p.company_name || "New Company",
+      city: p.city || "Konum Yok",
+      sector: p.sector || "construction",
+      desc: p.description || "",
+      // Yeni alanlar
+      type_label: p.company_type,
+      size_label: p.company_size,
+      year_label: p.founded_year,
+      services: p.services ? p.services.split(',').map(s=>s.trim()) : [],
+      logo_url: p.logo_url,
+      website: p.website,
+      phone: p.phone,
+      contact_email: p.contact_email,
+      // DİNAMİK LİSTELER (Önemli Kısım)
+      certificates: p.certificates || [],
+      projects: p.projects || [],
+      assets: p.assets || [],
+      // Sabit meta skorları (İleride bunlar da veritabanından gelebilir)
+      trust: "verified",
+      meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
+    };
+
+    // 3. Listede bu şirket var mı?
+    const existingIndex = database.findIndex(c => c.id == pId);
+
+    if (existingIndex > -1) {
+      // Varsa GÜNCELLE (Eski demo verisini ez)
+      // Mevcut objeyi koru, üzerine yenileri yaz (Merge)
+      database[existingIndex] = { ...database[existingIndex], ...realData };
+    } else {
+      // Yoksa LİSTEYE EKLE
+      database.unshift(realData);
+    }
+  });
+
+  // 4. Ekranı Yenile
+  renderCards(""); 
+  renderTopCompanies();
+
+  // Eğer şu an bir profil açıksa, onu da güncelle (böylece F5 atınca boş kalmaz)
+  if (selectedCompany) {
+      // Verileri güncellediğimiz için selectedCompany'i de yenilememiz lazım
+      const updatedCompany = database.find(c => c.id === selectedCompany.id);
+      if(updatedCompany) {
+          selectedCompany = updatedCompany;
+          openProfile(selectedCompany.id);
+      }
   }
 }
 </script>
