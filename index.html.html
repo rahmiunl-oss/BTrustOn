@@ -3903,6 +3903,7 @@ async function fetchAllPublicProfiles() {
       trust: "emerging", 
       meta: { references: 60, delivery: 70, years: 1, financial: 60, digital: 50 }, 
       // ...
+      certificates: profile.certificates || [],
       assets: profile.assets || [],
       projects: profile.projects || [] // <--- DÜZELTİLDİ (Veritabanından okuyor)
     };
@@ -3985,6 +3986,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     trust: "verified",
     meta: { references: 50, delivery: 50, years: 1, financial: 50, digital: 50 },
     // ...
+    certificates: profile.certificates || [],
     assets: profile.assets || [],
     projects: profile.projects || [] // <--- DÜZELTİLDİ
   };
