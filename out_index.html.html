@@ -1,0 +1,4603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BtrustOn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            BTrustOn: {
+              primary: "#0F172A",
+              accent: "#06b6d4",
+              darkAccent: "#0891b2",
+              surface: "#F8FAFC",
+              border: "#E2E8F0",
+              text: "#334155",
+            },
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            header: ["Oswald", "sans-serif"],
+          },
+          boxShadow: {
+            glass: "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
+            float: "0 20px 40px -5px rgba(6, 182, 212, 0.15)",
+            glow: "0 0 15px rgba(6, 182, 212, 0.4)",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .hidden-view {
+      display: none !important;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .modal {
+      transition: opacity 0.25s ease;
+    }
+    body.modal-active {
+      overflow-x: hidden;
+      overflow-y: visible !important;
+    }
+    .dot-map-bg {
+      background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    /* Editör input stilleri */
+    .input-field:focus {
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.1);
+        border-color: #06b6d4;
+    }
+/* Özel Scrollbar Tasarımı */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background-color: #94a3b8;
+    }
+/* TOAST NOTIFICATION STYLES */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .toast {
+      min-width: 300px;
+      background: white;
+      border-left: 4px solid;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease-out forwards;
+      opacity: 0;
+      transform: translateX(100%);
+    }
+
+    .toast.success { border-color: #10b981; } /* Yeşil */
+    .toast.error { border-color: #ef4444; }   /* Kırmızı */
+
+    .toast i { font-size: 18px; }
+    .toast.success i { color: #10b981; }
+    .toast.error i { color: #ef4444; }
+
+    .toast-content { flex: 1; }
+    .toast-title { font-weight: bold; font-size: 14px; color: #1f2937; display: block; margin-bottom: 2px;}
+    .toast-msg { font-size: 12px; color: #6b7280; }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(10px); }
+    }
+/* ... Burası eski CSS kodlarınızın bittiği yer ... */
+
+    /* 👇👇👇 BURAYA YAPIŞTIRIN 👇👇👇 */
+
+    /* --- SIGNATURE INBOX STYLES --- */
+    #inbox-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px); /* Buzlu cam efekti */
+      border-left: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: -10px 0 30px rgba(15, 23, 42, 0.15);
+      z-index: 9999;
+      transform: translateX(100%); /* Başlangıçta gizli */
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    #inbox-panel.open {
+      transform: translateX(0); /* Açılınca gelir */
+    }
+
+    .inbox-item {
+      position: relative;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .inbox-item:hover {
+      background: rgba(6, 182, 212, 0.05); /* Hoverda hafif turkuaz */
+    }
+
+    .inbox-item.unread {
+      background: white;
+      border-left-color: #06b6d4; /* Okunmamışsa sol taraf turkuaz */
+    }
+    
+    .inbox-item.unread::after {
+      content: '';
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444; /* Kırmızı nokta */
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* 👆👆👆 BURADA BİTİYOR 👆👆👆 */
+
+  </style> ```
+  </style>
+
+  <!-- Supabase Auth client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://ncssozhpwzvzeneaumlz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jc3Nvemhwd3p2emVuZWF1bWx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MzkyMjgsImV4cCI6MjA4MDQxNTIyOH0.pk9p8_KRcmcbzhulo4dA06uk_3FOFXwVT1vNiYOEfck";
+
+    const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+</script>
+</head>
+
+</head>
+<body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
+<div id="toast-container"></div>
+  <div
+    class="fixed inset-0 z-[-1] dot-map-bg opacity-[0.4] pointer-events-none"
+  ></div>
+  <div
+    class="fixed inset-0 z-[-2] bg-gradient-to-tr from-blue-50 via-white to-cyan-50/30"
+  ></div>
+
+  <nav
+    class="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-white/50 h-24 transition-all">
+    <div
+      class="max-w-7xl mx-auto px-4 h-full flex justify-between items-center"
+    >
+    <div 
+  onclick="showMainView()" 
+  class="cursor-pointer select-none flex items-center h-full pr-4 gap-0.5"
+>
+    <span class="text-4xl font-sans font-bold text-[#0A2A43] tracking-tight leading-none">
+        BTrust
+    </span>
+
+    <span class="text-4xl font-sans font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00C6FF] to-[#0078FF] leading-none drop-shadow-sm">
+        On
+    </span>
+</div>
+
+    <div class="flex items-center gap-3 text-sm font-medium">
+
+  <button
+    id="back-btn"
+    onclick="showMainView()"
+    class="hidden hidden-view items-center gap-2 text-gray-500 hover:text-BTrustOn-primary transition px-3 py-2 rounded-lg hover:bg-gray-100"
+  >
+    <i class="fa-solid fa-arrow-left"></i>
+    <span class="hidden md:inline" data-i18n="back">BACK</span>
+  </button>
+
+  <div id="guest-actions" class="flex items-center gap-3">
+    <button
+      id="btn-partner-login"
+      onclick="openLoginModal()"
+      class="text-gray-600 hover:text-BTrustOn-primary px-3 py-2 transition font-semibold"
+    >
+      <i class="fa-solid fa-lock mr-2 text-xs text-gray-400"></i>
+      Partner Login
+    </button>
+
+    <button
+      id="btn-join-network"
+      onclick="toggleModal('modal-join')"
+      class="bg-BTrustOn-primary text-white px-5 py-2.5 rounded-full font-bold hover:bg-BTrustOn-accent transition text-xs shadow-lg shadow-blue-900/20 tracking-wide flex items-center gap-2"
+    >
+      <i class="fa-solid fa-paper-plane"></i>
+      <span data-i18n="join">JOIN NETWORK</span>
+    </button>
+  </div>
+
+  <div id="user-actions" class="hidden flex items-center gap-3 border-l border-gray-200 pl-4 ml-1">
+    
+    <button
+      onclick="toggleInbox()"
+      class="relative w-10 h-10 rounded-full bg-white border border-gray-100 text-gray-400 hover:text-BTrustOn-accent hover:border-BTrustOn-accent hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all duration-300 flex items-center justify-center mr-2 group"
+    >
+      <i class="fa-solid fa-bell text-lg group-hover:animate-swing"></i>
+      
+      <span id="nav-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm animate-bounce">
+        0
+      </span>
+    </button>
+
+    <button
+      id="btn-my-company"
+      onclick="openMyCompanyIfExists()"
+      class="flex items-center gap-2 px-4 py-2 bg-cyan-50 text-BTrustOn-accent border border-cyan-200 rounded-lg text-xs font-bold hover:bg-cyan-100 hover:border-cyan-300 transition shadow-sm"
+    >
+      <i class="fa-solid fa-building-user"></i>
+      MY COMPANY
+    </button>
+
+    <button
+      id="btn-partner-logout"
+      onclick="partnerLogout()"
+      class="text-gray-400 hover:text-red-500 transition px-2 py-2"
+      title="Logout"
+    >
+      <i class="fa-solid fa-right-from-bracket text-lg"></i>
+    </button>
+  </div>
+
+</div>
+    </div>
+  </nav>
+
+  <div id="view-dashboard" class="fade-in">
+    <header
+      class="pt-14 pb-16 px-4 text-center relative overflow-hidden z-10"
+    >
+      <h1
+        id="hero-title"
+        class="text-5xl md:text-7xl font-header font-bold text-BTrustOn-primary mb-8 leading-snug tracking-tight drop-shadow-sm py-2"
+      ></h1>
+      <p
+        id="hero-desc"
+        class="text-xl text-gray-500 mb-12 max-w-2xl mx-auto font-light leading-relaxed"
+      ></p>
+
+      <div class="w-[95%] md:max-w-3xl mx-auto relative mb-12 md:mb-16 z-20 transition-all duration-300">
+        
+        <div class="absolute inset-0 bg-BTrustOn-accent/20 blur-2xl rounded-full opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+
+        <div
+          class="relative bg-white/90 backdrop-blur-xl p-1.5 md:p-2 rounded-full shadow-2xl flex items-center border border-white/80 ring-4 ring-transparent focus-within:ring-cyan-50/50 focus-within:scale-[1.02] transition-all duration-300"
+        >
+          <div class="pl-4 pr-3 text-BTrustOn-accent shrink-0">
+            <i class="fa-solid fa-magnifying-glass text-lg md:text-xl animate-pulse"></i>
+          </div>
+          
+          <input
+            type="text"
+            id="search-input"
+            onkeyup="renderCards(this.value)"
+            onkeydown="if(event.key === 'Enter') document.querySelector('main').scrollIntoView({ behavior: 'smooth' });"
+            class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-12 md:h-14"
+            placeholder=""
+          />
+          
+          <button
+            onclick="document.querySelector('main').scrollIntoView({ behavior: 'smooth' });"
+            class="shrink-0 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-12 h-12 md:w-auto md:h-14 md:px-8 font-bold transition shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-2 group"
+          >
+            <span class="hidden md:inline" data-i18n="btn_discover">DISCOVER</span>
+            
+            <i class="fa-solid fa-compass text-lg group-hover:rotate-45 transition-transform duration-300"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3 md:gap-4">
+        <button onclick="filterSector('all', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-BTrustOn-accent bg-BTrustOn-accent/10 text-BTrustOn-accent text-sm font-bold transition-all shadow-glow">
+          <i class="fa-solid fa-layer-group mr-2"></i>
+          <span data-i18n="sec_all">All Sectors</span>
+        </button>
+
+        <button onclick="filterSector('construction', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-trowel-bricks mr-2"></i>
+          <span data-i18n="sec_const">Construction</span>
+        </button>
+
+        <button onclick="filterSector('energy', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-bolt mr-2"></i>
+          <span data-i18n="sec_energy">Energy</span>
+        </button>
+
+        <button onclick="filterSector('mining', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-gem mr-2"></i>
+          <span data-i18n="sec_mine">Mining</span>
+        </button>
+
+        <button onclick="filterSector('manufacturing', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-industry mr-2"></i>
+          <span data-i18n="sec_manu">Manufacturing</span>
+        </button>
+
+        <button onclick="filterSector('technology', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-microchip mr-2"></i>
+          <span data-i18n="sec_tech">Technology</span>
+        </button>
+
+        <button onclick="filterSector('logistics', this)" class="filter-btn group px-5 py-2.5 rounded-full border border-gray-300 bg-white text-gray-500 hover:border-BTrustOn-accent hover:text-BTrustOn-accent hover:bg-cyan-50 text-sm font-medium transition-all">
+          <i class="fa-solid fa-truck-fast mr-2"></i>
+          <span data-i18n="sec_logi">Logistics</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 pb-24">
+      <div class="flex flex-col gap-6 mb-10 border-b border-gray-200/50 pb-8">
+        <div class="flex justify-between items-end">
+          <div>
+            <span
+              class="text-xs font-bold text-BTrustOn-accent uppercase tracking-wider mb-1 block flex items-center gap-2"
+            >
+              <span
+                class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+              ></span>
+              <span data-i18n="live_db">Live Database</span>
+            </span>
+            <span
+              id="result-count"
+              class="text-2xl font-bold text-BTrustOn-primary"
+              >Loading...</span
+            >
+          </div>
+        </div>
+
+        <div
+          class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4"
+        >
+          <div class="flex justify-between items-center mb-3">
+            <h3
+              class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2"
+            >
+              <i class="fa-solid fa-star text-amber-400"></i>
+              <span data-i18n="top_title"
+                >Top Verified Companies by Trust Score</span
+              >
+            </h3>
+            <span
+              class="text-[11px] text-gray-400"
+              data-i18n="top_sub"
+              >Updated in real-time</span
+            >
+          </div>
+          <div
+            id="top-companies"
+            class="flex gap-4 overflow-x-auto no-scrollbar pb-1"
+          ></div>
+        </div>
+      </div>
+
+      <div
+        id="card-container"
+        class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16"
+      ></div>
+
+      <section class="mt-10 mb-16">
+        <div
+          class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8"
+        >
+          <div>
+            <h2
+              class="text-2xl md:text-3xl font-header font-bold text-BTrustOn-primary mb-2"
+              data-i18n="how_title"
+            >
+              How Strabon Works
+            </h2>
+            <p
+              class="text-sm text-gray-500 max-w-xl"
+              data-i18n="how_sub"
+            >
+              Create your company profile, verify your references and let your
+              Strabon Trust Score™ increase your visibility.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+          <div
+            class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass"
+          >
+            <div
+              class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4"
+            >
+              <span class="text-xs font-bold text-BTrustOn-accent">01</span>
+            </div>
+            <h3
+              class="text-sm font-bold text-BTrustOn-primary mb-2"
+              data-i18n="how_step1_title"
+            >
+              Create your profile
+            </h3>
+            <p
+              class="text-xs text-gray-500 leading-relaxed"
+              data-i18n="how_step1_desc"
+            >
+              Add your company details, sectors, core services, assets and
+              project highlights.
+            </p>
+          </div>
+
+          <div
+            class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass"
+          >
+            <div
+              class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4"
+            >
+              <span class="text-xs font-bold text-BTrustOn-accent">02</span>
+            </div>
+            <h3
+              class="text-sm font-bold text-BTrustOn-primary mb-2"
+              data-i18n="how_step2_title"
+            >
+              Verify references
+            </h3>
+            <p
+              class="text-xs text-gray-500 leading-relaxed"
+              data-i18n="how_step2_desc"
+            >
+              Send verification requests to past clients and partners to build a
+              verified track record.
+            </p>
+          </div>
+
+          <div
+            class="bg-white/80 border border-gray-100 rounded-2xl p-6 shadow-glass"
+          >
+            <div
+              class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center mb-4"
+            >
+              <span class="text-xs font-bold text-BTrustOn-accent">03</span>
+            </div>
+            <h3
+              class="text-sm font-bold text-BTrustOn-primary mb-2"
+              data-i18n="how_step3_title"
+            >
+              Grow with Trust Score™
+            </h3>
+            <p
+              class="text-xs text-gray-500 leading-relaxed"
+              data-i18n="how_step3_desc"
+            >
+              Higher Strabon Trust Scores mean higher visibility in search
+              results and more qualified leads.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-10">
+        <div class="text-center mb-10">
+          <h2
+            class="text-2xl md:text-3xl font-header font-bold text-BTrustOn-primary mb-3"
+            data-i18n="pricing_title"
+          >
+            Pricing for Industrial Networks
+          </h2>
+          <p
+            class="text-sm text-gray-500 max-w-2xl mx-auto"
+            data-i18n="pricing_sub"
+          >
+            Start free, then upgrade as your company grows. Every plan includes
+            a public profile and access to the Strabon Trust Score™ framework.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+          <div
+            class="bg-white/90 border border-gray-200 rounded-2xl p-7 shadow-glass flex flex-col"
+          >
+            <h3 class="text-sm font-bold text-BTrustOn-primary mb-1">Free</h3>
+            <p
+              class="text-xs text-gray-500 mb-4"
+              data-i18n="price_free_tag"
+            >
+              For small teams getting started.
+            </p>
+            <div class="mb-6">
+              <span
+                class="text-3xl font-header font-bold text-BTrustOn-primary"
+                >$0</span
+              >
+              <span
+                class="text-xs text-gray-400 ml-1"
+                data-i18n="price_month"
+                >/month</span
+              >
+            </div>
+            <ul class="text-xs text-gray-600 space-y-2 mb-6">
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_free_1">Public company profile</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_free_2"
+                  >Up to 3 listed services</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_free_3"
+                  >Basic Strabon Trust Score™</span
+                >
+              </li>
+            </ul>
+            <button
+              class="mt-auto w-full border border-gray-300 text-xs font-bold text-gray-600 py-3 rounded-xl hover:bg-gray-50 transition"
+              onclick="toggleModal('modal-join')"
+              data-i18n="btn_get_started"
+            >
+              GET STARTED
+            </button>
+          </div>
+
+          <div
+            class="bg-BTrustOn-primary text-white rounded-2xl p-7 shadow-float relative overflow-hidden flex flex-col"
+          >
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-BTrustOn-primary via-slate-900 to-cyan-700 opacity-80"
+            ></div>
+            <div
+              class="relative z-10 flex justify-between items-start mb-4"
+            >
+              <div>
+                <h3 class="text-sm font-bold mb-1">Pro</h3>
+                <p
+                  class="text-xs text-cyan-200"
+                  data-i18n="price_pro_tag"
+                >
+                  For growth-focused industrial suppliers.
+                </p>
+              </div>
+              <span
+                class="text-[10px] font-bold bg-amber-400 text-slate-900 px-2 py-1 rounded-full"
+                data-i18n="badge_popular"
+                >MOST POPULAR</span
+              >
+            </div>
+            <div class="relative z-10 mb-6">
+              <span class="text-3xl font-header font-bold">$79</span>
+              <span
+                class="text-xs text-cyan-100 ml-1"
+                data-i18n="price_month"
+                >/month</span
+              >
+            </div>
+            <ul class="relative z-10 text-xs text-cyan-50 space-y-2 mb-6">
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-400 text-[10px]"
+                ></i>
+                <span data-i18n="price_pro_1"
+                  >Unlimited services & assets</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-400 text-[10px]"
+                ></i>
+                <span data-i18n="price_pro_2"
+                  >Verified reference module</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-400 text-[10px]"
+                ></i>
+                <span data-i18n="price_pro_3"
+                  >Priority ranking in search</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-400 text-[10px]"
+                ></i>
+                <span data-i18n="price_pro_4"
+                  >Advanced Trust Score™ insights</span
+                >
+              </li>
+            </ul>
+            <button
+              class="relative z-10 mt-auto w-full bg-white text-BTrustOn-primary text-xs font-bold py-3 rounded-xl hover:bg-cyan-100 transition"
+              onclick="toggleModal('modal-join')"
+              data-i18n="btn_choose_pro"
+            >
+              CHOOSE PRO
+            </button>
+          </div>
+
+          <div
+            class="bg-white/90 border border-gray-200 rounded-2xl p-7 shadow-glass flex flex-col"
+          >
+            <h3 class="text-sm font-bold text-BTrustOn-primary mb-1">
+              Enterprise
+            </h3>
+            <p
+              class="text-xs text-gray-500 mb-4"
+              data-i18n="price_ent_tag"
+            >
+              For EPCs and global industrial groups.
+            </p>
+            <div class="mb-6">
+              <span
+                class="text-3xl font-header font-bold text-BTrustOn-primary"
+                >Custom</span
+              >
+            </div>
+            <ul class="text-xs text-gray-600 space-y-2 mb-6">
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_ent_1"
+                  >Multi-user access & SSO</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_ent_2"
+                  >API access to supplier data</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_ent_3"
+                  >Dedicated success manager</span
+                >
+              </li>
+              <li class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-check text-emerald-500 text-[10px]"
+                ></i>
+                <span data-i18n="price_ent_4"
+                  >Custom Trust Score™ models</span
+                >
+              </li>
+            </ul>
+            <button
+              class="mt-auto w-full border border-BTrustOn-primary text-xs font-bold text-BTrustOn-primary py-3 rounded-xl hover:bg-BTrustOn-primary hover:text-white transition"
+              onclick="toggleModal('modal-join')"
+              data-i18n="btn_contact_sales"
+            >
+              CONTACT SALES
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+<div id="view-editor" class="hidden-view fade-in min-h-screen bg-gray-50 pb-20">
+      <div class="bg-BTrustOn-primary text-white pt-24 pb-12 px-4">
+          <div class="max-w-4xl mx-auto">
+              <div class="flex items-center gap-4 mb-4">
+                  <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-BTrustOn-accent text-xl">
+                      <i class="fa-solid fa-user-pen"></i>
+                  </div>
+                  <div>
+                      <h1 class="text-3xl font-header font-bold">Supplier Profile Editor</h1>
+                      <p class="text-gray-400 text-sm">Manage your company presence on Strabon Network</p>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <div class="max-w-4xl mx-auto px-4 -mt-8">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+              <div class="grid grid-cols-1 md:grid-cols-3 min-h-[600px]">
+                  
+                  <div class="bg-slate-50 border-r border-gray-200 p-6">
+                      <nav class="space-y-2 sticky top-6">
+                          <button onclick="scrollToSection('section-general')" 
+                                  class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-gray-200 text-sm font-bold text-BTrustOn-primary border-l-4 border-l-BTrustOn-accent hover:bg-gray-50 transition">
+                              <i class="fa-solid fa-building w-6 text-gray-400"></i> General Info
+                          </button>
+
+                          <button onclick="scrollToSection('section-services')" 
+                                  class="w-full text-left px-4 py-3 rounded-lg bg-white border border-transparent hover:border-gray-200 text-sm font-medium text-gray-500 hover:text-BTrustOn-primary hover:shadow-sm transition">
+                              <i class="fa-solid fa-cubes-stacked w-6 text-gray-400"></i> Services
+                          </button>
+
+                          <div class="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                              <div class="flex justify-between items-center mb-2">
+                                <h4 class="text-xs font-bold text-blue-800">Profile Strength</h4>
+                                <span id="status-percent" class="text-xs font-bold text-blue-600">0%</span>
+                              </div>
+                              <div class="w-full bg-blue-200 h-1.5 rounded-full mb-2 overflow-hidden">
+                                  <div id="progress-bar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-700" style="width: 0%"></div>
+                              </div>
+                              <p id="status-text" class="text-[10px] text-blue-600">Complete all fields to boost your Trust Score.</p>
+                          </div>
+                      </nav>
+                  </div>
+
+                  <div class="col-span-2 p-8">
+                      <form id="editor-form" onsubmit="event.preventDefault(); saveProfileData();">
+<div class="flex items-center gap-6 mb-8 border-b border-gray-100 pb-6">
+    <div id="edit-logo-preview-container" 
+         class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group cursor-pointer"
+         onclick="document.getElementById('edit-logo-input').click()">
+        
+        <i id="edit-logo-icon" class="fa-solid fa-building text-3xl text-gray-300 group-hover:scale-110 transition-transform duration-300"></i>
+        
+        <img id="edit-logo-img" class="hidden w-full h-full object-cover" />
+        
+        <div class="absolute inset-0 bg-slate-900/60 hidden group-hover:flex flex-col items-center justify-center text-white transition-all backdrop-blur-[1px]">
+            <i class="fa-solid fa-pen-to-square text-xl mb-1"></i>
+            <span class="text-[9px] font-bold uppercase tracking-widest">CHANGE</span>
+        </div>
+    </div>
+
+    <div>
+        <h4 class="text-sm font-bold text-gray-700">Company Logo</h4>
+        <p class="text-xs text-gray-400 mb-3">Recommended: 400x400px, PNG or JPG.</p>
+        
+        <input type="file" id="edit-logo-input" class="hidden" accept="image/*" onchange="handleLogoSelect(this)">
+        
+        <button type="button" onclick="document.getElementById('edit-logo-input').click()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 hover:border-gray-400 transition">
+            <i class="fa-solid fa-upload mr-1"></i> Upload Logo
+        </button>
+    </div>
+</div>
+                        <div class="space-y-12"> 
+                            
+                            <div id="section-general" class="space-y-6 scroll-mt-6">
+                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                                  General Information
+                                </h3>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                      Company Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="edit-name" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 font-bold focus:outline-none transition" placeholder="e.g. Acme Construction" required />
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">City <span class="text-red-500">*</span></label>
+                                        <input type="text" id="edit-city" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Istanbul, TR" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector <span class="text-red-500">*</span></label>
+                                        <select id="edit-sector" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
+                                            <option value="">Select sector…</option>
+                                            <option value="construction">Construction</option>
+                                            <option value="mining">Mining</option>
+                                            <option value="energy">Energy</option>
+                                            <option value="drilling">Drilling</option>
+                                            <option value="equipment">Equipment</option>
+                                            <option value="manufacturing">Manufacturing</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="logistics">Logistics</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Tagline (Slogan)</label>
+                                    <input type="text" id="edit-tagline" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Building the Future" />
+                                </div>
+
+<div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Website</label>
+      <input type="text" id="edit-website" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="www.example.com" />
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
+      <input 
+  type="text" 
+  id="edit-phone" 
+  class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" 
+  placeholder="+ (Country Code) Phone Number" 
+/>
+    </div>
+</div>
+
+<div class="mt-4">
+    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+        Public Contact Email <span class="text-gray-400 font-normal lowercase">(optional)</span>
+    </label>
+    <input 
+      type="email" 
+      id="edit-email" 
+      class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" 
+      placeholder="info@company.com (If different from login email)" 
+    />
+</div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+                                    <textarea id="edit-desc" rows="4" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="Describe your company's core capabilities..."></textarea>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</label>
+                                      <select id="edit-type" class="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none text-sm">
+                                          <option value="Industrial Supplier">Industrial Supplier</option>
+                                          <option value="Manufacturer">Manufacturer</option>
+                                          <option value="Contractor">Contractor</option>
+                                          <option value="Distributor">Distributor</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Size</label>
+                                      <select id="edit-size" class="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none text-sm">
+                                          <option value="1-10 employees">1-10</option>
+                                          <option value="10-50 employees">10-50</option>
+                                          <option value="50-100 employees">50-100</option>
+                                          <option value="100-250 employees">100-250</option>
+                                          <option value="250+ employees">250+</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Year</label>
+                                      <input type="number" id="edit-year" class="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none text-sm" placeholder="2012">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="section-services" class="space-y-6 scroll-mt-6">
+                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+                                  Services
+                                </h3>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                      Core Services
+                                    </label>
+                                    <p class="text-[11px] text-gray-400 mb-2">Comma separated list. Example: EPC, Excavation, Maintenance.</p>
+                                    <input type="text" id="edit-services" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="EPC, Excavation, Maintenance..." />
+                                </div>
+                            </div>
+
+                            <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-3 sticky bottom-0 bg-white pb-2">
+                                <button type="button" onclick="openProfile(selectedCompany.id)" class="px-6 py-3 rounded-lg font-bold text-gray-500 hover:bg-gray-100 transition">
+                                  Cancel
+                                </button>
+                                <button type="submit" class="bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-cyan-500/30 transition transform hover:-translate-y-0.5">
+                                    <i class="fa-solid fa-save mr-2"></i> Save &amp; Preview
+                                </button>
+                            </div>
+                        </div> 
+                      </form>
+                  </div> 
+              </div> 
+          </div>
+      </div>
+  </div>
+  
+
+  <div
+    id="view-profile"
+    class="hidden-view fade-in min-h-screen bg-white/50 backdrop-blur-sm"
+  >
+ <div
+    class="bg-gradient-to-r from-slate-50 via-white to-cyan-50/60 border-b border-BTrustOn-border pb-12 pt-12 relative overflow-hidden backdrop-blur-xl"
+  >
+    <div
+      class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10"
+    >
+    <div id="p-logo-container" 
+     class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative group transition-all"
+     onclick="triggerProfileLogoUpload()">
+    
+    <i id="p-default-icon" class="fa-solid fa-building text-5xl text-gray-300"></i>
+    
+    <img id="p-logo-image" class="hidden w-full h-full object-cover" alt="Company Logo" />
+
+    <div id="p-logo-overlay" class="hidden absolute inset-0 bg-slate-900/60 flex-col items-center justify-center text-white backdrop-blur-[1px] cursor-pointer">
+        <i class="fa-solid fa-camera text-2xl mb-1"></i>
+        <span class="text-[9px] font-bold uppercase tracking-widest">UPDATE</span>
+    </div>
+
+    <input type="file" id="profile-logo-input" class="hidden" accept="image/*" onchange="uploadLogoDirectly(this)" onclick="event.stopPropagation()">
+</div>
+
+      <div class="flex-grow">
+        <div class="flex flex-wrap items-center gap-4 mb-3">
+          <h1
+            id="p-name"
+            class="text-4xl font-header font-bold text-BTrustOn-primary"
+          >
+            Company Name
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="p-badge" class="flex flex-wrap gap-2"></div>
+            <span
+              class="text-[11px] text-gray-400 uppercase tracking-wide"
+            >
+              Top Verified Company
+            </span>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-4"
+        >
+          <span id="p-type-tag" class="font-semibold text-gray-700">
+            Industrial Supplier
+          </span>
+          <span>•</span>
+          <span id="p-size-tag">100–250 employees</span>
+          <span>•</span>
+          <span id="p-year-tag">Founded 2012</span>
+        </div>
+
+        <p
+          id="p-tagline"
+          class="text-xl text-BTrustOn-accent font-serif italic mb-2"
+        ></p>
+        <p
+          id="p-desc"
+          class="text-BTrustOn-text text-lg mb-6 font-light max-w-3xl leading-relaxed"
+        >
+          Description
+        </p>
+
+        <div class="flex flex-wrap gap-4 text-sm">
+          <span
+            class="flex items-center gap-2 bg-white/70 px-4 py-2 rounded-full border border-gray-200 shadow-sm"
+          >
+            <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+            <span id="p-city" class="font-semibold text-gray-700">City</span>
+          </span>
+
+          <span
+            class="flex items-center gap-2 bg-white/70 px-4 py-2 rounded-full border border-gray-200 shadow-sm"
+          >
+            <i class="fa-solid fa-layer-group text-BTrustOn-accent"></i>
+            <span id="p-sector" class="capitalize font-semibold text-gray-700"
+              >Sector</span
+            >
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0 relative z-20">
+        
+        <button
+          id="btn-edit-profile"
+          onclick="editMyProfile()"
+          class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-gray-200 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative"
+          title="Profili Düzenle"
+        >
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        
+        <button
+          id="btn-req-quote"
+          onclick="openQuoteModal(document.getElementById('p-name').innerText)"
+          class="bg-BTrustOn-primary text-white px-6 py-3 rounded-xl font-bold shadow-xl shadow-slate-900/10 hover:bg-BTrustOn-accent transition text-sm flex items-center justify-center gap-2"
+        >
+          <i class="fa-solid fa-paper-plane"></i>
+          <span data-i18n="req_quote">REQUEST QUOTE</span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+<main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <div class="lg:col-span-8 space-y-8">
+        
+        <div class="border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
+          <button onclick="switchProfileTab('overview')" id="tab-overview" class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-cyan-50/50 transition whitespace-nowrap">
+            <i class="fa-solid fa-circle-info text-[11px]"></i>
+            <span data-i18n="tab_overview">OVERVIEW</span>
+          </button>
+          <button onclick="switchProfileTab('projects')" id="tab-projects" class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-cyan-50/40 transition whitespace-nowrap">
+            <i class="fa-solid fa-diagram-project text-[11px]"></i>
+            <span data-i18n="tab_projects">PROJECTS</span>
+          </button>
+          <button onclick="switchProfileTab('certs')" id="tab-certs" class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-cyan-50/40 transition whitespace-nowrap">
+            <i class="fa-solid fa-certificate text-[11px]"></i>
+            <span data-i18n="tab_certs">CERTIFICATES</span>
+          </button>
+          <button onclick="switchProfileTab('assets')" id="tab-assets" class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-cyan-50/40 transition whitespace-nowrap">
+            <i class="fa-solid fa-cube text-[11px]"></i>
+            <span data-i18n="tab_assets">ASSETS</span>
+          </button>
+        </div>
+
+        <div id="content-overview">
+          <h3 class="font-bold text-BTrustOn-primary mb-4 font-header uppercase text-sm tracking-wider" data-i18n="lbl_services">
+            Core Services
+          </h3>
+          <div id="p-services-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"></div>
+        </div>
+
+        <div id="content-projects" class="hidden-view">
+          
+          <div class="flex flex-wrap items-center justify-between mb-6 border-b border-gray-100 pb-4">
+            <div>
+               <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="proj_key_ref">Key Reference Projects</h3>
+                           </div>
+            
+            <button id="btn-add-project" type="button" onclick="openProjectModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+                <i class="fa-solid fa-plus"></i> <span>ADD NEW PROJECT</span>
+            </button>
+          </div>
+
+         <div id="p-projects-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2 pb-2"></div>
+        </div>
+
+        <div id="content-certs" class="hidden-view">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="certs_title">Certifications</h3>
+            <span class="text-[11px] text-gray-400" data-i18n="certs_sub">Declared certificates</span>
+          </div>
+          <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div id="content-assets" class="hidden-view">
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            
+            <div class="flex flex-wrap items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50/30">
+              <div class="flex flex-col gap-2">
+                <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider">Equipment & Assets</h3>
+               <div class="flex flex-wrap items-center gap-2 text-[10px]">
+                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">Available</span>
+                   
+                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">Under Maintenance</span>
+                   
+                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-100">Out of Service</span>
+                </div>
+              </div>
+              <button id="btn-add-asset" type="button" onclick="openAssetModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+                <i class="fa-solid fa-plus"></i> <span>ADD NEW ASSET</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar relative">
+              <table class="min-w-full text-sm text-left border-collapse">
+                <thead class="bg-gray-50 text-gray-400 uppercase font-bold text-[10px] tracking-wider sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    <th class="py-3 px-6 bg-gray-50">Item Name</th>
+                    <th class="py-3 px-6 bg-gray-50">Specs</th>
+                    <th class="py-3 px-6 bg-gray-50 text-center">Qty</th>
+                    <th class="py-3 px-6 bg-gray-50">Location</th>
+                    <th class="py-3 px-6 bg-gray-50">Status</th>
+                    <th class="py-3 px-6 bg-gray-50 text-right w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="p-assets-list" class="divide-y divide-gray-100 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div> <div class="lg:col-span-4 space-y-6">
+        
+        <div class="sticky top-28">
+            <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-6 shadow-2xl relative overflow-hidden border border-slate-700/50 group hover:scale-[1.02] transition-transform duration-500">
+              
+              <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500 opacity-10 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse"></div>
+              <div class="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500 opacity-10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+              
+              <div class="relative z-10 flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em] mb-1">Performance</h3>
+                    <div class="text-sm font-bold text-white flex items-center gap-2">
+                        BTrustOn Score™ 
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
+                    </div>
+                </div>
+                <i class="fa-solid fa-shield-halved text-3xl text-white/10 group-hover:text-cyan-400/20 transition-colors"></i>
+              </div>
+
+              <div class="relative z-10 flex items-end gap-3 mb-6">
+                <span id="p-score" class="text-7xl font-header font-bold text-white tracking-tighter shadow-black drop-shadow-lg">98</span>
+                <div class="flex flex-col mb-3">
+                  <span class="text-sm text-slate-400 font-light">/100</span>
+                  <span id="p-score-label" class="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20">EXCELLENT</span>
+                </div>
+              </div>
+
+              <div class="relative z-10 w-full bg-slate-700/50 h-1.5 rounded-full overflow-hidden mb-6 backdrop-blur-sm">
+                <div id="p-score-bar" class="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full shadow-[0_0_15px_rgba(52,211,153,0.8)] transition-all duration-1000" style="width: 98%"></div>
+              </div>
+
+              <div class="relative z-10 space-y-3">
+                  <div class="flex items-start gap-3 text-[11px] text-slate-300 bg-white/5 p-3 rounded-lg border border-white/5">
+                    <i class="fa-solid fa-chart-line text-cyan-400 mt-0.5"></i>
+                    <div data-i18n="score_info_main" class="leading-relaxed opacity-80">Calculated from verified references, delivery performance and digital signals.</div>
+                  </div>
+                  
+                  <button class="w-full py-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-bold text-white transition flex items-center justify-center gap-2">
+                      <span>VIEW FULL REPORT</span>
+                      <i class="fa-solid fa-lock text-slate-400 text-[10px]"></i>
+                  </button>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h4>
+    <div class="space-y-4 text-sm text-gray-600">
+        
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                <i class="fa-solid fa-globe"></i>
+            </div>
+            <a id="p-website-link" href="#" target="_blank" class="text-BTrustOn-accent font-semibold hover:underline truncate">
+                -
+            </a>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                <i class="fa-solid fa-envelope"></i>
+            </div>
+            <span id="p-email-text" class="truncate">-</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                <i class="fa-solid fa-phone"></i>
+            </div>
+            <span id="p-phone-text" class="truncate">-</span>
+        </div>
+
+    </div>
+ </div>
+        </div>
+        
+      </main>
+  
+  </div>
+
+  <div
+    id="modal-join"
+    class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50"
+  >
+    <div
+      class="modal-overlay absolute w-full h-full bg-slate-900/60 backdrop-blur-sm"
+    ></div>
+    <div
+      class="modal-container bg-white w-11/12 md:max-w-lg mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in"
+    >
+      <div class="py-8 px-8">
+        <div
+          class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6"
+        >
+          <div>
+            <p
+              class="text-2xl font-header font-bold text-BTrustOn-primary"
+              data-i18n="join_title"
+            >
+              Join the Network
+            </p>
+            <p
+              class="text-[11px] text-gray-500 mt-1"
+              data-i18n="join_desc"
+            >
+              Create your company profile. Verification usually takes 24
+              hours.
+            </p>
+          </div>
+          <div
+            class="cursor-pointer z-50"
+            onclick="toggleModal('modal-join')"
+          >
+            <i
+              class="fa-solid fa-xmark text-gray-400 hover:text-red-500 text-xl"
+            ></i>
+          </div>
+        </div>
+        <form id="join-form" onsubmit="event.preventDefault(); handleJoin();" class="space-y-5">
+  <div>
+    <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_company">Company Name</label>
+    <input type="text" id="join-companyName" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" required />
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5">Email</label>
+      <input type="email" id="join-email" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" required />
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
+      <input type="password" id="join-password" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" placeholder="******" required />
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    
+    <div>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5">Primary Sector</label>
+      <select id="join-sector" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700">
+        <option value="construction">Construction</option>
+        <option value="mining">Mining</option>
+        <option value="energy">Energy</option>
+        <option value="manufacturing">Manufacturing</option>
+        <option value="technology">Technology</option>
+        <option value="logistics">Logistics</option>
+      </select>
+      <p class="text-[10px] text-gray-400 mt-1 leading-tight">Select your main field of activity.</p>
+    </div>
+    
+    <div>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5">Business Type</label>
+      <select id="join-type" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700">
+        <option value="Manufacturer">Manufacturer</option>
+        <option value="Distributor">Distributor / Supplier</option>
+        <option value="Contractor">Contractor</option>
+        <option value="Service & Consultancy">Service & Consultancy</option>
+      </select>
+      <p class="text-[10px] text-gray-400 mt-1 leading-tight">Select your role in the supply chain.</p>
+    </div>
+  </div>
+
+  <div class="mt-4">
+      <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_city">City</label>
+      <input type="text" id="join-city" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" required />
+  </div>
+
+  <div>
+    <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_services">Core Services</label>
+    <textarea id="join-services" rows="2" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" placeholder="EPC, Excavation..."></textarea>
+  </div>
+
+  <div class="pt-2">
+    <button type="submit" class="w-full bg-BTrustOn-primary text-white font-bold py-4 rounded-xl hover:bg-BTrustOn-accent transition">
+      CREATE ACCOUNT & PROFILE
+    </button>
+  </div>
+  <p id="join-error" class="text-xs text-red-500 text-center hidden"></p>
+</form>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="modal-quote"
+    class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50"
+  >
+    <div
+      class="modal-overlay absolute w-full h-full bg-slate-900/60 backdrop-blur-sm"
+    ></div>
+    <div
+      class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in"
+    >
+      <div class="py-8 px-8">
+        <div
+          class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6"
+        >
+          <div class="flex flex-col">
+            <p
+              class="text-2xl font-header font-bold text-BTrustOn-primary"
+              data-i18n="quote_title"
+            >
+              Request Quote
+            </p>
+            <p
+              class="text-xs text-BTrustOn-accent font-bold mt-1"
+              id="quote-target-company"
+            >
+              Target Company
+            </p>
+          </div>
+          <div
+            class="cursor-pointer z-50"
+            onclick="toggleModal('modal-quote')"
+          >
+            <i
+              class="fa-solid fa-xmark text-gray-400 hover:text-red-500 text-xl"
+            ></i>
+          </div>
+        </div>
+        <form
+          action="https://formspree.io/f/mqakpeoy"
+          method="POST"
+          class="space-y-5"
+        >
+          <input type="hidden" name="form_type" value="Quote_Request" />
+          <input
+            type="hidden"
+            name="target_company"
+            id="input-target-company"
+          />
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-600 mb-1.5"
+              data-i18n="field_your_name"
+              >Your Name</label
+            >
+            <input
+              type="text"
+              name="name"
+              class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-600 mb-1.5"
+              >Email</label
+            >
+            <input
+              type="email"
+              name="email"
+              class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-600 mb-1.5"
+              data-i18n="field_project"
+              >Project Details</label
+            >
+            <textarea
+              name="message"
+              rows="4"
+              class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none"
+              required
+            ></textarea>
+          </div>
+          <div class="pt-2">
+            <button
+              type="submit"
+              class="w-full bg-BTrustOn-accent text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition"
+              data-i18n="btn_send_quote"
+            >
+              SEND REQUEST
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-gray-200 bg-white/80 mt-4">
+    <div
+      class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500"
+    >
+      <div class="flex items-center gap-2">
+      <span class="font-header font-bold text-BTrustOn-primary text-sm">BtrustOn</span>
+        >
+        <span
+          >© <span id="year-span"></span> ·
+          <span data-i18n="footer_rights">All rights reserved.</span></span
+        >
+      </div>
+      <div class="flex gap-4">
+        <a href="#" class="hover:text-BTrustOn-primary" data-i18n="footer_about"
+          >About</a
+        >
+        <a
+          href="#"
+          class="hover:text-BTrustOn-primary"
+          data-i18n="footer_pricing"
+          >Pricing</a
+        >
+        <a
+          href="#"
+          class="hover:text-BTrustOn-primary"
+          data-i18n="footer_privacy"
+          >Privacy</a
+        >
+        <a
+          href="#"
+          class="hover:text-BTrustOn-primary"
+          data-i18n="footer_terms"
+          >Terms</a
+        >
+      </div>
+    </div>
+  </footer>
+
+<!-- Partner Login Modal -->
+<div
+  id="login-modal"
+  class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50"
+>
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
+    <h2 class="text-lg font-bold mb-4">Partner Login</h2>
+
+    <form id="login-form" class="space-y-3">
+      <div>
+        <label class="block text-sm mb-1">Email</label>
+        <input
+          type="email"
+          name="email"
+          required
+          class="w-full border rounded px-3 py-2 text-sm"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Password</label>
+        <input
+          type="password"
+          name="password"
+          required
+          class="w-full border rounded px-3 py-2 text-sm"
+        />
+      </div>
+
+      <p id="login-error" class="text-xs text-red-500 hidden"></p>
+
+      <div class="flex justify-end gap-2 mt-4">
+        <button
+          type="button"
+          onclick="closeLoginModal()"
+          class="text-sm px-3 py-2"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="text-sm px-4 py-2 rounded bg-blue-600 text-white"
+        >
+          Login
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="asset-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAssetModal()"></div>
+  
+  <div class="bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
+    <div class="bg-BTrustOn-primary text-white px-6 py-4 flex justify-between items-center">
+      <h3 id="asset-modal-title" class="font-bold font-header tracking-wide">Add New Asset</h3>
+      <button onclick="closeAssetModal()" class="text-white/70 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="p-6">
+      <form id="asset-form" onsubmit="event.preventDefault(); saveAsset();" class="space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Asset / Item Name</label>
+          <input type="text" id="asset-item" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. CAT 336 Excavator" required>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Specs</label>
+            <input type="text" id="asset-specs" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="2022 Model, Low hours">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Qty</label>
+            <input type="number" id="asset-qty" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" value="1">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
+          <input type="text" id="asset-location" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Ankara Warehouse">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</label>
+          <select id="asset-status" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white outline-none transition">
+            <option value="Available">Available</option>
+            <option value="Under Maintenance">Under Maintenance</option>
+            <option value="Out of Service">Out of Service</option>
+          </select>
+        </div>
+
+        <div class="pt-4 flex gap-3">
+          <button type="button" onclick="closeAssetModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+            CANCEL
+          </button>
+          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+            SAVE ASSET
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<div id="project-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeProjectModal()"></div>
+  
+  <div class="bg-white w-full max-w-lg mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
+    <div class="bg-BTrustOn-primary text-white px-6 py-4 flex justify-between items-center">
+      <h3 id="project-modal-title" class="font-bold font-header tracking-wide">Add New Project</h3>
+      <button onclick="closeProjectModal()" class="text-white/70 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="p-6">
+      <form id="project-form" onsubmit="event.preventDefault(); saveProject();" class="space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Title</label>
+          <input type="text" id="proj-title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Copper Mine Expansion" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
+          <input type="text" id="proj-loc" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Erzincan, TR" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+          <textarea id="proj-desc" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="Short details about the scope..."></textarea>
+        </div>
+
+        <div class="pt-4 flex gap-3">
+          <button type="button" onclick="closeProjectModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+            CANCEL
+          </button>
+          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+            SAVE PROJECT
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<div id="inbox-overlay" onclick="toggleInbox()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-[9990] hidden transition-opacity opacity-0"></div>
+
+<div id="inbox-panel" class="flex flex-col">
+    <div class="h-24 bg-gradient-to-r from-BTrustOn-primary to-slate-800 flex flex-col justify-center px-6 shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+        
+        <div class="relative z-10 flex justify-between items-center">
+            <div>
+                <h2 class="text-white font-header text-xl tracking-wide flex items-center gap-2">
+                    INBOX
+                    <span id="inbox-badge-count" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-glow hidden">0</span>
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Quote requests & System alerts</p>
+            </div>
+            <button onclick="toggleInbox()" class="text-white/60 hover:text-white hover:rotate-90 transition transform">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="inbox-content" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2 bg-slate-50/50">
+        </div>
+
+    <div class="p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
+        <button class="w-full py-3 rounded-xl border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check-double"></i> MARK ALL AS READ
+        </button>
+    </div>
+</div>
+<div id="view-message" class="hidden-view fixed inset-0 z-[10000] bg-slate-50/95 backdrop-blur-sm overflow-y-auto">
+    
+    <div class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex justify-between items-center max-w-5xl mx-auto w-full z-10">
+        <button onclick="closeMessageView()" class="flex items-center gap-2 text-gray-500 hover:text-BTrustOn-primary transition font-bold text-sm px-4 py-2 rounded-lg hover:bg-gray-100">
+            <i class="fa-solid fa-arrow-left"></i> BACK TO INBOX
+        </button>
+        
+        <div class="flex gap-2">
+            <button onclick="deleteCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" title="Delete">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+            
+            <button onclick="markAsUnreadCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" title="Mark Unread">
+                <i class="fa-solid fa-envelope text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto mt-8 mb-20 px-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px]">
+            
+            <div class="bg-slate-50 border-b border-gray-100 p-8 flex flex-col md:flex-row justify-between items-start gap-6">
+                <div class="flex items-start gap-4">
+                    <div id="msg-logo" class="w-16 h-16 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-2xl font-bold text-BTrustOn-primary">
+                        </div>
+                    <div>
+                        <h1 id="msg-subject" class="text-2xl font-header font-bold text-BTrustOn-primary mb-1">
+                            </h1>
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                            <span>From:</span>
+                            <span id="msg-company" class="font-bold text-gray-700 bg-gray-200/50 px-2 py-0.5 rounded">
+                                </span>
+                            <span class="text-gray-300">•</span>
+                            <span id="msg-date" class="text-xs">
+                                </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col items-end">
+                    <span id="msg-type-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide">
+                        QUOTE REQUEST
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-8 md:p-12">
+                <div class="prose max-w-none text-gray-600 leading-relaxed text-lg">
+                    <p id="msg-body">
+                        </p>
+                    
+                    <p class="mt-6 text-sm text-gray-400 italic">
+                        This message was sent via Strabon Secure Network. <br>
+                        Reference ID: #<span id="msg-id"></span>
+                    </p>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-gray-100">
+                    <h4 class="text-sm font-bold text-BTrustOn-primary mb-3 uppercase tracking-wider">Reply to Request</h4>
+                    <div class="flex gap-4 items-start">
+                        <div class="w-10 h-10 rounded-full bg-BTrustOn-primary text-white flex items-center justify-center shrink-0 text-sm">
+                            ME
+                        </div>
+                        <div class="flex-1">
+                
+                <input type="file" id="reply-file-input" style="display: none;" onchange="handleFileSelect(this)" />
+
+                <textarea id="reply-input" class="w-full border border-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition bg-gray-50 focus:bg-white" rows="3" placeholder="Type your reply or attach a formal proposal..."></textarea>
+                
+                <div id="attachment-preview" class="hidden mt-3 flex items-center justify-between bg-cyan-50 border border-cyan-100 rounded-lg p-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-white flex items-center justify-center text-BTrustOn-accent shadow-sm">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <div>
+                            <p id="attachment-name" class="text-xs font-bold text-gray-700 line-clamp-1">filename.pdf</p>
+                            <p id="attachment-size" class="text-[10px] text-gray-400">0 MB</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeAttachment()" class="text-gray-400 hover:text-red-500 transition px-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-3">
+                    <button type="button" onclick="document.getElementById('reply-file-input').click()" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition group">
+                        <i class="fa-solid fa-paperclip mr-1 group-hover:text-BTrustOn-accent"></i> ATTACH FILE
+                    </button>
+                    
+                    <button type="button" onclick="sendReply()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white text-xs font-bold hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+                        SEND REPLY <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            </div>
+        </div>
+    </div>
+</div> 
+<script>
+  // Login modalını aç/kapat
+  function openLoginModal() {
+    const modal = document.getElementById("login-modal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    const err = document.getElementById("login-error");
+    if (err) {
+      err.classList.add("hidden");
+      err.textContent = "";
+    }
+  }
+
+  function closeLoginModal() {
+    const modal = document.getElementById("login-modal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    const err = document.getElementById("login-error");
+    if (err) {
+      err.classList.add("hidden");
+      err.textContent = "";
+    }
+  }
+
+  
+  // Sayfa yüklendiğinde login formunu hazırla
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("login-form");
+    if (!form) return;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = new FormData(form);
+      const email = data.get("email");
+      const password = data.get("password");
+
+      const err = document.getElementById("login-error");
+      if (err) {
+        err.classList.add("hidden");
+        err.textContent = "";
+      }
+
+      const { data: authData, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (err) {
+          err.textContent = error.message || "Login failed";
+          err.classList.remove("hidden");
+        }
+        return;
+      }
+
+      // ✅ Login başarılı → modalı kapat ve "benim şirketimi" aç
+      closeLoginModal();
+      checkUserAndOpenProfile(true);
+    });
+  });
+
+  // Logout
+  async function partnerLogout() {
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      // İstersen burada ana ekrana döndürürüz
+      window.location.href = "/";
+    }
+  }
+</script>
+
+
+  <script>
+    const translations = {
+      en: {
+        hero_title:
+          "Source Smarter. <br> <span class='text-transparent bg-clip-text bg-gradient-to-r from-BTrustOn-accent to-blue-600'>Build Faster.</span>",
+        hero_desc:
+          "Discover verified industrial companies, trust scores and real project references – all on a single screen.",
+        search_ph:
+          "Search companies, equipment & services...",
+        btn_discover: "DISCOVER",
+        join: "JOIN NETWORK",
+        tab_certs: "CERTIFICATES",
+        no_certs: "No certificates listed for this supplier.",
+        asset_categories: "Asset categories:",
+        join_title: "Join the Network",
+        proj_key_ref: "Key Reference Projects",
+        proj_selected_from_supplier: "Selected projects from this supplier",
+        join_desc:
+          "Create your company profile. Verification usually takes 24 hours.",
+        quote_title: "Request Quote",
+        btn_submit: "SUBMIT APPLICATION",
+        btn_send_quote: "SEND REQUEST",
+        back: "BACK TO LIST",
+        req_quote: "REQUEST QUOTE",
+        sec_all: "All Sectors",
+        sec_const: "Construction",
+        sec_mine: "Mining",
+        sec_energy: "Energy",
+        sec_drill: "Drilling",
+        sec_manu: "Manufacturing",
+        sec_tech: "Technology",
+        sec_logi: "Logistics",
+        sec_equip: "Equipment",
+        tab_overview: "OVERVIEW",
+        tab_projects: "PROJECTS",
+        tab_certs: "CERTIFICATES",
+        certs_title: "Certifications & Compliance",
+        certs_sub: "Declared certificates of this supplier",
+        tab_assets: "ASSETS",
+        lbl_services: "Core Services",
+        th_item: "Item",
+        th_specs: "Specs",
+        th_status: "Status",
+        btn_view: "INSPECT",
+        results_label: "Results",
+        live_db: "Live Database",
+        how_title: "How BTrustOn Works",
+        how_sub:
+          "Create your company profile, verify your references and let your BTrustOn Score™ increase your visibility.",
+        how_step1_title: "Create your profile",
+        how_step1_desc:
+          "Add your company details, sectors, core services, assets and project highlights.",
+        how_step2_title: "Verify references",
+        how_step2_desc:
+          "Send verification requests to past clients and partners to build a verified track record.",
+        how_step3_title: "Grow with Trust Score™",
+        how_step3_desc:
+          "Higher BTrustOn Scores mean higher visibility in search results and more qualified leads.",
+        pricing_title: "Pricing for Industrial Networks",
+        pricing_sub:
+          "Start free, then upgrade as your company grows. Every plan includes a public profile and access to the BTrustOn Score™ framework.",
+        price_free_tag: "For small teams getting started.",
+        price_pro_tag: "For growth-focused industrial suppliers.",
+        price_ent_tag: "For EPCs and global industrial groups.",
+        price_month: "/month",
+        price_free_1: "Public company profile",
+        price_free_2: "Up to 3 listed services",
+        price_free_3: "Basic BTrustOn Score™",
+        price_pro_1: "Unlimited services & assets",
+        price_pro_2: "Verified reference module",
+        price_pro_3: "Priority ranking in search",
+        price_pro_4: "Advanced Trust Score™ insights",
+        price_ent_1: "Multi-user access & SSO",
+        price_ent_2: "API access to supplier data",
+        price_ent_3: "Dedicated success manager",
+        price_ent_4: "Custom Trust Score™ models",
+        btn_get_started: "GET STARTED",
+        btn_choose_pro: "CHOOSE PRO",
+        btn_contact_sales: "CONTACT SALES",
+        badge_popular: "MOST POPULAR",
+        top_title: "Top Verified Companies by Trust Score",
+        top_sub: "Updated in real-time",
+        score_info_main:
+          "Calculated from verified references, delivery performance, company age and digital signals.",
+        score_info_verify:
+          "Verified data can increase your score and ranking.",
+        field_company: "Company Name",
+        field_sector: "Sector",
+        field_city: "City",
+        field_website: "Website",
+        field_size: "Company Size",
+        field_services: "Core Services / Focus",
+        field_note: "Additional Notes",
+        field_your_name: "Your Name",
+        field_project: "Project Details",
+        footer_rights: "All rights reserved.",
+        footer_about: "About",
+        footer_pricing: "Pricing",
+        footer_privacy: "Privacy",
+        footer_terms: "Terms",
+      },
+      tr: {
+        hero_title:
+          "Akıllı Kaynak. <br> <span class='text-transparent bg-clip-text bg-gradient-to-r from-BTrustOn-accent to-blue-600'>Hızlı Çözüm.</span>",
+        hero_desc:
+          "Endüstriyel şirketleri tek ekranda toplayın; görünürlüklerini, güven skorlarını ve doğrulanmış referanslarını birlikte görün.",
+        search_ph:
+         "Firma, ekipman ve hizmet ara...",
+        btn_discover: "KEŞFET",
+        join: "AĞA KATIL",
+        asset_categories: "Varlık kategorileri:",
+        proj_key_ref: "Öne Çıkan Referans Projeler",
+        proj_selected_from_supplier: "Bu tedarikçiden seçilmiş projeler",
+        join_title: "Ağa Katılın",
+        join_desc:
+          "Firma profilinizi oluşturun. Doğrulama genelde 24 saat sürer.",
+        quote_title: "Teklif İste",
+        btn_submit: "BAŞVURUYU GÖNDER",
+        btn_send_quote: "TALEBİ GÖNDER",
+        back: "LİSTEYE DÖN",
+        req_quote: "TEKLİF İSTE",
+        sec_all: "Tüm Sektörler",
+        sec_const: "İnşaat",
+        sec_mine: "Maden",
+        sec_energy: "Enerji",
+        sec_drill: "Sondaj",
+        sec_manu: "Üretim",
+        sec_tech: "Teknoloji",
+        sec_logi: "Lojistik",
+        sec_equip: "Ekipman",
+        tab_certs: "SERTİFİKALAR",
+        no_certs: "Bu tedarikçi için listelenen sertifika yok.",
+        sec_energy: "Enerji",
+        sec_drill: "Sondaj",
+        sec_equip: "Ekipman",
+        tab_certs: "SERTİFİKALAR",
+        tab_overview: "GENEL BAKIŞ",
+        tab_projects: "PROJELER",
+        tab_assets: "VARLIKLAR",
+        lbl_services: "Hizmetler",
+        th_item: "Ekipman",
+        th_specs: "Özellik",
+        th_status: "Durum",
+        btn_view: "İNCELE",
+        results_label: "Sonuç",
+        live_db: "Canlı Veritabanı",
+        certs_title: "Sertifikalar ve Uyum",
+        certs_sub: "Bu tedarikçinin beyan ettiği sertifikalar",
+        how_title: "BTrustOn Nasıl Çalışır?",
+        how_sub:
+          "Firma profilinizi oluşturun, referanslarınızı doğrulatın ve BTrustOn Score™ ile görünürlüğünüzü artırın.",
+        how_step1_title: "Profilinizi oluşturun",
+        how_step1_desc:
+          "Firma bilgilerinizi, sektörlerinizi, temel hizmetlerinizi, varlıklarınızı ve öne çıkan projelerinizi ekleyin.",
+        how_step2_title: "Referansları doğrulayın",
+        how_step2_desc:
+          "Geçmiş iş ortaklarınıza doğrulama isteği göndererek doğrulanmış bir geçmiş oluşturun.",
+        how_step3_title: "Trust Score™ ile büyüyün",
+        how_step3_desc:
+          "Yüksek BTrustOn Score, arama sonuçlarında daha yüksek görünürlük ve daha nitelikli talepler demektir.",
+        pricing_title: "Endüstriyel Ağlar için Fiyatlandırma",
+        pricing_sub:
+          "Ücretsiz başlayın, şirketiniz büyüdükçe yükseltin. Tüm paketlerde herkese açık profil ve BTrustOn Score™ altyapısı dahildir.",
+        price_free_tag: "Yeni başlayan küçük ekipler için.",
+        price_pro_tag: "Büyüme odaklı tedarikçiler için.",
+        price_ent_tag: "EPC'ler ve global endüstriyel gruplar için.",
+        price_month: "/ay",
+        price_free_1: "Herkese açık firma profili",
+        price_free_2: "En fazla 3 hizmet girişi",
+        price_free_3: "Temel BTrustOn Score™",
+        price_pro_1: "Sınırsız hizmet ve varlık girişi",
+        price_pro_2: "Doğrulanmış referans modülü",
+        price_pro_3: "Aramalarda öncelikli sıralama",
+        price_pro_4: "Gelişmiş Trust Score™ içgörüleri",
+        price_ent_1: "Çok kullanıcılı erişim ve SSO",
+        price_ent_2: "Tedarikçi verisine API erişimi",
+        price_ent_3: "Özel müşteri yöneticisi",
+        price_ent_4: "Kuruma özel Trust Score™ modelleri",
+        btn_get_started: "BAŞLA",
+        btn_choose_pro: "PRO PAKETİ SEÇ",
+        btn_contact_sales: "SATIŞ ile İLETİŞİME GEÇ",
+        badge_popular: "EN POPÜLER",
+        top_title: "Trust Score'a Göre Öne Çıkan Firmalar",
+        top_sub: "Gerçek zamanlı güncellenir",
+        score_info_main:
+          "Doğrulanmış referanslar, teslimat performansı, şirket yaşı ve dijital sinyallerden hesaplanır.",
+        score_info_verify:
+          "Doğrulanmış veriler skorunuzu ve sıralamanızı artırabilir.",
+        field_company: "Firma Adı",
+        field_sector: "Sektör",
+        field_city: "Şehir",
+        field_website: "Web Sitesi",
+        field_size: "Firma Büyüklüğü",
+        field_services: "Temel Hizmetler / Odak Alanı",
+        field_note: "Ek Notlar",
+        field_your_name: "İsminiz",
+        field_project: "Proje Detayları",
+        footer_rights: "Tüm hakları saklıdır.",
+        footer_about: "Hakkında",
+        footer_pricing: "Fiyatlandırma",
+        footer_privacy: "Gizlilik",
+        footer_terms: "Şartlar",
+      },
+    };
+
+    let currentLang = "en";
+    let currentSector = "all";
+    let selectedCompany = null;
+
+    // Top band animasyon & canlı görünüm için
+    let topCompaniesOrder = [];
+    let topScrollInterval = null;
+    let topRotateInterval = null;
+
+    // Ana grid için hafif "canlılık" (boş aramada hafif shuffle)
+    let gridShuffleInterval = null;
+
+    // *** DATABASE: TAM LİSTE ***
+    const database = [
+      {
+        id: 101,
+        name: "Rönesans Holding",
+        city: "Ankara, TR",
+        sector: "construction",
+        type: "contractor",
+        trust: "global",
+        meta: {
+          references: 96,
+          delivery: 94,
+          years: 90,
+          financial: 92,
+          digital: 85,
+        },
+        desc:
+          "Global contractor in large-scale infrastructure, industrial and healthcare projects.",
+        desc_tr:
+          "Büyük ölçekli altyapı, endüstriyel tesis ve sağlık projelerinde faaliyet gösteren global yüklenici.",
+        services: ["EPC Contracts", "Healthcare Projects", "Industrial Facilities"],
+        services_tr: ["EPC Sözleşmeleri", "Sağlık Projeleri", "Endüstriyel Tesisler"],
+        certificates: ["ISO 9001:2015", "ISO 14001:2015", "ISO 45001:2018", "LEED Platinum"],
+        projects: [
+          {
+            title: "Yamal LNG",
+            title_tr: "Yamal LNG",
+            loc: "Russia",
+            loc_tr: "Rusya",
+            desc: "Mega-scale LNG plant project in the Arctic region.",
+            desc_tr: "Arktik bölgede mega ölçekli LNG tesis projesi.",
+          },
+        ],
+        assets: [
+          {
+            type: "Tower Crane Fleet",
+            type_tr: "Kule vinç filosu",
+            spec: "Liebherr & Terex, >30 units",
+            spec_tr: "Liebherr & Terex, 30+ ünite",
+            status: "Available",
+            status_tr: "Müsait",
+          },
+        ],
+      },
+      {
+        id: 102,
+        name: "Bechtel Corporation",
+        city: "USA",
+        sector: "construction",
+        type: "contractor",
+        trust: "global",
+        meta: {
+          references: 98,
+          delivery: 96,
+          years: 95,
+          financial: 95,
+          digital: 88,
+        },
+        desc:
+          "US-based engineering and construction company delivering complex megaprojects worldwide.",
+        desc_tr:
+          "Dünya genelinde karmaşık mega projeler gerçekleştiren ABD merkezli mühendislik ve inşaat şirketi.",
+        certificates: ["ASME N-Stamp", "ISO 9001", "ISO 14001", "OSHA VPP Star"],
+        services: ["Nuclear Power", "Infrastructure EPC", "Rail & Transit"],
+        services_tr: [
+          "Nükleer enerji santralleri",
+          "Altyapı EPC projeleri",
+          "Demiryolu ve ulaşım projeleri",
+        ],
+        projects: [
+          {
+            title: "Hoover Dam",
+            title_tr: "Hoover Barajı",
+            loc: "USA",
+            loc_tr: "ABD",
+            desc: "Iconic hydroelectric dam and infrastructure project.",
+            desc_tr: "İkonik hidroelektrik baraj ve altyapı projesi.",
+          },
+        ],
+        assets: [],
+      },
+      {
+        id: 103,
+        name: "Rio Tinto",
+        city: "UK/AUS",
+        sector: "mining",
+        type: "operator",
+        trust: "global",
+        meta: {
+          references: 97,
+          delivery: 94,
+          years: 95,
+          financial: 96,
+          digital: 82,
+        },
+        desc:
+          "Global mining corporation with diversified portfolio across iron ore, copper and more.",
+        desc_tr:
+          "Demir cevheri, bakır ve diğer emtialarda çeşitlendirilmiş portföye sahip global madencilik şirketi.",
+        services: ["Copper Operations", "Iron Ore", "Project Development"],
+        services_tr: ["Bakır işletmeleri", "Demir cevheri", "Proje geliştirme"],
+        certificates: ["The Copper Mark", "ICMM Member", "ISO 14001", "TSM Protocol"],
+        projects: [
+          {
+            title: "Oyu Tolgoi",
+            title_tr: "Oyu Tolgoi",
+            loc: "Mongolia",
+            loc_tr: "Moğolistan",
+            desc: "World-class copper-gold mine development.",
+            desc_tr: "Dünya ölçeğinde bakır-altın madeni geliştirme projesi.",
+          },
+        ],
+        assets: [],
+      },
+      {
+        id: 104,
+        name: "Schlumberger",
+        city: "USA/FR",
+        sector: "drilling",
+        type: "tech",
+        trust: "global",
+        meta: {
+          references: 94,
+          delivery: 93,
+          years: 90,
+          financial: 92,
+          digital: 90,
+        },
+        desc:
+          "Technology leader in oilfield services, digital solutions and subsurface data.",
+        desc_tr:
+          "Sondaj ve petrol sahası hizmetleri, dijital çözümler ve yeraltı verilerinde teknoloji lideri.",
+        services: ["Directional Drilling", "Digital Oilfield", "Well Logging"],
+        services_tr: [
+          "Yönlü sondaj hizmetleri",
+          "Dijital petrol sahası çözümleri",
+          "Kuyu loglama hizmetleri",
+        ],
+        certificates: ["API Spec Q1", "API Spec Q2", "ISO 27001", "ISO 14001"],
+        projects: [],
+        assets: [],
+      },
+      {
+        id: 105,
+        name: "Demir Export",
+        city: "Ankara, TR",
+        sector: "mining",
+        type: "operator",
+        trust: "verified",
+        meta: {
+          references: 90,
+          delivery: 88,
+          years: 85,
+          financial: 86,
+          digital: 75,
+        },
+        desc:
+          "Turkish mining operator focused on gold, iron and base metals.",
+        desc_tr:
+          "Altın, demir ve baz metaller odaklı faaliyet gösteren Türk madencilik şirketi.",
+        services: ["Gold Mining", "Iron Ore", "Feasibility & Development"],
+        services_tr: [
+          "Altın madenciliği",
+          "Demir cevheri üretimi",
+          "Fizibilite ve geliştirme",
+        ],
+        certificates: ["ISO 50001", "ISO 14001", "ISO 45001", "Gold Standard"],
+        projects: [
+          {
+            title: "Bakırtepe",
+            title_tr: "Bakırtepe",
+            loc: "Sivas, TR",
+            loc_tr: "Sivas, Türkiye",
+            desc: "Gold mine operation and development.",
+            desc_tr: "Altın madeni işletmesi ve geliştirme projesi.",
+          },
+        ],
+        assets: [],
+      },
+      {
+        id: 106,
+        name: "Siemens Energy",
+        city: "Germany",
+        sector: "energy",
+        type: "tech",
+        trust: "verified",
+        meta: {
+          references: 95,
+          delivery: 93,
+          years: 92,
+          financial: 94,
+          digital: 88,
+        },
+        desc:
+          "Energy technology company delivering turbines, grid solutions and services.",
+        desc_tr:
+          "Türbinler, şebeke çözümleri ve servis hizmetleri sunan enerji teknolojileri şirketi.",
+        services: ["Gas Turbines", "Grid Solutions", "Service & Maintenance"],
+        services_tr: [
+          "Gaz türbinleri",
+          "Şebeke çözümleri",
+          "Servis ve bakım hizmetleri",
+        ],
+        certificates: ["ISO 50001", "ISO 27001", "IEC 62443", "ISO 9001"],
+        projects: [],
+        assets: [],
+      },
+      {
+        id: 107,
+        name: "Borusan CAT",
+        city: "Istanbul, TR",
+        sector: "equipment",
+        type: "manufacturer",
+        trust: "verified",
+        meta: {
+          references: 92,
+          delivery: 90,
+          years: 88,
+          financial: 87,
+          digital: 80,
+        },
+        desc:
+          "Authorized CAT dealer for heavy equipment sales, rental and service.",
+        desc_tr:
+          "Ağır iş makineleri satış, kiralama ve servisinde yetkili CAT distribütörü.",
+        services: ["Equipment Sales", "Rental Fleet", "After-Sales Service"],
+        services_tr: [
+          "Makina satışı",
+          "Kiralama filosu",
+          "Satış sonrası servis",
+        ],
+        certificates: ["Caterpillar 5-Star Dealer", "ISO 9001", "ISO 27001", "ISO 14001"],
+        projects: [],
+        assets: [
+          {
+            type: "CAT Excavator Fleet",
+            type_tr: "CAT ekskavatör filosu",
+            spec: "CAT 336 / 352",
+            spec_tr: "CAT 336 / 352",
+            status: "In Stock",
+            status_tr: "Stokta",
+          },
+        ],
+      },
+      {
+        id: 108,
+        name: "Ortadoğu Sondaj",
+        city: "Ankara, TR",
+        sector: "drilling",
+        type: "contractor",
+        trust: "emerging",
+        meta: {
+          references: 88,
+          delivery: 86,
+          years: 82,
+          financial: 80,
+          digital: 72,
+        },
+        desc:
+          "Drilling contractor specialized in core drilling and geothermal exploration.",
+        desc_tr:
+          "Karot sondajı ve jeotermal arama projelerinde uzman sondaj yüklenicisi.",
+        services: ["Core Drilling", "Geothermal Wells", "Exploration Support"],
+        services_tr: [
+          "Karot sondajı",
+          "Jeotermal kuyu açma",
+          "Arama saha desteği",
+        ],
+        certificates: ["ISO 9001:2015", "ISO 14001:2015", "OHSAS 18001"],
+        projects: [],
+        assets: [],
+      },
+      {
+        id: 109,
+        name: "Enka İnşaat",
+        city: "Istanbul, TR",
+        sector: "construction",
+        type: "contractor",
+        trust: "global",
+        meta: {
+          references: 97,
+          delivery: 95,
+          years: 93,
+          financial: 94,
+          digital: 86,
+        },
+        desc:
+          "Engineering and construction company active in power, infrastructure and industrial plants.",
+        desc_tr:
+          "Enerji santralleri, altyapı ve endüstriyel tesis projelerinde faaliyet gösteren mühendislik ve inşaat şirketi.",
+        services: ["Power Plants", "Infrastructure EPC", "Industrial Projects"],
+        services_tr: [
+          "Enerji santrali projeleri",
+          "Altyapı EPC projeleri",
+          "Endüstriyel tesis projeleri",
+        ],
+        certificates: ["ASME S/U/PP Stamps", "ISO 9001", "ISO 14001", "OHSAS 18001"],
+        projects: [],
+        assets: [],
+      },
+      {
+        id: 110,
+        name: "Sandvik Mining",
+        city: "Sweden",
+        sector: "equipment",
+        type: "manufacturer",
+        trust: "premium",
+        meta: {
+          references: 95,
+          delivery: 93,
+          years: 91,
+          financial: 92,
+          digital: 84,
+        },
+        desc:
+          "Manufacturer of mining equipment including crushers and underground drills.",
+        desc_tr:
+          "Kırıcılar ve yeraltı delici makineler dahil madencilik ekipmanları üreticisi.",
+        services: ["Crushers", "Underground Drills", "OEM Parts"],
+        services_tr: [
+          "Kırıcı ekipmanlar",
+          "Yeraltı delici makineler",
+          "Orijinal yedek parça (OEM)",
+        ],
+        certificates: ["ISO 9001", "CE Marking", "EcoVadis Gold", "ISO 45001"],
+        projects: [],
+        assets: [],
+      },
+      {
+        id: 111,
+        name: "HİDROMEK",
+        city: "Ankara, TR",
+        sector: "equipment",
+        type: "manufacturer",
+        trust: "verified",
+        meta: {
+          references: 90,
+          delivery: 88,
+          years: 86,
+          financial: 85,
+          digital: 78,
+        },
+        desc:
+          "Construction machinery manufacturer with backhoe loaders and motor graders.",
+        desc_tr:
+          "Kazıcı yükleyici ve greyder üretiminde uzman inşaat makinaları üreticisi.",
+        services: ["Backhoe Loaders", "Motor Graders", "Excavators"],
+        services_tr: [
+          "Kazıcı yükleyiciler",
+          "Greyderler",
+          "Ekskavatörler",
+        ],
+        certificates: ["ISO 9001", "TSE-ISO-EN 9000", "Turquality"],
+        projects: [],
+        assets: [],
+      },
+// const database = [ dizisinin içine, diğer şirketlerin altına virgül koyup bunları ekle:
+
+      {
+        id: 112,
+        name: "ABB Industrial",
+        city: "Zurich, CH",
+        sector: "technology",  // YENİ SEKTÖR
+        type: "tech",
+        trust: "global",
+        meta: { references: 96, delivery: 95, years: 98, financial: 94, digital: 92 },
+        desc: "Industrial automation, robotics and electrification technology leader.",
+        services: ["Robotics", "Automation", "Electrification"],
+        certificates: ["ISO 9001", "ISO 14001", "IEC 62443"],
+        projects: [],
+        assets: []
+      },
+      {
+        id: 113,
+        name: "Kuehne+Nagel",
+        city: "Hamburg, DE",
+        sector: "logistics", // YENİ SEKTÖR
+        type: "service",
+        trust: "global",
+        meta: { references: 94, delivery: 98, years: 95, financial: 92, digital: 88 },
+        desc: "Global transport and logistics company specialized in sea and air freight.",
+        services: ["Project Logistics", "Sea Freight", "Heavy Lift Transport"],
+        certificates: ["ISO 9001", "AEO Status", "IATA Agent"],
+        projects: [],
+        assets: []
+      },
+      {
+        id: 114,
+        name: "ArcelorMittal",
+        city: "Luxembourg",
+        sector: "manufacturing", // YENİ SEKTÖR
+        type: "manufacturer",
+        trust: "global",
+        meta: { references: 95, delivery: 92, years: 94, financial: 90, digital: 85 },
+        desc: "The world's leading steel and mining company.",
+        services: ["Steel Production", "Mining", "R&D"],
+        certificates: ["IATF 16949", "ISO 14001", "ResponsibleSteel"],
+        projects: [],
+        assets: []
+      },
+    ];
+
+    function t(key) {
+      return translations[currentLang][key] || translations.en[key] || "";
+    }
+
+    function computeScore(meta) {
+      const sum =
+        meta.references +
+        meta.delivery +
+        meta.years +
+        meta.financial +
+        meta.digital;
+      return Math.round(sum / 5);
+    }
+
+    function getTrustBadge(company) {
+      const trust = company.trust || "verified";
+      let label = "";
+      let classes =
+        "bg-gray-100 text-gray-700 border border-gray-200";
+
+      if (trust === "global") {
+        label = "Global Partner";
+        classes = "bg-blue-50 text-blue-800 border border-blue-200";
+      } else if (trust === "premium") {
+        label = "Premium Verified";
+        classes = "bg-purple-50 text-purple-800 border border-purple-200";
+      } else if (trust === "verified") {
+        label = "Verified Partner";
+        classes = "bg-emerald-50 text-emerald-800 border border-emerald-200";
+      } else if (trust === "emerging") {
+        label = "Emerging Partner";
+        classes = "bg-amber-50 text-amber-800 border border-amber-200";
+      }
+
+      return `
+        <span class="${classes} text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+          <i class="fa-solid fa-shield-halved text-[10px]"></i>
+          <span>${label}</span>
+        </span>
+      `;
+    }
+
+    function getScoreLabel(score) {
+      if (currentLang === "tr") {
+        if (score >= 95) return "MÜKEMMEL";
+        if (score >= 90) return "GÜÇLÜ";
+        if (score >= 80) return "SAĞLAM";
+        return "GELİŞMEKTE";
+      } else {
+        if (score >= 95) return "EXCELLENT";
+        if (score >= 90) return "STRONG";
+        if (score >= 80) return "SOLID";
+        return "GROWING";
+      }
+    }
+
+    function sectorToTr(sector) {
+      if (currentLang === "en") {
+        // İngilizce modda baş harfi büyütüp döndürür
+        if (sector === "manufacturing") return "Manufacturing";
+        if (sector === "technology") return "Technology";
+        if (sector === "logistics") return "Logistics";
+        return sector.charAt(0).toUpperCase() + sector.slice(1);
+      }
+      
+      // Türkçe mod için karşılıklar
+      if (sector === "construction") return "İnşaat";
+      if (sector === "mining") return "Maden";
+      if (sector === "energy") return "Enerji";
+      if (sector === "drilling") return "Sondaj";
+      if (sector === "equipment") return "Ekipman";
+      if (sector === "manufacturing") return "Üretim & Sanayi";
+      if (sector === "technology") return "Teknoloji";
+      if (sector === "logistics") return "Lojistik";
+      
+      return sector;
+    }
+
+    function applyTranslations() {
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n");
+        if (!key) return;
+        const value = t(key);
+        if (value) {
+          el.innerHTML = value;
+        }
+      });
+
+      const heroTitle = document.getElementById("hero-title");
+      const heroDesc = document.getElementById("hero-desc");
+      if (heroTitle) heroTitle.innerHTML = t("hero_title");
+      if (heroDesc) heroDesc.innerHTML = t("hero_desc");
+
+      const searchInput = document.getElementById("search-input");
+      if (searchInput) searchInput.placeholder = t("search_ph");
+
+      const yearSpan = document.getElementById("year-span");
+      if (yearSpan) yearSpan.textContent = new Date().getFullYear().toString();
+    }
+
+    // TOP COMPANIES BAND
+
+    function initTopCompaniesOrder() {
+      topCompaniesOrder = [...database].sort(
+        (a, b) => computeScore(b.meta) - computeScore(a.meta)
+      );
+    }
+
+function renderTopCompanies() {
+      const container = document.getElementById("top-companies");
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (!topCompaniesOrder.length) {
+        initTopCompaniesOrder();
+      }
+
+      // AKILLI LİSTELEME MANTIĞI:
+      // Eğer veritabanında az şirket varsa (10'dan az), ekran dolsun ve animasyon aksın diye listeyi çoğaltıyoruz.
+      // Eğer zaten çok şirket varsa, sistemi yormamak için olduğu gibi bırakıyoruz.
+      let topList;
+      if (topCompaniesOrder.length < 10) {
+         const baseTop = topCompaniesOrder.slice(0, 5); // En iyi 5 şirketi al
+         topList = [...baseTop, ...baseTop, ...baseTop, ...baseTop]; // 4 kere arka arkaya ekle
+      } else {
+         topList = topCompaniesOrder.slice(0, 20); // Zaten çok varsa ilk 20 tanesi yeter
+      }
+
+      topList.forEach((company) => {
+        const score = computeScore(company.meta);
+        const desc =
+          currentLang === "tr" && company.desc_tr
+            ? company.desc_tr
+            : company.desc;
+
+        const card = document.createElement("button");
+        // Mobilde ve PC'de düzgün durması için genişlik ayarı
+        card.className =
+          "min-w-[260px] bg-slate-900 text-white rounded-xl px-4 py-3 flex flex-col justify-between shadow-md hover:shadow-lg hover:-translate-y-0.5 transition transform border border-slate-700/50";
+        card.onclick = () => openProfile(company.id);
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[13px] font-bold line-clamp-1 text-cyan-50">
+              ${company.name}
+            </span>
+            <span class="text-[11px] font-semibold bg-cyan-900/50 text-cyan-200 px-2 py-0.5 rounded-full border border-cyan-800">
+              ${score}
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 line-clamp-2 mb-2 text-left font-light leading-relaxed">
+            ${desc}
+          </p>
+          <div class="flex items-center justify-between mt-auto w-full">
+            <span class="flex items-center gap-1.5 text-[10px] text-slate-500">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="line-clamp-1 max-w-[80px]">${company.city}</span>
+            </span>
+            <span class="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              ${getScoreLabel(score)}
+            </span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function rotateTopCompanies() {
+      if (!topCompaniesOrder.length) return;
+      const first = topCompaniesOrder.shift();
+      topCompaniesOrder.push(first);
+      renderTopCompanies();
+    }
+
+    function startTopAnimations() {
+      const container = document.getElementById("top-companies");
+      if (!container) return;
+
+      if (topScrollInterval) clearInterval(topScrollInterval);
+      if (topRotateInterval) clearInterval(topRotateInterval);
+
+      // AKIŞ HIZI AYARI BURADA:
+      // 20 = Çok Hızlı | 30 = İdeal/Akıcı | 50 = Yavaş
+      const speed = 30; 
+
+      topScrollInterval = setInterval(() => {
+        if (!container) return;
+        container.scrollLeft += 1; // Her seferinde 1 piksel kaydır
+        
+        // Sona geldiyse başa sar (Sonsuz döngü hissi)
+        if (
+          container.scrollLeft >=
+          container.scrollWidth - container.clientWidth - 1
+        ) {
+          container.scrollLeft = 0;
+        }
+      }, speed); // <-- Hız değişkenini buraya verdik
+
+      // Kartların içindeki verileri (Skor, İsim vb.) belirli aralıklarla karıştırıp canlılık katmak için:
+      topRotateInterval = setInterval(() => {
+        rotateTopCompanies();
+      }, 10000); // 10 saniyede bir veri yenileme (Bu kalabilir)
+    }
+
+    // MAIN GRID
+
+    function renderCards(searchQuery = "") {
+      const container = document.getElementById("card-container");
+      const resultCount = document.getElementById("result-count");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const query = (searchQuery || "").toLowerCase().trim();
+
+      let filtered = database.filter((company) => {
+        if (currentSector !== "all" && company.sector !== currentSector) {
+          return false;
+        }
+
+        if (!query) return true;
+
+        const desc =
+          currentLang === "tr" && company.desc_tr
+            ? company.desc_tr
+            : company.desc;
+
+        const services =
+          currentLang === "tr" && company.services_tr
+            ? company.services_tr
+            : company.services;
+
+        const haystack = [
+          company.name,
+          company.city,
+          company.sector,
+          desc,
+          ...(services || []),
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(query);
+      });
+
+      if (resultCount) {
+        resultCount.textContent = `${filtered.length} ${t("results_label")}`;
+      }
+
+      if (filtered.length === 0) {
+        const empty = document.createElement("div");
+        empty.className =
+          "col-span-full text-center text-sm text-gray-500";
+        empty.textContent =
+          currentLang === "tr"
+            ? "Kriterlere uygun firma bulunamadı."
+            : "No companies match the selected filters.";
+        container.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach((company) => {
+        const score = computeScore(company.meta);
+        const desc =
+          currentLang === "tr" && company.desc_tr
+            ? company.desc_tr
+            : company.desc;
+
+        const services =
+          currentLang === "tr" && company.services_tr
+            ? company.services_tr
+            : company.services;
+
+        const card = document.createElement("div");
+        card.className =
+          "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-glass flex flex-col justify-between hover:border-BTrustOn-accent hover:shadow-lg hover:-translate-y-1 transition cursor-pointer";
+        card.onclick = () => openProfile(company.id);
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-BTrustOn-primary mb-0.5 line-clamp-1">
+                ${company.name}
+              </h3>
+              <p class="text-[11px] text-gray-400 mb-1 line-clamp-1">
+                ${company.city}
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-header font-bold text-BTrustOn-primary leading-none">
+                ${score}<span class="text-[10px] text-gray-400">/100</span>
+              </div>
+              <div class="text-[10px] text-emerald-500 font-semibold mt-0.5">
+                ${getScoreLabel(score)}
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-600 mb-3 line-clamp-3">
+            ${desc}
+          </p>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            ${(services || [])
+              .slice(0, 3)
+              .map(
+                (s) => `
+              <span class="text-[10px] px-2 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600">
+                ${s}
+              </span>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              ${getTrustBadge(company)}
+            </div>
+            <button
+              class="text-[11px] font-bold text-BTrustOn-accent flex items-center gap-1"
+              type="button"
+            >
+              <span>${t("btn_view")}</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Hafif "canlılık": sadece default durumda (tüm sektörler + boş arama) diziyi shuffle et
+    function startGridShuffle() {
+      const searchInput = document.getElementById("search-input");
+
+      if (gridShuffleInterval) clearInterval(gridShuffleInterval);
+
+      gridShuffleInterval = setInterval(() => {
+        if (!searchInput) return;
+        const query = (searchInput.value || "").trim();
+        if (query !== "" || currentSector !== "all") {
+          return; // kullanıcı filtre kullanıyorsa karışmasın
+        }
+
+        // Rastgele hafif karıştır
+        database.sort(() => Math.random() - 0.5);
+        renderCards("");
+      }, 15000); // 15 sn'de bir hafif değişim
+    }
+
+    function filterSector(sector, btnEl) {
+      currentSector = sector;
+
+      document.querySelectorAll(".filter-btn").forEach((btn) => {
+        btn.classList.remove(
+          "border-BTrustOn-accent",
+          "bg-BTrustOn-accent/10",
+          "text-BTrustOn-accent",
+          "shadow-glow"
+        );
+        btn.classList.add(
+          "border-gray-300",
+          "bg-transparent",
+          "text-gray-500"
+        );
+      });
+
+      if (btnEl) {
+        btnEl.classList.remove(
+          "border-gray-300",
+          "bg-transparent",
+          "text-gray-500"
+        );
+        btnEl.classList.add(
+          "border-BTrustOn-accent",
+          "bg-BTrustOn-accent/10",
+          "text-BTrustOn-accent",
+          "shadow-glow"
+        );
+      }
+
+      const searchInput = document.getElementById("search-input");
+      const value = searchInput ? searchInput.value : "";
+      renderCards(value);
+    }
+    // Status badge renkleri (Available / Under Maintenance / Out of Service)
+    function getStatusBadge(baseStatusRaw, displayStatus) {
+      const base = (baseStatusRaw || "").toLowerCase();
+      const disp = (displayStatus || baseStatusRaw || "").toLowerCase();
+
+      let classes = "bg-slate-50 text-slate-600";
+
+      // Available / Müsait → Yeşil
+      if (base.includes("available") || disp.includes("müsait")) {
+        classes = "bg-emerald-50 text-emerald-700";
+      }
+      // Under Maintenance / bakım → Sarı
+      else if (
+        base.includes("maintenance") ||
+        base.includes("maint") ||
+        disp.includes("bakım")
+      ) {
+        classes = "bg-amber-50 text-amber-700";
+      }
+      // Out of Service / Servis dışı → Kırmızı
+      else if (
+        base.includes("out of service") ||
+        base.includes("oos") ||
+        disp.includes("servis dışı")
+      ) {
+        classes = "bg-rose-50 text-rose-700";
+      }
+
+      const label = displayStatus || baseStatusRaw || "";
+
+      return `
+        <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold ${classes}">
+          ${label}
+        </span>
+      `;
+    }
+
+    // --- CERTIFICATES (Dynamic) ---
+    function renderCertificates(company) {
+      const certList = document.getElementById("p-certs-list");
+      if (!certList) return;
+      
+      certList.innerHTML = "";
+
+      if (!company.certificates || company.certificates.length === 0) {
+        certList.innerHTML = `
+          <div class="col-span-2 bg-white border border-gray-200 rounded-xl p-5 text-gray-500 text-sm italic">
+            ${t("no_certs")}
+          </div>`;
+        return;
+      }
+
+      company.certificates.forEach(cert => {
+        certList.innerHTML += `
+          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition">
+            <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0">
+               <i class="fa-solid fa-award text-cyan-600 text-sm"></i>
+            </div>
+            <div class="text-BTrustOn-primary font-bold text-sm">
+              ${cert}
+            </div>
+          </div>`;
+      });
+    }
+
+    function openProfile(companyId) {
+      const company = database.find((c) => c.id === companyId);
+      if (!company) return;
+      selectedCompany = company;
+
+      const viewDashboard = document.getElementById("view-dashboard");
+      const viewProfile = document.getElementById("view-profile");
+      const viewEditor = document.getElementById("view-editor"); // Editor
+      const backBtn = document.getElementById("back-btn");
+
+      if (viewDashboard) viewDashboard.classList.add("hidden-view");
+      if (viewEditor) viewEditor.classList.add("hidden-view"); // Hide editor if open
+      if (viewProfile) viewProfile.classList.remove("hidden-view");
+      if (backBtn) backBtn.classList.remove("hidden", "hidden-view");
+      window.scrollTo(0, 0);
+// --- D. LOGO GÖSTERİMİ (BUNU EKLEYİN) ---
+      const pLogoImg = document.getElementById("p-logo-image");
+      const pDefaultIcon = document.getElementById("p-default-icon");
+      
+      if (pLogoImg && pDefaultIcon) {
+          if (company.logo_url) {
+              // Logo varsa: Resmi göster, ikonu gizle
+              pLogoImg.src = company.logo_url;
+              pLogoImg.classList.remove("hidden");
+              pDefaultIcon.classList.add("hidden");
+          } else {
+              // Logo yoksa: Resmi gizle, varsayılan ikonu göster
+              pLogoImg.classList.add("hidden");
+              pDefaultIcon.classList.remove("hidden");
+          }
+      }
+
+      const nameEl = document.getElementById("p-name");
+      const descEl = document.getElementById("p-desc");
+      const taglineEl = document.getElementById("p-tagline");
+      const cityEl = document.getElementById("p-city");
+      const sectorEl = document.getElementById("p-sector");
+      const badgeEl = document.getElementById("p-badge");
+      // ✅ openProfile İÇİNE EKLENECEK PARÇA
+      const pType = document.getElementById("p-type-tag");
+      const pSize = document.getElementById("p-size-tag");
+      const pYear = document.getElementById("p-year-tag");
+
+      // Verileri ekrana yaz
+      if (pType) pType.textContent = company.type_label || "Industrial Supplier";
+      if (pSize) pSize.textContent = company.size_label || "Size N/A";
+      if (pYear) pYear.textContent = company.year_label ? `Founded ${company.year_label}` : "";
+
+      if (nameEl) nameEl.textContent = company.name;
+      if (cityEl) cityEl.textContent = company.city;
+      if (sectorEl)
+        sectorEl.textContent =
+          currentLang === "tr"
+            ? sectorToTr(company.sector)
+            : company.sector.charAt(0).toUpperCase() +
+              company.sector.slice(1);
+
+      const desc =
+        currentLang === "tr" && company.desc_tr
+          ? company.desc_tr
+          : company.desc;
+      if (descEl) descEl.textContent = desc;
+      if (taglineEl) taglineEl.textContent = company.tagline || "";
+
+      if (badgeEl) badgeEl.innerHTML = getTrustBadge(company);
+
+      const score = computeScore(company.meta);
+      const pScore = document.getElementById("p-score");
+      const pScoreLabel = document.getElementById("p-score-label");
+      const pScoreBar = document.getElementById("p-score-bar");
+
+      if (pScore) pScore.textContent = score.toString();
+      if (pScoreLabel) pScoreLabel.textContent = getScoreLabel(score);
+      if (pScoreBar) pScoreBar.style.width = `${score}%`;
+
+      // --- CORE SERVICES (GÜNCELLENMİŞ KISIM) ---
+      const servicesGrid = document.getElementById("p-services-grid");
+      if (servicesGrid) {
+        servicesGrid.innerHTML = "";
+        
+        // Önce veriyi sağlamlaştır: Türkçe yoksa İngilizceyi göster
+        let displayServices = [];
+        if (currentLang === "tr" && company.services_tr && company.services_tr.length > 0) {
+            displayServices = company.services_tr;
+        } else {
+            displayServices = company.services || [];
+        }
+
+        if (displayServices.length === 0) {
+          servicesGrid.innerHTML =
+            '<div class="col-span-full py-4 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50"><p class="text-sm text-gray-400 italic">Hizmet bilgisi girilmemiş.</p></div>';
+        } else {
+          displayServices.forEach((s) => {
+            const div = document.createElement("div");
+            // GÖRÜNÜR KART TASARIMI
+            div.className =
+              "bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md hover:border-BTrustOn-accent transition group cursor-default";
+
+            div.innerHTML = `
+              <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0 text-BTrustOn-accent group-hover:bg-BTrustOn-accent group-hover:text-white transition duration-300">
+                 <i class="fa-solid fa-check text-lg"></i>
+              </div>
+              <span class="text-sm font-bold text-gray-700 group-hover:text-BTrustOn-primary transition">${s}</span>
+            `;
+            servicesGrid.appendChild(div);
+          });
+        }
+      }
+
+      // --- PROJELERİ LİSTELE (GÜNCELLENMİŞ - BUTONLU VERSİYON) ---
+      const pProjectsList = document.getElementById("p-projects-list");
+
+      // Yetki Kontrolü: Bu profil benim mi?
+      const isMyProfileForProj = (localStorage.getItem("BTrustOn_my_company_id") && String(companyId) === String(localStorage.getItem("BTrustOn_my_company_id")));
+
+      // "ADD NEW PROJECT" butonunu bul ve duruma göre gizle/göster
+      const btnAddProject = document.getElementById("btn-add-project");
+      if(btnAddProject) {
+        if(isMyProfileForProj) btnAddProject.classList.remove("hidden-view");
+        else btnAddProject.classList.add("hidden-view");
+      }
+
+      if (pProjectsList) {
+        pProjectsList.innerHTML = "";
+        const projects = company.projects || [];
+        
+        if (projects.length === 0) {
+          pProjectsList.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400 text-xs italic">Henüz proje eklenmemiş.</div>';
+        } else {
+          projects.forEach((p) => {
+            const title = currentLang === "tr" && p.title_tr ? p.title_tr : p.title;
+            const loc = currentLang === "tr" && p.loc_tr ? p.loc_tr : p.loc;
+            const desc = currentLang === "tr" && p.desc_tr ? p.desc_tr : p.desc;
+            const pId = p.id;
+
+            // DÜZENLEME BUTONLARI (Sadece sahibiysen kartın üstüne ekle)
+            let actionBtns = "";
+            if(isMyProfileForProj) {
+                actionBtns = `
+                  <div class="flex gap-2 ml-2 shrink-0">
+                    <button onclick="openProjectModal(${pId})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition" title="Düzenle">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <button onclick="deleteProject(${pId})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition" title="Sil">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                  </div>
+                `;
+            }
+
+            const card = document.createElement("div");
+            // Kart tasarımı (flex-col ve h-full ile hizayı koruduk)
+            card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-BTrustOn-accent transition group relative flex flex-col h-full";
+
+            card.innerHTML = `
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-diagram-project text-BTrustOn-accent"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-bold text-BTrustOn-primary leading-snug pr-2 line-clamp-2">
+                      ${title}
+                    </h4>
+                    <p class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                      <i class="fa-solid fa-location-dot text-BTrustOn-accent text-[10px]"></i>
+                      <span class="line-clamp-1">${loc}</span>
+                    </p>
+                  </div>
+                </div>
+                ${actionBtns}
+              </div>
+
+              <p class="text-xs text-gray-600 leading-relaxed pl-1 line-clamp-3">
+                ${desc}
+              </p>
+            `;
+
+            pProjectsList.appendChild(card);
+          });
+        }
+      }
+
+      // --- RENDER CERTIFICATES ---
+      renderCertificates(company);
+
+      // ✅ GÜNCELLENMİŞ ASSET TABLOSU KODU
+      const assetsList = document.getElementById("p-assets-list");
+      if (assetsList) {
+        assetsList.innerHTML = "";
+        const assets = company.assets || [];
+        
+        // Bu profili görüntüleyen kişi sahibi mi?
+        const myId = localStorage.getItem("BTrustOn_my_company_id");
+        const isOwner = (myId && String(company.id) === String(myId));
+
+        if (assets.length === 0) {
+          // Colspan 6 yaptık çünkü tabloda artık 6 sütun var
+          assetsList.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-gray-400 italic">No assets listed yet.</td></tr>`;
+        } else {
+          assets.forEach((a) => {
+            const type = a.type || a.type_tr || "";
+            const spec = a.spec || a.spec_tr || "";
+            const status = a.status || "";
+            const qty = a.qty || "1";
+            const loc = a.location || "-";
+            const assetId = a.id; 
+
+            // Status Rengi
+            let badgeClass = "bg-slate-50 text-slate-600 border-slate-100";
+            if(status === "Available") badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
+            else if(status === "Under Maintenance") badgeClass = "bg-amber-50 text-amber-700 border-amber-100";
+            else if(status === "Out of Service") badgeClass = "bg-rose-50 text-rose-700 border-rose-100";
+
+            // BUTONLAR (Sadece sahipsen görünür)
+            let actionButtons = "";
+            if (isOwner) {
+                actionButtons = `
+                  <div class="flex items-center justify-end gap-2">
+                    <button onclick="openAssetModal(${assetId})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white transition flex items-center justify-center" title="Edit">
+                      <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <button onclick="deleteAsset(${assetId})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center" title="Delete">
+                      <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                  </div>
+                `;
+            }
+
+            const row = document.createElement("tr");
+            row.className = "hover:bg-cyan-50/30 transition group border-b border-gray-50 last:border-0";
+            row.innerHTML = `
+              <td class="py-3 px-6 font-bold text-BTrustOn-primary text-xs">${type}</td>
+              <td class="py-3 px-6 text-gray-500 text-xs">${spec}</td>
+              <td class="py-3 px-6 text-center font-mono text-xs">${qty}</td>
+              <td class="py-3 px-6 text-gray-500 text-xs">${loc}</td>
+              <td class="py-3 px-6">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold border ${badgeClass}">
+                  ${status}
+                </span>
+              </td>
+              <td class="py-3 px-6 text-right">
+                ${actionButtons}
+              </td>
+            `;
+            assetsList.appendChild(row);
+          });
+        }
+      }
+// --- C. CONTACT INFO GÖSTERİMİ (BUNU EKLEYİN) ---
+      const pWebsite = document.getElementById("p-website-link");
+      const pEmail = document.getElementById("p-email-text");
+      const pPhone = document.getElementById("p-phone-text");
+
+      // 1. Website
+      if (pWebsite) {
+          if (company.website) {
+              let href = company.website.startsWith("http") ? company.website : "https://" + company.website;
+              pWebsite.href = href;
+              pWebsite.textContent = company.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
+              pWebsite.classList.remove("text-gray-400", "italic", "pointer-events-none");
+              pWebsite.classList.add("text-BTrustOn-accent", "hover:underline");
+          } else {
+              pWebsite.textContent = "-";
+              pWebsite.removeAttribute("href");
+              pWebsite.classList.add("text-gray-400", "italic", "pointer-events-none");
+              pWebsite.classList.remove("text-BTrustOn-accent", "hover:underline");
+          }
+      }
+
+      // 2. Email
+      // 2. Email (GÜNCELLENMİŞ MANTIK)
+      if (pEmail) {
+          // Öncelik: contact_email (varsa). Yoksa: email (login). O da yoksa: "-"
+          const displayEmail = company.contact_email || company.email || "-";
+          
+          pEmail.textContent = displayEmail;
+          
+          if(displayEmail !== "-") {
+              // Tıklayınca mail atma özelliği
+              pEmail.parentElement.onclick = () => window.location.href = "mailto:" + displayEmail;
+              pEmail.parentElement.classList.remove("text-gray-400"); // Gri rengi kaldır
+              pEmail.parentElement.classList.add("cursor-pointer", "hover:bg-gray-50", "text-gray-700"); // Siyah yap ve tıklanabilir kıl
+          } else {
+              // Mail yoksa pasif yap
+               pEmail.parentElement.onclick = null;
+               pEmail.parentElement.classList.remove("cursor-pointer", "hover:bg-gray-50", "text-gray-700");
+               pEmail.parentElement.classList.add("text-gray-400");
+          }
+      }
+
+      // 3. Telefon
+      if (pPhone) {
+          pPhone.textContent = company.phone || "-";
+      }
+      switchProfileTab("overview");
+// ✅ YENİ TOPLU BUTON KONTROLÜ (Edit, Asset ve Teklif Butonları)
+      
+      // 1. Kimlik Kontrolü: Bu profil benim mi?
+      const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
+      const isMyProfile = (myCurrentId && String(companyId) === String(myCurrentId));
+
+      // 2. Butonları Seç
+      const btnEdit = document.getElementById("btn-edit-profile");
+      const btnAddAsset = document.getElementById("btn-add-asset");
+      const btnQuote = document.getElementById("btn-req-quote"); // Teklif butonu
+// ... (Mevcut openProfile kodlarınızın devamı) ...
+
+      // --- LOGO TIKLAMA YETKİSİ AYARI ---
+      const logoContainer = document.getElementById("p-logo-container");
+      const logoOverlay = document.getElementById("p-logo-overlay");
+      const logoInput = document.getElementById("profile-logo-input");
+
+      if (logoContainer && logoOverlay) {
+          if (isMyProfile) {
+              // Eğer benim profilimse: Tıklamaya izin ver ve Hover efektini aç
+              logoContainer.classList.add("cursor-pointer", "hover:scale-105");
+              logoContainer.setAttribute("onclick", "document.getElementById('profile-logo-input').click()");
+              logoOverlay.classList.remove("hidden"); // Overlay HTML'de group-hover ile çalışacak ama class olarak varlığını açalım
+              logoOverlay.className = "absolute inset-0 bg-slate-900/60 hidden group-hover:flex flex-col items-center justify-center text-white backdrop-blur-[1px] cursor-pointer";
+          } else {
+              // Başkasının profili: Tıklamayı kapat
+              logoContainer.classList.remove("cursor-pointer", "hover:scale-105");
+              logoContainer.removeAttribute("onclick");
+              logoOverlay.className = "hidden"; // Tamamen gizle
+          }
+      }
+
+      if (isMyProfile) {
+          // --- EĞER BENİM PROFİLİMSE ---
+          if(btnEdit) btnEdit.classList.remove("hidden-view");         // Düzenle: GÖSTER
+          if(btnAddAsset) btnAddAsset.classList.remove("hidden-view"); // Ekle: GÖSTER
+          if(btnQuote) btnQuote.classList.add("hidden-view");          // Teklif İste: GİZLE (Kendinden istemezsin)
+      } else {
+          // --- EĞER BAŞKASININ PROFİLİYSE ---
+          if(btnEdit) btnEdit.classList.add("hidden-view");            // Düzenle: GİZLE
+          if(btnAddAsset) btnAddAsset.classList.add("hidden-view");    // Ekle: GİZLE
+          if(btnQuote) btnQuote.classList.remove("hidden-view");       // Teklif İste: GÖSTER
+      }
+    }
+
+    // --- EDITOR FUNCTIONS ---
+    function showEditorView() {
+        document.getElementById("view-dashboard").classList.add("hidden-view");
+        document.getElementById("view-profile").classList.add("hidden-view");
+        document.getElementById("view-editor").classList.remove("hidden-view");
+        document.getElementById("back-btn").classList.remove("hidden", "hidden-view");
+        window.scrollTo(0,0);
+    }
+
+   // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
+// ✅ 1. GÜNCELLENMİŞ KAYDETME FONKSİYONU
+/* --- B. KAYDETME (GÜNCEL - CONTACT INFO DAHİL) --- */
+/* --- GÜNCELLENMİŞ saveProfileData (Toast'lı) --- */
+/* --- B. KAYDETME (GÜNCEL - EMAIL DAHİL) --- */
+async function saveProfileData() {
+  const btn = document.querySelector("#editor-form button[type='submit']");
+  const originalText = btn.textContent;
+  btn.textContent = "Uploading...";
+  btn.disabled = true;
+
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("No active session found!");
+
+    let finalLogoUrl = selectedCompany.logo_url || null;
+
+    // 1. LOGO VARSA ÖNCE ONU YÜKLE
+    if (selectedLogoFile) {
+        const fileExt = selectedLogoFile.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // Supabase Storage'a yükle
+        const { error: uploadError } = await supabaseClient.storage
+            .from('logos') // 1. Adımda açtığımız bucket ismi
+            .upload(filePath, selectedLogoFile);
+
+        if (uploadError) throw uploadError;
+
+        // Public URL al
+        const { data: { publicUrl } } = supabaseClient.storage
+            .from('logos')
+            .getPublicUrl(filePath);
+            
+        finalLogoUrl = publicUrl;
+    }
+
+    // 2. DİĞER VERİLERİ HAZIRLA
+    const name = document.getElementById("edit-name").value.trim();
+    const city = document.getElementById("edit-city").value.trim();
+    const sector = document.getElementById("edit-sector").value;
+    const desc = document.getElementById("edit-desc").value.trim();
+    const servicesStr = document.getElementById("edit-services").value.trim();
+    const website = document.getElementById("edit-website").value.trim();
+    const phone = document.getElementById("edit-phone").value.trim();
+    const contactEmail = document.getElementById("edit-email").value.trim();
+    const typeVal = document.getElementById("edit-type").value;
+    const sizeVal = document.getElementById("edit-size").value;
+    const yearVal = document.getElementById("edit-year").value;
+
+    const updates = {
+      company_name: name,
+      city: city,
+      sector: sector,
+      description: desc,
+      services: servicesStr,
+      website: website,
+      phone: phone,
+      contact_email: contactEmail,
+      company_type: typeVal,
+      company_size: sizeVal,
+      founded_year: yearVal,
+      logo_url: finalLogoUrl, // Logo URL'ini kaydet
+      updated_at: new Date(),
+    };
+
+    // 3. VERİTABANINI GÜNCELLE
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    showToast("Success", "Profile and logo updated successfully!", "success");
+
+    // Local veriyi güncelle (Ekran yenilenmeden görünsün diye)
+    const localCompany = database.find(c => c.id == user.id);
+    if (localCompany) {
+        Object.assign(localCompany, {
+            name, city, sector, desc,
+            website, phone, contact_email: contactEmail,
+            type_label: typeVal, size_label: sizeVal, year_label: yearVal,
+            logo_url: finalLogoUrl,
+            services: servicesStr.split(',').map(s => s.trim()).filter(s => s)
+        });
+    }
+
+    openProfile(user.id);
+    
+    document.getElementById("view-editor").classList.add("hidden-view");
+    document.getElementById("view-profile").classList.remove("hidden-view");
+    document.getElementById("back-btn").classList.remove("hidden", "hidden-view");
+
+  } catch (error) {
+    console.error("Error:", error);
+    showToast("Error", error.message, "error");
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+    function showMainView() {
+      const viewDashboard = document.getElementById("view-dashboard");
+      const viewProfile = document.getElementById("view-profile");
+      const viewEditor = document.getElementById("view-editor");
+      const backBtn = document.getElementById("back-btn");
+
+      if (viewDashboard) viewDashboard.classList.remove("hidden-view");
+      if (viewProfile) viewProfile.classList.add("hidden-view");
+      if (viewEditor) viewEditor.classList.add("hidden-view");
+      if (backBtn) backBtn.classList.add("hidden", "hidden-view");
+    }
+
+    function toggleModal(id) {
+      const modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.toggle("opacity-0");
+      modal.classList.toggle("pointer-events-none");
+      document.body.classList.toggle("modal-active");
+    }
+
+    function openQuoteModal(companyName) {
+      const targetEl = document.getElementById("quote-target-company");
+      const inputTarget = document.getElementById("input-target-company");
+      if (targetEl) targetEl.textContent = companyName || "";
+      if (inputTarget) inputTarget.value = companyName || "";
+      toggleModal("modal-quote");
+    }
+
+    function switchProfileTab(tab) {
+      const tabs = ["overview", "projects", "certs", "assets"];
+      tabs.forEach((tName) => {
+        const btn = document.getElementById(`tab-${tName}`);
+        const content = document.getElementById(`content-${tName}`);
+        if (!btn || !content) return;
+
+        if (tName === tab) {
+          btn.classList.add(
+            "border-BTrustOn-accent",
+            "text-BTrustOn-primary",
+            "bg-cyan-50/50"
+          );
+          btn.classList.remove("border-transparent");
+          content.classList.remove("hidden-view");
+        } else {
+          btn.classList.remove(
+            "border-BTrustOn-accent",
+            "text-BTrustOn-primary",
+            "bg-cyan-50/50"
+          );
+          btn.classList.add("border-transparent");
+          content.classList.add("hidden-view");
+        }
+      });
+    }
+
+    function switchLanguage(lang) {
+      currentLang = lang === "tr" ? "tr" : "en";
+
+      const btnEn = document.getElementById("lang-en");
+      const btnTr = document.getElementById("lang-tr");
+
+      if (btnEn && btnTr) {
+        if (currentLang === "en") {
+          btnEn.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
+          btnEn.classList.remove("text-gray-500");
+          btnTr.classList.remove(
+            "bg-white",
+            "text-BTrustOn-primary",
+            "shadow-sm"
+          );
+          btnTr.classList.add("text-gray-500");
+        } else {
+          btnTr.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
+          btnTr.classList.remove("text-gray-500");
+          btnEn.classList.remove(
+            "bg-white",
+            "text-BTrustOn-primary",
+            "shadow-sm"
+          );
+          btnEn.classList.add("text-gray-500");
+        }
+      }
+
+      applyTranslations();
+      renderTopCompanies();
+      const searchInput = document.getElementById("search-input");
+      const value = searchInput ? searchInput.value : "";
+      renderCards(value);
+
+        // Şu an profil ekranında mıyız, kontrol et
+  const viewProfile = document.getElementById("view-profile");
+  const isProfileVisible =
+    viewProfile && !viewProfile.classList.contains("hidden-view");
+
+  // Sadece profil ekranındaysak ilgili şirket profilini yeniden çiz
+  if (isProfileVisible && selectedCompany) {
+    openProfile(selectedCompany.id);
+  }
+
+    }
+      
+    document.addEventListener("DOMContentLoaded", () => {
+      applyTranslations();
+      initTopCompaniesOrder();
+      renderTopCompanies();
+      renderCards("");
+
+      startTopAnimations();
+      startGridShuffle();
+
+      switchLanguage("en");
+    });
+/* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
+
+let currentEditingAssetId = null;
+
+// 1. MODALI AÇ (Ekleme veya Düzenleme)
+function openAssetModal(assetId = null) {
+  const modal = document.getElementById("asset-modal");
+  const form = document.getElementById("asset-form");
+  const title = document.getElementById("asset-modal-title");
+  
+  if (!modal) return;
+  modal.classList.remove("pointer-events-none", "opacity-0");
+  
+  // Formu temizle
+  if(form) form.reset();
+  
+  if (assetId) {
+    // --- DÜZENLEME MODU ---
+    currentEditingAssetId = assetId;
+    if(title) title.textContent = "Edit Asset Details";
+    
+    // Veriyi bul ve kutulara doldur
+    const asset = selectedCompany.assets.find(a => a.id === assetId);
+    if (asset) {
+        document.getElementById("asset-item").value = asset.type || asset.type_tr || "";
+        document.getElementById("asset-specs").value = asset.spec || asset.spec_tr || "";
+        document.getElementById("asset-qty").value = asset.qty || "1";
+        document.getElementById("asset-location").value = asset.location || "";
+        document.getElementById("asset-status").value = asset.status || "Available";
+    }
+  } else {
+    // --- EKLEME MODU ---
+    currentEditingAssetId = null;
+    if(title) title.textContent = "Add New Asset";
+  }
+}
+
+function closeAssetModal() {
+  const modal = document.getElementById("asset-modal");
+  if (modal) modal.classList.add("pointer-events-none", "opacity-0");
+  currentEditingAssetId = null;
+}
+
+// 2. KAYDET (Hem Yeni Ekleme Hem Güncelleme)
+// 2. KAYDET (ASSET - ENGLISH)
+/* --- GÜNCELLENMİŞ saveAsset (Toast'lı) --- */
+async function saveAsset() {
+  const btn = document.querySelector("#asset-form button[type='submit']");
+  const originalText = btn.textContent;
+  btn.textContent = "Processing...";
+  btn.disabled = true;
+
+  try {
+    const item = document.getElementById("asset-item").value.trim();
+    const specs = document.getElementById("asset-specs").value.trim();
+    const qty = document.getElementById("asset-qty").value.trim();
+    const location = document.getElementById("asset-location").value.trim();
+    const status = document.getElementById("asset-status").value;
+
+    if (!item) { showToast("Missing Info", "Please enter an item name.", "error"); return; }
+
+    let currentAssets = [...(selectedCompany.assets || [])];
+
+    if (currentEditingAssetId) {
+        const index = currentAssets.findIndex(a => a.id === currentEditingAssetId);
+        if (index > -1) {
+            currentAssets[index] = {
+                ...currentAssets[index],
+                type: item, spec: specs, qty: qty, location: location, status: status,
+                updated_at: new Date().toISOString()
+            };
+        }
+    } else {
+        const newAsset = {
+            id: Date.now(),
+            type: item, spec: specs, qty: qty, location: location, status: status,
+            date_added: new Date().toISOString()
+        };
+        currentAssets.push(newAsset);
+    }
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("No session.");
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ assets: currentAssets, updated_at: new Date() })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    selectedCompany.assets = currentAssets;
+    const localRef = database.find(c => c.id == user.id);
+    if(localRef) localRef.assets = currentAssets;
+
+    openProfile(user.id);
+    switchProfileTab('assets');
+    closeAssetModal();
+    showToast("Success", "Asset saved successfully.", "success");
+
+  } catch (error) {
+    console.error(error);
+    showToast("Error", error.message, "error");
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+// 3. SİLME (ASSET - ENGLISH)
+async function deleteAsset(assetId) {
+    if(!confirm("Are you sure you want to delete this asset?")) return; // Onay mesajı İngilizce
+
+    try {
+        let currentAssets = selectedCompany.assets.filter(a => a.id !== assetId);
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ assets: currentAssets, updated_at: new Date() })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        selectedCompany.assets = currentAssets;
+        const localRef = database.find(c => c.id == user.id);
+        if(localRef) localRef.assets = currentAssets;
+
+        openProfile(user.id);
+        switchProfileTab('assets');
+
+    } catch (error) {
+        alert("Delete error: " + error.message);
+    }
+}
+
+/* --- PROJECT YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
+
+let currentEditingProjectId = null;
+
+// 1. MODALI AÇ
+function openProjectModal(projectId = null) {
+  const modal = document.getElementById("project-modal");
+  const form = document.getElementById("project-form");
+  const title = document.getElementById("project-modal-title");
+  
+  if (!modal) return;
+  modal.classList.remove("pointer-events-none", "opacity-0");
+  
+  // Formu temizle
+  if(form) form.reset();
+  
+  if (projectId) {
+    // --- DÜZENLEME MODU ---
+    currentEditingProjectId = projectId;
+    if(title) title.textContent = "Edit Project";
+    
+    // Veriyi bul ve doldur
+    // Not: selectedCompany global değişkeni açık olan profili tutar
+    if (selectedCompany && selectedCompany.projects) {
+        const proj = selectedCompany.projects.find(p => p.id === projectId);
+        if (proj) {
+            document.getElementById("proj-title").value = proj.title || proj.title_tr || "";
+            document.getElementById("proj-loc").value = proj.loc || proj.loc_tr || "";
+            document.getElementById("proj-desc").value = proj.desc || proj.desc_tr || "";
+        }
+    }
+  } else {
+    // --- EKLEME MODU ---
+    currentEditingProjectId = null;
+    if(title) title.textContent = "Add New Project";
+  }
+}
+
+function closeProjectModal() {
+  const modal = document.getElementById("project-modal");
+  if (modal) modal.classList.add("pointer-events-none", "opacity-0");
+  currentEditingProjectId = null;
+}
+
+// 2. KAYDET (Supabase)
+// 2. KAYDET (PROJECT - ENGLISH)
+/* --- GÜNCELLENMİŞ saveProject (Toast'lı) --- */
+async function saveProject() {
+  const btn = document.querySelector("#project-form button[type='submit']");
+  const originalText = btn.textContent;
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+
+  try {
+    const title = document.getElementById("proj-title").value.trim();
+    const loc = document.getElementById("proj-loc").value.trim();
+    const desc = document.getElementById("proj-desc").value.trim();
+
+    if (!title) { showToast("Missing Info", "Please enter a project title.", "error"); return; }
+
+    let currentProjects = [...(selectedCompany.projects || [])];
+
+    if (currentEditingProjectId) {
+        const index = currentProjects.findIndex(p => p.id === currentEditingProjectId);
+        if (index > -1) {
+            currentProjects[index] = { ...currentProjects[index], title: title, loc: loc, desc: desc };
+        }
+    } else {
+        currentProjects.push({ id: Date.now(), title: title, loc: loc, desc: desc });
+    }
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Session expired.");
+
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ projects: currentProjects, updated_at: new Date() })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    selectedCompany.projects = currentProjects;
+    const localRef = database.find(c => c.id == user.id);
+    if(localRef) localRef.projects = currentProjects;
+
+    openProfile(user.id);
+    switchProfileTab('projects');
+    closeProjectModal();
+    showToast("Success", "Project saved successfully.", "success");
+
+  } catch (error) {
+    showToast("Error", error.message, "error");
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+// 3. SİLME (PROJECT - ENGLISH)
+async function deleteProject(projectId) {
+    if(!confirm("Are you sure you want to delete this project?")) return;
+
+    try {
+        let currentProjects = (selectedCompany.projects || []).filter(p => p.id !== projectId);
+        
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("No session.");
+
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ projects: currentProjects, updated_at: new Date() })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        selectedCompany.projects = currentProjects;
+        const localRef = database.find(c => c.id == user.id);
+        if(localRef) localRef.projects = currentProjects;
+
+        openProfile(user.id);
+        switchProfileTab('projects');
+
+    } catch (error) {
+        alert("Delete error: " + error.message);
+    }
+}
+  </script>
+<script>
+// 1. YENİ KAYIT (JOIN) İŞLEMİ
+// GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
+/* --- GÜNCELLENMİŞ handleJoin (Toast'lı) --- */
+async function handleJoin() {
+  const btn = document.querySelector("#join-form button");
+  const originalText = btn.textContent;
+  btn.textContent = "Processing...";
+  btn.disabled = true;
+
+  try {
+    const email = document.getElementById("join-email").value;
+    const password = document.getElementById("join-password").value;
+    const companyName = document.getElementById("join-companyName").value;
+    const sector = document.getElementById("join-sector").value;
+    const typeVal = document.getElementById("join-type").value;
+    const city = document.getElementById("join-city").value;
+    const services = document.getElementById("join-services").value;
+    const errEl = document.getElementById("join-error");
+
+    if(errEl) errEl.classList.add("hidden");
+
+    const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
+    if (authError) throw authError;
+
+    const { error: dbError } = await supabaseClient.from('profiles').insert([
+      {
+        id: authData.user.id,
+        email: email,
+        company_name: companyName,
+        sector: sector,
+        company_type: typeVal,
+        city: city,
+        services: services,
+        description: "",
+        size: "1-10"
+      }
+    ]);
+
+    if (dbError) throw dbError;
+
+    toggleModal('modal-join');
+    showToast("Welcome!", "Registration successful. Profile created.", "success");
+    checkUserAndOpenProfile();
+
+  } catch (error) {
+    const errEl = document.getElementById("join-error");
+    if(errEl) {
+      errEl.textContent = "Error: " + (error.message || error);
+      errEl.classList.remove("hidden");
+    }
+    showToast("Registration Failed", error.message || "Please check details.", "error");
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+// --- YENİ EKLENECEK FONKSİYON BAŞLANGIÇ ---
+async function fetchAllPublicProfiles() {
+  // 1. Supabase'den profilleri çek
+  const { data: profiles, error } = await supabaseClient
+    .from('profiles')
+    .select('*');
+
+  if (error || !profiles) {
+    console.log("Henüz kayıtlı şirket yok veya hata oluştu.");
+    return;
+  }
+
+  // 2. Gelen veriyi site formatına uydur
+  profiles.forEach(profile => {
+    // Listede zaten var mı? Varsa üstüne yazmayalım, sadece eksikleri güncelleyelim.
+    const exists = database.find(c => c.id == profile.id);
+    
+    const formattedProfile = {
+      id: profile.id,
+      name: profile.company_name || "New Company",
+      city: profile.city || "Konum Yok",
+      sector: profile.sector || "construction",
+      desc: profile.description || "",
+      type_label: profile.company_type || "Industrial Supplier",
+      size_label: profile.company_size || "Size N/A",
+      year_label: profile.founded_year || "",
+      services: profile.services ? profile.services.split(',') : [],
+      logo_url: profile.logo_url || null,
+      website: profile.website || "",
+      phone: profile.phone || "",
+      contact_email: profile.contact_email || "",
+      // Kayıt olanlar için varsayılan değerler
+      trust: "emerging", 
+      meta: { references: 60, delivery: 70, years: 1, financial: 60, digital: 50 }, 
+      // ...
+      assets: profile.assets || [],
+      projects: profile.projects || [] // <--- DÜZELTİLDİ (Veritabanından okuyor)
+    };
+
+    if (!exists) {
+      // Listede yoksa en başa ekle
+      database.unshift(formattedProfile);
+    }
+  });
+
+  // 3. Ekranı yenile ki yeni şirket görünsün
+  renderCards(""); 
+  renderTopCompanies();
+}
+// --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
+// ✅ BUNU YAPIŞTIR
+// ✅ 2. GÜNCELLENMİŞ VERİ ÇEKME FONKSİYONU
+// ✅ YENİ GÜNCELLENMİŞ VERSİYON (Grup Kontrollü)
+async function checkUserAndOpenProfile(forceOpen = false) {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  
+  // 1. Grupları Seç (Artık tek tek buton değil, grup yönetiyoruz)
+  const guestGroup = document.getElementById("guest-actions"); // Misafirler
+  const userGroup = document.getElementById("user-actions");   // Üyeler
+
+  if (!session) {
+    // --- OTURUM YOKSA ---
+    // Misafir grubunu göster (Flex yaparak hizayı koru)
+    if(guestGroup) {
+        guestGroup.classList.remove("hidden");
+        guestGroup.classList.add("flex");
+    }
+    // Üye grubunu gizle
+    if(userGroup) {
+        userGroup.classList.add("hidden");
+        userGroup.classList.remove("flex");
+    }
+    return;
+  } else {
+    // --- OTURUM VARSA ---
+    // Misafir grubunu (Join + Login) gizle
+    if(guestGroup) {
+        guestGroup.classList.add("hidden");
+        guestGroup.classList.remove("flex");
+    }
+    // Üye grubunu (My Company + Logout) göster
+    if(userGroup) {
+        userGroup.classList.remove("hidden");
+        userGroup.classList.add("flex");
+    }
+  }
+
+  // 2. Veritabanından veriyi çek
+  const { data: profile, error } = await supabaseClient
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  if (error || !profile) { console.log("Profil verisi çekilemedi."); return; }
+
+  // 3. Veriyi site formatına çevir
+  const mappedProfile = {
+    id: profile.id,
+    name: profile.company_name,
+    city: profile.city,
+    sector: profile.sector || "construction",
+    desc: profile.description || "",
+    
+    // Yeni alanlar
+    type_label: profile.company_type || "Industrial Supplier",
+    size_label: profile.company_size || "Size N/A",
+    year_label: profile.founded_year || "",
+
+    services: profile.services ? profile.services.split(',') : [],
+    logo_url: profile.logo_url || null,
+    website: profile.website || "",
+    phone: profile.phone || "",
+    contact_email: profile.contact_email || "",
+    trust: "verified",
+    meta: { references: 50, delivery: 50, years: 1, financial: 50, digital: 50 },
+    // ...
+    assets: profile.assets || [],
+    projects: profile.projects || [] // <--- DÜZELTİLDİ
+  };
+
+  if (typeof database !== 'undefined') {
+      const idx = database.findIndex(c => c.id == profile.id);
+      if (idx > -1) { database[idx] = mappedProfile; } 
+      else { database.unshift(mappedProfile); }
+      
+      localStorage.setItem("BTrustOn_my_company_id", profile.id);
+
+      if (forceOpen === true) { openProfile(profile.id); }
+  }
+}
+// 3. SAYFA YÜKLENİNCE ÇALIŞTIR
+document.addEventListener("DOMContentLoaded", () => {
+    
+    // YENİ EKLEDİĞİMİZ SATIR: Herkesi veritabanından çek
+    setTimeout(fetchAllPublicProfiles, 100);
+
+    // SENDEKİ MEVCUT KOD:
+    setTimeout(checkUserAndOpenProfile, 500);
+});
+// Oturum durumu değişirse (Giriş/Çıkış) tetikle
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    checkUserAndOpenProfile();
+  } else if (event === 'SIGNED_OUT') {
+    window.location.reload();
+  }
+});
+/* --- MY COMPANY BUTONU DÜZELTME --- */
+
+// Eski fonksiyonu bununla değiştiriyoruz/eziyoruz:
+function openMyCompanyIfExists() {
+  // 1. LocalStorage'dan ID'yi al
+  const myId = localStorage.getItem("BTrustOn_my_company_id");
+  
+  if (!myId) {
+    console.warn("Kayıtlı şirket ID'si bulunamadı, oturum kontrol ediliyor...");
+    checkUserAndOpenProfile(); // ID yoksa tekrar giriş kontrolü yap
+    return;
+  }
+
+  console.log("Şirket profili açılıyor, ID:", myId);
+
+  // 2. Eğer bu şirket veritabanı listemizde yoksa (Sayfa yenilendiyse kaybolmuş olabilir)
+  // Önce listeye ekleyip sonra açmamız gerekebilir.
+  // Ama checkUserAndOpenProfile zaten çalışıp eklemiş olmalı.
+  
+  const companyExists = typeof database !== 'undefined' && database.find(c => c.id == myId);
+
+  if (companyExists) {
+    // Şirket listede var, direkt aç
+    openProfile(myId);
+  } else {
+    // Şirket listede yoksa, verileri tekrar çekip açması için checkUser'ı tetikle
+    checkUserAndOpenProfile();
+  }
+}
+
+/* --- PROFİL DÜZENLEME FONKSİYONLARI --- */
+/* =========================================
+   1. GÜNCELLENMİŞ EDİTÖR AÇMA FONKSİYONU
+   ========================================= */
+/* =========================================
+   GÜNCELLENMİŞ EDİTÖR FONKSİYONU (Sertifikasız & Temiz)
+   ========================================= */
+/* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL) --- */
+/* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL - EMAIL DAHİL) --- */
+function editMyProfile() {
+  if (!selectedCompany) return;
+
+  document.getElementById("edit-name").value = selectedCompany.name || "";
+  document.getElementById("edit-city").value = selectedCompany.city || "";
+  document.getElementById("edit-tagline").value = selectedCompany.tagline || "";
+  document.getElementById("edit-desc").value = selectedCompany.desc || "";
+  
+// LOGO GÖSTERİMİ (Editörde)
+  const logoUrl = selectedCompany.logo_url;
+  if (logoUrl) {
+      document.getElementById("edit-logo-img").src = logoUrl;
+      document.getElementById("edit-logo-img").classList.remove("hidden");
+      document.getElementById("edit-logo-icon").classList.add("hidden");
+  } else {
+      // Logo yoksa sıfırla
+      document.getElementById("edit-logo-img").src = "";
+      document.getElementById("edit-logo-img").classList.add("hidden");
+      document.getElementById("edit-logo-icon").classList.remove("hidden");
+  }
+  selectedLogoFile = null; // Seçimi sıfırla
+  // İLETİŞİM BİLGİLERİ
+  document.getElementById("edit-website").value = selectedCompany.website || "";
+  document.getElementById("edit-phone").value = selectedCompany.phone || "";
+  
+  // YENİ: Contact Email (Varsa onu getir, yoksa ana login mailini getir)
+  document.getElementById("edit-email").value = selectedCompany.contact_email || selectedCompany.email || "";
+
+  const sectorSelect = document.getElementById("edit-sector");
+  if(sectorSelect) sectorSelect.value = selectedCompany.sector;
+
+  const typeEl = document.getElementById("edit-type");
+  const sizeEl = document.getElementById("edit-size");
+  const yearEl = document.getElementById("edit-year");
+
+  if(typeEl) typeEl.value = selectedCompany.type_label || "Industrial Supplier";
+  if(sizeEl) sizeEl.value = selectedCompany.size_label || "1-10 employees";
+  if(yearEl) yearEl.value = selectedCompany.year_label || "";
+
+  const services = selectedCompany.services || []; 
+  document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
+
+  showEditorView();
+  setTimeout(initEditorListeners, 100); 
+}
+/* =========================================
+   2. YENİ EKLENEN FONKSİYONLAR (Altına Gelecek)
+   ========================================= */
+
+// A. Sol menüden tıklayınca ilgili yere kaydırma
+/* --- PROFILE STRENGTH HESAPLAMA (GÜNCEL) --- */
+function calculateProfileStatus() {
+  // 1. ADIM: FORM ALANLARINI KONTROL ET
+  // Yeni eklenen "edit-website" ve "edit-phone" listeye eklendi
+  const fields = [
+    "edit-name", "edit-city", "edit-sector", "edit-desc", 
+    "edit-services", "edit-type", "edit-size", "edit-year",
+    "edit-website", "edit-phone" 
+  ];
+
+  let filledCount = 0;
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    // Boşlukları temizle ve dolu mu bak
+    if (el && el.value && el.value.trim().length > 0) {
+      filledCount++;
+    }
+  });
+  
+  // Form puanı (Toplam skorun %60'ı formdan gelir)
+  const formScore = Math.round((filledCount / fields.length) * 60);
+
+  // 2. ADIM: PROJE VE VARLIK KONTROLÜ
+  let projectScore = 0;
+  let assetScore = 0;
+
+  if (selectedCompany) {
+      // En az 1 proje varsa +20 Puan
+      if (selectedCompany.projects && selectedCompany.projects.length > 0) {
+          projectScore = 20;
+      }
+      // En az 1 varlık varsa +20 Puan
+      if (selectedCompany.assets && selectedCompany.assets.length > 0) {
+          assetScore = 20;
+      }
+  }
+
+  // TOPLAM PUAN
+  const totalPercent = formScore + projectScore + assetScore;
+
+  // UI GÜNCELLEME
+  const bar = document.getElementById("progress-bar");
+  const text = document.getElementById("status-percent");
+  const msg = document.getElementById("status-text");
+
+  if (bar) bar.style.width = `${totalPercent}%`;
+  if (text) text.textContent = `${totalPercent}%`;
+
+  // RENK VE MESAJ AYARLARI
+  if (totalPercent >= 100) {
+      if(msg) msg.textContent = "Excellent! Your profile is fully optimized.";
+      if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
+      if(text) text.classList.replace("text-blue-600", "text-emerald-600");
+  } else if (totalPercent >= 70) {
+      if(msg) msg.textContent = "Strong profile. Fill missing info to reach 100%.";
+      if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-blue-600";
+  } else {
+      if(msg) msg.textContent = "Low trust score. Add projects & assets to boost visibility.";
+      if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-amber-500";
+      if(text) text.classList.replace("text-blue-600", "text-amber-600");
+  }
+}
+// C. Editör açıldığında ve yazı yazıldığında hesaplamayı tetikle
+function initEditorListeners() {
+  const inputs = document.querySelectorAll("#editor-form input, #editor-form select, #editor-form textarea");
+  inputs.forEach(input => {
+    // Her tuşa basıldığında veya seçim değiştiğinde hesapla
+    input.addEventListener("input", calculateProfileStatus);
+    input.addEventListener("change", calculateProfileStatus);
+  });
+  
+  // İlk açılışta bir kere hesapla
+  calculateProfileStatus();
+}
+/* --- TOAST BİLDİRİM SİSTEMİ (En alta ekleyin) --- */
+function showToast(title, message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
+  
+  toast.innerHTML = `
+    <i class="fa-solid ${icon}"></i>
+    <div class="toast-content">
+      <span class="toast-title">${title}</span>
+      <span class="toast-msg">${message}</span>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  `;
+
+  container.appendChild(toast);
+
+  // 4 saniye sonra sil
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+/* --- PREMIUM INBOX ENGINE (EN ALTA EKLE) --- */
+
+// Demo Veriler (Gerçek hayatta Supabase'den gelir)
+const inboxData = [
+  {
+    id: 101,
+    company: "Rönesans Holding",
+    type: "quote", // quote, system, alert
+    title: "Project RFQ: Steel Structure",
+    desc: "Requesting quotation for 500 tons of structural steel for Izmir project.",
+    time: "12 mins ago",
+    unread: true,
+    logo: "R"
+  },
+  {
+    id: 102,
+    company: "System",
+    type: "system",
+    title: "Profile Verified",
+    desc: "Your company documents have been approved. Trust Score updated.",
+    time: "2 hours ago",
+    unread: true,
+    logo: "S"
+  },
+  {
+    id: 103,
+    company: "Tekfen Construction",
+    type: "quote",
+    title: "Equipment Rental Inquiry",
+    desc: "Looking for 3x CAT 336 Excavators for 6 months lease.",
+    time: "Yesterday",
+    unread: false,
+    logo: "T"
+  }
+];
+
+function toggleInbox() {
+  const panel = document.getElementById("inbox-panel");
+  const overlay = document.getElementById("inbox-overlay");
+  
+  if (!panel || !overlay) return;
+
+  const isOpen = panel.classList.contains("open");
+
+  if (isOpen) {
+    // Kapat
+    panel.classList.remove("open");
+    overlay.classList.remove("opacity-100");
+    overlay.classList.add("opacity-0");
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+  } else {
+    // Aç
+    renderInboxItems(); // Verileri tazeleyerek aç
+    overlay.classList.remove("hidden");
+    // Animasyon için minik gecikme
+    setTimeout(() => {
+        overlay.classList.remove("opacity-0");
+        overlay.classList.add("opacity-100");
+        panel.classList.add("open");
+    }, 10);
+  }
+}
+
+function renderInboxItems() {
+  const container = document.getElementById("inbox-content");
+  const badgeNav = document.getElementById("nav-badge");
+  const badgeHeader = document.getElementById("inbox-badge-count");
+  
+  if (!container) return;
+  container.innerHTML = "";
+
+  let unreadCount = 0;
+
+  inboxData.forEach(item => {
+    if(item.unread) unreadCount++;
+
+    // Kart Elementi Oluştur
+    const card = document.createElement("div");
+    
+    // Tasarım Sınıfları
+    card.className = `inbox-item p-4 mb-1 cursor-pointer group ${item.unread ? 'unread' : 'bg-white/60 opacity-80'}`;
+    
+    // --- KRİTİK DEĞİŞİKLİK: TIKLAMA ÖZELLİĞİ TÜM KARTA VERİLDİ ---
+    card.onclick = () => openMessage(item.id); 
+    // -----------------------------------------------------------
+    
+    // İkon Rengi (Type'a göre)
+    let iconBg = "bg-gray-100 text-gray-500";
+    let icon = "fa-building";
+    
+    if(item.type === 'quote') { iconBg = "bg-cyan-50 text-BTrustOn-accent"; icon = "fa-file-invoice-dollar"; }
+    if(item.type === 'system') { iconBg = "bg-emerald-50 text-emerald-600"; icon = "fa-shield-halved"; }
+    if(item.type === 'alert') { iconBg = "bg-amber-50 text-amber-600"; icon = "fa-triangle-exclamation"; }
+
+    card.innerHTML = `
+      <div class="flex gap-4 pointer-events-none"> <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300">
+           <i class="fa-solid ${icon}"></i>
+        </div>
+
+        <div class="flex-1">
+           <div class="flex justify-between items-start mb-1">
+              <h4 class="text-xs font-bold text-BTrustOn-primary leading-tight">${item.title}</h4>
+              <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2">${item.time}</span>
+           </div>
+           
+           <p class="text-xs text-gray-500 leading-relaxed mb-2 line-clamp-2">${item.desc}</p>
+           
+           <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                 ${item.company}
+              </span>
+              
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                 <button class="text-BTrustOn-accent hover:text-BTrustOn-darkAccent text-[10px] font-bold flex items-center gap-1">
+                    VIEW <i class="fa-solid fa-arrow-right"></i>
+                 </button>
+              </div>
+           </div>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+
+  // Badge Güncelleme
+  if(badgeNav) {
+      if(unreadCount > 0) {
+          badgeNav.textContent = unreadCount;
+          badgeNav.classList.remove("hidden");
+      } else {
+          badgeNav.classList.add("hidden");
+      }
+  }
+  
+  if(badgeHeader) {
+      if(unreadCount > 0) {
+        badgeHeader.textContent = `${unreadCount} NEW`;
+        badgeHeader.classList.remove("hidden");
+      } else {
+        badgeHeader.classList.add("hidden");
+      }
+  }
+}
+// Sayfa açılınca badge'i kontrol et
+document.addEventListener("DOMContentLoaded", () => {
+    // Hafif bir gecikmeyle çalıştır ki diğer yüklemeler bitsin
+    setTimeout(renderInboxItems, 800);
+});
+/* --- MESSAGE READER LOGIC (YENİ EKLENECEK KISIM) --- */
+
+function openMessage(msgId) {
+    // 1. Mesajı veriden bul
+    const msg = inboxData.find(m => m.id === msgId);
+    if (!msg) return;
+
+    // 2. HTML elemanlarını doldur
+    document.getElementById("msg-subject").textContent = msg.title;
+    document.getElementById("msg-company").textContent = msg.company;
+    document.getElementById("msg-date").textContent = msg.time; 
+    document.getElementById("msg-body").textContent = msg.desc + " We are looking forward to your prompt response regarding this matter. Please include your best offer and delivery timeline."; 
+    document.getElementById("msg-id").textContent = msg.id;
+    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
+
+    // Badge Rengi Ayarla
+    const badge = document.getElementById("msg-type-badge");
+    if(badge) {
+        if(msg.type === 'quote') {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide";
+            badge.textContent = "QUOTE REQUEST";
+        } else if (msg.type === 'system') {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide";
+            badge.textContent = "SYSTEM NOTIFICATION";
+        }
+    }
+
+    // 3. Okundu olarak işaretle
+    msg.unread = false;
+    renderInboxItems(); // Listeyi güncelle
+
+    // 4. Ekranı Aç
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.remove("hidden-view");
+    
+    // Arkadaki scroll'u kilitle
+    document.body.style.overflow = "hidden"; 
+
+    // Inbox panelini kapat
+    const panel = document.getElementById("inbox-panel");
+    const overlay = document.getElementById("inbox-overlay");
+    if(panel) panel.classList.remove("open");
+    if(overlay) overlay.classList.add("hidden");
+}
+
+function closeMessageView() {
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.add("hidden-view");
+    document.body.style.overflow = "auto"; // Scroll'u aç
+}
+
+/* --- GERÇEK MESAJLAŞMA SİSTEMİ (Supabase Entegreli) --- */
+
+let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
+
+// 1. MESAJI AÇMA FONKSİYONU
+function openMessage(msgId) {
+    const msg = inboxData.find(m => m.id === msgId);
+    if (!msg) return;
+
+    // --- CONTEXT KAYDETME ---
+    currentMessageContext = {
+        original_msg_id: msg.id,
+        target_company_name: msg.company,
+        // Demo ortamında olduğumuz için 'fake' bir ID atıyoruz. 
+        // Gerçek sistemde burası msg.sender_id (UUID) olmalı.
+        target_user_id: msg.sender_id || "demo-receiver-id" 
+    };
+
+    // HTML Doldur
+    document.getElementById("msg-subject").textContent = msg.title;
+    document.getElementById("msg-company").textContent = msg.company;
+    document.getElementById("msg-date").textContent = msg.time; 
+    document.getElementById("msg-body").textContent = msg.desc + "\n\n(System: Waiting for your reply...)"; 
+    document.getElementById("msg-id").textContent = msg.id;
+    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
+
+    // Badge Ayarla
+    const badge = document.getElementById("msg-type-badge");
+    if(badge) {
+        if(msg.type === 'quote') {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide";
+            badge.textContent = "QUOTE REQUEST";
+        } else {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200 uppercase tracking-wide";
+            badge.textContent = "MESSAGE";
+        }
+    }
+
+    // Okundu yap
+    msg.unread = false;
+    renderInboxItems(); 
+
+    // Ekranı Aç
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.remove("hidden-view");
+    document.body.style.overflow = "hidden"; 
+
+    // Inbox panelini kapat
+    const panel = document.getElementById("inbox-panel");
+    const overlay = document.getElementById("inbox-overlay");
+    if(panel) panel.classList.remove("open");
+    if(overlay) overlay.classList.add("hidden");
+}
+
+// 2. MESAJI KAPATMA
+function closeMessageView() {
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.add("hidden-view");
+    document.body.style.overflow = "auto";
+}
+
+// 3. CEVAP GÖNDERME (Veritabanına Yazar)
+// GÜNCELLENMİŞ sendReply (Dosya Destekli)
+async function sendReply() {
+    const inputEl = document.getElementById("reply-input");
+    const content = inputEl.value.trim();
+    const btn = document.querySelector("button[onclick='sendReply()']");
+
+    // Kontrol: Hem mesaj hem dosya yoksa hata ver
+    if (!content && !currentAttachmentFile) {
+        showToast("Error", "Please write a message or attach a file.", "error");
+        return;
+    }
+    if (!currentMessageContext) {
+        showToast("Error", "Context lost. Reopen message.", "error");
+        return;
+    }
+
+    // Butonu Kilitle
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    btn.disabled = true;
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Login required.");
+
+        // --- DOSYA VARSA BİLGİ NOTU EKLE ---
+        let finalContent = content;
+        if (currentAttachmentFile) {
+            finalContent += `\n\n[📎 ATTACHMENT: ${currentAttachmentFile.name}]`;
+        }
+        // -----------------------------------
+
+        if (currentMessageContext.target_user_id === "demo-receiver-id") {
+            // Demo Simülasyon
+            await new Promise(r => setTimeout(r, 1500));
+            showToast("Sent", "Reply sent with attachment (Demo)", "success");
+        } else {
+            // Gerçek Gönderim
+            const { error } = await supabaseClient
+                .from('messages')
+                .insert([{
+                    sender_id: user.id,
+                    receiver_id: currentMessageContext.target_user_id,
+                    content: finalContent,
+                    subject: "Re: " + document.getElementById("msg-subject").textContent,
+                    is_read: false
+                }]);
+
+            if (error) throw error;
+            showToast("Sent", "Message sent successfully!", "success");
+        }
+
+        // Temizlik
+        inputEl.value = "";
+        removeAttachment(); // Dosyayı temizle (Yeni eklenen fonksiyonu çağırıyoruz)
+        closeMessageView();
+
+    } catch (error) {
+        showToast("Error", error.message, "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+/* --- MESAJ AKSİYONLARI (SİLME & OKUNMADI YAPMA) --- */
+
+// 1. MEVCUT MESAJI SİL
+function deleteCurrentMessage() {
+    // Açık olan bir mesaj var mı kontrol et
+    if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
+
+    if (!confirm("Are you sure you want to delete this conversation?")) return;
+
+    // Listeden bul ve sil
+    const index = inboxData.findIndex(m => m.id === currentMessageContext.original_msg_id);
+    if (index > -1) {
+        inboxData.splice(index, 1); // Diziden çıkar
+    }
+
+    // Ekranı güncelle ve kapat
+    renderInboxItems(); // Listeyi yenile (silinen gitsin)
+    closeMessageView(); // Okuma ekranını kapat
+    
+    // Bildirim ver
+    showToast("Deleted", "Conversation moved to trash.", "success");
+}
+
+// 2. OKUNMADI OLARAK İŞARETLE
+function markAsUnreadCurrentMessage() {
+    if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
+
+    // Mesajı bul
+    const msg = inboxData.find(m => m.id === currentMessageContext.original_msg_id);
+    
+    if (msg) {
+        msg.unread = true; // Durumu değiştir
+    }
+
+    // Ekranı güncelle ve kapat
+    renderInboxItems(); // Listeyi yenile (Kırmızı nokta/badge geri gelsin)
+    closeMessageView(); // Okuma ekranını kapat
+    
+    // Bildirim ver
+    showToast("Marked Unread", "Conversation marked as unread.", "success");
+}
+/* --- DOSYA EKLEME YÖNETİMİ --- */
+
+let currentAttachmentFile = null; // Seçilen dosyayı hafızada tut
+
+// 1. DOSYA SEÇİLİNCE ÇALIŞIR
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        currentAttachmentFile = input.files[0];
+        
+        // Önizleme alanını doldur
+        const preview = document.getElementById("attachment-preview");
+        const nameEl = document.getElementById("attachment-name");
+        const sizeEl = document.getElementById("attachment-size");
+        
+        if (preview && nameEl) {
+            nameEl.textContent = currentAttachmentFile.name;
+            // Boyutu hesapla (KB veya MB)
+            let size = currentAttachmentFile.size / 1024;
+            let label = " KB";
+            if(size > 1024) { size = size / 1024; label = " MB"; }
+            
+            if(sizeEl) sizeEl.textContent = size.toFixed(1) + label;
+
+            // Kutuyu göster
+            preview.classList.remove("hidden");
+        }
+    }
+}
+
+// 2. DOSYAYI KALDIR (X Butonu)
+function removeAttachment() {
+    currentAttachmentFile = null;
+    document.getElementById("reply-file-input").value = ""; // Inputu sıfırla
+    
+    // Kutuyu gizle
+    const preview = document.getElementById("attachment-preview");
+    if (preview) preview.classList.add("hidden");
+}
+let selectedLogoFile = null; // Seçilen dosyayı tutar
+
+function handleLogoSelect(input) {
+  if (input.files && input.files[0]) {
+    selectedLogoFile = input.files[0];
+    
+    // Tarayıcıda önizleme yap (Server'a gitmeden)
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById("edit-logo-img").src = e.target.result;
+      document.getElementById("edit-logo-img").classList.remove("hidden");
+      document.getElementById("edit-logo-icon").classList.add("hidden");
+    }
+    reader.readAsDataURL(selectedLogoFile);
+  }
+}
+/* --- PROFİL EKRANINDAN HIZLI LOGO DEĞİŞTİRME --- */
+
+async function uploadLogoDirectly(input) {
+  if (!input.files || !input.files[0]) return;
+
+  const file = input.files[0];
+  
+  // 1. Kullanıcıya hemen önizleme göster (Bekletme)
+  const reader = new FileReader();
+  reader.onload = function(e) {
+      const img = document.getElementById("p-logo-image");
+      const icon = document.getElementById("p-default-icon");
+      if(img) { img.src = e.target.result; img.classList.remove("hidden"); }
+      if(icon) icon.classList.add("hidden");
+  }
+  reader.readAsDataURL(file);
+
+  // 2. Yükleme İşlemi Başlasın
+  showToast("Uploading...", "Updating your logo...", "info");
+
+  try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error("Login required");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // A. Storage'a Yükle
+      const { error: uploadError } = await supabaseClient.storage
+          .from('logos')
+          .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // B. Public URL Al
+      const { data: { publicUrl } } = supabaseClient.storage
+          .from('logos')
+          .getPublicUrl(filePath);
+
+      // C. Sadece Profil Tablosundaki 'logo_url' alanını güncelle
+      const { error: dbError } = await supabaseClient
+          .from('profiles')
+          .update({ logo_url: publicUrl, updated_at: new Date() })
+          .eq('id', user.id);
+
+      if (dbError) throw dbError;
+
+      // D. Başarılı
+      showToast("Success", "Logo updated successfully!", "success");
+
+      // E. Local Database'i Güncelle (Sayfa yenilenmeden hafızada kalsın)
+      const localCompany = database.find(c => c.id == user.id);
+      if (localCompany) {
+          localCompany.logo_url = publicUrl;
+      }
+
+  } catch (error) {
+      console.error(error);
+      showToast("Error", "Logo upload failed: " + error.message, "error");
+      // Hata olursa eski haline döndürmek için sayfayı yenileyebilir veya eski URL'i geri yükleyebiliriz
+  }
+}
+</script>
+</html>
