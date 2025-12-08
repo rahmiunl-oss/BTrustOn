@@ -958,9 +958,20 @@
     <div
       class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10"
     >
-      <div id="p-logo-container" class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative">
+    <div id="p-logo-container" 
+     class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative group transition-all"
+     onclick="triggerProfileLogoUpload()">
+    
     <i id="p-default-icon" class="fa-solid fa-building text-5xl text-gray-300"></i>
+    
     <img id="p-logo-image" class="hidden w-full h-full object-cover" alt="Company Logo" />
+
+    <div id="p-logo-overlay" class="hidden absolute inset-0 bg-slate-900/60 flex-col items-center justify-center text-white backdrop-blur-[1px] cursor-pointer">
+        <i class="fa-solid fa-camera text-2xl mb-1"></i>
+        <span class="text-[9px] font-bold uppercase tracking-widest">UPDATE</span>
+    </div>
+
+    <input type="file" id="profile-logo-input" class="hidden" accept="image/*" onchange="uploadLogoDirectly(this)" onclick="event.stopPropagation()">
 </div>
 
       <div class="flex-grow">
@@ -3186,6 +3197,27 @@ function renderTopCompanies() {
       const btnEdit = document.getElementById("btn-edit-profile");
       const btnAddAsset = document.getElementById("btn-add-asset");
       const btnQuote = document.getElementById("btn-req-quote"); // Teklif butonu
+// ... (Mevcut openProfile kodlarınızın devamı) ...
+
+      // --- LOGO TIKLAMA YETKİSİ AYARI ---
+      const logoContainer = document.getElementById("p-logo-container");
+      const logoOverlay = document.getElementById("p-logo-overlay");
+      const logoInput = document.getElementById("profile-logo-input");
+
+      if (logoContainer && logoOverlay) {
+          if (isMyProfile) {
+              // Eğer benim profilimse: Tıklamaya izin ver ve Hover efektini aç
+              logoContainer.classList.add("cursor-pointer", "hover:scale-105");
+              logoContainer.setAttribute("onclick", "document.getElementById('profile-logo-input').click()");
+              logoOverlay.classList.remove("hidden"); // Overlay HTML'de group-hover ile çalışacak ama class olarak varlığını açalım
+              logoOverlay.className = "absolute inset-0 bg-slate-900/60 hidden group-hover:flex flex-col items-center justify-center text-white backdrop-blur-[1px] cursor-pointer";
+          } else {
+              // Başkasının profili: Tıklamayı kapat
+              logoContainer.classList.remove("cursor-pointer", "hover:scale-105");
+              logoContainer.removeAttribute("onclick");
+              logoOverlay.className = "hidden"; // Tamamen gizle
+          }
+      }
 
       if (isMyProfile) {
           // --- EĞER BENİM PROFİLİMSE ---
@@ -4495,6 +4527,69 @@ function handleLogoSelect(input) {
       document.getElementById("edit-logo-icon").classList.add("hidden");
     }
     reader.readAsDataURL(selectedLogoFile);
+  }
+}
+/* --- PROFİL EKRANINDAN HIZLI LOGO DEĞİŞTİRME --- */
+
+async function uploadLogoDirectly(input) {
+  if (!input.files || !input.files[0]) return;
+
+  const file = input.files[0];
+  
+  // 1. Kullanıcıya hemen önizleme göster (Bekletme)
+  const reader = new FileReader();
+  reader.onload = function(e) {
+      const img = document.getElementById("p-logo-image");
+      const icon = document.getElementById("p-default-icon");
+      if(img) { img.src = e.target.result; img.classList.remove("hidden"); }
+      if(icon) icon.classList.add("hidden");
+  }
+  reader.readAsDataURL(file);
+
+  // 2. Yükleme İşlemi Başlasın
+  showToast("Uploading...", "Updating your logo...", "info");
+
+  try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error("Login required");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // A. Storage'a Yükle
+      const { error: uploadError } = await supabaseClient.storage
+          .from('logos')
+          .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // B. Public URL Al
+      const { data: { publicUrl } } = supabaseClient.storage
+          .from('logos')
+          .getPublicUrl(filePath);
+
+      // C. Sadece Profil Tablosundaki 'logo_url' alanını güncelle
+      const { error: dbError } = await supabaseClient
+          .from('profiles')
+          .update({ logo_url: publicUrl, updated_at: new Date() })
+          .eq('id', user.id);
+
+      if (dbError) throw dbError;
+
+      // D. Başarılı
+      showToast("Success", "Logo updated successfully!", "success");
+
+      // E. Local Database'i Güncelle (Sayfa yenilenmeden hafızada kalsın)
+      const localCompany = database.find(c => c.id == user.id);
+      if (localCompany) {
+          localCompany.logo_url = publicUrl;
+      }
+
+  } catch (error) {
+      console.error(error);
+      showToast("Error", "Logo upload failed: " + error.message, "error");
+      // Hata olursa eski haline döndürmek için sayfayı yenileyebilir veya eski URL'i geri yükleyebiliriz
   }
 }
 </script>
