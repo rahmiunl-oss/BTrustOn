@@ -96,6 +96,111 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background-color: #94a3b8;
     }
+/* TOAST NOTIFICATION STYLES */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .toast {
+      min-width: 300px;
+      background: white;
+      border-left: 4px solid;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease-out forwards;
+      opacity: 0;
+      transform: translateX(100%);
+    }
+
+    .toast.success { border-color: #10b981; } /* Yeşil */
+    .toast.error { border-color: #ef4444; }   /* Kırmızı */
+
+    .toast i { font-size: 18px; }
+    .toast.success i { color: #10b981; }
+    .toast.error i { color: #ef4444; }
+
+    .toast-content { flex: 1; }
+    .toast-title { font-weight: bold; font-size: 14px; color: #1f2937; display: block; margin-bottom: 2px;}
+    .toast-msg { font-size: 12px; color: #6b7280; }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(10px); }
+    }
+/* ... Burası eski CSS kodlarınızın bittiği yer ... */
+
+    /* 👇👇👇 BURAYA YAPIŞTIRIN 👇👇👇 */
+
+    /* --- SIGNATURE INBOX STYLES --- */
+    #inbox-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px); /* Buzlu cam efekti */
+      border-left: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: -10px 0 30px rgba(15, 23, 42, 0.15);
+      z-index: 9999;
+      transform: translateX(100%); /* Başlangıçta gizli */
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    #inbox-panel.open {
+      transform: translateX(0); /* Açılınca gelir */
+    }
+
+    .inbox-item {
+      position: relative;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .inbox-item:hover {
+      background: rgba(6, 182, 212, 0.05); /* Hoverda hafif turkuaz */
+    }
+
+    .inbox-item.unread {
+      background: white;
+      border-left-color: #06b6d4; /* Okunmamışsa sol taraf turkuaz */
+    }
+    
+    .inbox-item.unread::after {
+      content: '';
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444; /* Kırmızı nokta */
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* 👆👆👆 BURADA BİTİYOR 👆👆👆 */
+
+  </style> ```
   </style>
 
   <!-- Supabase Auth client -->
@@ -113,6 +218,7 @@
 
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
+<div id="toast-container"></div>
   <div
     class="fixed inset-0 z-[-1] dot-map-bg opacity-[0.4] pointer-events-none"
   ></div>
@@ -129,14 +235,11 @@
   onclick="showMainView()" 
   class="cursor-pointer select-none flex items-center h-full pr-4 gap-0.5"
 >
-    <span class="text-4xl font-sans font-bold text-[#1565C0] tracking-tight leading-none">
+    <span class="text-4xl font-sans font-bold text-[#0A2A43] tracking-tight leading-none">
         BTrust
     </span>
 
-    <span 
-      class="text-4xl font-sans font-bold text-transparent leading-none"
-      style="-webkit-text-stroke: 1.5px #1565C0;"
-    >
+    <span class="text-4xl font-sans font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00C6FF] to-[#0078FF] leading-none drop-shadow-sm">
         On
     </span>
 </div>
@@ -174,6 +277,17 @@
 
   <div id="user-actions" class="hidden flex items-center gap-3 border-l border-gray-200 pl-4 ml-1">
     
+    <button
+      onclick="toggleInbox()"
+      class="relative w-10 h-10 rounded-full bg-white border border-gray-100 text-gray-400 hover:text-BTrustOn-accent hover:border-BTrustOn-accent hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all duration-300 flex items-center justify-center mr-2 group"
+    >
+      <i class="fa-solid fa-bell text-lg group-hover:animate-swing"></i>
+      
+      <span id="nav-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm animate-bounce">
+        0
+      </span>
+    </button>
+
     <button
       id="btn-my-company"
       onclick="openMyCompanyIfExists()"
@@ -717,6 +831,33 @@
                                     <input type="text" id="edit-tagline" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Building the Future" />
                                 </div>
 
+<div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Website</label>
+      <input type="text" id="edit-website" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="www.example.com" />
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
+      <input 
+  type="text" 
+  id="edit-phone" 
+  class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" 
+  placeholder="+ (Country Code) Phone Number" 
+/>
+    </div>
+</div>
+
+<div class="mt-4">
+    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+        Public Contact Email <span class="text-gray-400 font-normal lowercase">(optional)</span>
+    </label>
+    <input 
+      type="email" 
+      id="edit-email" 
+      class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" 
+      placeholder="info@company.com (If different from login email)" 
+    />
+</div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
                                     <textarea id="edit-desc" rows="4" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="Describe your company's core capabilities..."></textarea>
@@ -914,8 +1055,7 @@
           <div class="flex flex-wrap items-center justify-between mb-6 border-b border-gray-100 pb-4">
             <div>
                <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="proj_key_ref">Key Reference Projects</h3>
-               <span class="text-[11px] text-gray-400" data-i18n="proj_selected_from_supplier">Selected projects from this supplier</span>
-            </div>
+                           </div>
             
             <button id="btn-add-project" type="button" onclick="openProjectModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
                 <i class="fa-solid fa-plus"></i> <span>ADD NEW PROJECT</span>
@@ -1015,22 +1155,34 @@
             </div>
 
             <div class="mt-6 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h4>
-                <div class="space-y-3 text-sm text-gray-600">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                            <i class="fa-solid fa-globe"></i>
-                        </div>
-                        <span class="text-BTrustOn-accent font-semibold cursor-pointer hover:underline">Visit Website</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                            <i class="fa-solid fa-envelope"></i>
-                        </div>
-                        <span>Login to view email</span>
-                    </div>
-                </div>
-             </div>
+    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h4>
+    <div class="space-y-4 text-sm text-gray-600">
+        
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                <i class="fa-solid fa-globe"></i>
+            </div>
+            <a id="p-website-link" href="#" target="_blank" class="text-BTrustOn-accent font-semibold hover:underline truncate">
+                -
+            </a>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                <i class="fa-solid fa-envelope"></i>
+            </div>
+            <span id="p-email-text" class="truncate">-</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                <i class="fa-solid fa-phone"></i>
+            </div>
+            <span id="p-phone-text" class="truncate">-</span>
+        </div>
+
+    </div>
+ </div>
         </div>
         
       </main>
@@ -1426,6 +1578,115 @@
     </div>
   </div>
 </div>
+<div id="inbox-overlay" onclick="toggleInbox()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-[9990] hidden transition-opacity opacity-0"></div>
+
+<div id="inbox-panel" class="flex flex-col">
+    <div class="h-24 bg-gradient-to-r from-BTrustOn-primary to-slate-800 flex flex-col justify-center px-6 shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+        
+        <div class="relative z-10 flex justify-between items-center">
+            <div>
+                <h2 class="text-white font-header text-xl tracking-wide flex items-center gap-2">
+                    INBOX
+                    <span id="inbox-badge-count" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-glow hidden">0</span>
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">Quote requests & System alerts</p>
+            </div>
+            <button onclick="toggleInbox()" class="text-white/60 hover:text-white hover:rotate-90 transition transform">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="inbox-content" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2 bg-slate-50/50">
+        </div>
+
+    <div class="p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
+        <button class="w-full py-3 rounded-xl border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check-double"></i> MARK ALL AS READ
+        </button>
+    </div>
+</div>
+<div id="view-message" class="hidden-view fixed inset-0 z-[10000] bg-slate-50/95 backdrop-blur-sm overflow-y-auto">
+    
+    <div class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex justify-between items-center max-w-5xl mx-auto w-full z-10">
+        <button onclick="closeMessageView()" class="flex items-center gap-2 text-gray-500 hover:text-BTrustOn-primary transition font-bold text-sm px-4 py-2 rounded-lg hover:bg-gray-100">
+            <i class="fa-solid fa-arrow-left"></i> BACK TO INBOX
+        </button>
+        
+        <div class="flex gap-2">
+            <button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" title="Delete">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+            <button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" title="Mark Unread">
+                <i class="fa-solid fa-envelope text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto mt-8 mb-20 px-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px]">
+            
+            <div class="bg-slate-50 border-b border-gray-100 p-8 flex flex-col md:flex-row justify-between items-start gap-6">
+                <div class="flex items-start gap-4">
+                    <div id="msg-logo" class="w-16 h-16 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-2xl font-bold text-BTrustOn-primary">
+                        </div>
+                    <div>
+                        <h1 id="msg-subject" class="text-2xl font-header font-bold text-BTrustOn-primary mb-1">
+                            </h1>
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                            <span>From:</span>
+                            <span id="msg-company" class="font-bold text-gray-700 bg-gray-200/50 px-2 py-0.5 rounded">
+                                </span>
+                            <span class="text-gray-300">•</span>
+                            <span id="msg-date" class="text-xs">
+                                </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col items-end">
+                    <span id="msg-type-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide">
+                        QUOTE REQUEST
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-8 md:p-12">
+                <div class="prose max-w-none text-gray-600 leading-relaxed text-lg">
+                    <p id="msg-body">
+                        </p>
+                    
+                    <p class="mt-6 text-sm text-gray-400 italic">
+                        This message was sent via Strabon Secure Network. <br>
+                        Reference ID: #<span id="msg-id"></span>
+                    </p>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-gray-100">
+                    <h4 class="text-sm font-bold text-BTrustOn-primary mb-3 uppercase tracking-wider">Reply to Request</h4>
+                    <div class="flex gap-4 items-start">
+                        <div class="w-10 h-10 rounded-full bg-BTrustOn-primary text-white flex items-center justify-center shrink-0 text-sm">
+                            ME
+                        </div>
+                        <div class="flex-1">
+                <textarea id="reply-input" class="w-full border border-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition bg-gray-50 focus:bg-white" rows="3" placeholder="Type your reply or attach a formal proposal..."></textarea>
+                
+                <div class="flex justify-end gap-3 mt-3">
+                    <button class="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition">
+                        <i class="fa-solid fa-paperclip mr-1"></i> ATTACH FILE
+                    </button>
+                    
+                    <button onclick="sendReply()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white text-xs font-bold hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+                        SEND REPLY <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            </div>
+        </div>
+    </div>
+</div> 
 <script>
   // Login modalını aç/kapat
   function openLoginModal() {
@@ -2806,7 +3067,52 @@ function renderTopCompanies() {
           });
         }
       }
+// --- C. CONTACT INFO GÖSTERİMİ (BUNU EKLEYİN) ---
+      const pWebsite = document.getElementById("p-website-link");
+      const pEmail = document.getElementById("p-email-text");
+      const pPhone = document.getElementById("p-phone-text");
 
+      // 1. Website
+      if (pWebsite) {
+          if (company.website) {
+              let href = company.website.startsWith("http") ? company.website : "https://" + company.website;
+              pWebsite.href = href;
+              pWebsite.textContent = company.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
+              pWebsite.classList.remove("text-gray-400", "italic", "pointer-events-none");
+              pWebsite.classList.add("text-BTrustOn-accent", "hover:underline");
+          } else {
+              pWebsite.textContent = "-";
+              pWebsite.removeAttribute("href");
+              pWebsite.classList.add("text-gray-400", "italic", "pointer-events-none");
+              pWebsite.classList.remove("text-BTrustOn-accent", "hover:underline");
+          }
+      }
+
+      // 2. Email
+      // 2. Email (GÜNCELLENMİŞ MANTIK)
+      if (pEmail) {
+          // Öncelik: contact_email (varsa). Yoksa: email (login). O da yoksa: "-"
+          const displayEmail = company.contact_email || company.email || "-";
+          
+          pEmail.textContent = displayEmail;
+          
+          if(displayEmail !== "-") {
+              // Tıklayınca mail atma özelliği
+              pEmail.parentElement.onclick = () => window.location.href = "mailto:" + displayEmail;
+              pEmail.parentElement.classList.remove("text-gray-400"); // Gri rengi kaldır
+              pEmail.parentElement.classList.add("cursor-pointer", "hover:bg-gray-50", "text-gray-700"); // Siyah yap ve tıklanabilir kıl
+          } else {
+              // Mail yoksa pasif yap
+               pEmail.parentElement.onclick = null;
+               pEmail.parentElement.classList.remove("cursor-pointer", "hover:bg-gray-50", "text-gray-700");
+               pEmail.parentElement.classList.add("text-gray-400");
+          }
+      }
+
+      // 3. Telefon
+      if (pPhone) {
+          pPhone.textContent = company.phone || "-";
+      }
       switchProfileTab("overview");
 // ✅ YENİ TOPLU BUTON KONTROLÜ (Edit, Asset ve Teklif Butonları)
       
@@ -2843,6 +3149,9 @@ function renderTopCompanies() {
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
 // ✅ 1. GÜNCELLENMİŞ KAYDETME FONKSİYONU
+/* --- B. KAYDETME (GÜNCEL - CONTACT INFO DAHİL) --- */
+/* --- GÜNCELLENMİŞ saveProfileData (Toast'lı) --- */
+/* --- B. KAYDETME (GÜNCEL - EMAIL DAHİL) --- */
 async function saveProfileData() {
   const btn = document.querySelector("#editor-form button[type='submit']");
   const originalText = btn.textContent;
@@ -2856,14 +3165,14 @@ async function saveProfileData() {
     const desc = document.getElementById("edit-desc").value.trim();
     const servicesStr = document.getElementById("edit-services").value.trim();
     
-    // YENİ INPUTLARI AL
-    const typeEl = document.getElementById("edit-type");
-    const sizeEl = document.getElementById("edit-size");
-    const yearEl = document.getElementById("edit-year");
-    
-    const typeVal = typeEl ? typeEl.value : "Industrial Supplier";
-    const sizeVal = sizeEl ? sizeEl.value : "1-10 employees";
-    const yearVal = yearEl ? yearEl.value : "";
+    // İLETİŞİM INPUTLARI
+    const website = document.getElementById("edit-website").value.trim();
+    const phone = document.getElementById("edit-phone").value.trim();
+    const contactEmail = document.getElementById("edit-email").value.trim(); // YENİ
+
+    const typeVal = document.getElementById("edit-type").value;
+    const sizeVal = document.getElementById("edit-size").value;
+    const yearVal = document.getElementById("edit-year").value;
 
     const updates = {
       company_name: name,
@@ -2871,6 +3180,9 @@ async function saveProfileData() {
       sector: sector,
       description: desc,
       services: servicesStr,
+      website: website,
+      phone: phone,
+      contact_email: contactEmail, // Veritabanına yaz
       company_type: typeVal,
       company_size: sizeVal,
       founded_year: yearVal,
@@ -2878,7 +3190,7 @@ async function saveProfileData() {
     };
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Oturum bulunamadı!");
+    if (!user) throw new Error("No active session found!");
 
     const { error } = await supabaseClient
       .from('profiles')
@@ -2887,33 +3199,31 @@ async function saveProfileData() {
 
     if (error) throw error;
 
-    // Toast yerine geçici alert (Toast eklemedik henüz)
-    alert("Profile updated successfully!");
+    showToast("Success", "Profile updated successfully!", "success");
 
     // Ekranı güncelle
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
-        localCompany.name = name;
-        localCompany.city = city;
-        localCompany.sector = sector;
-        localCompany.desc = desc;
-        localCompany.services = servicesStr.split(',').map(s => s.trim()).filter(s => s);
-        
-        localCompany.type_label = typeVal;
-        localCompany.size_label = sizeVal;
-        localCompany.year_label = yearVal;
+        Object.assign(localCompany, {
+            name, city, sector, desc,
+            website, phone, 
+            contact_email: contactEmail, // Local güncelleme
+            type_label: typeVal,
+            size_label: sizeVal,
+            year_label: yearVal,
+            services: servicesStr.split(',').map(s => s.trim()).filter(s => s)
+        });
     }
 
     openProfile(user.id);
     
-    // Geri dön
     document.getElementById("view-editor").classList.add("hidden-view");
     document.getElementById("view-profile").classList.remove("hidden-view");
     document.getElementById("back-btn").classList.remove("hidden", "hidden-view");
 
   } catch (error) {
-    console.error("Hata:", error);
-    alert("Hata: " + error.message);
+    console.error("Error:", error);
+    showToast("Error", error.message, "error");
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
@@ -3076,10 +3386,11 @@ function closeAssetModal() {
 
 // 2. KAYDET (Hem Yeni Ekleme Hem Güncelleme)
 // 2. KAYDET (ASSET - ENGLISH)
+/* --- GÜNCELLENMİŞ saveAsset (Toast'lı) --- */
 async function saveAsset() {
   const btn = document.querySelector("#asset-form button[type='submit']");
   const originalText = btn.textContent;
-  btn.textContent = "Processing..."; // "İşleniyor..." yerine
+  btn.textContent = "Processing...";
   btn.disabled = true;
 
   try {
@@ -3089,34 +3400,23 @@ async function saveAsset() {
     const location = document.getElementById("asset-location").value.trim();
     const status = document.getElementById("asset-status").value;
 
-    if (!item) { alert("Please enter an item name."); return; } // Uyarı İngilizce
+    if (!item) { showToast("Missing Info", "Please enter an item name.", "error"); return; }
 
-    // Listeyi kopyala
     let currentAssets = [...(selectedCompany.assets || [])];
 
     if (currentEditingAssetId) {
-        // GÜNCELLEME
         const index = currentAssets.findIndex(a => a.id === currentEditingAssetId);
         if (index > -1) {
             currentAssets[index] = {
                 ...currentAssets[index],
-                type: item,
-                spec: specs,
-                qty: qty,
-                location: location,
-                status: status,
+                type: item, spec: specs, qty: qty, location: location, status: status,
                 updated_at: new Date().toISOString()
             };
         }
     } else {
-        // YENİ EKLEME
         const newAsset = {
             id: Date.now(),
-            type: item,
-            spec: specs,
-            qty: qty,
-            location: location,
-            status: status,
+            type: item, spec: specs, qty: qty, location: location, status: status,
             date_added: new Date().toISOString()
         };
         currentAssets.push(newAsset);
@@ -3132,7 +3432,6 @@ async function saveAsset() {
 
     if (error) throw error;
 
-    // EKRANI GÜNCELLE
     selectedCompany.assets = currentAssets;
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.assets = currentAssets;
@@ -3140,16 +3439,16 @@ async function saveAsset() {
     openProfile(user.id);
     switchProfileTab('assets');
     closeAssetModal();
+    showToast("Success", "Asset saved successfully.", "success");
 
   } catch (error) {
     console.error(error);
-    alert("Error: " + error.message);
+    showToast("Error", error.message, "error");
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
   }
 }
-
 // 3. SİLME (ASSET - ENGLISH)
 async function deleteAsset(assetId) {
     if(!confirm("Are you sure you want to delete this asset?")) return; // Onay mesajı İngilizce
@@ -3224,10 +3523,11 @@ function closeProjectModal() {
 
 // 2. KAYDET (Supabase)
 // 2. KAYDET (PROJECT - ENGLISH)
+/* --- GÜNCELLENMİŞ saveProject (Toast'lı) --- */
 async function saveProject() {
   const btn = document.querySelector("#project-form button[type='submit']");
   const originalText = btn.textContent;
-  btn.textContent = "Saving..."; 
+  btn.textContent = "Saving...";
   btn.disabled = true;
 
   try {
@@ -3235,32 +3535,21 @@ async function saveProject() {
     const loc = document.getElementById("proj-loc").value.trim();
     const desc = document.getElementById("proj-desc").value.trim();
 
-    if (!title) { alert("Please enter a project title."); return; }
+    if (!title) { showToast("Missing Info", "Please enter a project title.", "error"); return; }
 
     let currentProjects = [...(selectedCompany.projects || [])];
 
     if (currentEditingProjectId) {
         const index = currentProjects.findIndex(p => p.id === currentEditingProjectId);
         if (index > -1) {
-            currentProjects[index] = {
-                ...currentProjects[index],
-                title: title,
-                loc: loc,
-                desc: desc
-            };
+            currentProjects[index] = { ...currentProjects[index], title: title, loc: loc, desc: desc };
         }
     } else {
-        const newProj = {
-            id: Date.now(),
-            title: title,
-            loc: loc,
-            desc: desc
-        };
-        currentProjects.push(newProj);
+        currentProjects.push({ id: Date.now(), title: title, loc: loc, desc: desc });
     }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Session expired, please login again.");
+    if (!user) throw new Error("Session expired.");
 
     const { error } = await supabaseClient
       .from('profiles')
@@ -3270,23 +3559,21 @@ async function saveProject() {
     if (error) throw error;
 
     selectedCompany.projects = currentProjects;
-    
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.projects = currentProjects;
 
     openProfile(user.id);
     switchProfileTab('projects');
     closeProjectModal();
+    showToast("Success", "Project saved successfully.", "success");
 
   } catch (error) {
-    console.error(error);
-    alert("Error: " + error.message);
+    showToast("Error", error.message, "error");
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
   }
 }
-
 // 3. SİLME (PROJECT - ENGLISH)
 async function deleteProject(projectId) {
     if(!confirm("Are you sure you want to delete this project?")) return;
@@ -3319,6 +3606,7 @@ async function deleteProject(projectId) {
 <script>
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
 // GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
+/* --- GÜNCELLENMİŞ handleJoin (Toast'lı) --- */
 async function handleJoin() {
   const btn = document.querySelector("#join-form button");
   const originalText = btn.textContent;
@@ -3329,55 +3617,44 @@ async function handleJoin() {
     const email = document.getElementById("join-email").value;
     const password = document.getElementById("join-password").value;
     const companyName = document.getElementById("join-companyName").value;
-    
     const sector = document.getElementById("join-sector").value;
-    const typeVal = document.getElementById("join-type").value; // YENİ: Type bilgisini al
+    const typeVal = document.getElementById("join-type").value;
     const city = document.getElementById("join-city").value;
-    
     const services = document.getElementById("join-services").value;
     const errEl = document.getElementById("join-error");
 
     if(errEl) errEl.classList.add("hidden");
 
-    // 1. Kullanıcı Oluştur (Auth)
-    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-      email,
-      password,
-    });
-
+    const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
     if (authError) throw authError;
 
-    // 2. Profil Oluştur (Database)
-    // company_type alanını da ekledik
     const { error: dbError } = await supabaseClient.from('profiles').insert([
       {
         id: authData.user.id,
         email: email,
         company_name: companyName,
         sector: sector,
-        company_type: typeVal, // <-- ARTIK VERİTABANINA KAYDEDİLİYOR
+        company_type: typeVal,
         city: city,
         services: services,
         description: "",
-        size: "1-10" // Varsayılan boyut
+        size: "1-10"
       }
     ]);
 
     if (dbError) throw dbError;
 
-    alert("Registration successful! Profile created.");
     toggleModal('modal-join');
-    
-    // Giriş yap ve profili aç
+    showToast("Welcome!", "Registration successful. Profile created.", "success");
     checkUserAndOpenProfile();
 
   } catch (error) {
-    console.error(error);
     const errEl = document.getElementById("join-error");
     if(errEl) {
       errEl.textContent = "Error: " + (error.message || error);
       errEl.classList.remove("hidden");
     }
+    showToast("Registration Failed", error.message || "Please check details.", "error");
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
@@ -3561,15 +3838,23 @@ function openMyCompanyIfExists() {
 /* =========================================
    GÜNCELLENMİŞ EDİTÖR FONKSİYONU (Sertifikasız & Temiz)
    ========================================= */
+/* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL) --- */
+/* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL - EMAIL DAHİL) --- */
 function editMyProfile() {
   if (!selectedCompany) return;
 
-  // Verileri Doldur
   document.getElementById("edit-name").value = selectedCompany.name || "";
   document.getElementById("edit-city").value = selectedCompany.city || "";
   document.getElementById("edit-tagline").value = selectedCompany.tagline || "";
   document.getElementById("edit-desc").value = selectedCompany.desc || "";
   
+  // İLETİŞİM BİLGİLERİ
+  document.getElementById("edit-website").value = selectedCompany.website || "";
+  document.getElementById("edit-phone").value = selectedCompany.phone || "";
+  
+  // YENİ: Contact Email (Varsa onu getir, yoksa ana login mailini getir)
+  document.getElementById("edit-email").value = selectedCompany.contact_email || selectedCompany.email || "";
+
   const sectorSelect = document.getElementById("edit-sector");
   if(sectorSelect) sectorSelect.value = selectedCompany.sector;
 
@@ -3584,10 +3869,7 @@ function editMyProfile() {
   const services = selectedCompany.services || []; 
   document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
 
-  // Görünümü Aç
   showEditorView();
-
-  // Hesaplamayı başlat
   setTimeout(initEditorListeners, 100); 
 }
 /* =========================================
@@ -3595,21 +3877,14 @@ function editMyProfile() {
    ========================================= */
 
 // A. Sol menüden tıklayınca ilgili yere kaydırma
-function scrollToSection(sectionId) {
-  const element = document.getElementById(sectionId);
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
-
-// B. Profil Doluluk Oranını Hesapla
-// GÜNCELLENMİŞ HESAPLAMA (Sertifikasız)
+/* --- PROFILE STRENGTH HESAPLAMA (GÜNCEL) --- */
 function calculateProfileStatus() {
   // 1. ADIM: FORM ALANLARINI KONTROL ET
-  // "edit-certs" LİSTEDEN ÇIKARILDI
+  // Yeni eklenen "edit-website" ve "edit-phone" listeye eklendi
   const fields = [
     "edit-name", "edit-city", "edit-sector", "edit-desc", 
-    "edit-services", "edit-type", "edit-size", "edit-year"
+    "edit-services", "edit-type", "edit-size", "edit-year",
+    "edit-website", "edit-phone" 
   ];
 
   let filledCount = 0;
@@ -3621,7 +3896,7 @@ function calculateProfileStatus() {
     }
   });
   
-  // Form puanı (Maksimum 60 puan)
+  // Form puanı (Toplam skorun %60'ı formdan gelir)
   const formScore = Math.round((filledCount / fields.length) * 60);
 
   // 2. ADIM: PROJE VE VARLIK KONTROLÜ
@@ -3629,9 +3904,11 @@ function calculateProfileStatus() {
   let assetScore = 0;
 
   if (selectedCompany) {
+      // En az 1 proje varsa +20 Puan
       if (selectedCompany.projects && selectedCompany.projects.length > 0) {
           projectScore = 20;
       }
+      // En az 1 varlık varsa +20 Puan
       if (selectedCompany.assets && selectedCompany.assets.length > 0) {
           assetScore = 20;
       }
@@ -3648,20 +3925,20 @@ function calculateProfileStatus() {
   if (bar) bar.style.width = `${totalPercent}%`;
   if (text) text.textContent = `${totalPercent}%`;
 
+  // RENK VE MESAJ AYARLARI
   if (totalPercent >= 100) {
-      if(msg) msg.textContent = "Mükemmel! Profiliniz güven veriyor.";
+      if(msg) msg.textContent = "Excellent! Your profile is fully optimized.";
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
       if(text) text.classList.replace("text-blue-600", "text-emerald-600");
   } else if (totalPercent >= 70) {
-      if(msg) msg.textContent = "Güçlü profil. Eksikleri tamamlayın.";
+      if(msg) msg.textContent = "Strong profile. Fill missing info to reach 100%.";
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-blue-600";
   } else {
-      if(msg) msg.textContent = "Düşük güven skoru. Lütfen proje ve varlık ekleyin.";
+      if(msg) msg.textContent = "Low trust score. Add projects & assets to boost visibility.";
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-amber-500";
       if(text) text.classList.replace("text-blue-600", "text-amber-600");
   }
 }
-
 // C. Editör açıldığında ve yazı yazıldığında hesaplamayı tetikle
 function initEditorListeners() {
   const inputs = document.querySelectorAll("#editor-form input, #editor-form select, #editor-form textarea");
@@ -3674,6 +3951,360 @@ function initEditorListeners() {
   // İlk açılışta bir kere hesapla
   calculateProfileStatus();
 }
+/* --- TOAST BİLDİRİM SİSTEMİ (En alta ekleyin) --- */
+function showToast(title, message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
 
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
+  
+  toast.innerHTML = `
+    <i class="fa-solid ${icon}"></i>
+    <div class="toast-content">
+      <span class="toast-title">${title}</span>
+      <span class="toast-msg">${message}</span>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  `;
+
+  container.appendChild(toast);
+
+  // 4 saniye sonra sil
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+/* --- PREMIUM INBOX ENGINE (EN ALTA EKLE) --- */
+
+// Demo Veriler (Gerçek hayatta Supabase'den gelir)
+const inboxData = [
+  {
+    id: 101,
+    company: "Rönesans Holding",
+    type: "quote", // quote, system, alert
+    title: "Project RFQ: Steel Structure",
+    desc: "Requesting quotation for 500 tons of structural steel for Izmir project.",
+    time: "12 mins ago",
+    unread: true,
+    logo: "R"
+  },
+  {
+    id: 102,
+    company: "System",
+    type: "system",
+    title: "Profile Verified",
+    desc: "Your company documents have been approved. Trust Score updated.",
+    time: "2 hours ago",
+    unread: true,
+    logo: "S"
+  },
+  {
+    id: 103,
+    company: "Tekfen Construction",
+    type: "quote",
+    title: "Equipment Rental Inquiry",
+    desc: "Looking for 3x CAT 336 Excavators for 6 months lease.",
+    time: "Yesterday",
+    unread: false,
+    logo: "T"
+  }
+];
+
+function toggleInbox() {
+  const panel = document.getElementById("inbox-panel");
+  const overlay = document.getElementById("inbox-overlay");
+  
+  if (!panel || !overlay) return;
+
+  const isOpen = panel.classList.contains("open");
+
+  if (isOpen) {
+    // Kapat
+    panel.classList.remove("open");
+    overlay.classList.remove("opacity-100");
+    overlay.classList.add("opacity-0");
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+  } else {
+    // Aç
+    renderInboxItems(); // Verileri tazeleyerek aç
+    overlay.classList.remove("hidden");
+    // Animasyon için minik gecikme
+    setTimeout(() => {
+        overlay.classList.remove("opacity-0");
+        overlay.classList.add("opacity-100");
+        panel.classList.add("open");
+    }, 10);
+  }
+}
+
+function renderInboxItems() {
+  const container = document.getElementById("inbox-content");
+  const badgeNav = document.getElementById("nav-badge");
+  const badgeHeader = document.getElementById("inbox-badge-count");
+  
+  if (!container) return;
+  container.innerHTML = "";
+
+  let unreadCount = 0;
+
+  inboxData.forEach(item => {
+    if(item.unread) unreadCount++;
+
+    // Kart Tasarımı
+    const card = document.createElement("div");
+    card.className = `inbox-item p-4 mb-1 cursor-pointer group ${item.unread ? 'unread' : 'bg-white/60 opacity-80'}`;
+    
+    // İkon Rengi (Type'a göre)
+    let iconBg = "bg-gray-100 text-gray-500";
+    let icon = "fa-building";
+    
+    if(item.type === 'quote') { iconBg = "bg-cyan-50 text-BTrustOn-accent"; icon = "fa-file-invoice-dollar"; }
+    if(item.type === 'system') { iconBg = "bg-emerald-50 text-emerald-600"; icon = "fa-shield-halved"; }
+    if(item.type === 'alert') { iconBg = "bg-amber-50 text-amber-600"; icon = "fa-triangle-exclamation"; }
+
+    card.innerHTML = `
+      <div class="flex gap-4">
+        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300">
+           <i class="fa-solid ${icon}"></i>
+        </div>
+
+        <div class="flex-1">
+           <div class="flex justify-between items-start mb-1">
+              <h4 class="text-xs font-bold text-BTrustOn-primary leading-tight">${item.title}</h4>
+              <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2">${item.time}</span>
+           </div>
+           
+           <p class="text-xs text-gray-500 leading-relaxed mb-2 line-clamp-2">${item.desc}</p>
+           
+           <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                 ${item.company}
+              </span>
+              
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                 <button onclick="openMessage(${item.id})" class="text-BTrustOn-accent hover:text-BTrustOn-darkAccent text-[10px] font-bold flex items-center gap-1">
+   VIEW <i class="fa-solid fa-arrow-right"></i>
+</button>
+              </div>
+           </div>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+
+  // Badge Güncelleme
+  if(badgeNav) {
+      if(unreadCount > 0) {
+          badgeNav.textContent = unreadCount;
+          badgeNav.classList.remove("hidden");
+      } else {
+          badgeNav.classList.add("hidden");
+      }
+  }
+  
+  if(badgeHeader) {
+      if(unreadCount > 0) {
+        badgeHeader.textContent = `${unreadCount} NEW`;
+        badgeHeader.classList.remove("hidden");
+      } else {
+        badgeHeader.classList.add("hidden");
+      }
+  }
+}
+
+// Sayfa açılınca badge'i kontrol et
+document.addEventListener("DOMContentLoaded", () => {
+    // Hafif bir gecikmeyle çalıştır ki diğer yüklemeler bitsin
+    setTimeout(renderInboxItems, 800);
+});
+/* --- MESSAGE READER LOGIC (YENİ EKLENECEK KISIM) --- */
+
+function openMessage(msgId) {
+    // 1. Mesajı veriden bul
+    const msg = inboxData.find(m => m.id === msgId);
+    if (!msg) return;
+
+    // 2. HTML elemanlarını doldur
+    document.getElementById("msg-subject").textContent = msg.title;
+    document.getElementById("msg-company").textContent = msg.company;
+    document.getElementById("msg-date").textContent = msg.time; 
+    document.getElementById("msg-body").textContent = msg.desc + " We are looking forward to your prompt response regarding this matter. Please include your best offer and delivery timeline."; 
+    document.getElementById("msg-id").textContent = msg.id;
+    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
+
+    // Badge Rengi Ayarla
+    const badge = document.getElementById("msg-type-badge");
+    if(badge) {
+        if(msg.type === 'quote') {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide";
+            badge.textContent = "QUOTE REQUEST";
+        } else if (msg.type === 'system') {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide";
+            badge.textContent = "SYSTEM NOTIFICATION";
+        }
+    }
+
+    // 3. Okundu olarak işaretle
+    msg.unread = false;
+    renderInboxItems(); // Listeyi güncelle
+
+    // 4. Ekranı Aç
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.remove("hidden-view");
+    
+    // Arkadaki scroll'u kilitle
+    document.body.style.overflow = "hidden"; 
+
+    // Inbox panelini kapat
+    const panel = document.getElementById("inbox-panel");
+    const overlay = document.getElementById("inbox-overlay");
+    if(panel) panel.classList.remove("open");
+    if(overlay) overlay.classList.add("hidden");
+}
+
+function closeMessageView() {
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.add("hidden-view");
+    document.body.style.overflow = "auto"; // Scroll'u aç
+}
+
+/* --- GERÇEK MESAJLAŞMA SİSTEMİ (Supabase Entegreli) --- */
+
+let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
+
+// 1. MESAJI AÇMA FONKSİYONU
+function openMessage(msgId) {
+    const msg = inboxData.find(m => m.id === msgId);
+    if (!msg) return;
+
+    // --- CONTEXT KAYDETME ---
+    currentMessageContext = {
+        original_msg_id: msg.id,
+        target_company_name: msg.company,
+        // Demo ortamında olduğumuz için 'fake' bir ID atıyoruz. 
+        // Gerçek sistemde burası msg.sender_id (UUID) olmalı.
+        target_user_id: msg.sender_id || "demo-receiver-id" 
+    };
+
+    // HTML Doldur
+    document.getElementById("msg-subject").textContent = msg.title;
+    document.getElementById("msg-company").textContent = msg.company;
+    document.getElementById("msg-date").textContent = msg.time; 
+    document.getElementById("msg-body").textContent = msg.desc + "\n\n(System: Waiting for your reply...)"; 
+    document.getElementById("msg-id").textContent = msg.id;
+    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
+
+    // Badge Ayarla
+    const badge = document.getElementById("msg-type-badge");
+    if(badge) {
+        if(msg.type === 'quote') {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide";
+            badge.textContent = "QUOTE REQUEST";
+        } else {
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200 uppercase tracking-wide";
+            badge.textContent = "MESSAGE";
+        }
+    }
+
+    // Okundu yap
+    msg.unread = false;
+    renderInboxItems(); 
+
+    // Ekranı Aç
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.remove("hidden-view");
+    document.body.style.overflow = "hidden"; 
+
+    // Inbox panelini kapat
+    const panel = document.getElementById("inbox-panel");
+    const overlay = document.getElementById("inbox-overlay");
+    if(panel) panel.classList.remove("open");
+    if(overlay) overlay.classList.add("hidden");
+}
+
+// 2. MESAJI KAPATMA
+function closeMessageView() {
+    const viewer = document.getElementById("view-message");
+    if(viewer) viewer.classList.add("hidden-view");
+    document.body.style.overflow = "auto";
+}
+
+// 3. CEVAP GÖNDERME (Veritabanına Yazar)
+async function sendReply() {
+    const inputEl = document.getElementById("reply-input");
+    const content = inputEl.value.trim();
+    // Butonu bul (onclick özelliğine göre)
+    const btn = document.querySelector("button[onclick='sendReply()']");
+
+    // Kontroller
+    if (!content) {
+        showToast("Error", "Please write a message before sending.", "error");
+        return;
+    }
+    if (!currentMessageContext) {
+        showToast("Error", "Message context lost. Please reopen the message.", "error");
+        return;
+    }
+
+    // Butonu kilitle
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    btn.disabled = true;
+
+    try {
+        // 1. Giriş yapmış kullanıcıyı bul
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        if (!user) {
+            throw new Error("You must be logged in to reply.");
+        }
+
+        // 2. Eğer hedef ID "demo" ise (Simülasyon)
+        if (currentMessageContext.target_user_id === "demo-receiver-id") {
+            
+            // 1.5 saniye bekle (gerçekçilik için)
+            await new Promise(r => setTimeout(r, 1500));
+            
+            showToast("Sent (Demo)", `Reply sent to ${currentMessageContext.target_company_name} (Simulation)`, "success");
+            
+        } else {
+            // 3. GERÇEK GÖNDERİM (Supabase)
+            const { error } = await supabaseClient
+                .from('messages')
+                .insert([
+                    {
+                        sender_id: user.id,
+                        receiver_id: currentMessageContext.target_user_id,
+                        content: content,
+                        subject: "Re: " + document.getElementById("msg-subject").textContent,
+                        is_read: false
+                    }
+                ]);
+
+            if (error) throw error;
+            showToast("Sent", "Message sent successfully!", "success");
+        }
+
+        // Başarılı ise temizle ve kapat
+        inputEl.value = "";
+        closeMessageView();
+
+    } catch (error) {
+        console.error(error);
+        showToast("Error", error.message, "error");
+    } finally {
+        // Butonu eski haline getir
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
 </script>
 </html>
