@@ -339,11 +339,13 @@
             type="text"
             id="search-input"
             onkeyup="renderCards(this.value)"
+            onkeydown="if(event.key === 'Enter') document.querySelector('main').scrollIntoView({ behavior: 'smooth' });"
             class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-12 md:h-14"
             placeholder=""
           />
           
           <button
+            onclick="document.querySelector('main').scrollIntoView({ behavior: 'smooth' });"
             class="shrink-0 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-12 h-12 md:w-auto md:h-14 md:px-8 font-bold transition shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-2 group"
           >
             <span class="hidden md:inline" data-i18n="btn_discover">DISCOVER</span>
@@ -791,6 +793,27 @@
 
                   <div class="col-span-2 p-8">
                       <form id="editor-form" onsubmit="event.preventDefault(); saveProfileData();">
+<div class="flex items-center gap-6 mb-8 border-b border-gray-100 pb-6">
+    <div id="edit-logo-preview-container" class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group">
+        <i id="edit-logo-icon" class="fa-solid fa-building text-3xl text-gray-300"></i>
+        <img id="edit-logo-img" class="hidden w-full h-full object-cover" />
+        
+        <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white text-xs font-bold pointer-events-none">
+            Change
+        </div>
+    </div>
+
+    <div>
+        <h4 class="text-sm font-bold text-gray-700">Company Logo</h4>
+        <p class="text-xs text-gray-400 mb-3">Recommended: 400x400px, PNG or JPG.</p>
+        
+        <input type="file" id="edit-logo-input" class="hidden" accept="image/*" onchange="handleLogoSelect(this)">
+        
+        <button type="button" onclick="document.getElementById('edit-logo-input').click()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 hover:border-gray-400 transition">
+            <i class="fa-solid fa-upload mr-1"></i> Upload Logo
+        </button>
+    </div>
+</div>
                         <div class="space-y-12"> 
                             
                             <div id="section-general" class="space-y-6 scroll-mt-6">
@@ -930,11 +953,10 @@
     <div
       class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10"
     >
-      <div
-        class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 p-4 shrink-0 text-5xl text-BTrustOn-primary"
-      >
-        <i id="p-logo-icon" class="fa-solid fa-building"></i>
-      </div>
+      <div id="p-logo-container" class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative">
+    <i id="p-default-icon" class="fa-solid fa-building text-5xl text-gray-300"></i>
+    <img id="p-logo-image" class="hidden w-full h-full object-cover" alt="Company Logo" />
+</div>
 
       <div class="flex-grow">
         <div class="flex flex-wrap items-center gap-4 mb-3">
@@ -1615,10 +1637,11 @@
         </button>
         
         <div class="flex gap-2">
-            <button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" title="Delete">
+            <button onclick="deleteCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" title="Delete">
                 <i class="fa-solid fa-trash-can text-sm"></i>
             </button>
-            <button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" title="Mark Unread">
+            
+            <button onclick="markAsUnreadCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" title="Mark Unread">
                 <i class="fa-solid fa-envelope text-sm"></i>
             </button>
         </div>
@@ -1670,14 +1693,32 @@
                             ME
                         </div>
                         <div class="flex-1">
+                
+                <input type="file" id="reply-file-input" style="display: none;" onchange="handleFileSelect(this)" />
+
                 <textarea id="reply-input" class="w-full border border-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition bg-gray-50 focus:bg-white" rows="3" placeholder="Type your reply or attach a formal proposal..."></textarea>
                 
+                <div id="attachment-preview" class="hidden mt-3 flex items-center justify-between bg-cyan-50 border border-cyan-100 rounded-lg p-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-white flex items-center justify-center text-BTrustOn-accent shadow-sm">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <div>
+                            <p id="attachment-name" class="text-xs font-bold text-gray-700 line-clamp-1">filename.pdf</p>
+                            <p id="attachment-size" class="text-[10px] text-gray-400">0 MB</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeAttachment()" class="text-gray-400 hover:text-red-500 transition px-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
                 <div class="flex justify-end gap-3 mt-3">
-                    <button class="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition">
-                        <i class="fa-solid fa-paperclip mr-1"></i> ATTACH FILE
+                    <button type="button" onclick="document.getElementById('reply-file-input').click()" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition group">
+                        <i class="fa-solid fa-paperclip mr-1 group-hover:text-BTrustOn-accent"></i> ATTACH FILE
                     </button>
                     
-                    <button onclick="sendReply()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white text-xs font-bold hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+                    <button type="button" onclick="sendReply()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white text-xs font-bold hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
                         SEND REPLY <i class="fa-solid fa-paper-plane ml-1"></i>
                     </button>
                 </div>
@@ -2849,6 +2890,22 @@ function renderTopCompanies() {
       if (viewProfile) viewProfile.classList.remove("hidden-view");
       if (backBtn) backBtn.classList.remove("hidden", "hidden-view");
       window.scrollTo(0, 0);
+// --- D. LOGO GÖSTERİMİ (BUNU EKLEYİN) ---
+      const pLogoImg = document.getElementById("p-logo-image");
+      const pDefaultIcon = document.getElementById("p-default-icon");
+      
+      if (pLogoImg && pDefaultIcon) {
+          if (company.logo_url) {
+              // Logo varsa: Resmi göster, ikonu gizle
+              pLogoImg.src = company.logo_url;
+              pLogoImg.classList.remove("hidden");
+              pDefaultIcon.classList.add("hidden");
+          } else {
+              // Logo yoksa: Resmi gizle, varsayılan ikonu göster
+              pLogoImg.classList.add("hidden");
+              pDefaultIcon.classList.remove("hidden");
+          }
+      }
 
       const nameEl = document.getElementById("p-name");
       const descEl = document.getElementById("p-desc");
@@ -3155,21 +3212,45 @@ function renderTopCompanies() {
 async function saveProfileData() {
   const btn = document.querySelector("#editor-form button[type='submit']");
   const originalText = btn.textContent;
-  btn.textContent = "Saving...";
+  btn.textContent = "Uploading...";
   btn.disabled = true;
 
   try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("No active session found!");
+
+    let finalLogoUrl = selectedCompany.logo_url || null;
+
+    // 1. LOGO VARSA ÖNCE ONU YÜKLE
+    if (selectedLogoFile) {
+        const fileExt = selectedLogoFile.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // Supabase Storage'a yükle
+        const { error: uploadError } = await supabaseClient.storage
+            .from('logos') // 1. Adımda açtığımız bucket ismi
+            .upload(filePath, selectedLogoFile);
+
+        if (uploadError) throw uploadError;
+
+        // Public URL al
+        const { data: { publicUrl } } = supabaseClient.storage
+            .from('logos')
+            .getPublicUrl(filePath);
+            
+        finalLogoUrl = publicUrl;
+    }
+
+    // 2. DİĞER VERİLERİ HAZIRLA
     const name = document.getElementById("edit-name").value.trim();
     const city = document.getElementById("edit-city").value.trim();
     const sector = document.getElementById("edit-sector").value;
     const desc = document.getElementById("edit-desc").value.trim();
     const servicesStr = document.getElementById("edit-services").value.trim();
-    
-    // İLETİŞİM INPUTLARI
     const website = document.getElementById("edit-website").value.trim();
     const phone = document.getElementById("edit-phone").value.trim();
-    const contactEmail = document.getElementById("edit-email").value.trim(); // YENİ
-
+    const contactEmail = document.getElementById("edit-email").value.trim();
     const typeVal = document.getElementById("edit-type").value;
     const sizeVal = document.getElementById("edit-size").value;
     const yearVal = document.getElementById("edit-year").value;
@@ -3182,16 +3263,15 @@ async function saveProfileData() {
       services: servicesStr,
       website: website,
       phone: phone,
-      contact_email: contactEmail, // Veritabanına yaz
+      contact_email: contactEmail,
       company_type: typeVal,
       company_size: sizeVal,
       founded_year: yearVal,
+      logo_url: finalLogoUrl, // Logo URL'ini kaydet
       updated_at: new Date(),
     };
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("No active session found!");
-
+    // 3. VERİTABANINI GÜNCELLE
     const { error } = await supabaseClient
       .from('profiles')
       .update(updates)
@@ -3199,18 +3279,16 @@ async function saveProfileData() {
 
     if (error) throw error;
 
-    showToast("Success", "Profile updated successfully!", "success");
+    showToast("Success", "Profile and logo updated successfully!", "success");
 
-    // Ekranı güncelle
+    // Local veriyi güncelle (Ekran yenilenmeden görünsün diye)
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
             name, city, sector, desc,
-            website, phone, 
-            contact_email: contactEmail, // Local güncelleme
-            type_label: typeVal,
-            size_label: sizeVal,
-            year_label: yearVal,
+            website, phone, contact_email: contactEmail,
+            type_label: typeVal, size_label: sizeVal, year_label: yearVal,
+            logo_url: finalLogoUrl,
             services: servicesStr.split(',').map(s => s.trim()).filter(s => s)
         });
     }
@@ -3848,6 +3926,19 @@ function editMyProfile() {
   document.getElementById("edit-tagline").value = selectedCompany.tagline || "";
   document.getElementById("edit-desc").value = selectedCompany.desc || "";
   
+// LOGO GÖSTERİMİ (Editörde)
+  const logoUrl = selectedCompany.logo_url;
+  if (logoUrl) {
+      document.getElementById("edit-logo-img").src = logoUrl;
+      document.getElementById("edit-logo-img").classList.remove("hidden");
+      document.getElementById("edit-logo-icon").classList.add("hidden");
+  } else {
+      // Logo yoksa sıfırla
+      document.getElementById("edit-logo-img").src = "";
+      document.getElementById("edit-logo-img").classList.add("hidden");
+      document.getElementById("edit-logo-icon").classList.remove("hidden");
+  }
+  selectedLogoFile = null; // Seçimi sıfırla
   // İLETİŞİM BİLGİLERİ
   document.getElementById("edit-website").value = selectedCompany.website || "";
   document.getElementById("edit-phone").value = selectedCompany.phone || "";
@@ -4056,9 +4147,15 @@ function renderInboxItems() {
   inboxData.forEach(item => {
     if(item.unread) unreadCount++;
 
-    // Kart Tasarımı
+    // Kart Elementi Oluştur
     const card = document.createElement("div");
+    
+    // Tasarım Sınıfları
     card.className = `inbox-item p-4 mb-1 cursor-pointer group ${item.unread ? 'unread' : 'bg-white/60 opacity-80'}`;
+    
+    // --- KRİTİK DEĞİŞİKLİK: TIKLAMA ÖZELLİĞİ TÜM KARTA VERİLDİ ---
+    card.onclick = () => openMessage(item.id); 
+    // -----------------------------------------------------------
     
     // İkon Rengi (Type'a göre)
     let iconBg = "bg-gray-100 text-gray-500";
@@ -4069,8 +4166,7 @@ function renderInboxItems() {
     if(item.type === 'alert') { iconBg = "bg-amber-50 text-amber-600"; icon = "fa-triangle-exclamation"; }
 
     card.innerHTML = `
-      <div class="flex gap-4">
-        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300">
+      <div class="flex gap-4 pointer-events-none"> <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300">
            <i class="fa-solid ${icon}"></i>
         </div>
 
@@ -4088,9 +4184,9 @@ function renderInboxItems() {
               </span>
               
               <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                 <button onclick="openMessage(${item.id})" class="text-BTrustOn-accent hover:text-BTrustOn-darkAccent text-[10px] font-bold flex items-center gap-1">
-   VIEW <i class="fa-solid fa-arrow-right"></i>
-</button>
+                 <button class="text-BTrustOn-accent hover:text-BTrustOn-darkAccent text-[10px] font-bold flex items-center gap-1">
+                    VIEW <i class="fa-solid fa-arrow-right"></i>
+                 </button>
               </div>
            </div>
         </div>
@@ -4119,7 +4215,6 @@ function renderInboxItems() {
       }
   }
 }
-
 // Sayfa açılınca badge'i kontrol et
 document.addEventListener("DOMContentLoaded", () => {
     // Hafif bir gecikmeyle çalıştır ki diğer yüklemeler bitsin
@@ -4238,73 +4333,164 @@ function closeMessageView() {
 }
 
 // 3. CEVAP GÖNDERME (Veritabanına Yazar)
+// GÜNCELLENMİŞ sendReply (Dosya Destekli)
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
-    // Butonu bul (onclick özelliğine göre)
     const btn = document.querySelector("button[onclick='sendReply()']");
 
-    // Kontroller
-    if (!content) {
-        showToast("Error", "Please write a message before sending.", "error");
+    // Kontrol: Hem mesaj hem dosya yoksa hata ver
+    if (!content && !currentAttachmentFile) {
+        showToast("Error", "Please write a message or attach a file.", "error");
         return;
     }
     if (!currentMessageContext) {
-        showToast("Error", "Message context lost. Please reopen the message.", "error");
+        showToast("Error", "Context lost. Reopen message.", "error");
         return;
     }
 
-    // Butonu kilitle
+    // Butonu Kilitle
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
     btn.disabled = true;
 
     try {
-        // 1. Giriş yapmış kullanıcıyı bul
         const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        if (!user) {
-            throw new Error("You must be logged in to reply.");
-        }
+        if (!user) throw new Error("Login required.");
 
-        // 2. Eğer hedef ID "demo" ise (Simülasyon)
+        // --- DOSYA VARSA BİLGİ NOTU EKLE ---
+        let finalContent = content;
+        if (currentAttachmentFile) {
+            finalContent += `\n\n[📎 ATTACHMENT: ${currentAttachmentFile.name}]`;
+        }
+        // -----------------------------------
+
         if (currentMessageContext.target_user_id === "demo-receiver-id") {
-            
-            // 1.5 saniye bekle (gerçekçilik için)
+            // Demo Simülasyon
             await new Promise(r => setTimeout(r, 1500));
-            
-            showToast("Sent (Demo)", `Reply sent to ${currentMessageContext.target_company_name} (Simulation)`, "success");
-            
+            showToast("Sent", "Reply sent with attachment (Demo)", "success");
         } else {
-            // 3. GERÇEK GÖNDERİM (Supabase)
+            // Gerçek Gönderim
             const { error } = await supabaseClient
                 .from('messages')
-                .insert([
-                    {
-                        sender_id: user.id,
-                        receiver_id: currentMessageContext.target_user_id,
-                        content: content,
-                        subject: "Re: " + document.getElementById("msg-subject").textContent,
-                        is_read: false
-                    }
-                ]);
+                .insert([{
+                    sender_id: user.id,
+                    receiver_id: currentMessageContext.target_user_id,
+                    content: finalContent,
+                    subject: "Re: " + document.getElementById("msg-subject").textContent,
+                    is_read: false
+                }]);
 
             if (error) throw error;
             showToast("Sent", "Message sent successfully!", "success");
         }
 
-        // Başarılı ise temizle ve kapat
+        // Temizlik
         inputEl.value = "";
+        removeAttachment(); // Dosyayı temizle (Yeni eklenen fonksiyonu çağırıyoruz)
         closeMessageView();
 
     } catch (error) {
-        console.error(error);
         showToast("Error", error.message, "error");
     } finally {
-        // Butonu eski haline getir
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
+}
+/* --- MESAJ AKSİYONLARI (SİLME & OKUNMADI YAPMA) --- */
+
+// 1. MEVCUT MESAJI SİL
+function deleteCurrentMessage() {
+    // Açık olan bir mesaj var mı kontrol et
+    if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
+
+    if (!confirm("Are you sure you want to delete this conversation?")) return;
+
+    // Listeden bul ve sil
+    const index = inboxData.findIndex(m => m.id === currentMessageContext.original_msg_id);
+    if (index > -1) {
+        inboxData.splice(index, 1); // Diziden çıkar
+    }
+
+    // Ekranı güncelle ve kapat
+    renderInboxItems(); // Listeyi yenile (silinen gitsin)
+    closeMessageView(); // Okuma ekranını kapat
+    
+    // Bildirim ver
+    showToast("Deleted", "Conversation moved to trash.", "success");
+}
+
+// 2. OKUNMADI OLARAK İŞARETLE
+function markAsUnreadCurrentMessage() {
+    if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
+
+    // Mesajı bul
+    const msg = inboxData.find(m => m.id === currentMessageContext.original_msg_id);
+    
+    if (msg) {
+        msg.unread = true; // Durumu değiştir
+    }
+
+    // Ekranı güncelle ve kapat
+    renderInboxItems(); // Listeyi yenile (Kırmızı nokta/badge geri gelsin)
+    closeMessageView(); // Okuma ekranını kapat
+    
+    // Bildirim ver
+    showToast("Marked Unread", "Conversation marked as unread.", "success");
+}
+/* --- DOSYA EKLEME YÖNETİMİ --- */
+
+let currentAttachmentFile = null; // Seçilen dosyayı hafızada tut
+
+// 1. DOSYA SEÇİLİNCE ÇALIŞIR
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        currentAttachmentFile = input.files[0];
+        
+        // Önizleme alanını doldur
+        const preview = document.getElementById("attachment-preview");
+        const nameEl = document.getElementById("attachment-name");
+        const sizeEl = document.getElementById("attachment-size");
+        
+        if (preview && nameEl) {
+            nameEl.textContent = currentAttachmentFile.name;
+            // Boyutu hesapla (KB veya MB)
+            let size = currentAttachmentFile.size / 1024;
+            let label = " KB";
+            if(size > 1024) { size = size / 1024; label = " MB"; }
+            
+            if(sizeEl) sizeEl.textContent = size.toFixed(1) + label;
+
+            // Kutuyu göster
+            preview.classList.remove("hidden");
+        }
+    }
+}
+
+// 2. DOSYAYI KALDIR (X Butonu)
+function removeAttachment() {
+    currentAttachmentFile = null;
+    document.getElementById("reply-file-input").value = ""; // Inputu sıfırla
+    
+    // Kutuyu gizle
+    const preview = document.getElementById("attachment-preview");
+    if (preview) preview.classList.add("hidden");
+}
+let selectedLogoFile = null; // Seçilen dosyayı tutar
+
+function handleLogoSelect(input) {
+  if (input.files && input.files[0]) {
+    selectedLogoFile = input.files[0];
+    
+    // Tarayıcıda önizleme yap (Server'a gitmeden)
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById("edit-logo-img").src = e.target.result;
+      document.getElementById("edit-logo-img").classList.remove("hidden");
+      document.getElementById("edit-logo-icon").classList.add("hidden");
+    }
+    reader.readAsDataURL(selectedLogoFile);
+  }
 }
 </script>
 </html>
