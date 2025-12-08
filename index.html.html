@@ -1660,6 +1660,33 @@
     </div>
   </div>
 </div>
+<div id="delete-modal" class="fixed inset-0 z-[70] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+  
+  <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl z-20 overflow-hidden transform transition-all scale-95" id="delete-modal-content">
+    <div class="p-6 text-center">
+      
+      <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
+      </div>
+
+      <h3 class="text-lg font-bold text-gray-800 mb-2">Are you sure?</h3>
+      <p id="delete-modal-msg" class="text-sm text-gray-500 mb-6 leading-relaxed">
+        Do you really want to delete this item? This process cannot be undone.
+      </p>
+
+      <div class="flex gap-3">
+        <button onclick="closeDeleteModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+          CANCEL
+        </button>
+        <button id="btn-confirm-delete" class="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition shadow-lg shadow-red-500/30">
+          YES, DELETE
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <div id="inbox-overlay" onclick="toggleInbox()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-[9990] hidden transition-opacity opacity-0"></div>
 
@@ -3658,33 +3685,34 @@ async function saveAsset() {
   }
 }
 // 3. SİLME (ASSET - ENGLISH)
-async function deleteAsset(assetId) {
-    if(!confirm("Are you sure you want to delete this asset?")) return; // Onay mesajı İngilizce
+// 3. SİLME (ASSET) - YENİ MODAL İLE
+function deleteAsset(assetId) {
+    openDeleteModal("Are you sure you want to remove this asset from inventory?", async () => {
+        try {
+            let currentAssets = selectedCompany.assets.filter(a => a.id !== assetId);
 
-    try {
-        let currentAssets = selectedCompany.assets.filter(a => a.id !== assetId);
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ assets: currentAssets, updated_at: new Date() })
+                .eq('id', user.id);
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        const { error } = await supabaseClient
-            .from('profiles')
-            .update({ assets: currentAssets, updated_at: new Date() })
-            .eq('id', user.id);
+            if (error) throw error;
 
-        if (error) throw error;
+            selectedCompany.assets = currentAssets;
+            const localRef = database.find(c => c.id == user.id);
+            if(localRef) localRef.assets = currentAssets;
 
-        selectedCompany.assets = currentAssets;
-        const localRef = database.find(c => c.id == user.id);
-        if(localRef) localRef.assets = currentAssets;
+            openProfile(user.id);
+            switchProfileTab('assets');
+            showToast("Deleted", "Asset removed successfully.", "success");
 
-        openProfile(user.id);
-        switchProfileTab('assets');
-
-    } catch (error) {
-        alert("Delete error: " + error.message);
-    }
+        } catch (error) {
+            showToast("Error", error.message, "error");
+        }
+    });
 }
-
 /* --- PROJECT YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
 
 let currentEditingProjectId = null;
@@ -3783,32 +3811,70 @@ async function saveProject() {
   }
 }
 // 3. SİLME (PROJECT - ENGLISH)
-async function deleteProject(projectId) {
-    if(!confirm("Are you sure you want to delete this project?")) return;
+// 3. SİLME (PROJECT) - YENİ MODAL İLE
+function deleteProject(projectId) {
+    openDeleteModal("Are you sure you want to delete this project?", async () => {
+        try {
+            let currentProjects = (selectedCompany.projects || []).filter(p => p.id !== projectId);
+            
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) throw new Error("No session.");
 
-    try {
-        let currentProjects = (selectedCompany.projects || []).filter(p => p.id !== projectId);
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ projects: currentProjects, updated_at: new Date() })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            selectedCompany.projects = currentProjects;
+            const localRef = database.find(c => c.id == user.id);
+            if(localRef) localRef.projects = currentProjects;
+
+            openProfile(user.id);
+            switchProfileTab('projects');
+            showToast("Deleted", "Project removed successfully.", "success");
+
+        } catch (error) {
+            showToast("Error", error.message, "error");
+        }
+    });
+}
+// 3. SİLME (CERTIFICATE) - YENİ MODAL İLE
+function deleteCert(certId, certName) {
+    // Tarayıcı confirm'i yerine kendi modalımızı çağırıyoruz
+    openDeleteModal(`Are you sure you want to delete "${certName}"?`, async () => {
         
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) throw new Error("No session.");
+        // --- ASIL SİLME İŞLEMİ BURADA BAŞLIYOR ---
+        try {
+            let currentCerts = [];
+            
+            if (certId === -1) {
+                currentCerts = selectedCompany.certificates.filter(c => c !== certName);
+            } else {
+                currentCerts = selectedCompany.certificates.filter(c => c.id !== certId);
+            }
 
-        const { error } = await supabaseClient
-            .from('profiles')
-            .update({ projects: currentProjects, updated_at: new Date() })
-            .eq('id', user.id);
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ certificates: currentCerts, updated_at: new Date() })
+                .eq('id', user.id);
 
-        if (error) throw error;
+            if (error) throw error;
 
-        selectedCompany.projects = currentProjects;
-        const localRef = database.find(c => c.id == user.id);
-        if(localRef) localRef.projects = currentProjects;
+            selectedCompany.certificates = currentCerts;
+            const localRef = database.find(c => c.id == user.id);
+            if(localRef) localRef.certificates = currentCerts;
 
-        openProfile(user.id);
-        switchProfileTab('projects');
-
-    } catch (error) {
-        alert("Delete error: " + error.message);
-    }
+            openProfile(user.id);
+            showToast("Deleted", "Certificate removed successfully.", "success");
+            
+        } catch (error) {
+            showToast("Error", "Delete failed: " + error.message, "error");
+        }
+    });
 }
   </script>
 <script>
@@ -4209,6 +4275,47 @@ function showToast(title, message, type = 'success') {
     toast.style.animation = 'fadeOut 0.3s ease-out forwards';
     setTimeout(() => toast.remove(), 300);
   }, 4000);
+}
+/* --- SİLME ONAY SİSTEMİ --- */
+let pendingDeleteAction = null; // Silme fonksiyonunu burada tutacağız
+
+function openDeleteModal(message, actionCallback) {
+  const modal = document.getElementById("delete-modal");
+  const msgEl = document.getElementById("delete-modal-msg");
+  const btn = document.getElementById("btn-confirm-delete");
+
+  if (!modal) return;
+
+  // Mesajı ayarla
+  if(msgEl) msgEl.textContent = message;
+
+  // Yapılacak işlemi hafızaya al
+  pendingDeleteAction = actionCallback;
+
+  // Butona tıklanınca işlemi çalıştır
+  btn.onclick = () => {
+    if (pendingDeleteAction) pendingDeleteAction();
+    closeDeleteModal();
+  };
+
+  // Modalı göster
+  modal.classList.remove("pointer-events-none", "opacity-0");
+  document.getElementById("delete-modal-content").classList.remove("scale-95");
+  document.getElementById("delete-modal-content").classList.add("scale-100");
+}
+
+function closeDeleteModal() {
+  const modal = document.getElementById("delete-modal");
+  if (modal) modal.classList.add("pointer-events-none", "opacity-0");
+  
+  // Efekt sıfırlama
+  const content = document.getElementById("delete-modal-content");
+  if(content) {
+      content.classList.remove("scale-100");
+      content.classList.add("scale-95");
+  }
+  
+  pendingDeleteAction = null;
 }
 /* --- PREMIUM INBOX ENGINE (EN ALTA EKLE) --- */
 
@@ -4797,38 +4904,41 @@ async function saveCert() {
 }
 
 // 3. SİLME
-async function deleteCert(certId, certName) {
-    if(!confirm("Are you sure you want to delete this certificate?")) return;
-
-    try {
-        let currentCerts = [];
+// 3. SİLME (CERTIFICATE) - YENİ MODAL İLE
+function deleteCert(certId, certName) {
+    // Tarayıcı confirm'i yerine kendi modalımızı çağırıyoruz
+    openDeleteModal(`Are you sure you want to delete "${certName}"?`, async () => {
         
-        if (certId === -1) {
-            // Eski tip string veriyi isme göre sil (Fallback)
-            currentCerts = selectedCompany.certificates.filter(c => c !== certName);
-        } else {
-            // Yeni tip obje veriyi ID'ye göre sil
-            currentCerts = selectedCompany.certificates.filter(c => c.id !== certId);
+        // --- ASIL SİLME İŞLEMİ BURADA BAŞLIYOR ---
+        try {
+            let currentCerts = [];
+            
+            if (certId === -1) {
+                currentCerts = selectedCompany.certificates.filter(c => c !== certName);
+            } else {
+                currentCerts = selectedCompany.certificates.filter(c => c.id !== certId);
+            }
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ certificates: currentCerts, updated_at: new Date() })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            selectedCompany.certificates = currentCerts;
+            const localRef = database.find(c => c.id == user.id);
+            if(localRef) localRef.certificates = currentCerts;
+
+            openProfile(user.id);
+            showToast("Deleted", "Certificate removed successfully.", "success");
+            
+        } catch (error) {
+            showToast("Error", "Delete failed: " + error.message, "error");
         }
-
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        const { error } = await supabaseClient
-            .from('profiles')
-            .update({ certificates: currentCerts, updated_at: new Date() })
-            .eq('id', user.id);
-
-        if (error) throw error;
-
-        selectedCompany.certificates = currentCerts;
-        const localRef = database.find(c => c.id == user.id);
-        if(localRef) localRef.certificates = currentCerts;
-
-        openProfile(user.id);
-        
-    } catch (error) {
-        showToast("Error", "Delete failed: " + error.message, "error");
-    }
+    });
 }
 // --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
 async function initRealData() {
