@@ -808,11 +808,11 @@
           class="text-xl text-BTrustOn-accent font-serif italic mb-2"
         ></p>
         <p
-          id="p-desc"
-          class="text-BTrustOn-text text-lg mb-6 font-light max-w-3xl leading-relaxed"
-        >
-          Description
-        </p>
+  id="p-desc"
+  class="text-BTrustOn-text text-lg mb-6 font-light max-w-3xl leading-relaxed whitespace-pre-line break-words"
+>
+  Description
+</p>
 
         <div class="flex flex-wrap gap-4 text-sm">
           <span
@@ -1337,9 +1337,14 @@
       <form id="asset-form" onsubmit="event.preventDefault(); saveAsset();" class="space-y-4">
         
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Asset / Item Name</label>
-          <input type="text" id="asset-item" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. CAT 336 Excavator" required>
-        </div>
+    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+    <textarea 
+      id="edit-desc" 
+      rows="4" 
+      class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition resize-y whitespace-normal" 
+      placeholder="Describe your company's core capabilities..."
+    ></textarea>
+</div>
 
         <div class="grid grid-cols-3 gap-4">
           <div class="col-span-2">
