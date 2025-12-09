@@ -4689,26 +4689,30 @@ async function sendReply() {
     }
 }
 // 1. MEVCUT MESAJI SİL
+// 1. MEVCUT MESAJI SİL (PROFESYONEL MODAL İLE)
 function deleteCurrentMessage() {
     // Açık olan bir mesaj var mı kontrol et
     if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
 
-    if (!confirm("Are you sure you want to delete this conversation?")) return;
+    // Standart 'confirm' yerine kendi şık modalımızı çağırıyoruz
+    openDeleteModal("Are you sure you want to delete this conversation?", () => {
+        
+        // --- SİLME İŞLEMİ (Kullanıcı 'YES' derse burası çalışır) ---
+        
+        // 1. Listeden bul ve sil
+        const index = inboxData.findIndex(m => m.id === currentMessageContext.original_msg_id);
+        if (index > -1) {
+            inboxData.splice(index, 1); // Diziden çıkar
+        }
 
-    // Listeden bul ve sil
-    const index = inboxData.findIndex(m => m.id === currentMessageContext.original_msg_id);
-    if (index > -1) {
-        inboxData.splice(index, 1); // Diziden çıkar
-    }
-
-    // Ekranı güncelle ve kapat
-    renderInboxItems(); // Listeyi yenile (silinen gitsin)
-    closeMessageView(); // Okuma ekranını kapat
-    
-    // Bildirim ver
-    showToast("Deleted", "Conversation moved to trash.", "success");
+        // 2. Ekranı güncelle
+        renderInboxItems(); // Listeyi yenile (silinen gitsin)
+        closeMessageView(); // Okuma ekranını kapat
+        
+        // 3. Bildirim ver
+        showToast("Deleted", "Conversation moved to trash.", "success");
+    });
 }
-
 // 2. OKUNMADI OLARAK İŞARETLE
 function markAsUnreadCurrentMessage() {
     if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
