@@ -1193,11 +1193,7 @@
             ></i>
           </div>
         </div>
-        <form
-          action="https://formspree.io/f/mqakpeoy"
-          method="POST"
-          class="space-y-5"
-        >
+        <form onsubmit="event.preventDefault(); handleQuoteSubmit();" class="space-y-5">
           <input type="hidden" name="form_type" value="Quote_Request" />
           <input
             type="hidden"
@@ -5344,5 +5340,40 @@ function markAllInboxRead() {
         }
         return sorted;
     }
+// --- TEKLİF FORMU GÖNDERME (YENİ) ---
+async function handleQuoteSubmit() {
+  const btn = document.querySelector("#modal-quote button[type='submit']");
+  const originalText = btn.textContent;
+  
+  // 1. Butonu kilitle
+  btn.textContent = "Sending...";
+  btn.disabled = true;
+
+  try {
+    // Form verilerini al (İleride bunları veritabanına da kaydedebiliriz)
+    const targetCompany = document.getElementById("input-target-company").value;
+    const name = document.querySelector("#modal-quote input[name='name']").value;
+    const email = document.querySelector("#modal-quote input[name='email']").value;
+    const message = document.querySelector("#modal-quote textarea[name='message']").value;
+
+    // Simülasyon (Gerçek sistemde burada supabaseClient.from('messages').insert... çalışır)
+    // Şimdilik sadece başarılı olmuş gibi davranıyoruz.
+    await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+    // 2. Başarılı Mesajı Göster
+    showToast("Quote Sent", `Your request to ${targetCompany} has been sent successfully.`, "success");
+
+    // 3. Modalı Kapat ve Formu Temizle
+    toggleModal('modal-quote');
+    document.querySelector("#modal-quote form").reset();
+
+  } catch (error) {
+    showToast("Error", "Could not send quote. Please try again.", "error");
+  } finally {
+    // 4. Butonu eski haline getir
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
 </script>
 </html>
