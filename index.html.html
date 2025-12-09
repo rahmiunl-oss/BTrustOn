@@ -2574,30 +2574,53 @@ function renderTopCompanies() {
       const container = document.getElementById("top-companies");
       if (!container) return;
 
-      if (topScrollInterval) clearInterval(topScrollInterval);
-      if (topRotateInterval) clearInterval(topRotateInterval);
+      const scrollSpeed = 30; // Kayma hızı (düşük = hızlı, yüksek = yavaş)
 
-      // AKIŞ HIZI AYARI BURADA:
-      // 20 = Çok Hızlı | 30 = İdeal/Akıcı | 50 = Yavaş
-      const speed = 30; 
+      // --- İÇ FONKSİYON: OYNAT ---
+      function playAnimations() {
+        // Önce eski zamanlayıcılar varsa temizle (üst üste binmesin)
+        if (topScrollInterval) clearInterval(topScrollInterval);
+        if (topRotateInterval) clearInterval(topRotateInterval);
 
-      topScrollInterval = setInterval(() => {
-        if (!container) return;
-        container.scrollLeft += 1; // Her seferinde 1 piksel kaydır
-        
-        // Sona geldiyse başa sar (Sonsuz döngü hissi)
-        if (
-          container.scrollLeft >=
-          container.scrollWidth - container.clientWidth - 1
-        ) {
-          container.scrollLeft = 0;
-        }
-      }, speed); // <-- Hız değişkenini buraya verdik
+        // 1. Kaydırma (Scroll) Başlat
+        topScrollInterval = setInterval(() => {
+          if (!container) return;
+          container.scrollLeft += 1; 
 
-      // Kartların içindeki verileri (Skor, İsim vb.) belirli aralıklarla karıştırıp canlılık katmak için:
-      topRotateInterval = setInterval(() => {
-        rotateTopCompanies();
-      }, 10000); // 10 saniyede bir veri yenileme (Bu kalabilir)
+          // Sona gelince başa sar
+          if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 1) {
+            container.scrollLeft = 0;
+          }
+        }, scrollSpeed);
+
+        // 2. Kartları Karıştırma Başlat (Okurken değişmesin diye bunu da durduruyoruz)
+        topRotateInterval = setInterval(() => {
+          rotateTopCompanies();
+        }, 10000);
+      }
+
+      // --- İÇ FONKSİYON: DURDUR ---
+      function pauseAnimations() {
+        if (topScrollInterval) clearInterval(topScrollInterval);
+        if (topRotateInterval) clearInterval(topRotateInterval);
+      }
+
+      // --- EVENT LISTENERLAR (Olay Dinleyicileri) ---
+      // Mouse üzerine gelince DURDUR
+      container.onmouseenter = () => {
+        pauseAnimations();
+        // Kullanıcı durduğunu anlasın diye cursor stilini değiştirebiliriz (opsiyonel)
+        container.style.cursor = "paused"; 
+      };
+
+      // Mouse gidince DEVAM ET
+      container.onmouseleave = () => {
+        playAnimations();
+        container.style.cursor = "default";
+      };
+
+      // Sayfa açılışında başlat
+      playAnimations();
     }
 
     // MAIN GRID
