@@ -3870,7 +3870,7 @@ async function fetchAllPublicProfiles() {
       tagline: profile.tagline || "",
       sector: profile.sector || "construction",
       desc: profile.description || "",
-      type_label: profile.company_type || "Industrial Supplier",
+      type_label: profile.company_type || "Industrial Supplier", // Type verisi buradan geliyor
       size_label: profile.company_size || "Size N/A",
       year_label: profile.founded_year || "",
       services: profile.services ? profile.services.split(',') : [],
@@ -3878,23 +3878,32 @@ async function fetchAllPublicProfiles() {
       website: profile.website || "",
       phone: profile.phone || "",
       contact_email: profile.contact_email || "",
-      // Kayıt olanlar için varsayılan değerler
       trust: "emerging", 
       meta: { references: 60, delivery: 70, years: 1, financial: 60, digital: 50 }, 
-      // ...
       certificates: profile.certificates || [],
       assets: profile.assets || [],
-      projects: profile.projects || [] // <--- DÜZELTİLDİ (Veritabanından okuyor)
+      projects: profile.projects || [] 
     };
 
-    if (!exists) {
-      // Listede yoksa en başa ekle
-      database.unshift(formattedProfile);
+    if (exists) {
+        // Varsa güncelle
+        Object.assign(exists, formattedProfile);
+    } else {
+        // Yoksa ekle
+        database.unshift(formattedProfile);
     }
   });
 
-  // 3. Ekranı yenile ki yeni şirket görünsün
-  renderCards(""); 
+  // 3. EKRANI YENİLE (DÜZELTME BURADA YAPILDI)
+  // Eski renderCards("") yerine akıllı vitrini çağırıyoruz.
+  if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
+      renderShowcase(); // Rozetleri destekleyen fonksiyon
+  } else {
+      // Eğer kullanıcı o sırada arama yapıyorsa arama sonucunu güncelle
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value : "";
+      renderSearchResults(q);
+  }
+  
   renderTopCompanies();
 }
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
@@ -4863,19 +4872,12 @@ async function initRealData() {
     .from('profiles')
     .select('*');
 
-  if (error) {
-    console.error("Veri çekme hatası:", error);
-    return;
-  }
-
+  if (error) { console.error("Veri çekme hatası:", error); return; }
   if (!profiles) return;
 
-  // 2. Gelen verileri bizim 'database' formatımıza uydur
+  // 2. Verileri formatla
   profiles.forEach(p => {
-    // Profilin bizdeki ID'si (Auth ID'si)
     const pId = p.id;
-
-    // Supabase verisini bizim formata çevir
     const realData = {
       id: pId,
       name: p.company_name || "New Company",
@@ -4883,8 +4885,7 @@ async function initRealData() {
       sector: p.sector || "construction",
       desc: p.description || "",
       tagline: p.tagline || "",
-      // Yeni alanlar
-      type_label: p.company_type,
+      type_label: p.company_type, // Type verisi
       size_label: p.company_size,
       year_label: p.founded_year,
       services: p.services ? p.services.split(',').map(s=>s.trim()) : [],
@@ -4892,36 +4893,32 @@ async function initRealData() {
       website: p.website,
       phone: p.phone,
       contact_email: p.contact_email,
-      // DİNAMİK LİSTELER (Önemli Kısım)
       certificates: p.certificates || [],
       projects: p.projects || [],
       assets: p.assets || [],
-      // Sabit meta skorları (İleride bunlar da veritabanından gelebilir)
       trust: "verified",
       meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
     };
 
-    // 3. Listede bu şirket var mı?
     const existingIndex = database.findIndex(c => c.id == pId);
-
     if (existingIndex > -1) {
-      // Varsa GÜNCELLE (Eski demo verisini ez)
-      // Mevcut objeyi koru, üzerine yenileri yaz (Merge)
       database[existingIndex] = { ...database[existingIndex], ...realData };
     } else {
-      // Yoksa LİSTEYE EKLE
       database.unshift(realData);
     }
   });
 
-  // 4. Ekranı Yenile
-  renderCards(""); 
-  renderTopCompanies();
+  // 4. Ekranı Yenile (DÜZELTME: renderCards kaldırıldı)
   populateCountryFilter();
-  renderShowcase();
-  // Eğer şu an bir profil açıksa, onu da güncelle (böylece F5 atınca boş kalmaz)
+  
+  if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
+      renderShowcase(); // Rozetleri hemen gösterir
+  }
+  
+  renderTopCompanies();
+
+  // Açık profil varsa güncelle
   if (selectedCompany) {
-      // Verileri güncellediğimiz için selectedCompany'i de yenilememiz lazım
       const updatedCompany = database.find(c => c.id === selectedCompany.id);
       if(updatedCompany) {
           selectedCompany = updatedCompany;
