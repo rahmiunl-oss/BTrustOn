@@ -1573,10 +1573,7 @@
                     <p id="msg-body">
                         </p>
                     
-                    <p class="mt-6 text-sm text-gray-400 italic">
-                        This message was sent via Strabon Secure Network. <br>
-                        Reference ID: #<span id="msg-id"></span>
-                    </p>
+                    
                 </div>
 
                 <div class="mt-12 pt-8 border-t border-gray-100">
@@ -1873,7 +1870,7 @@
         btn_choose_pro: "CHOOSE PRO",
         btn_contact_sales: "CONTACT SALES",
         badge_popular: "MOST POPULAR",
-        top_title: "Top Verified Companies by Trust Score",
+        top_title: "Top Verified Companies",
         top_sub: "Updated in real-time",
         score_info_main:
           "Calculated from verified references, delivery performance, company age and digital signals.",
@@ -4581,7 +4578,7 @@ function openMessage(msgId) {
     document.getElementById("msg-subject").textContent = msg.title;
     document.getElementById("msg-company").textContent = msg.company;
     document.getElementById("msg-date").textContent = msg.time; 
-    document.getElementById("msg-body").textContent = msg.desc + "\n\n(System: Waiting for your reply...)"; 
+    document.getElementById("msg-body").textContent = msg.desc; 
     document.getElementById("msg-id").textContent = msg.id;
     document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
 
