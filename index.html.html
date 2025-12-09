@@ -803,10 +803,12 @@
           <span id="p-year-tag">Founded 2012</span>
         </div>
 
-        <p
-          id="p-tagline"
-          class="text-xl text-BTrustOn-accent font-serif italic mb-2"
-        ></p>
+        <div id="p-tagline-container" class="hidden mb-8 relative pl-6 border-l-4 border-BTrustOn-accent/40 mt-2">
+            <i class="fa-solid fa-quote-left absolute -top-3 -left-3 text-3xl text-BTrustOn-accent/10 bg-white/50 backdrop-blur-sm p-1 rounded-full"></i>
+            
+            <p id="p-tagline" class="text-xl md:text-2xl font-serif italic text-slate-700 leading-relaxed tracking-wide">
+                </p>
+        </div>
         <p
   id="p-desc"
   class="text-BTrustOn-text text-lg mb-6 font-light max-w-3xl leading-relaxed whitespace-pre-line break-words"
@@ -2360,6 +2362,52 @@
       `;
     }
 
+// 👇 YENİ FONKSİYON: Şirket Tipine Göre Rozet Üretir 👇
+    function getCompanyTypeBadge(rawType) {
+      const type = (rawType || "company").toLowerCase();
+      let label = rawType;
+      let icon = "fa-building";
+      let colorClass = "bg-gray-50 text-gray-500 border-gray-200";
+
+      // Tiplere göre renk ve ikon ayarları
+      if (type.includes("manufacturer") || type.includes("üretici")) {
+        label = "Manufacturer";
+        icon = "fa-industry";
+        colorClass = "bg-purple-50 text-purple-700 border-purple-100";
+      } else if (type.includes("contractor") || type.includes("yüklenici")) {
+        label = "Contractor";
+        icon = "fa-helmet-safety";
+        colorClass = "bg-orange-50 text-orange-700 border-orange-100";
+      } else if (type.includes("distributor") || type.includes("supplier") || type.includes("tedarikçi")) {
+        label = "Distributor / Supplier";
+        icon = "fa-truck-ramp-box";
+        colorClass = "bg-indigo-50 text-indigo-700 border-indigo-100";
+      } else if (type.includes("tech") || type.includes("software")) {
+        label = "Tech & Service";
+        icon = "fa-microchip";
+        colorClass = "bg-blue-50 text-blue-700 border-blue-100";
+      } else if (type.includes("operator") || type.includes("mining")) {
+        label = "Operator";
+        icon = "fa-gem";
+        colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
+      }
+
+      // TR desteği (İsterseniz burayı genişletebiliriz)
+      if (currentLang === "tr") {
+          if(label === "Manufacturer") label = "Üretici";
+          if(label === "Contractor") label = "Yüklenici";
+          if(label === "Distributor / Supplier") label = "Tedarikçi / Distribütör";
+          if(label === "Tech & Service") label = "Teknoloji & Servis";
+          if(label === "Operator") label = "İşletmeci";
+      }
+
+      return `
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass} uppercase tracking-wide">
+           <i class="fa-solid ${icon}"></i> ${label}
+        </span>
+      `;
+    }
+
     function getScoreLabel(score) {
       if (currentLang === "tr") {
         if (score >= 95) return "MÜKEMMEL";
@@ -2875,7 +2923,6 @@ function filterSector(sector, btnEl) {
 
       const nameEl = document.getElementById("p-name");
       const descEl = document.getElementById("p-desc");
-      const taglineEl = document.getElementById("p-tagline");
       const cityEl = document.getElementById("p-city");
       const sectorEl = document.getElementById("p-sector");
       const badgeEl = document.getElementById("p-badge");
@@ -2903,7 +2950,24 @@ function filterSector(sector, btnEl) {
           ? company.desc_tr
           : company.desc;
       if (descEl) descEl.textContent = desc;
-      if (taglineEl) taglineEl.textContent = company.tagline || "";
+      // 👇 BURADAN BAŞLA 👇
+      
+      // --- TAGLINE (SLOGAN) GÖSTERİMİ ---
+      const taglineContainer = document.getElementById("p-tagline-container");
+      const taglineText = document.getElementById("p-tagline");
+
+      if (taglineContainer && taglineText) {
+          if (company.tagline && company.tagline.trim() !== "") {
+              // Slogan varsa: Tırnak içine al ve kutuyu göster
+              taglineText.textContent = `"${company.tagline}"`; 
+              taglineContainer.classList.remove("hidden");
+          } else {
+              // Yoksa: Kutuyu gizle
+              taglineContainer.classList.add("hidden");
+          }
+      }
+
+      // 👆 BURADA BİTİYOR 👆
 
       if (badgeEl) badgeEl.innerHTML = getTrustBadge(company);
 
@@ -3253,10 +3317,11 @@ async function saveProfileData() {
     const typeVal = document.getElementById("edit-type").value;
     const sizeVal = document.getElementById("edit-size").value;
     const yearVal = document.getElementById("edit-year").value;
-
+    const tagline = document.getElementById("edit-tagline").value.trim();
     const updates = {
       company_name: name,
       city: city,
+      tagline: tagline,
       sector: sector,
       description: desc,
       services: servicesStr,
@@ -3284,7 +3349,7 @@ async function saveProfileData() {
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
-            name, city, sector, desc,
+            name, city, sector, desc, tagline,
             website, phone, contact_email: contactEmail,
             type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
@@ -4886,6 +4951,7 @@ function markAllInboxRead() {
     // 1. ANA RENDER FONKSİYONU (Kartları Çizer)
     // Bu fonksiyon sadece "Verilen Listeyi Ekrana Basmakla" görevlidir.
     // 1. ANA RENDER FONKSİYONU (Kartları Çizer) - DÜZELTİLMİŞ VERSİYON
+    // 1. ANA RENDER FONKSİYONU (GÜNCELLENMİŞ - TİP ROZETLİ)
     function drawCardsToScreen(companyList, mode = "showcase") {
         const container = document.getElementById("card-container");
         const resultCount = document.getElementById("result-count");
@@ -4920,11 +4986,11 @@ function markAllInboxRead() {
             const score = computeScore(company.meta);
             const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
             const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
+            
+            // Veritabanındaki "type" veya "type_label" alanını kullanıyoruz
+            const compType = company.type_label || company.type || "Company";
 
             const card = document.createElement("div");
-            
-            // DÜZELTME 1: "justify-between" kaldırıldı, "h-full" eklendi.
-            // Bu sayede kart uzasa bile içerikler birbirinden kopmaz.
             card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-glass flex flex-col h-full hover:border-BTrustOn-accent hover:shadow-lg hover:-translate-y-1 transition cursor-pointer fade-in";
             
             card.onclick = () => openProfile(company.id);
@@ -4932,15 +4998,20 @@ function markAllInboxRead() {
             card.innerHTML = `
               <div class="flex-1 flex flex-col gap-3"> 
                   <div class="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 class="text-sm font-bold text-BTrustOn-primary mb-0.5 line-clamp-1">
+                    <div class="flex-1 min-w-0"> <h3 class="text-sm font-bold text-BTrustOn-primary mb-1.5 truncate pr-2">
                         ${company.name}
                       </h3>
-                      <p class="text-[11px] text-gray-400 mb-1 line-clamp-1">
-                        ${company.city}
-                      </p>
+                      
+                      <div class="flex flex-wrap items-center gap-2 mb-1">
+                        ${getCompanyTypeBadge(compType)}
+                        <span class="text-[10px] text-gray-400 flex items-center gap-1 shrink-0">
+                           <span class="w-1 h-1 rounded-full bg-gray-300"></span> 
+                           ${company.city}
+                        </span>
+                      </div>
+
                     </div>
-                    <div class="text-right shrink-0">
+                    <div class="text-right shrink-0 pl-2">
                       <div class="text-xs font-header font-bold text-BTrustOn-primary leading-none">
                         ${score}<span class="text-[10px] text-gray-400">/100</span>
                       </div>
