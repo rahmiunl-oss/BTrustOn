@@ -4103,18 +4103,34 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   }
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // YENİ EKLEDİĞİMİZ SATIR: Herkesi veritabanından çek
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Profil ve Verileri Çek
     setTimeout(fetchAllPublicProfiles, 100);
-
-    // SENDEKİ MEVCUT KOD:
     setTimeout(checkUserAndOpenProfile, 500);
+    
+    // 2. Başlangıç Ayarları
+    applyTranslations();
+    initTopCompaniesOrder();
+    renderTopCompanies();
+    startTopAnimations();
+    switchLanguage("en");
+    initRealData();
+    initShowcaseSystem();
+
+    // 👇👇👇 3. YENİ EKLENECEK: MESAJLARI ÇEK VE DİNLE 👇👇👇
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        console.log("Oturum açık, mesajlar getiriliyor...");
+        fetchInboxMessages(); // Eski mesajları getir
+        subscribeToMessages(); // Canlı dinlemeye başla
+    }
 });
 // Oturum durumu değişirse (Giriş/Çıkış) tetikle
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN') {
     checkUserAndOpenProfile();
+    fetchInboxMessages(); // <--- YENİ: Giriş yapınca mesajları çek
+    subscribeToMessages(); // <--- YENİ: Canlı dinlemeyi başlat
   } else if (event === 'SIGNED_OUT') {
     window.location.reload();
   }
