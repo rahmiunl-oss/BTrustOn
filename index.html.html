@@ -1336,55 +1336,55 @@
     </div>
     
     <div class="p-6">
-      <form id="asset-form" onsubmit="event.preventDefault(); saveAsset();" class="space-y-4">
-        
-        <div>
-    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Item Name</label>
-    <input 
-      type="text" 
-      id="asset-item" 
-      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" 
-      placeholder="e.g. Caterpillar 320 GC" 
-      required
-    >
-</div>
-
-        <div class="grid grid-cols-3 gap-4">
-          <div class="col-span-2">
-            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Specs</label>
-            <input type="text" id="asset-specs" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="2022 Model, Low hours">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Qty</label>
-            <input type="number" id="asset-qty" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" value="1">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
-          <input type="text" id="asset-location" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Ankara Warehouse">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</label>
-          <select id="asset-status" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white outline-none transition">
-            <option value="Available">Available</option>
-            <option value="Under Maintenance">Under Maintenance</option>
-            <option value="Out of Service">Out of Service</option>
-          </select>
-        </div>
-
-        <div class="pt-4 flex gap-3">
-          <button type="button" onclick="closeAssetModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
-            CANCEL
-          </button>
-          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
-            SAVE ASSET
-          </button>
-        </div>
-
-      </form>
+  <form id="asset-form" onsubmit="event.preventDefault(); saveAsset();" class="space-y-4">
+    
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Item Name</label>
+      <input 
+        type="text" 
+        id="asset-item" 
+        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" 
+        placeholder="e.g. Liebherr LR 11000 Crawler Crane" 
+        required
+      >
     </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div class="col-span-2">
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Specs</label>
+        <input type="text" id="asset-specs" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. 1000 Ton Capacity, 2023 Model">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Qty</label>
+        <input type="number" id="asset-qty" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" value="1">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
+      <input type="text" id="asset-location" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Rotterdam Logistics Hub, NL">
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Status</label>
+      <select id="asset-status" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white outline-none transition">
+        <option value="Available">Available</option>
+        <option value="Under Maintenance">Under Maintenance</option>
+        <option value="Out of Service">Out of Service</option>
+      </select>
+    </div>
+
+    <div class="pt-4 flex gap-3">
+      <button type="button" onclick="closeAssetModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+        CANCEL
+      </button>
+      <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+        SAVE ASSET
+      </button>
+    </div>
+
+  </form>
+</div>
   </div>
 </div>
 <div id="project-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
@@ -1399,34 +1399,34 @@
     </div>
     
     <div class="p-6">
-      <form id="project-form" onsubmit="event.preventDefault(); saveProject();" class="space-y-4">
-        
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Title</label>
-          <input type="text" id="proj-title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Copper Mine Expansion" required>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
-          <input type="text" id="proj-loc" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Erzincan, TR" required>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
-          <textarea id="proj-desc" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="Short details about the scope..."></textarea>
-        </div>
-
-        <div class="pt-4 flex gap-3">
-          <button type="button" onclick="closeProjectModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
-            CANCEL
-          </button>
-          <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
-            SAVE PROJECT
-          </button>
-        </div>
-
-      </form>
+  <form id="project-form" onsubmit="event.preventDefault(); saveProject();" class="space-y-4">
+    
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Title</label>
+      <input type="text" id="proj-title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Offshore Wind Farm Installation" required>
     </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
+      <input type="text" id="proj-loc" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. North Sea, Netherlands" required>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+      <textarea id="proj-desc" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. EPC delivery of 50 turbines (12MW) and subsea cabling works..."></textarea>
+    </div>
+
+    <div class="pt-4 flex gap-3">
+      <button type="button" onclick="closeProjectModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+        CANCEL
+      </button>
+      <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
+        SAVE PROJECT
+      </button>
+    </div>
+
+  </form>
+</div>
   </div>
 </div>
 <div id="cert-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
