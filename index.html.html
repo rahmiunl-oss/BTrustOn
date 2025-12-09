@@ -3867,6 +3867,7 @@ async function fetchAllPublicProfiles() {
       id: profile.id,
       name: profile.company_name || "New Company",
       city: profile.city || "Konum Yok",
+      tagline: profile.tagline || "",
       sector: profile.sector || "construction",
       desc: profile.description || "",
       type_label: profile.company_type || "Industrial Supplier",
@@ -3948,6 +3949,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     id: profile.id,
     name: profile.company_name,
     city: profile.city,
+    tagline: profile.tagline || "",
     sector: profile.sector || "construction",
     desc: profile.description || "",
     
@@ -4880,6 +4882,7 @@ async function initRealData() {
       city: p.city || "Konum Yok",
       sector: p.sector || "construction",
       desc: p.description || "",
+      tagline: p.tagline || "",
       // Yeni alanlar
       type_label: p.company_type,
       size_label: p.company_size,
