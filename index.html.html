@@ -1128,7 +1128,23 @@
     <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_services">Core Services</label>
     <textarea id="join-services" rows="2" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" placeholder="EPC, Excavation..."></textarea>
   </div>
-
+<div class="flex items-start gap-3 mt-4 mb-2">
+    <div class="flex items-center h-5">
+      <input 
+        id="join-terms" 
+        type="checkbox" 
+        required 
+        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 focus:ring-opacity-50 transition cursor-pointer"
+      >
+    </div>
+    <label for="join-terms" class="text-xs text-gray-500 leading-snug">
+      I agree to the 
+      <a href="javascript:void(0)" onclick="toggleModal('modal-terms')" class="text-BTrustOn-accent font-bold hover:underline">Terms of Service</a> 
+      and 
+      <a href="javascript:void(0)" onclick="toggleModal('modal-terms')" class="text-BTrustOn-accent font-bold hover:underline">Privacy Policy</a>.
+      I acknowledge that BTrustOn is a verification platform and does not guarantee the performance of any listed company.
+    </label>
+  </div>
   <div class="pt-2">
     <button type="submit" class="w-full bg-BTrustOn-primary text-white font-bold py-4 rounded-xl hover:bg-BTrustOn-accent transition">
       CREATE ACCOUNT & PROFILE
@@ -1241,40 +1257,24 @@
   </div>
 
   <footer class="border-t border-gray-200 bg-white/80 mt-4">
-    <div
-      class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500"
-    >
+    <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+      
       <div class="flex items-center gap-2">
-      <span class="font-header font-bold text-BTrustOn-primary text-sm">BtrustOn</span>
-        >
-        <span
-          >© <span id="year-span"></span> ·
-          <span data-i18n="footer_rights">All rights reserved.</span></span
-        >
+        <span class="font-header font-bold text-BTrustOn-primary text-sm">BTrustOn</span>
+        <span class="text-gray-300">|</span>
+        <span>© <span id="year-span"></span> · <span data-i18n="footer_rights">All rights reserved.</span></span>
       </div>
-      <div class="flex gap-4">
-        <a href="#" class="hover:text-BTrustOn-primary" data-i18n="footer_about"
-          >About</a
-        >
-        <a
-          href="#"
-          class="hover:text-BTrustOn-primary"
-          data-i18n="footer_pricing"
-          >Pricing</a
-        >
-        <a
-          href="#"
-          class="hover:text-BTrustOn-primary"
-          data-i18n="footer_privacy"
-          >Privacy</a
-        >
-        <a
-          href="#"
-          class="hover:text-BTrustOn-primary"
-          data-i18n="footer_terms"
-          >Terms</a
-        >
+
+      <div class="flex items-center gap-6 md:gap-8">
+        <a href="javascript:void(0)" onclick="toggleModal('modal-about')" class="hover:text-BTrustOn-primary transition" data-i18n="footer_about">About</a>
+
+        <a href="javascript:void(0)" onclick="toggleModal('modal-join')" class="hover:text-BTrustOn-primary transition" data-i18n="footer_pricing">Pricing</a>
+
+        <a href="javascript:void(0)" onclick="toggleModal('modal-terms')" class="hover:text-BTrustOn-primary transition" data-i18n="footer_privacy">Privacy</a>
+
+        <a href="javascript:void(0)" onclick="toggleModal('modal-terms')" class="hover:text-BTrustOn-primary transition" data-i18n="footer_terms">Terms</a>
       </div>
+
     </div>
   </footer>
 
@@ -1623,7 +1623,99 @@
             </div>
         </div>
     </div>
+</div>
+</div> </div> <div id="modal-about" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]">  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-about')"></div>
+  <div class="modal-container bg-white w-11/12 md:max-w-2xl mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col">
+    
+    <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+      <h2 class="text-2xl font-header font-bold text-BTrustOn-primary">About BTrustOn</h2>
+      <button onclick="toggleModal('modal-about')" class="text-gray-400 hover:text-red-500 transition">
+        <i class="fa-solid fa-xmark text-2xl"></i>
+      </button>
+    </div>
+
+    <div class="p-8 text-gray-600 leading-relaxed space-y-6 text-sm">
+      <p class="text-lg font-light text-BTrustOn-primary">
+        BTrustOn is the premier digital ecosystem designed to bridge the gap between industrial capability and global opportunity. We replace uncertainty with verified data.
+      </p>
+
+      <div>
+        <h3 class="font-bold text-BTrustOn-primary mb-2">Our Mission</h3>
+        <p>To create a transparent, merit-based industrial network where companies are judged by their proven track record, assets, and verified references rather than marketing noise.</p>
+      </div>
+
+      <div>
+        <h3 class="font-bold text-BTrustOn-primary mb-2">Who We Are</h3>
+        <p>Born from the needs of the construction, mining, and energy sectors, BTrustOn acts as a central registry and verification body. We enable EPC contractors, asset owners, and suppliers to discover trusted partners, verify capabilities instantly, and reduce supply chain risks.</p>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <h3 class="font-bold text-BTrustOn-primary mb-2 text-xs uppercase tracking-wider">The Trust Score™ Engine</h3>
+        <p class="text-xs">Our proprietary algorithm aggregates data from declared assets, completed projects, client verifications, and financial health indicators to assign a dynamic Trust Score. This allows for objective comparison of suppliers worldwide.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-terms" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]">
+  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-terms')"></div>
+  <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col">
+    
+    <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+      <div>
+        <h2 class="text-2xl font-header font-bold text-BTrustOn-primary">Terms of Service</h2>
+        <p class="text-xs text-gray-400">Last Updated: December 2025</p>
+      </div>
+      <button onclick="toggleModal('modal-terms')" class="text-gray-400 hover:text-red-500 transition">
+        <i class="fa-solid fa-xmark text-2xl"></i>
+      </button>
+    </div>
+
+    <div class="p-8 text-gray-600 leading-relaxed space-y-6 text-xs md:text-sm text-justify">
+      
+      <div class="p-4 bg-amber-50 border border-amber-100 rounded-lg text-amber-800 text-xs font-bold">
+        IMPORTANT: BTrustOn is a data aggregator and networking platform. We do not guarantee the quality, safety, or legality of the services provided by listed companies.
+      </div>
+
+      <div>
+        <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">1. Acceptance of Terms</h4>
+        <p>By accessing or using BTrustOn, you agree to be bound by these Terms. If you represent a company, you certify that you have the authority to bind that entity to these Terms.</p>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">2. Verification & Data Accuracy</h4>
+        <p>While BTrustOn employs rigorous verification processes (including the Trust Score™), we rely on data provided by users and third parties. BTrustOn <strong>does not warrant</strong> the accuracy, completeness, or reliability of any company profile, asset list, or project reference. Users are responsible for conducting their own due diligence before entering into contracts.</p>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">3. Limitation of Liability (Crucial)</h4>
+        <p>To the fullest extent permitted by law, BTrustOn (and its officers, employees, and agents) shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or business reputation. Our total liability for any claim arising out of these terms or the platform use is limited to the amount you paid us (if any) in the past 12 months.</p>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">4. Indemnification</h4>
+        <p>You agree to indemnify and hold BTrustOn harmless from any claims, damages, liabilities, costs, and expenses (including legal fees) arising from: (a) your use of the platform; (b) any content you upload (including logos, project details); (c) your violation of any third-party rights or laws.</p>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">5. International Use & Compliance</h4>
+        <p>BTrustOn operates globally. Users are responsible for complying with all local laws and regulations applicable to their jurisdiction. Use of this platform in jurisdictions where its content is illegal is prohibited.</p>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">6. Governing Law & Dispute Resolution</h4>
+        <p>These Terms are governed by the laws of the Republic of Turkey. Any disputes arising from these Terms shall be resolved exclusively in the courts of Istanbul (Çağlayan), Turkey, without regard to conflict of law principles.</p>
+      </div>
+
+    </div>
+    
+    <div class="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
+        <button onclick="toggleModal('modal-terms')" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg text-xs transition">CLOSE</button>
+    </div>
+
+  </div>
 </div> 
+
 <script>
   // Login modalını aç/kapat
   function openLoginModal() {
