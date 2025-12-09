@@ -849,13 +849,13 @@
         </button>
         
         <button
-          id="btn-req-quote"
-          onclick="openQuoteModal(document.getElementById('p-name').innerText)"
-          class="bg-BTrustOn-primary text-white px-6 py-3 rounded-xl font-bold shadow-xl shadow-slate-900/10 hover:bg-BTrustOn-accent transition text-sm flex items-center justify-center gap-2"
-        >
-          <i class="fa-solid fa-paper-plane"></i>
-          <span data-i18n="req_quote">REQUEST QUOTE</span>
-        </button>
+  id="btn-req-quote"
+  onclick="openQuoteModal(selectedCompany.id, selectedCompany.name)"
+  class="bg-BTrustOn-primary text-white px-6 py-3 rounded-xl ... (diğer classlar aynı kalsın)"
+>
+  <i class="fa-solid fa-paper-plane"></i>
+  <span data-i18n="req_quote">REQUEST QUOTE</span>
+</button>
 
       </div>
     </div>
@@ -4352,41 +4352,80 @@ function closeDeleteModal() {
   pendingDeleteAction = null;
 }
 /* --- PREMIUM INBOX ENGINE (EN ALTA EKLE) --- */
+// 👇 YENİ EKLENECEK KISIM 👇
 
-// Demo Veriler (Gerçek hayatta Supabase'den gelir)
-const inboxData = [
-  {
-    id: 101,
-    company: "Rönesans Holding",
-    type: "quote", // quote, system, alert
-    title: "Project RFQ: Steel Structure",
-    desc: "Requesting quotation for 500 tons of structural steel for Izmir project.",
-    time: "12 mins ago",
-    unread: true,
-    logo: "R"
-  },
-  {
-    id: 102,
-    company: "System",
-    type: "system",
-    title: "Profile Verified",
-    desc: "Your company documents have been approved. Trust Score updated.",
-    time: "2 hours ago",
-    unread: true,
-    logo: "S"
-  },
-  {
-    id: 103,
-    company: "Tekfen Construction",
-    type: "quote",
-    title: "Equipment Rental Inquiry",
-    desc: "Looking for 3x CAT 336 Excavators for 6 months lease.",
-    time: "Yesterday",
-    unread: false,
-    logo: "T"
-  }
-];
+// Inbox verisini artık canlı tutacağız, demo veriyi sildik, boş başlattık.
+let inboxData = []; 
 
+// Tarih formatlayıcı (Örn: "2 hours ago" yazar)
+function timeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " mins ago";
+    return "Just now";
+}
+// 👆 YAPIŞTIRMA BİTTİ 👆
+
+// Gerçek Gelen Kutusunu Çek
+async function fetchInboxMessages() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    // Supabase'den bana gelen mesajları çek
+    // Ayrıca gönderenin profil bilgilerini de (logo vs) çekmek için join yapıyoruz
+    // Not: SQL'de foreign key tanımlıysa: sender:sender_id(company_name, logo_url)
+    // Basitlik adına şimdilik düz çekip ID'den eşleştirelim veya view kullanalım.
+    
+    const { data: messages, error } = await supabaseClient
+        .from('messages')
+        .select('*')
+        .eq('receiver_id', user.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Inbox error:", error);
+        return;
+    }
+
+    // Veriyi frontend formatına çevir
+    inboxData = messages.map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_id, // Cevap yazmak için lazım
+        company: msg.related_company_name || "Unknown Company",
+        type: msg.msg_type,
+        title: msg.subject,
+        desc: msg.content,
+        time: timeAgo(msg.created_at),
+        unread: !msg.is_read,
+        logo: (msg.related_company_name || "U").charAt(0)
+    }));
+
+    renderInboxItems(); // Ekrana bas
+}
+
+// Realtime Abonelik Başlat (Sayfa açılınca çağırılmalı)
+function subscribeToMessages() {
+    supabaseClient
+        .channel('public:messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+            // Yeni mesaj geldiğinde inbox'ı yenile
+            console.log('New message received!', payload);
+            fetchInboxMessages();
+            showToast("New Message", "You have received a new message.", "info");
+        })
+        .subscribe();
+}
 function toggleInbox() {
   const panel = document.getElementById("inbox-panel");
   const overlay = document.getElementById("inbox-overlay");
@@ -4502,54 +4541,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 /* --- MESSAGE READER LOGIC (YENİ EKLENECEK KISIM) --- */
 
-function openMessage(msgId) {
-    // 1. Mesajı veriden bul
-    const msg = inboxData.find(m => m.id === msgId);
-    if (!msg) return;
-
-    // 2. HTML elemanlarını doldur
-    document.getElementById("msg-subject").textContent = msg.title;
-    document.getElementById("msg-company").textContent = msg.company;
-    document.getElementById("msg-date").textContent = msg.time; 
-    document.getElementById("msg-body").textContent = msg.desc + " We are looking forward to your prompt response regarding this matter. Please include your best offer and delivery timeline."; 
-    document.getElementById("msg-id").textContent = msg.id;
-    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
-
-    // Badge Rengi Ayarla
-    const badge = document.getElementById("msg-type-badge");
-    if(badge) {
-        if(msg.type === 'quote') {
-            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide";
-            badge.textContent = "QUOTE REQUEST";
-        } else if (msg.type === 'system') {
-            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide";
-            badge.textContent = "SYSTEM NOTIFICATION";
-        }
-    }
-
-    // 3. Okundu olarak işaretle
-    msg.unread = false;
-    renderInboxItems(); // Listeyi güncelle
-
-    // 4. Ekranı Aç
-    const viewer = document.getElementById("view-message");
-    if(viewer) viewer.classList.remove("hidden-view");
-    
-    // Arkadaki scroll'u kilitle
-    document.body.style.overflow = "hidden"; 
-
-    // Inbox panelini kapat
-    const panel = document.getElementById("inbox-panel");
-    const overlay = document.getElementById("inbox-overlay");
-    if(panel) panel.classList.remove("open");
-    if(overlay) overlay.classList.add("hidden");
-}
-
-function closeMessageView() {
-    const viewer = document.getElementById("view-message");
-    if(viewer) viewer.classList.add("hidden-view");
-    document.body.style.overflow = "auto"; // Scroll'u aç
-}
 
 /* --- GERÇEK MESAJLAŞMA SİSTEMİ (Supabase Entegreli) --- */
 
@@ -4613,72 +4604,77 @@ function closeMessageView() {
 }
 
 // 3. CEVAP GÖNDERME (Veritabanına Yazar)
-// GÜNCELLENMİŞ sendReply (Dosya Destekli)
+// 3. CEVAP GÖNDERME (LIVE + DOSYA DESTEKLİ)
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
-    const btn = document.querySelector("button[onclick='sendReply()']");
+    // Butonu bul (mobilde veya masaüstünde farklı yerde olabilir diye garantiye alıyoruz)
+    const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
-    // Kontrol: Hem mesaj hem dosya yoksa hata ver
+    // Kontrol: Hem mesaj boşsa HEM DE dosya seçilmemişse hata ver
     if (!content && !currentAttachmentFile) {
         showToast("Error", "Please write a message or attach a file.", "error");
         return;
     }
+    // Kontrol: Kime cevap vereceğimiz belli mi?
     if (!currentMessageContext) {
-        showToast("Error", "Context lost. Reopen message.", "error");
+        showToast("Error", "Context lost. Please reopen the message.", "error");
         return;
     }
 
     // Butonu Kilitle
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-    btn.disabled = true;
+    const originalText = btn ? btn.innerHTML : "SEND";
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+    }
 
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Login required.");
 
-        // --- DOSYA VARSA BİLGİ NOTU EKLE ---
+        // --- DOSYA VARSA MESAJIN SONUNA EKLE ---
+        // (Not: Gerçek dosya upload'u yapmıyoruz, sadece ismini ekliyoruz. 
+        // Dosya upload için Storage ayarı gerekir, şimdilik ismini iletiyoruz)
         let finalContent = content;
         if (currentAttachmentFile) {
             finalContent += `\n\n[📎 ATTACHMENT: ${currentAttachmentFile.name}]`;
         }
-        // -----------------------------------
+        // ---------------------------------------
 
-        if (currentMessageContext.target_user_id === "demo-receiver-id") {
-            // Demo Simülasyon
-            await new Promise(r => setTimeout(r, 1500));
-            showToast("Sent", "Reply sent with attachment (Demo)", "success");
-        } else {
-            // Gerçek Gönderim
-            const { error } = await supabaseClient
-                .from('messages')
-                .insert([{
-                    sender_id: user.id,
-                    receiver_id: currentMessageContext.target_user_id,
-                    content: finalContent,
-                    subject: "Re: " + document.getElementById("msg-subject").textContent,
-                    is_read: false
-                }]);
+        // GERÇEK GÖNDERİM (Supabase)
+        const { error } = await supabaseClient
+            .from('messages')
+            .insert([{
+                sender_id: user.id,
+                receiver_id: currentMessageContext.target_user_id,
+                content: finalContent,
+                subject: "Re: " + document.getElementById("msg-subject").textContent,
+                related_company_name: selectedCompany ? selectedCompany.name : "Yanıt",
+                msg_type: 'message',
+                is_read: false
+            }]);
 
-            if (error) throw error;
-            showToast("Sent", "Message sent successfully!", "success");
-        }
+        if (error) throw error;
+
+        showToast("Sent", "Reply sent successfully!", "success");
 
         // Temizlik
         inputEl.value = "";
-        removeAttachment(); // Dosyayı temizle (Yeni eklenen fonksiyonu çağırıyoruz)
+        if (typeof removeAttachment === "function") removeAttachment(); // Dosya seçimini temizle
         closeMessageView();
 
     } catch (error) {
+        console.error(error);
         showToast("Error", error.message, "error");
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        // Butonu eski haline getir
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 }
-/* --- MESAJ AKSİYONLARI (SİLME & OKUNMADI YAPMA) --- */
-
 // 1. MEVCUT MESAJI SİL
 function deleteCurrentMessage() {
     // Açık olan bir mesaj var mı kontrol et
@@ -5341,36 +5337,60 @@ function markAllInboxRead() {
         return sorted;
     }
 // --- TEKLİF FORMU GÖNDERME (YENİ) ---
+// Teklif Modalını Açma (ID parametresi eklendi)
+function openQuoteModal(companyId, companyName) {
+  const targetNameEl = document.getElementById("quote-target-company");
+  const inputName = document.getElementById("input-target-company");
+  const inputId = document.getElementById("input-target-id");
+
+  if (targetNameEl) targetNameEl.textContent = companyName || "";
+  if (inputName) inputName.value = companyName || "";
+  if (inputId) inputId.value = companyId || ""; // ID'yi sakla
+
+  toggleModal("modal-quote");
+}
+
+// Teklifi Veritabanına Gönderme
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
-  
-  // 1. Butonu kilitle
   btn.textContent = "Sending...";
   btn.disabled = true;
 
   try {
-    // Form verilerini al (İleride bunları veritabanına da kaydedebiliriz)
-    const targetCompany = document.getElementById("input-target-company").value;
-    const name = document.querySelector("#modal-quote input[name='name']").value;
-    const email = document.querySelector("#modal-quote input[name='email']").value;
+    const targetId = document.getElementById("input-target-id").value;
+    const targetName = document.getElementById("input-target-company").value;
+    const senderName = document.querySelector("#modal-quote input[name='name']").value;
     const message = document.querySelector("#modal-quote textarea[name='message']").value;
 
-    // Simülasyon (Gerçek sistemde burada supabaseClient.from('messages').insert... çalışır)
-    // Şimdilik sadece başarılı olmuş gibi davranıyoruz.
-    await new Promise(resolve => setTimeout(resolve, 1500)); 
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("You must be logged in to send a quote.");
 
-    // 2. Başarılı Mesajı Göster
-    showToast("Quote Sent", `Your request to ${targetCompany} has been sent successfully.`, "success");
+    // Supabase'e Yaz
+    const { error } = await supabaseClient
+      .from('messages')
+      .insert([
+        {
+          sender_id: user.id,
+          receiver_id: targetId,
+          subject: "Quote Request from " + senderName,
+          content: message,
+          related_company_name: senderName, // Veya kullanıcının kendi şirket adı
+          msg_type: 'quote',
+          is_read: false
+        }
+      ]);
 
-    // 3. Modalı Kapat ve Formu Temizle
+    if (error) throw error;
+
+    showToast("Quote Sent", `Request sent to ${targetName}.`, "success");
     toggleModal('modal-quote');
     document.querySelector("#modal-quote form").reset();
 
   } catch (error) {
-    showToast("Error", "Could not send quote. Please try again.", "error");
+    console.error(error);
+    showToast("Error", error.message, "error");
   } finally {
-    // 4. Butonu eski haline getir
     btn.textContent = originalText;
     btn.disabled = false;
   }
