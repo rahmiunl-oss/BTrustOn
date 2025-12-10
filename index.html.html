@@ -4450,6 +4450,7 @@ async function fetchInboxMessages() {
 // ✅ DÜZELTİLMİŞ ABONELİK (Kendi mesajına bildirim vermez)
 /* --- GERÇEK ZAMANLI DİNLEME (REALTIME) --- */
 // ✅ Mesajlar ve Teklifler için Doğru Real-time Dinleyicisi
+// ✅ Mesajlar ve Teklifler (İngilizce + Mavi Logo Rengi)
 let messageChannel = null;
 
 function subscribeToMessages() {
@@ -4473,26 +4474,29 @@ function subscribeToMessages() {
         // Mesaj bana gelmediyse durdur
         if (payload.new.receiver_id !== user.id) return;
 
-        console.log("Realtime: Yeni veri alındı!", payload.new);
+        console.log("Realtime: New data received!", payload.new);
 
-        // 3. INBOX'I YENİLE (Bu işlem Kırmızı Badge'i otomatik günceller)
+        // 3. INBOX'I YENİLE
         if (typeof fetchInboxMessages === 'function') {
           await fetchInboxMessages();
         }
 
-        // 4. Toast Bildirimi Göster
+        // 4. Toast Bildirimi Göster (TAMAMEN İNGİLİZCE)
         const isQuote = payload.new.msg_type === 'quote';
         
-        // Türe göre metni ayarla
-        const title = isQuote ? "Yeni Teklif İsteği" : "Yeni Mesaj";
+        // Başlıklar (New Message / New Quote Request)
+        const title = isQuote ? "New Quote Request" : "New Message";
+        
+        // İçerikler
         const body = isQuote 
-          ? "Yeni bir fiyat teklifi isteği aldınız." 
-          : (payload.new.subject || "Yeni bir mesajınız var.");
+          ? "You received a new quote request. Check your inbox!" 
+          : (payload.new.subject || "You have a new message.");
 
         // Sadece Inbox paneli kapalıysa bildirim göster
         const panel = document.getElementById("inbox-panel");
         if (panel && !panel.classList.contains("open")) {
-            showToast(title, body, "info");
+            // ✅ 'brand' kullanarak MAVİ renk yaptık
+            showToast(title, body, "brand");
         }
       }
     )
