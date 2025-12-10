@@ -4659,48 +4659,88 @@ document.addEventListener("DOMContentLoaded", () => {
 let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 
 // 1. MESAJI AÇMA FONKSİYONU
-/* --- GÜNCELLENMİŞ OPEN MESSAGE (FIXED CONTEXT) --- */
+/* --- GÜNCELLENMİŞ OPEN MESSAGE (READ FIX + ŞİRKET ADI FIX) --- */
 let currentThreadPartnerId = null; 
 let currentThreadSubject = null;
-let currentOpenMessageId = null; // Silme işlemi için lazım olan ID
+let currentOpenMessageId = null; 
 
 async function openMessage(msgId) {
+    // 1. Mesajı listede bul
     const msg = inboxData.find(m => m.id === msgId);
     if (!msg) return;
 
-    // 1. ÖNEMLİ: Context'i Kaydet (Silme/Okuma fonksiyonları bunu kullanacak)
+    // --- FIX 1: GÖRSEL DÜZELTME (ANLIK) ---
+    // Tıklar tıklamaz kırmızı noktayı kaldır ve menüyü güncelle
+    if (msg.unread) {
+        msg.unread = false; 
+        renderInboxItems(); 
+    }
+
+    // --- FIX 2: VERİTABANI DÜZELTME (GARANTİ) ---
+    // Arka planda bu konudaki TÜM mesajları 'okundu' yap.
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (user) {
+        supabaseClient
+            .from('messages')
+            .update({ is_read: true })
+            .eq('receiver_id', user.id)       // Bana gelenler
+            .eq('sender_id', msg.sender_id)   // Bu kişiden gelenler
+            .ilike('subject', `%${msg.title}%`) // Bu konudaki mesajlar
+            .then(({ error }) => {
+                if(error) console.error("Read update error:", error);
+            });
+    }
+
+    // 3. Context Ayarla
     currentOpenMessageId = msgId; 
     currentThreadPartnerId = msg.sender_id;
     currentThreadSubject = msg.title;
 
-    // 2. HTML Başlıklarını Doldur
+    // 4. HTML Başlıklarını Doldur
     document.getElementById("msg-subject").textContent = msg.title;
-    document.getElementById("msg-company").textContent = msg.company;
     
+    // --- FIX 3: ŞİRKET ADI GÖSTERİMİ ---
+    // Veritabanından gelen "İsim (Şirket)" formatını parçala ve güzel göster
+    const rawName = msg.company || "Unknown";
+    let displayNameHtml = rawName;
+    
+    // Parantez içini yakala: "Ahmet (ABC Yapı)" -> İsim: Ahmet, Şirket: ABC Yapı
+    const match = rawName.match(/^(.*?)\s*\((.*?)\)$/);
+    
+    if (match) {
+        // Eğer format uygunsa: İsmi siyah, Şirketi gri ve 'from' ile yaz
+        displayNameHtml = `
+            <span class="text-gray-900 font-bold">${match[1]}</span>
+            <span class="text-gray-400 font-normal text-[11px] ml-1"> from ${match[2]}</span>
+        `;
+    } else {
+        // Format yoksa düz yaz
+        displayNameHtml = `<span class="text-gray-900 font-bold">${rawName}</span>`;
+    }
+    document.getElementById("msg-company").innerHTML = displayNameHtml;
+    
+    // Badge Ayarla
     const badge = document.getElementById("msg-type-badge");
     if(badge) {
         badge.textContent = msg.type === 'quote' ? "QUOTE" : "MESSAGE";
-        // Stil sınıfını da güncelleyelim
         badge.className = msg.type === 'quote' 
-            ? "font-semibold text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-BTrustOn-accent border border-cyan-100" 
-            : "font-semibold text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200";
+            ? "px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-50 text-BTrustOn-accent uppercase tracking-wide border border-cyan-100" 
+            : "px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600 uppercase tracking-wide border border-gray-200";
     }
 
     const logoEl = document.getElementById("msg-logo");
-    if(logoEl) logoEl.textContent = msg.logo || msg.company.charAt(0);
+    if(logoEl) logoEl.textContent = msg.logo || msg.company.charAt(0).toUpperCase();
 
-    // 3. Ekranı Aç
+    // 5. Ekranı Aç
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.remove("hidden-view");
-    document.body.style.overflow = "hidden"; // Arka plan kaymasını engelle
+    document.body.style.overflow = "hidden"; 
 
-    // Inbox panelini kapat
     toggleInbox(); 
 
-    // 4. Geçmişi Yükle
+    // 6. Geçmişi Yükle
     await loadMessageThread(msg.title, msg.sender_id);
 }
-
 // Konuşma geçmişini veritabanından çeken ve basan fonksiyon
 async function loadMessageThread(cleanSubject, partnerId) {
     const container = document.getElementById("message-thread-container");
@@ -5587,6 +5627,8 @@ function openQuoteModal(companyId, companyName) {
 // Teklifi Veritabanına Gönderme
 /* --- DOSYA DESTEKLİ TEKLİF GÖNDERME --- */
 /* --- GÜNCELLENMİŞ TEKLİF GÖNDERME (KONU BAŞLIKLI) --- */
+/* --- OTOMATİK ŞİRKET İSİMLİ TEKLİF GÖNDERME --- */
+/* --- OTOMATİK ŞİRKET İSİMLİ TEKLİF GÖNDERME --- */
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
@@ -5594,42 +5636,59 @@ async function handleQuoteSubmit() {
   btn.disabled = true;
 
   try {
+    // 1. KULLANICI KONTROLÜ
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("You must be logged in to send a quote.");
+
+    // 2. KULLANICININ ŞİRKET BİLGİSİNİ ÇEK (PROFILES TABLOSUNDAN)
+    // Burası eksikti, şimdi ekliyoruz:
+    const { data: userProfile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('company_name')
+        .eq('id', user.id)
+        .single();
+
+    // Şirket ismini veritabanından aldık! (Bulamazsa varsayılan atar)
+    const myCompanyName = (userProfile && userProfile.company_name) ? userProfile.company_name : "Unknown Company";
+
+    // 3. FORM VERİLERİNİ AL
     const targetId = document.getElementById("input-target-id").value;
     const targetName = document.getElementById("input-target-company").value;
-    const senderName = document.querySelector("#modal-quote input[name='name']").value;
-    
-    // YENİ: Konu başlığını al
+    const senderName = document.querySelector("#modal-quote input[name='name']").value.trim(); 
+    const senderEmail = document.querySelector("#modal-quote input[name='email']").value.trim();
     const subjectInput = document.getElementById("quote-subject").value.trim();
     const message = document.querySelector("#modal-quote textarea[name='message']").value;
     const fileInput = document.getElementById("quote-file");
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("You must be logged in.");
+    // 4. GÖNDEREN GÖRÜNÜMÜNÜ OLUŞTUR: "Ad Soyad (Şirket Adı)"
+    const displaySender = `${senderName} (${myCompanyName})`;
 
-    let finalContent = message;
+    // 5. İÇERİK OLUŞTUR (Emaili gizle)
+    let finalContent = message + `\n\n[CONTACT_EMAIL: ${senderEmail}]`;
 
-    // Dosya Yükleme (Aynı kalıyor)
+    // Dosya Varsa Yükle
     if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `quotes/${user.id}-${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabaseClient.storage.from('logos').upload(fileName, file); // Bucket adınızı kontrol edin
+        
+        const { error: uploadError } = await supabaseClient.storage.from('logos').upload(fileName, file);
         if (!uploadError) {
             const { data: { publicUrl } } = supabaseClient.storage.from('logos').getPublicUrl(fileName);
             finalContent += `\n\n[📎 Attachment: ${file.name}](${publicUrl})`;
         }
     }
 
-    // Mesajı Gönder (Subject artık formdan geliyor)
+    // 6. MESAJI KAYDET
     const { error } = await supabaseClient
       .from('messages')
       .insert([
         {
           sender_id: user.id,
           receiver_id: targetId,
-          subject: subjectInput, // <-- YENİ EKLENDİ
+          subject: subjectInput, 
           content: finalContent,
-          related_company_name: senderName,
+          related_company_name: displaySender, // <-- ARTIK BURADA ŞİRKET ADI DA VAR
           msg_type: 'quote',
           is_read: false
         }
