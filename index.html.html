@@ -104,7 +104,7 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      z-index: 9999;
+      z-index: 99999;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -1230,6 +1230,18 @@
               required
             />
           </div>
+
+<div>
+  <label class="block text-xs font-bold text-gray-600 mb-1.5">Subject</label>
+  <input 
+    type="text" 
+    name="subject" 
+    id="quote-subject" 
+    class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none font-bold text-gray-700" 
+    placeholder="e.g. Excavator Rental Request" 
+    required 
+  />
+</div>
           <div>
             <label
               class="block text-xs font-bold text-gray-600 mb-1.5"
@@ -1539,99 +1551,73 @@
 </button>
     </div>
 </div>
-<div id="view-message" class="hidden-view fixed inset-0 z-[10000] bg-slate-50/95 backdrop-blur-sm overflow-y-auto">
+<div id="view-message" class="hidden-view fixed inset-0 z-[10000] bg-slate-50 flex flex-col h-[100dvh]">
     
-    <div class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex justify-between items-center max-w-5xl mx-auto w-full z-10">
-        <button onclick="closeMessageView()" class="flex items-center gap-2 text-gray-500 hover:text-BTrustOn-primary transition font-bold text-sm px-4 py-2 rounded-lg hover:bg-gray-100">
-            <i class="fa-solid fa-arrow-left"></i> BACK TO INBOX
-        </button>
-        
-        <div class="flex gap-2">
-            <button onclick="deleteCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" title="Delete">
-                <i class="fa-solid fa-trash-can text-sm"></i>
+    <div class="shrink-0 bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex justify-between items-center shadow-sm z-20">
+        <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
+            <button onclick="closeMessageView()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition">
+                <i class="fa-solid fa-arrow-left"></i>
             </button>
             
+            <div id="msg-logo" class="w-10 h-10 rounded-lg bg-cyan-50 border border-cyan-100 flex items-center justify-center text-lg font-bold text-BTrustOn-accent shrink-0">
+                A
+            </div>
+            
+            <div class="min-w-0">
+                <h1 id="msg-subject" class="text-sm md:text-base font-bold text-gray-800 truncate">Subject</h1>
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span id="msg-company" class="truncate font-medium">Company Name</span>
+                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <span id="msg-type-badge" class="font-semibold text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">MESSAGE</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-2 shrink-0">
             <button onclick="markAsUnreadCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" title="Mark Unread">
-                <i class="fa-solid fa-envelope text-sm"></i>
+                <i class="fa-solid fa-envelope-open text-sm"></i>
+            </button>
+            <button onclick="deleteCurrentMessage()" class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" title="Delete Conversation">
+                <i class="fa-solid fa-trash-can text-sm"></i>
             </button>
         </div>
     </div>
 
-    <div class="max-w-4xl mx-auto mt-8 mb-20 px-4">
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px]">
+    <div id="message-thread-container" class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4 bg-[#e5ddd5]/10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+        <div class="flex justify-center mt-10">
+            <span class="bg-gray-200 text-gray-600 text-[10px] px-3 py-1 rounded-full uppercase tracking-wide font-bold">Loading Chat...</span>
+        </div>
+    </div>
+
+    <div class="shrink-0 bg-white border-t border-gray-200 p-3 md:p-4 z-20">
+        
+        <div id="attachment-preview" class="hidden mb-2 flex items-center justify-between bg-cyan-50 border border-cyan-100 rounded-lg p-2 mx-1">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <div class="w-8 h-8 rounded bg-white flex items-center justify-center text-BTrustOn-accent shadow-sm shrink-0">
+                    <i class="fa-solid fa-file-lines"></i>
+                </div>
+                <div class="min-w-0">
+                    <p id="attachment-name" class="text-xs font-bold text-gray-700 truncate">filename.pdf</p>
+                    <p id="attachment-size" class="text-[9px] text-gray-400">0 KB</p>
+                </div>
+            </div>
+            <button type="button" onclick="removeAttachment()" class="w-6 h-6 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+
+        <div class="flex items-end gap-2 md:gap-3 max-w-5xl mx-auto">
+            <input type="file" id="reply-file-input" style="display: none;" onchange="handleFileSelect(this)" />
+            <button type="button" onclick="document.getElementById('reply-file-input').click()" class="h-10 w-10 md:w-12 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center border border-gray-200 shrink-0">
+                <i class="fa-solid fa-paperclip text-lg"></i>
+            </button>
+
+            <textarea id="reply-input" rows="1" class="flex-1 bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:bg-white focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition resize-none max-h-32 min-h-[44px]" placeholder="Type a message..."></textarea>
             
-            <div class="bg-slate-50 border-b border-gray-100 p-8 flex flex-col md:flex-row justify-between items-start gap-6">
-                <div class="flex items-start gap-4">
-                    <div id="msg-logo" class="w-16 h-16 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-2xl font-bold text-BTrustOn-primary">
-                        </div>
-                    <div>
-                        <h1 id="msg-subject" class="text-2xl font-header font-bold text-BTrustOn-primary mb-1">
-                            </h1>
-                        <div class="flex items-center gap-2 text-sm text-gray-500">
-                            <span>From:</span>
-                            <span id="msg-company" class="font-bold text-gray-700 bg-gray-200/50 px-2 py-0.5 rounded">
-                                </span>
-                            <span class="text-gray-300">•</span>
-                            <span id="msg-date" class="text-xs">
-                                </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col items-end">
-                    <span id="msg-type-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide">
-                        QUOTE REQUEST
-                    </span>
-                </div>
-            </div>
-
-            <div class="p-8 md:p-12">
-                <div class="prose max-w-none text-gray-600 leading-relaxed text-lg">
-                    <p id="msg-body">
-                        </p>
-                    
-                    
-                </div>
-
-                <div class="mt-12 pt-8 border-t border-gray-100">
-                    <h4 class="text-sm font-bold text-BTrustOn-primary mb-3 uppercase tracking-wider">Reply to Request</h4>
-                    <div class="flex gap-4 items-start">
-                        <div class="w-10 h-10 rounded-full bg-BTrustOn-primary text-white flex items-center justify-center shrink-0 text-sm">
-                            ME
-                        </div>
-                        <div class="flex-1">
-                
-                <input type="file" id="reply-file-input" style="display: none;" onchange="handleFileSelect(this)" />
-
-                <textarea id="reply-input" class="w-full border border-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition bg-gray-50 focus:bg-white" rows="3" placeholder="Type your reply or attach a formal proposal..."></textarea>
-                
-                <div id="attachment-preview" class="hidden mt-3 flex items-center justify-between bg-cyan-50 border border-cyan-100 rounded-lg p-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded bg-white flex items-center justify-center text-BTrustOn-accent shadow-sm">
-                            <i class="fa-solid fa-file-lines"></i>
-                        </div>
-                        <div>
-                            <p id="attachment-name" class="text-xs font-bold text-gray-700 line-clamp-1">filename.pdf</p>
-                            <p id="attachment-size" class="text-[10px] text-gray-400">0 MB</p>
-                        </div>
-                    </div>
-                    <button type="button" onclick="removeAttachment()" class="text-gray-400 hover:text-red-500 transition px-2">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-
-                <div class="flex justify-end gap-3 mt-3">
-                    <button type="button" onclick="document.getElementById('reply-file-input').click()" class="px-4 py-2 rounded-lg border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition group">
-                        <i class="fa-solid fa-paperclip mr-1 group-hover:text-BTrustOn-accent"></i> ATTACH FILE
-                    </button>
-                    
-                    <button type="button" onclick="sendReply()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white text-xs font-bold hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
-                        SEND REPLY <i class="fa-solid fa-paper-plane ml-1"></i>
-                    </button>
-                </div>
-            </div>
-
-            </div>
+            <button onclick="sendReply()" class="h-10 px-4 md:px-6 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-xl font-bold text-xs tracking-wide transition shadow-lg shadow-cyan-500/20 shrink-0 flex items-center gap-2">
+                <span>SEND</span>
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -4450,59 +4436,51 @@ function timeAgo(dateString) {
 
 // Gerçek Gelen Kutusunu Çek
 /* --- GRUPLANMIŞ INBOX (THREADING) --- */
+/* --- KONU BAZLI GRUPLANMIŞ INBOX --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // Tüm mesajları çek (Bana gelenler)
+    // Tüm mesajları çek
     const { data: messages, error } = await supabaseClient
         .from('messages')
         .select('*')
         .eq('receiver_id', user.id)
-        .order('created_at', { ascending: false }); // En yeni en üstte
+        .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error("Inbox error:", error);
-        return;
-    }
+    if (error) { console.error("Inbox error:", error); return; }
 
-    // --- GRUPLAMA MANTIĞI ---
     const groupedMap = new Map();
 
     messages.forEach(msg => {
-        // "Re: " ibaresini temizle ki aynı konu olduğunu anlayalım
-        const rootSubject = msg.subject.replace(/^Re:\s+/i, '').trim();
+        // "Re:" eklerini temizle ki "Re: Fiyat" ile "Fiyat" aynı gruba girsin
+        const cleanSubject = msg.subject.replace(/^(Re:\s*)+/i, '').trim();
         
-        // Gruplama Anahtarı: Konu + Gönderen Şirket (Benzersiz sohbet kimliği)
-        // Not: Basitlik için Konu Başlığını baz alıyoruz.
-        const groupKey = rootSubject + "_" + msg.related_company_name;
+        // Gruplama Anahtarı: Temiz Konu + Gönderen Şirket
+        const groupKey = cleanSubject + "_" + (msg.related_company_name || "Unknown");
 
         if (!groupedMap.has(groupKey)) {
-            // Bu konudaki İLK (yani en yeni) mesajı listeye ekle
             groupedMap.set(groupKey, {
-                id: msg.id,             // En son mesajın ID'si (açınca bunu görecek)
-                count: 1,               // Mesaj sayısı
-                sender_id: msg.sender_id,
+                id: msg.id,             // En son mesajın ID'si
+                count: 1,
+                sender_id: msg.sender_id, // Karşı tarafın ID'si (thread için lazım)
                 company: msg.related_company_name || "Unknown",
                 type: msg.msg_type,
-                title: rootSubject,     // Temiz başlık
-                desc: msg.content,      // En son mesajın içeriği
+                title: cleanSubject,     // Ekranda görünecek temiz başlık
+                desc: msg.content,      // En son içerik
                 time: timeAgo(msg.created_at),
-                unread: !msg.is_read,   // En sonuncusu okunmadıysa unread sayılır
+                unread: !msg.is_read,
                 logo: (msg.related_company_name || "U").charAt(0)
             });
         } else {
-            // Zaten bu konu listede varsa, sadece sayacını artır ve unread durumunu güncelle
             const existing = groupedMap.get(groupKey);
             existing.count += 1;
-            if (!msg.is_read) existing.unread = true; // Grupta herhangi biri okunmamışsa hepsi okunmamış görünür
+            if (!msg.is_read) existing.unread = true;
         }
     });
 
-    // Map'ten Array'e çevir
     inboxData = Array.from(groupedMap.values());
-
-    renderInboxItems(); // Ekrana bas
+    renderInboxItems();
 }
 // Realtime Abonelik Başlat (Sayfa açılınca çağırılmalı)
 // ✅ DÜZELTİLMİŞ ABONELİK (Kendi mesajına bildirim vermez)
@@ -4511,12 +4489,9 @@ async function fetchInboxMessages() {
 // ✅ Mesajlar ve Teklifler (İngilizce + Mavi Logo Rengi)
 // ✅ Mesajlar ve Teklifler (Tıklayınca Mesaja Gitme Özellikli)
 let messageChannel = null;
-
+/* --- GÜNCELLENMİŞ REALTIME (TEMİZ BİLDİRİM) --- */
 function subscribeToMessages() {
-  if (messageChannel) {
-    supabaseClient.removeChannel(messageChannel);
-    messageChannel = null;
-  }
+  if (messageChannel) { supabaseClient.removeChannel(messageChannel); messageChannel = null; }
 
   messageChannel = supabaseClient
     .channel('public:messages')
@@ -4525,35 +4500,28 @@ function subscribeToMessages() {
       { event: 'INSERT', schema: 'public', table: 'messages' },
       async (payload) => {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
+        if (!user || payload.new.receiver_id !== user.id) return;
 
-        if (payload.new.receiver_id !== user.id) return;
+        // Inbox'ı tazele
+        if (typeof fetchInboxMessages === 'function') await fetchInboxMessages();
 
-        console.log("Realtime: New data received!", payload.new);
-
-        // 1. Verileri Tazele
-        if (typeof fetchInboxMessages === 'function') {
-          await fetchInboxMessages();
-        }
+        // TEMİZ BİLDİRİM HAZIRLIĞI
+        const rawSubject = payload.new.subject || "No Subject";
+        // Başındaki tüm "Re:"leri ve boşlukları sil
+        const cleanSubject = rawSubject.replace(/^(Re:\s*)+/i, '').trim();
+        const senderName = payload.new.related_company_name || "Someone";
+        const msgId = payload.new.id;
 
         const isQuote = payload.new.msg_type === 'quote';
-        const msgId = payload.new.id; // Gelen mesajın ID'si
-
-        const title = isQuote ? "New Quote Request" : "New Message";
-        const body = isQuote 
-          ? "You received a new quote request. Tap to view details." 
-          : (payload.new.subject || "Tap here to read the message.");
+        
+        // Bildirim Başlığı: Sadece Konu
+        const title = cleanSubject; 
+        // Bildirim İçeriği: Kimden geldiği
+        const body = `${senderName} sent a ${isQuote ? 'Quote Request' : 'Message'}`;
 
         const panel = document.getElementById("inbox-panel");
-        
-        // Eğer panel kapalıysa bildirimi göster
         if (panel && !panel.classList.contains("open")) {
-            // 4. Parametre olarak tıklama fonksiyonunu gönderiyoruz:
-            showToast(title, body, "brand", () => {
-                // Tıklanınca çalışacak kod:
-                console.log("Toast clicked, opening message:", msgId);
-                openMessage(msgId);
-            });
+            showToast(title, body, "brand", () => openMessage(msgId));
         }
       }
     )
@@ -4691,66 +4659,114 @@ document.addEventListener("DOMContentLoaded", () => {
 let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 
 // 1. MESAJI AÇMA FONKSİYONU
+/* --- GÜNCELLENMİŞ OPEN MESSAGE (FIXED CONTEXT) --- */
+let currentThreadPartnerId = null; 
+let currentThreadSubject = null;
+let currentOpenMessageId = null; // Silme işlemi için lazım olan ID
+
 async function openMessage(msgId) {
     const msg = inboxData.find(m => m.id === msgId);
     if (!msg) return;
 
-    // --- CONTEXT KAYDETME ---
-    currentMessageContext = {
-        original_msg_id: msg.id,
-        target_company_name: msg.company,
-        // Demo ortamında olduğumuz için 'fake' bir ID atıyoruz. 
-        // Gerçek sistemde burası msg.sender_id (UUID) olmalı.
-        target_user_id: msg.sender_id || "demo-receiver-id" 
-    };
+    // 1. ÖNEMLİ: Context'i Kaydet (Silme/Okuma fonksiyonları bunu kullanacak)
+    currentOpenMessageId = msgId; 
+    currentThreadPartnerId = msg.sender_id;
+    currentThreadSubject = msg.title;
 
-    // HTML Doldur
+    // 2. HTML Başlıklarını Doldur
     document.getElementById("msg-subject").textContent = msg.title;
     document.getElementById("msg-company").textContent = msg.company;
-    document.getElementById("msg-date").textContent = msg.time; 
-    document.getElementById("msg-body").textContent = msg.desc; 
-    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
-
-    // Badge Ayarla
+    
     const badge = document.getElementById("msg-type-badge");
     if(badge) {
-        if(msg.type === 'quote') {
-            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-50 text-BTrustOn-accent border border-cyan-100 uppercase tracking-wide";
-            badge.textContent = "QUOTE REQUEST";
-        } else {
-            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200 uppercase tracking-wide";
-            badge.textContent = "MESSAGE";
-        }
+        badge.textContent = msg.type === 'quote' ? "QUOTE" : "MESSAGE";
+        // Stil sınıfını da güncelleyelim
+        badge.className = msg.type === 'quote' 
+            ? "font-semibold text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-BTrustOn-accent border border-cyan-100" 
+            : "font-semibold text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200";
     }
 
-    // Okundu yap
-    msg.unread = false;
-    renderInboxItems(); 
-// ✅ Okundu yap (DB)
-try {
-    const { error } = await supabaseClient
-        .from("messages")
-        .update({ is_read: true })
-        .eq("id", msg.id);
+    const logoEl = document.getElementById("msg-logo");
+    if(logoEl) logoEl.textContent = msg.logo || msg.company.charAt(0);
 
-    if (error) throw error;
-} catch (e) {
-    console.error("Mark read error:", e);
-}
-
-
-    // Ekranı Aç
+    // 3. Ekranı Aç
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.remove("hidden-view");
-    document.body.style.overflow = "hidden"; 
+    document.body.style.overflow = "hidden"; // Arka plan kaymasını engelle
 
     // Inbox panelini kapat
-    const panel = document.getElementById("inbox-panel");
-    const overlay = document.getElementById("inbox-overlay");
-    if(panel) panel.classList.remove("open");
-    if(overlay) overlay.classList.add("hidden");
+    toggleInbox(); 
+
+    // 4. Geçmişi Yükle
+    await loadMessageThread(msg.title, msg.sender_id);
 }
 
+// Konuşma geçmişini veritabanından çeken ve basan fonksiyon
+async function loadMessageThread(cleanSubject, partnerId) {
+    const container = document.getElementById("message-thread-container");
+    container.innerHTML = '<div class="flex justify-center p-4"><i class="fa-solid fa-spinner fa-spin text-BTrustOn-accent"></i></div>';
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if(!user) return;
+
+    // "Subject" içinde arama yap (ilike kullanarak "Re:" varyasyonlarını da yakala)
+    // Hem benim gönderdiklerim hem bana gelenler
+    const { data: thread, error } = await supabaseClient
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .ilike('subject', `%${cleanSubject}%`) 
+        .order('created_at', { ascending: true }); // Eskiden yeniye sırala (Chat mantığı)
+
+    if (error) {
+        container.innerHTML = '<p class="text-red-500 text-xs">Error loading history.</p>';
+        return;
+    }
+
+    container.innerHTML = ""; // Temizle
+
+    if(thread.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-xs text-center">No previous messages.</p>';
+        return;
+    }
+
+    // Mesajları Ekrana Bas
+    thread.forEach(m => {
+        const isMe = m.sender_id === user.id;
+        
+        // Dosya linklerini düzenle (Markdown link -> HTML)
+        let formattedContent = m.content
+            .replace(/\n/g, '<br>')
+            .replace(/\[📎 Attachment: (.*?)\]\((.*?)\)/g, 
+                '<a href="$2" target="_blank" class="block mt-2 p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-BTrustOn-accent hover:underline flex items-center gap-2"><i class="fa-solid fa-paperclip"></i> $1</a>');
+
+        const bubble = document.createElement("div");
+        bubble.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-fade-in`;
+        
+        bubble.innerHTML = `
+            <div class="max-w-[80%] ${isMe ? 'bg-cyan-50 border border-cyan-100 rounded-tr-none' : 'bg-white border border-gray-200 rounded-tl-none'} p-4 rounded-xl shadow-sm">
+                <div class="flex justify-between items-center mb-1 gap-4">
+                    <span class="text-[10px] font-bold ${isMe ? 'text-BTrustOn-accent' : 'text-gray-600'}">
+                        ${isMe ? 'ME' : (m.related_company_name || 'Partner')}
+                    </span>
+                    <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleString()}</span>
+                </div>
+                <div class="text-sm text-gray-700 leading-relaxed break-words">
+                    ${formattedContent}
+                </div>
+            </div>
+        `;
+        container.appendChild(bubble);
+
+        // Mesaj okunmadıysa okundu yap (Sadece karşıdan gelenler)
+        if (!isMe && !m.is_read) {
+            supabaseClient.from('messages').update({ is_read: true }).eq('id', m.id).then(()=>{});
+        }
+    });
+
+    // En alta kaydır (Son mesajı göster)
+    container.scrollTop = container.scrollHeight;
+}
 // 2. MESAJI KAPATMA
 function closeMessageView() {
     const viewer = document.getElementById("view-message");
@@ -4760,70 +4776,69 @@ function closeMessageView() {
 
 // 3. CEVAP GÖNDERME (Veritabanına Yazar)
 // 3. CEVAP GÖNDERME (LIVE + DOSYA DESTEKLİ)
+/* --- CEVAP GÖNDERME (DOĞRU KONU BAŞLIĞI İLE) --- */
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
-    // Butonu bul (mobilde veya masaüstünde farklı yerde olabilir diye garantiye alıyoruz)
+    
+    // Butonu bul
     const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
-    // Kontrol: Hem mesaj boşsa HEM DE dosya seçilmemişse hata ver
     if (!content && !currentAttachmentFile) {
-        showToast("Error", "Please write a message or attach a file.", "error");
+        showToast("Error", "Please write a message.", "error");
         return;
     }
-    // Kontrol: Kime cevap vereceğimiz belli mi?
-    if (!currentMessageContext) {
-        showToast("Error", "Context lost. Please reopen the message.", "error");
+
+    if (!currentThreadPartnerId || !currentThreadSubject) {
+        showToast("Error", "Chat context lost.", "error");
         return;
     }
 
     // Butonu Kilitle
     const originalText = btn ? btn.innerHTML : "SEND";
     if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         btn.disabled = true;
     }
 
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) throw new Error("Login required.");
+        
+        // Konunun başına sadece bir tane "Re: " ekle (yoksa ekleme)
+        // Veritabanında "Re: Konu" olarak durabilir ama biz ekranda hep temizliyoruz.
+        const replySubject = currentThreadSubject.startsWith("Re:") 
+            ? currentThreadSubject 
+            : "Re: " + currentThreadSubject;
 
-        // --- DOSYA VARSA MESAJIN SONUNA EKLE ---
-        // (Not: Gerçek dosya upload'u yapmıyoruz, sadece ismini ekliyoruz. 
-        // Dosya upload için Storage ayarı gerekir, şimdilik ismini iletiyoruz)
         let finalContent = content;
+        // Dosya varsa link ekle (Basitleştirilmiş)
         if (currentAttachmentFile) {
-            finalContent += `\n\n[📎 ATTACHMENT: ${currentAttachmentFile.name}]`;
+             finalContent += `\n\n[📎 Attachment: ${currentAttachmentFile.name}]`;
         }
-        // ---------------------------------------
 
-        // GERÇEK GÖNDERİM (Supabase)
-        const { error } = await supabaseClient
-            .from('messages')
-            .insert([{
-                sender_id: user.id,
-                receiver_id: currentMessageContext.target_user_id,
-                content: finalContent,
-                subject: "Re: " + document.getElementById("msg-subject").textContent,
-                related_company_name: selectedCompany ? selectedCompany.name : "Yanıt",
-                msg_type: 'message',
-                is_read: false
-            }]);
+        const { error } = await supabaseClient.from('messages').insert([{
+            sender_id: user.id,
+            receiver_id: currentThreadPartnerId,
+            content: finalContent,
+            subject: replySubject, // Gruplama için önemli
+            related_company_name: selectedCompany ? selectedCompany.name : "Reply",
+            msg_type: 'message',
+            is_read: false
+        }]);
 
         if (error) throw error;
 
-        showToast("Sent", "Reply sent successfully!", "success");
-
         // Temizlik
         inputEl.value = "";
-        if (typeof removeAttachment === "function") removeAttachment(); // Dosya seçimini temizle
-        closeMessageView();
+        if (typeof removeAttachment === "function") removeAttachment(); 
+        
+        // EKRANI KAPATMA! Sadece sohbeti güncelle:
+        await loadMessageThread(currentThreadSubject, currentThreadPartnerId);
 
     } catch (error) {
         console.error(error);
-        showToast("Error", error.message, "error");
+        showToast("Error", "Failed to send reply.", "error");
     } finally {
-        // Butonu eski haline getir
         if (btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -4834,70 +4849,78 @@ async function sendReply() {
 // 1. MEVCUT MESAJI SİL (PROFESYONEL MODAL İLE)
 // MEVCUT MESAJI SİL (HEM EKRANDAN HEM VERİTABANINDAN)
 // 1. MEVCUT MESAJI SİL (HEM EKRANDAN HEM VERİTABANINDAN)
-function deleteCurrentMessage() {
-    // Açık olan bir mesaj var mı kontrol et
-    if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
+/* --- GÜNCELLENMİŞ SİLME VE OKUNMADI İŞLEMLERİ --- */
 
-    openDeleteModal("Are you sure you want to delete this conversation?", async () => {
-        
-        // Butonu geçici olarak kilitlemek isterseniz burada spinner eklenebilir ama şart değil
-        
+// 1. MESAJI (SOHBETİ) SİL
+function deleteCurrentMessage() {
+    if (!currentOpenMessageId) return;
+
+    openDeleteModal("Delete this conversation history permanently?", async () => {
         try {
-            // 1. ÖNCE SUPABASE VERİTABANINDAN SİL
+            // Sadece tek mesajı değil, o konudaki sohbeti temizleyelim mi?
+            // Şimdilik sadece Inbox'taki o satırı (ve bağlı mesajı) siliyoruz.
+            // Gerçek bir "herkes için sil" yerine "benden sil" mantığı daha güvenlidir ama
+            // burada basitlik adına ID ile siliyoruz.
+            
             const { error } = await supabaseClient
                 .from('messages')
                 .delete()
-                .eq('id', currentMessageContext.original_msg_id);
+                .eq('id', currentOpenMessageId); // Inbox'taki ana mesajı siler
 
             if (error) throw error;
 
-            // 2. SİLME BAŞARILIYSA EKRANDAN (LOCAL LISTEDEN) SİL
-            const index = inboxData.findIndex(m => m.id === currentMessageContext.original_msg_id);
-            if (index > -1) {
-                inboxData.splice(index, 1);
-            }
-
-            // 3. EKRANI GÜNCELLE
-            renderInboxItems(); 
-            closeMessageView(); 
-            showToast("Deleted", "Conversation deleted permanently.", "success");
+            // Listeden çıkar
+            inboxData = inboxData.filter(m => m.id !== currentOpenMessageId);
+            
+            // Ekranı güncelle
+            renderInboxItems();
+            closeMessageView();
+            showToast("Deleted", "Conversation removed from inbox.", "success");
 
         } catch (error) {
-            console.error("Silme hatası:", error);
+            console.error("Delete error:", error);
             showToast("Error", "Could not delete: " + error.message, "error");
         }
     });
 }
-// 2. OKUNMADI OLARAK İŞARETLE (DB + UI)
+
+// 2. OKUNMADI OLARAK İŞARETLE
+/* --- TEK MESAJI OKUNMADI YAP --- */
 async function markAsUnreadCurrentMessage() {
-    if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
-
-    // Mesajı local listede bul
-    const msg = inboxData.find(m => m.id === currentMessageContext.original_msg_id);
-
-    // 1) UI güncelle
-    if (msg) {
-        msg.unread = true;
+    // ID kontrolü (Önceki adımda openMessage içinde bunu tanımlamıştık)
+    if (!currentOpenMessageId) {
+        showToast("Error", "No message selected.", "error");
+        return;
     }
-    renderInboxItems();
 
-    // 2) DB güncelle
     try {
+        // 1. DB Güncelle: Bu ID'li mesajı 'okunmadı' (false) yap
         const { error } = await supabaseClient
             .from("messages")
             .update({ is_read: false })
-            .eq("id", currentMessageContext.original_msg_id);
+            .eq("id", currentOpenMessageId);
 
         if (error) throw error;
 
+        // 2. Local Listeyi Güncelle (Kırmızı noktayı geri getir)
+        const item = inboxData.find(m => m.id === currentOpenMessageId);
+        if(item) {
+            item.unread = true;
+        }
+
+        // 3. Ekranı Yenile
+        renderInboxItems(); // Sol menüdeki kırmızıyı yakar
+        
+        // Mesaj ekranını kapatıp listeye dön (Kullanıcı değişimi görsün diye)
         closeMessageView();
+        
         showToast("Marked Unread", "Conversation marked as unread.", "success");
+
     } catch (e) {
-        console.error("Mark unread error:", e);
-        showToast("Error", "Could not update unread status.", "error");
+        console.error("Unread error:", e);
+        showToast("Error", "Failed to update status.", "error");
     }
 }
-
 /* --- DOSYA EKLEME YÖNETİMİ --- */
 
 let currentAttachmentFile = null; // Seçilen dosyayı hafızada tut
@@ -5218,36 +5241,50 @@ async function initRealData() {
   }
 }
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
+/* --- TÜMÜNÜ OKUNDU YAP (GÜÇLENDİRİLMİŞ) --- */
+/* --- TÜMÜNÜ OKUNDU YAP (AKILLI KONTROL) --- */
 async function markAllInboxRead() {
-  // Okunmamış mesajları bul
-  const unreadItems = inboxData.filter(item => item.unread === true);
+  const btn = document.querySelector("#inbox-panel button[onclick='markAllInboxRead()']");
+  
+  // 1. ÖNCE KONTROL ET: Hiç okunmamış mesaj var mı?
+  // inboxData listesindeki 'unread' olanları sayıyoruz
+  const unreadExists = inboxData.some(item => item.unread === true);
 
-  if (unreadItems.length === 0) {
-    showToast("Info", "All messages are already read.", "info");
-    return;
+  if (!unreadExists) {
+      // Eğer hepsi zaten okunmuşsa, boşuna sunucuya gitme ve "Success" deme.
+      // Sadece kullanıcıya bilgi ver ve fonksiyondan çık.
+      showToast("Up to date", "All messages are already read.", "info");
+      return; 
   }
 
-  // 1) UI güncelle
-  unreadItems.forEach(item => {
-    item.unread = false;
-  });
-  renderInboxItems();
+  // --- Buradan sonrası aynı, işlem başlıyor ---
+  if(btn) btn.disabled = true;
 
-  // 2) DB güncelle
   try {
-    const ids = unreadItems.map(i => i.id);
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Login required");
 
+    // 1. Veritabanını Güncelle
     const { error } = await supabaseClient
       .from("messages")
       .update({ is_read: true })
-      .in("id", ids);
+      .eq("receiver_id", user.id)
+      .eq("is_read", false);
 
     if (error) throw error;
 
+    // 2. Yerel listeyi güncelle
+    inboxData.forEach(item => item.unread = false);
+    renderInboxItems();
+
+    // 3. Başarılı Mesajı (Sadece gerçekten bir şeyler değiştiyse çıkar)
     showToast("Success", "All messages marked as read.", "success");
+
   } catch (e) {
     console.error("Mark all read error:", e);
-    showToast("Error", "Could not update read status.", "error");
+    showToast("Error", "Could not update status.", "error");
+  } finally {
+    if(btn) btn.disabled = false;
   }
 }
 /* --- AKILLI VİTRİN VE ARAMA SİSTEMİ --- */
@@ -5549,6 +5586,7 @@ function openQuoteModal(companyId, companyName) {
 
 // Teklifi Veritabanına Gönderme
 /* --- DOSYA DESTEKLİ TEKLİF GÖNDERME --- */
+/* --- GÜNCELLENMİŞ TEKLİF GÖNDERME (KONU BAŞLIKLI) --- */
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
@@ -5559,46 +5597,37 @@ async function handleQuoteSubmit() {
     const targetId = document.getElementById("input-target-id").value;
     const targetName = document.getElementById("input-target-company").value;
     const senderName = document.querySelector("#modal-quote input[name='name']").value;
+    
+    // YENİ: Konu başlığını al
+    const subjectInput = document.getElementById("quote-subject").value.trim();
     const message = document.querySelector("#modal-quote textarea[name='message']").value;
     const fileInput = document.getElementById("quote-file");
 
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("You must be logged in to send a quote.");
+    if (!user) throw new Error("You must be logged in.");
 
     let finalContent = message;
 
-    // --- DOSYA YÜKLEME İŞLEMİ ---
+    // Dosya Yükleme (Aynı kalıyor)
     if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         const fileExt = file.name.split('.').pop();
-        // Dosya ismini benzersiz yap
         const fileName = `quotes/${user.id}-${Date.now()}.${fileExt}`;
-
-        // 1. Storage'a yükle (Bucket adınızın 'logos' veya 'documents' olduğundan emin olun, yoksa 'logos' kullanın)
-        const { error: uploadError } = await supabaseClient.storage
-            .from('logos') // Varsa 'documents' bucket'ı daha iyi olur
-            .upload(fileName, file);
-
-        if (uploadError) throw uploadError;
-
-        // 2. Public URL al
-        const { data: { publicUrl } } = supabaseClient.storage
-            .from('logos')
-            .getPublicUrl(fileName);
-        
-        // 3. Linki mesaja ekle
-        finalContent += `\n\n[📎 Attachment: ${file.name}](${publicUrl})`;
+        const { error: uploadError } = await supabaseClient.storage.from('logos').upload(fileName, file); // Bucket adınızı kontrol edin
+        if (!uploadError) {
+            const { data: { publicUrl } } = supabaseClient.storage.from('logos').getPublicUrl(fileName);
+            finalContent += `\n\n[📎 Attachment: ${file.name}](${publicUrl})`;
+        }
     }
-    // -----------------------------
 
-    // Mesajı Gönder
+    // Mesajı Gönder (Subject artık formdan geliyor)
     const { error } = await supabaseClient
       .from('messages')
       .insert([
         {
           sender_id: user.id,
           receiver_id: targetId,
-          subject: "Quote Request: " + senderName, // Başlık sabitlemesi
+          subject: subjectInput, // <-- YENİ EKLENDİ
           content: finalContent,
           related_company_name: senderName,
           msg_type: 'quote',
@@ -5611,7 +5640,7 @@ async function handleQuoteSubmit() {
     showToast("Quote Sent", `Request sent to ${targetName}.`, "success");
     toggleModal('modal-quote');
     document.querySelector("#modal-quote form").reset();
-    document.getElementById('quote-file-name').textContent = ""; // Dosya ismini temizle
+    document.getElementById('quote-file-name').textContent = ""; 
 
   } catch (error) {
     console.error(error);
