@@ -45,6 +45,9 @@
     .hidden-view {
       display: none !important;
     }
+/* Marka Rengi Stili */
+.toast.brand { border-color: #06b6d4 !important; }
+.toast.brand i { color: #06b6d4 !important; }
     .fade-in {
       animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -4304,15 +4307,22 @@ function initEditorListeners() {
   calculateProfileStatus();
 }
 /* --- TOAST BİLDİRİM SİSTEMİ (En alta ekleyin) --- */
+/* --- TOAST BİLDİRİM SİSTEMİ (GÜNCELLENMİŞ HALİ) --- */
 function showToast(title, message, type = 'success') {
   const container = document.getElementById('toast-container');
   if (!container) return;
 
   const toast = document.createElement('div');
+  
+  // CSS'teki .brand sınıfını tetiklemek için type'ı buraya ekliyoruz
   toast.className = `toast ${type}`;
   
-  const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
-  
+  // İkon Seçimi: 
+  // Eğer 'brand' gelirse Zil, 'error' gelirse Çarpı, yoksa Tik işareti
+  let icon = 'fa-circle-check'; 
+  if (type === 'error') icon = 'fa-circle-xmark';
+  if (type === 'brand') icon = 'fa-bell'; // <--- BURASI YENİ EKLENDİ
+
   toast.innerHTML = `
     <i class="fa-solid ${icon}"></i>
     <div class="toast-content">
