@@ -4597,7 +4597,8 @@ let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 /* --- GÜNCELLENMİŞ SOHBET AÇMA (TIKLANABİLİR BAŞLIK) --- */
 let currentPartnerId = null; // Global değişken
 let currentSubject = null;
-/* --- GÜNCELLENMİŞ: openMessage (Tıklanabilir Başlık) --- */
+let currentOpenMessageId = null;
+
 async function openMessage(itemId) {
     const item = inboxData.find(m => m.id === itemId);
     if (!item) return;
@@ -4741,28 +4742,27 @@ function closeMessageView() {
     if(viewer) viewer.classList.add("hidden-view");
     document.body.style.overflow = "auto";
 }
-
-// 3. CEVAP GÖNDERME (Veritabanına Yazar)
-// 3. CEVAP GÖNDERME (LIVE + DOSYA DESTEKLİ)
-/* --- CEVAP GÖNDERME (DOĞRU KONU BAŞLIĞI İLE) --- */
+/* --- DÜZELTİLMİŞ: sendReply (Değişken İsimleri Eşleştirildi) --- */
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
     
-    // Butonu bul
+    // Butonu bul (Hem mobilde hem desktopta çalışması için seçiciyi genişlettik)
     const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
+    // 1. KONTROLLER
     if (!content && !currentAttachmentFile) {
-        showToast("Error", "Please write a message.", "error");
+        showToast("Warning", "Please write a message.", "error");
         return;
     }
 
-    if (!currentThreadPartnerId || !currentThreadSubject) {
-        showToast("Error", "Chat context lost.", "error");
+    // HATA BURADAYDI: Artık 'currentPartnerId' ve 'currentSubject' kullanıyoruz
+    if (!currentPartnerId || !currentSubject) {
+        showToast("Error", "Chat connection lost. Please close and reopen the message.", "error");
         return;
     }
 
-    // Butonu Kilitle
+    // 2. BUTONU KİLİTLE
     const originalText = btn ? btn.innerHTML : "SEND";
     if (btn) {
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -4771,24 +4771,28 @@ async function sendReply() {
 
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Please login again.");
         
-        // Konunun başına sadece bir tane "Re: " ekle (yoksa ekleme)
-        // Veritabanında "Re: Konu" olarak durabilir ama biz ekranda hep temizliyoruz.
-        const replySubject = currentThreadSubject.startsWith("Re:") 
-            ? currentThreadSubject 
-            : "Re: " + currentThreadSubject;
+        // Konu Başlığı Ayarı (Re: eklemesi)
+        const replySubject = currentSubject.startsWith("Re:") 
+            ? currentSubject 
+            : "Re: " + currentSubject;
 
         let finalContent = content;
-        // Dosya varsa link ekle (Basitleştirilmiş)
+        
+        // Dosya Eki Varsa Linke Çevir
         if (currentAttachmentFile) {
+             // Not: Gerçek dosya yükleme kodunu buraya eklemeniz gerekebilir, 
+             // şimdilik sadece ismini ekliyoruz.
              finalContent += `\n\n[📎 Attachment: ${currentAttachmentFile.name}]`;
         }
 
+        // 3. VERİTABANINA KAYDET
         const { error } = await supabaseClient.from('messages').insert([{
             sender_id: user.id,
-            receiver_id: currentThreadPartnerId,
+            receiver_id: currentPartnerId, // Düzeltilmiş değişken
             content: finalContent,
-            subject: replySubject, // Gruplama için önemli
+            subject: replySubject,
             related_company_name: selectedCompany ? selectedCompany.name : "Reply",
             msg_type: 'message',
             is_read: false
@@ -4796,16 +4800,16 @@ async function sendReply() {
 
         if (error) throw error;
 
-        // Temizlik
+        // 4. TEMİZLİK VE EKRANI YENİLEME
         inputEl.value = "";
         if (typeof removeAttachment === "function") removeAttachment(); 
         
-        // EKRANI KAPATMA! Sadece sohbeti güncelle:
-        await loadMessageThread(currentThreadSubject, currentThreadPartnerId);
+        // Sohbet balonlarını yenile
+        await loadMessageThread(currentSubject, currentPartnerId);
 
     } catch (error) {
         console.error(error);
-        showToast("Error", "Failed to send reply.", "error");
+        showToast("Error", "Failed to send: " + error.message, "error");
     } finally {
         if (btn) {
             btn.innerHTML = originalText;
@@ -4813,6 +4817,7 @@ async function sendReply() {
         }
     }
 }
+
 // 1. MEVCUT MESAJI SİL
 // 1. MEVCUT MESAJI SİL (PROFESYONEL MODAL İLE)
 // MEVCUT MESAJI SİL (HEM EKRANDAN HEM VERİTABANINDAN)
