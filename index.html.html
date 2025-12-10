@@ -4595,7 +4595,7 @@ document.addEventListener("DOMContentLoaded", () => {
 let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 
 // 1. MESAJI AÇMA FONKSİYONU
-function openMessage(msgId) {
+async function openMessage(msgId) {
     const msg = inboxData.find(m => m.id === msgId);
     if (!msg) return;
 
@@ -4630,6 +4630,18 @@ function openMessage(msgId) {
     // Okundu yap
     msg.unread = false;
     renderInboxItems(); 
+// ✅ Okundu yap (DB)
+try {
+    const { error } = await supabaseClient
+        .from("messages")
+        .update({ is_read: true })
+        .eq("id", msg.id);
+
+    if (error) throw error;
+} catch (e) {
+    console.error("Mark read error:", e);
+}
+
 
     // Ekranı Aç
     const viewer = document.getElementById("view-message");
@@ -4760,24 +4772,36 @@ function deleteCurrentMessage() {
         }
     });
 }
-// 2. OKUNMADI OLARAK İŞARETLE
-function markAsUnreadCurrentMessage() {
+// 2. OKUNMADI OLARAK İŞARETLE (DB + UI)
+async function markAsUnreadCurrentMessage() {
     if (!currentMessageContext || !currentMessageContext.original_msg_id) return;
 
-    // Mesajı bul
+    // Mesajı local listede bul
     const msg = inboxData.find(m => m.id === currentMessageContext.original_msg_id);
-    
-    if (msg) {
-        msg.unread = true; // Durumu değiştir
-    }
 
-    // Ekranı güncelle ve kapat
-    renderInboxItems(); // Listeyi yenile (Kırmızı nokta/badge geri gelsin)
-    closeMessageView(); // Okuma ekranını kapat
-    
-    // Bildirim ver
-    showToast("Marked Unread", "Conversation marked as unread.", "success");
+    // 1) UI güncelle
+    if (msg) {
+        msg.unread = true;
+    }
+    renderInboxItems();
+
+    // 2) DB güncelle
+    try {
+        const { error } = await supabaseClient
+            .from("messages")
+            .update({ is_read: false })
+            .eq("id", currentMessageContext.original_msg_id);
+
+        if (error) throw error;
+
+        closeMessageView();
+        showToast("Marked Unread", "Conversation marked as unread.", "success");
+    } catch (e) {
+        console.error("Mark unread error:", e);
+        showToast("Error", "Could not update unread status.", "error");
+    }
 }
+
 /* --- DOSYA EKLEME YÖNETİMİ --- */
 
 let currentAttachmentFile = null; // Seçilen dosyayı hafızada tut
@@ -5098,24 +5122,37 @@ async function initRealData() {
   }
 }
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
-function markAllInboxRead() {
-  // Okunmamış mesaj var mı kontrol et
-  const unreadExists = inboxData.some(item => item.unread === true);
+async function markAllInboxRead() {
+  // Okunmamış mesajları bul
+  const unreadItems = inboxData.filter(item => item.unread === true);
 
-  if (!unreadExists) {
+  if (unreadItems.length === 0) {
     showToast("Info", "All messages are already read.", "info");
     return;
   }
 
-  // Hepsini okundu yap
-  inboxData.forEach(item => {
+  // 1) UI güncelle
+  unreadItems.forEach(item => {
     item.unread = false;
   });
-
-  // Arayüzü güncelle (Kırmızı noktaları kaldır)
   renderInboxItems();
-  
-  showToast("Success", "All messages marked as read.", "success");
+
+  // 2) DB güncelle
+  try {
+    const ids = unreadItems.map(i => i.id);
+
+    const { error } = await supabaseClient
+      .from("messages")
+      .update({ is_read: true })
+      .in("id", ids);
+
+    if (error) throw error;
+
+    showToast("Success", "All messages marked as read.", "success");
+  } catch (e) {
+    console.error("Mark all read error:", e);
+    showToast("Error", "Could not update read status.", "error");
+  }
 }
 /* --- AKILLI VİTRİN VE ARAMA SİSTEMİ --- */
 
