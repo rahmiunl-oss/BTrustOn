@@ -4308,20 +4308,21 @@ function initEditorListeners() {
 }
 /* --- TOAST BİLDİRİM SİSTEMİ (En alta ekleyin) --- */
 /* --- TOAST BİLDİRİM SİSTEMİ (GÜNCELLENMİŞ HALİ) --- */
-function showToast(title, message, type = 'success') {
+/* --- TOAST BİLDİRİM SİSTEMİ (TIKLANABİLİR VERSİYON) --- */
+function showToast(title, message, type = 'success', onClick = null) {
   const container = document.getElementById('toast-container');
   if (!container) return;
 
   const toast = document.createElement('div');
   
-  // CSS'teki .brand sınıfını tetiklemek için type'ı buraya ekliyoruz
-  toast.className = `toast ${type}`;
+  // Tıklanabilir ise mouse imleci el işareti olsun
+  const cursorClass = onClick ? 'cursor-pointer hover:bg-gray-50' : '';
+  toast.className = `toast ${type} ${cursorClass}`;
   
-  // İkon Seçimi: 
-  // Eğer 'brand' gelirse Zil, 'error' gelirse Çarpı, yoksa Tik işareti
+  // İkon Seçimi
   let icon = 'fa-circle-check'; 
   if (type === 'error') icon = 'fa-circle-xmark';
-  if (type === 'brand') icon = 'fa-bell'; // <--- BURASI YENİ EKLENDİ
+  if (type === 'brand') icon = 'fa-bell'; 
 
   toast.innerHTML = `
     <i class="fa-solid ${icon}"></i>
@@ -4329,17 +4330,43 @@ function showToast(title, message, type = 'success') {
       <span class="toast-title">${title}</span>
       <span class="toast-msg">${message}</span>
     </div>
-    <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+    <button id="close-toast-btn" class="text-gray-400 hover:text-gray-600 z-50 p-1">
       <i class="fa-solid fa-xmark text-sm"></i>
     </button>
   `;
 
+  // TIKLAMA OLAYI
+  toast.onclick = (e) => {
+    // Eğer kapatma butonuna (veya ikonuna) basıldıysa mesajı açma, sadece kapat
+    if (e.target.closest('#close-toast-btn')) {
+        toast.remove();
+        return;
+    }
+    
+    // Eğer tıklama aksiyonu varsa çalıştır
+    if (onClick) {
+        onClick();
+        toast.remove(); // Tıklayınca bildirimi ekrandan kaldır
+    }
+  };
+
+  // Kapatma butonu için özel dinleyici (Garanti olsun diye)
+  const closeBtn = toast.querySelector('#close-toast-btn');
+  if(closeBtn) {
+      closeBtn.onclick = (e) => {
+          e.stopPropagation(); // Tıklamayı yukarı geçirme
+          toast.remove();
+      };
+  }
+
   container.appendChild(toast);
 
-  // 4 saniye sonra sil
+  // 4 saniye sonra otomatik sil
   setTimeout(() => {
-    toast.style.animation = 'fadeOut 0.3s ease-out forwards';
-    setTimeout(() => toast.remove(), 300);
+    if (toast.parentNode) { // Hala ekrandaysa
+        toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => toast.remove(), 300);
+    }
   }, 4000);
 }
 /* --- SİLME ONAY SİSTEMİ --- */
@@ -4451,52 +4478,51 @@ async function fetchInboxMessages() {
 /* --- GERÇEK ZAMANLI DİNLEME (REALTIME) --- */
 // ✅ Mesajlar ve Teklifler için Doğru Real-time Dinleyicisi
 // ✅ Mesajlar ve Teklifler (İngilizce + Mavi Logo Rengi)
+// ✅ Mesajlar ve Teklifler (Tıklayınca Mesaja Gitme Özellikli)
 let messageChannel = null;
 
 function subscribeToMessages() {
-  // 1. Önceki abonelik varsa temizle
   if (messageChannel) {
     supabaseClient.removeChannel(messageChannel);
     messageChannel = null;
   }
 
-  // 2. 'messages' tablosunu dinle
   messageChannel = supabaseClient
     .channel('public:messages')
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages' },
       async (payload) => {
-        // Mevcut kullanıcıyı al
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) return;
 
-        // Mesaj bana gelmediyse durdur
         if (payload.new.receiver_id !== user.id) return;
 
         console.log("Realtime: New data received!", payload.new);
 
-        // 3. INBOX'I YENİLE
+        // 1. Verileri Tazele
         if (typeof fetchInboxMessages === 'function') {
           await fetchInboxMessages();
         }
 
-        // 4. Toast Bildirimi Göster (TAMAMEN İNGİLİZCE)
         const isQuote = payload.new.msg_type === 'quote';
-        
-        // Başlıklar (New Message / New Quote Request)
-        const title = isQuote ? "New Quote Request" : "New Message";
-        
-        // İçerikler
-        const body = isQuote 
-          ? "You received a new quote request. Check your inbox!" 
-          : (payload.new.subject || "You have a new message.");
+        const msgId = payload.new.id; // Gelen mesajın ID'si
 
-        // Sadece Inbox paneli kapalıysa bildirim göster
+        const title = isQuote ? "New Quote Request" : "New Message";
+        const body = isQuote 
+          ? "You received a new quote request. Tap to view details." 
+          : (payload.new.subject || "Tap here to read the message.");
+
         const panel = document.getElementById("inbox-panel");
+        
+        // Eğer panel kapalıysa bildirimi göster
         if (panel && !panel.classList.contains("open")) {
-            // ✅ 'brand' kullanarak MAVİ renk yaptık
-            showToast(title, body, "brand");
+            // 4. Parametre olarak tıklama fonksiyonunu gönderiyoruz:
+            showToast(title, body, "brand", () => {
+                // Tıklanınca çalışacak kod:
+                console.log("Toast clicked, opening message:", msgId);
+                openMessage(msgId);
+            });
         }
       }
     )
