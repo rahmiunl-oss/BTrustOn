@@ -213,6 +213,53 @@
     SUPABASE_URL,
     SUPABASE_ANON_KEY
   );
+let quoteChannel = null;
+
+function subscribeQuoteRealtime(currentUserId) {
+  if (quoteChannel) {
+    supabaseClient.removeChannel(quoteChannel);
+    quoteChannel = null;
+  }
+
+  quoteChannel = supabaseClient
+    .channel("quote-requests-" + currentUserId)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "quote_requests",
+        // Eğer sende alıcı kolonu farklıysa bunu değiştir:
+        // filter: `receiver_id=eq.${currentUserId}`
+        filter: `target_user_id=eq.${currentUserId}`
+      },
+      (payload) => {
+        // En güvenli ve en kolay yöntem:
+        // Listeyi DB’den tekrar çekip UI’yi güncelle
+        if (typeof fetchQuoteRequests === "function") {
+          fetchQuoteRequests();
+        }
+
+        // Eğer badge sayın varsa güncelle
+        if (typeof updateQuoteBadge === "function") {
+          updateQuoteBadge();
+        }
+
+        if (typeof showToast === "function") {
+          showToast("Success", "New quote request arrived.", "success");
+        }
+      }
+    )
+    .subscribe();
+}
+
+function unsubscribeQuoteRealtime() {
+  if (quoteChannel) {
+    supabaseClient.removeChannel(quoteChannel);
+    quoteChannel = null;
+  }
+}
+
 </script>
 </head>
 
@@ -4117,19 +4164,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     initShowcaseSystem();
 
     // 👇👇👇 3. YENİ EKLENECEK: MESAJLARI ÇEK VE DİNLE 👇👇👇
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-        console.log("Oturum açık, mesajlar getiriliyor...");
-        fetchInboxMessages(); // Eski mesajları getir
-        subscribeToMessages(); // Canlı dinlemeye başla
+     const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    // Mesajlar
+    fetchInboxMessages();
+    subscribeToMessages();
+
+    // Quote Requests (✅ BURAYA EKLE)
+    fetchQuoteRequests();      
+    subscribeQuoteRealtime();
     }
 });
 // Oturum durumu değişirse (Giriş/Çıkış) tetikle
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN') {
     checkUserAndOpenProfile();
-    fetchInboxMessages(); // <--- YENİ: Giriş yapınca mesajları çek
-    subscribeToMessages(); // <--- YENİ: Canlı dinlemeyi başlat
+
+    // Mesajlar
+    fetchInboxMessages();
+    subscribeToMessages();
+
+    // Quote Requests (✅ BURAYA EKLE)
+    fetchQuoteRequests();      // varsa
+    subscribeQuoteRealtime();  // 1. adımda eklediğin realtime fonksiyon
   } else if (event === 'SIGNED_OUT') {
     window.location.reload();
   }
