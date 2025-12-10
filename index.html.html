@@ -4358,15 +4358,16 @@ function timeAgo(dateString) {
 /* --- GRUPLANMIŞ INBOX (THREADING) --- */
 /* --- KONU BAZLI GRUPLANMIŞ INBOX --- */
 /* --- GÜNCELLENMİŞ SOHBET LİSTESİ (HEM GELEN HEM GİDEN - GRUPLU) --- */
+/* --- GÜNCELLENMİŞ INBOX (PARTNER ID GARANTİLİ) --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // HEM GÖNDERDİĞİM HEM ALDIĞIM TÜM MESAJLARI ÇEK
+    // Hem gelen hem giden mesajları çek
     const { data: messages, error } = await supabaseClient
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`) // Kritik Değişiklik
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
     if (error) { console.error("Inbox error:", error); return; }
@@ -4374,56 +4375,54 @@ async function fetchInboxMessages() {
     const groupedMap = new Map();
 
     messages.forEach(msg => {
-        // Konu Başlığını Temizle (Re: kısımlarını at)
+        // Konu başlığını temizle
         const cleanSubject = msg.subject.replace(/^(Re:\s*)+/i, '').trim();
         
-        // KONUŞTUĞUM KİŞİYİ (PARTNER) BELİRLE
-        // Eğer gönderen bensem, partner alıcıdır. Gönderen oysa, partner odur.
+        // --- PARTNER BELİRLEME (KRİTİK NOKTA) ---
+        // Eğer gönderen bensem, partner alıcıdır.
+        // Eğer gönderen oysa, partner gönderendir.
         const isMeSender = (msg.sender_id === user.id);
         const partnerId = isMeSender ? msg.receiver_id : msg.sender_id;
         
-        // Eşsiz Anahtar: Konu + Partner ID
+        // Eşsiz Anahtar: Konu + Partner
         const groupKey = cleanSubject + "_" + partnerId;
 
         if (!groupedMap.has(groupKey)) {
-            // Şirket Adını Belirle (Ekranda görünecek isim)
-            // Eğer son mesajı ben attıysam bile, listede PARTNERİN adını görmek isterim.
-            // Bu yüzden mesajın içindeki "related_company_name"e güvenemeyiz (o an kim attıysa onu yazar).
-            // İdeal çözüm: Partnerin olduğu bir mesaj bulup ismini oradan almak.
-            
+            // Şirket Adını Belirle
             let displayCompany = "Unknown Partner";
-            
-            // Eğer mesajı o attıysa, onun ismi zaten related_company_name'dir.
+            let logoChar = "P";
+
             if (!isMeSender) {
-                displayCompany = msg.related_company_name;
+                // Mesajı o attıysa ismini alabiliriz
+                // Format: "İsim (Şirket)" ise sadece Şirketi al
+                const rawName = msg.related_company_name || "Partner";
+                const match = rawName.match(/\((.+)\)$/);
+                displayCompany = match ? match[1] : rawName;
+                logoChar = displayCompany.charAt(0);
             } else {
-                // Eğer son mesajı ben attıysam, bu grupta onun attığı eski bir mesajı bulmaya çalışalım
-                const msgFromPartner = messages.find(m => 
-                    m.sender_id === partnerId && 
-                    m.subject.includes(cleanSubject)
-                );
-                if (msgFromPartner) {
-                    displayCompany = msgFromPartner.related_company_name;
+                // Mesajı ben attıysam, bu grupta onun attığı bir mesajı bulup ismini oradan çalalım
+                const msgFromPartner = messages.find(m => m.sender_id === partnerId);
+                if (msgFromPartner && msgFromPartner.related_company_name) {
+                    const rawName = msgFromPartner.related_company_name;
+                    const match = rawName.match(/\((.+)\)$/);
+                    displayCompany = match ? match[1] : rawName;
+                    logoChar = displayCompany.charAt(0);
                 } else {
-                    // Eğer hiç cevap yazmamışsa (sadece ben teklif attıysam),
-                    // Teklif formunda 'Target Company' alanı olmadığı için (biz kaldırdık),
-                    // veritabanında saklı bir yer yoksa burası "Sent Quote" kalabilir.
-                    // VEYA: Teklif atarken receiver adını da kaydetmek gerekirdi.
-                    // Şimdilik basitçe:
-                    displayCompany = "Partner (Click to View)"; 
+                    displayCompany = "Potential Client"; // Henüz cevap yazmadıysa
                 }
             }
 
             groupedMap.set(groupKey, {
                 id: msg.id,             
                 count: 1,
-                sender_id: partnerId, // Listede tıklayınca bu ID ile işlem yapacağız (Partner)
+                // ÖNEMLİ: Listede tıklayınca bu ID ile profili açacağız
+                partner_id: partnerId, 
                 company: displayCompany,
                 title: cleanSubject,     
                 desc: isMeSender ? `You: ${msg.content}` : msg.content,      
                 time: timeAgo(msg.created_at),
-                unread: !msg.is_read && !isMeSender, // Sadece o attıysa ve okunmadıysa
-                type: 'message' // Hepsini mesaj ikonu yapalım, sadelik için
+                unread: !msg.is_read && !isMeSender,
+                logo: logoChar.toUpperCase()
             });
         } else {
             const existing = groupedMap.get(groupKey);
@@ -4620,90 +4619,74 @@ document.addEventListener("DOMContentLoaded", () => {
 let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 
 // 1. MESAJI AÇMA FONKSİYONU
-/* --- GÜNCELLENMİŞ OPEN MESSAGE (TIKLANABİLİR ŞİRKET PROFİLİ) --- */
-let currentThreadPartnerId = null; 
-let currentThreadSubject = null;
-let currentOpenMessageId = null; 
-/* --- GÜNCELLENMİŞ SOHBET DETAYI (SADE BAŞLIK & TIKLANABİLİR ŞİRKET) --- */
-async function openMessage(msgId) {
-    const msg = inboxData.find(m => m.id === msgId);
-    if (!msg) return;
+/* --- GÜNCELLENMİŞ SOHBET AÇMA (TIKLANABİLİR BAŞLIK) --- */
+let currentPartnerId = null; // Global değişken
+let currentSubject = null;
+
+async function openMessage(itemId) { // itemId: Inbox listesindeki öğenin ID'si (mesaj ID'si)
+    const item = inboxData.find(m => m.id === itemId);
+    if (!item) return;
+
+    // Global değişkenleri ayarla (Cevap yazarken lazım)
+    currentPartnerId = item.partner_id;
+    currentSubject = item.title;
+    currentOpenMessageId = itemId;
 
     // 1. Read Fix (Anlık)
-    if (msg.unread) {
-        msg.unread = false; 
+    if (item.unread) {
+        item.unread = false; 
         renderInboxItems(); 
     }
 
-    // 2. Read Fix (DB - Toplu Okundu)
+    // 2. Read Fix (DB - Toplu)
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (user) {
-        // Konudaki ve bu partnerden gelen her şeyi okundu yap
         supabaseClient
             .from('messages')
             .update({ is_read: true })
             .eq('receiver_id', user.id)
-            .eq('sender_id', msg.sender_id) 
-            .ilike('subject', `%${msg.title}%`)
+            .eq('sender_id', currentPartnerId) 
+            .ilike('subject', `%${item.title}%`)
             .then(() => {});
     }
 
-    // 3. Context
-    currentOpenMessageId = msgId; 
-    currentThreadPartnerId = msg.sender_id; // Bu artık her zaman PARTNER ID'si
-    currentThreadSubject = msg.title;
-
-    // 4. BAŞLIK AYARLARI (SADELEŞTİRİLMİŞ)
+    // 3. EKRANI DOLDUR
     
-    // Rozeti komple gizle/kaldır (İsteğin üzerine)
+    // Konu
+    document.getElementById("msg-subject").textContent = item.title;
+    
+    // Şirket Adı ve Link (From ...)
+    // Burada item.company zaten "Şirket Adı" olarak temizlendi (fetchInboxMessages içinde)
+    const companyHtml = `
+        <span class="text-gray-900 font-bold text-sm">Conversation with</span>
+        <span onclick="openProfile('${currentPartnerId}')" 
+              class="text-BTrustOn-accent hover:text-BTrustOn-darkAccent hover:underline cursor-pointer font-bold text-sm ml-1 transition"
+              title="View Company Profile">
+            ${item.company}
+        </span>
+    `;
+    document.getElementById("msg-company").innerHTML = companyHtml;
+    
+    // Rozeti Gizle
     const badge = document.getElementById("msg-type-badge");
     if(badge) badge.style.display = 'none';
 
-    // Konu Başlığı
-    document.getElementById("msg-subject").textContent = msg.title;
-    
-    // Şirket Adı ve Linki Formatlama
-    const rawName = msg.company || "Unknown";
-    let displayNameHtml = rawName;
-    
-    // Regex: "Ahmet (ABC Yapı)" formatını ayırır
-    const match = rawName.match(/^(.*?)\s*\((.+)\)$/);
-    
-    if (match && match.length >= 3) {
-        // match[1] = İsim (Ahmet)
-        // match[2] = Şirket (ABC Yapı)
-        
-        displayNameHtml = `
-            <span class="text-gray-900 font-bold text-sm">${match[1]}</span>
-            <div class="text-xs text-gray-500 mt-0.5">
-                from 
-                <span onclick="openProfile('${msg.sender_id}')" class="text-BTrustOn-accent hover:text-BTrustOn-darkAccent hover:underline cursor-pointer font-bold transition">
-                    ${match[2]}
-                </span>
-            </div>
-        `;
-    } else {
-        // Format yoksa düz yaz
-        displayNameHtml = `<span class="text-gray-900 font-bold">${rawName}</span>`;
-    }
-    document.getElementById("msg-company").innerHTML = displayNameHtml;
-    
-    // Logo (İlk harf)
+    // Logo
     const logoEl = document.getElementById("msg-logo");
-    // Şirket adının veya ismin baş harfi
-    let initial = (match && match[2]) ? match[2].charAt(0) : rawName.charAt(0);
-    if(logoEl) logoEl.textContent = initial.toUpperCase();
+    if(logoEl) logoEl.textContent = item.logo;
 
-    // 5. Ekranı Aç
+    // 4. Ekranı Aç
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.remove("hidden-view");
     document.body.style.overflow = "hidden"; 
 
     toggleInbox(); 
-    await loadMessageThread(msg.title, msg.sender_id);
+    
+    // Geçmişi Yükle
+    await loadMessageThread(item.title, currentPartnerId);
 }
-
 /* --- SOHBET BALONLARI (SADECE ŞİRKET ADI) --- */
+/* --- GÜNCELLENMİŞ BALON YÜKLEME (TIKLANABİLİR İSİMLER) --- */
 async function loadMessageThread(cleanSubject, partnerId) {
     const container = document.getElementById("message-thread-container");
     container.innerHTML = '<div class="flex justify-center p-4"><i class="fa-solid fa-spinner fa-spin text-BTrustOn-accent"></i></div>';
@@ -4719,40 +4702,42 @@ async function loadMessageThread(cleanSubject, partnerId) {
         .order('created_at', { ascending: true });
 
     if (error) {
-        container.innerHTML = '<p class="text-red-500 text-xs text-center">Error loading history.</p>';
+        container.innerHTML = '<p class="text-red-500 text-xs">Error loading history.</p>';
         return;
     }
 
     container.innerHTML = ""; 
 
     if(!thread || thread.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-xs text-center italic">No previous messages.</p>';
+        container.innerHTML = '<p class="text-gray-400 text-xs text-center italic">Start the conversation...</p>';
         return;
     }
 
     thread.forEach(m => {
         const isMe = m.sender_id === user.id;
-        
-        // GÖRÜNEN İSİM AYARI (İsteğin üzerine)
-        let displayName = "Partner";
+        let displayNameHtml = "";
 
         if (isMe) {
-            displayName = "ME";
+            // BEN: Tıklanmaz, sadece ME yazar.
+            displayNameHtml = `<span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>`;
         } else {
-            // "Ahmet (ABC Yapı)" formatından sadece "ABC Yapı" kısmını çek
+            // PARTNER: Tıklanabilir Şirket Adı
+            // İsmi veritabanındaki "İsim (Şirket)" formatından ayıkla
+            let nameToShow = "Partner";
             const raw = m.related_company_name || "";
-            const match = raw.match(/\((.+)\)$/); // Parantez içindeki son kısmı al
-            
-            if (match && match[1]) {
-                displayName = match[1]; // Sadece Şirket Adı
-            } else {
-                displayName = raw; // Format yoksa hepsini yaz
-            }
+            const match = raw.match(/\((.+)\)$/);
+            if(match) nameToShow = match[1]; // Sadece Şirket Adı
+            else if(raw) nameToShow = raw;
+
+            displayNameHtml = `
+                <span onclick="openProfile('${m.sender_id}')" 
+                      class="text-[10px] font-bold text-gray-600 hover:text-BTrustOn-accent hover:underline cursor-pointer transition uppercase tracking-wide">
+                    ${nameToShow}
+                </span>`;
         }
 
-        // İçerik Temizliği (Mail kodunu sil)
+        // İçerik Temizliği
         let cleanContent = m.content.replace(/\[CONTACT_EMAIL:.*?\]/g, "");
-        
         let formattedContent = cleanContent
             .replace(/\n/g, '<br>')
             .replace(/\[📎 Attachment: (.*?)\]\((.*?)\)/g, 
@@ -4764,9 +4749,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
         bubble.innerHTML = `
             <div class="max-w-[85%] ${isMe ? 'bg-cyan-50 border border-cyan-100 rounded-tr-none' : 'bg-white border border-gray-200 rounded-tl-none'} p-4 rounded-xl shadow-sm">
                 <div class="flex justify-between items-center mb-1 gap-4">
-                    <span class="text-[10px] font-bold ${isMe ? 'text-BTrustOn-accent' : 'text-gray-600'} uppercase tracking-wide">
-                        ${displayName}
-                    </span>
+                    ${displayNameHtml}
                     <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div class="text-sm text-gray-700 leading-relaxed break-words">
@@ -4775,7 +4758,8 @@ async function loadMessageThread(cleanSubject, partnerId) {
             </div>
         `;
         container.appendChild(bubble);
-
+        
+        // DB Okundu Yap (Eğer ben okuyorsam)
         if (!isMe && !m.is_read) {
             supabaseClient.from('messages').update({ is_read: true }).eq('id', m.id).then(()=>{});
         }
@@ -4783,6 +4767,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
 
     container.scrollTop = container.scrollHeight;
 }
+
 // 2. MESAJI KAPATMA
 function closeMessageView() {
     const viewer = document.getElementById("view-message");
@@ -5683,60 +5668,60 @@ async function handleQuoteSubmit() {
     btn.disabled = false;
   }
 }
-/* --- SİLME FONKSİYONLARI (TEKLİ & TOPLU) --- */
+/* --- GÜNCELLENMİŞ VE GÜÇLENDİRİLMİŞ SİLME İŞLEMLERİ --- */
 
-// 1. TEK BİR SOHBETİ SİL (Thread Delete)
-function deleteThread(msgId, title, senderId, event) {
-    // Tıklamayı durdur (Mesajın açılmasını engeller)
+// 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
+function deleteThread(msgId, title, partnerId, event) {
     if(event) event.stopPropagation();
 
-    openDeleteModal("Delete this conversation? It will be removed from your inbox.", async () => {
+    openDeleteModal("Delete this conversation? (Both sent and received messages will be removed)", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("Login required");
 
-            // O Konudaki TÜM mesajları sil (Receiver ben, Sender o, Konu aynı)
-            // Not: Sadece listelenen son mesajı silmek yerine, bütün thread'i temizliyoruz.
+            // 1. Veritabanından SİL (Hem gelen hem giden)
+            // Mantık: (Ben gönderdim VE O aldı) VEYA (O gönderdi VE Ben aldım)
+            // VE Konu başlığı tutuyor.
+            
             const { error } = await supabaseClient
                 .from('messages')
                 .delete()
-                .eq('receiver_id', user.id)
-                .eq('sender_id', senderId)
-                .ilike('subject', `%${title}%`); // Konu eşleşmesi
+                .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+                .ilike('subject', `%${title}%`); // Konu eşleşmesi (Re: dahil)
 
             if (error) throw error;
 
-            // Listeyi yerel olarak güncelle (Hızlı tepki)
-            // SenderId ve Title eşleşenleri çıkar
-            inboxData = inboxData.filter(m => !(m.sender_id === senderId && m.title === title));
+            // 2. Ekrandan SİL (Anlık yok et)
+            // Bu partner ve bu konuyla eşleşen her şeyi listeden çıkar
+            inboxData = inboxData.filter(m => !(m.sender_id === partnerId && m.title === title));
             
             renderInboxItems();
-            showToast("Deleted", "Conversation deleted.", "success");
+            showToast("Deleted", "Conversation deleted permanently.", "success");
 
         } catch (error) {
             console.error(error);
-            showToast("Error", "Could not delete thread.", "error");
+            showToast("Error", "Could not delete thread completely.", "error");
         }
     });
 }
 
-// 2. TÜM KUTUYU SİL (Delete All)
+// 2. TÜM KUTUYU SİL (HEM GELENİ HEM GİDENİ SİLER)
 function deleteAllInbox() {
     if (inboxData.length === 0) {
         showToast("Info", "Inbox is already empty.", "info");
         return;
     }
 
-    openDeleteModal("WARNING: This will delete ALL messages in your inbox. Are you sure?", async () => {
+    openDeleteModal("WARNING: This will delete ALL messages (Sent & Received). Are you sure?", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) return;
 
-            // Bana gelen tüm mesajları sil
+            // Bana gelen VEYA Benim gönderdiğim her şeyi sil
             const { error } = await supabaseClient
                 .from('messages')
                 .delete()
-                .eq('receiver_id', user.id);
+                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
             if (error) throw error;
 
@@ -5751,5 +5736,6 @@ function deleteAllInbox() {
         }
     });
 }
+
 </script>
 </html>
