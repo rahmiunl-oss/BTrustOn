@@ -4595,16 +4595,17 @@ document.addEventListener("DOMContentLoaded", () => {
 let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 
 // 1. MESAJI AÇMA FONKSİYONU
-async function openMessage(msgId) {
-    // Mesajı listeden bul (Son kodlarda değişken adını messageList yapmıştık)
-    const msg = messageList.find(m => m.id === msgId);
+function openMessage(msgId) {
+    const msg = inboxData.find(m => m.id === msgId);
     if (!msg) return;
 
     // --- CONTEXT KAYDETME ---
     currentMessageContext = {
         original_msg_id: msg.id,
         target_company_name: msg.company,
-        target_user_id: msg.sender_id 
+        // Demo ortamında olduğumuz için 'fake' bir ID atıyoruz. 
+        // Gerçek sistemde burası msg.sender_id (UUID) olmalı.
+        target_user_id: msg.sender_id || "demo-receiver-id" 
     };
 
     // HTML Doldur
@@ -4612,10 +4613,7 @@ async function openMessage(msgId) {
     document.getElementById("msg-company").textContent = msg.company;
     document.getElementById("msg-date").textContent = msg.time; 
     document.getElementById("msg-body").textContent = msg.desc; 
-    
-    // Logo Doldur
-    const logoDiv = document.getElementById("msg-logo");
-    if(logoDiv) logoDiv.textContent = (msg.company || "A").charAt(0);
+    document.getElementById("msg-logo").textContent = msg.logo || msg.company.charAt(0);
 
     // Badge Ayarla
     const badge = document.getElementById("msg-type-badge");
@@ -4629,38 +4627,22 @@ async function openMessage(msgId) {
         }
     }
 
-    // --- KRİTİK DÜZELTME BURASI ---
-    // Eğer mesaj daha önce okunmamışsa, şimdi "Okundu" olarak işaretle
-    if (msg.unread) {
-        
-        // 1. Veritabanına Yaz (Supabase Update)
-        const { error } = await supabaseClient
-            .from('messages')
-            .update({ is_read: true })
-            .eq('id', msgId);
-
-        if (error) {
-            console.error("Okundu bilgisi işlenemedi:", error);
-        } else {
-            // 2. Veritabanı başarılıysa Yerel Listeyi Güncelle
-            msg.unread = false;
-            
-            // 3. Menüdeki kırmızı sayıları (Badge) güncelle
-            renderInboxItems(); 
-        }
-    }
+    // Okundu yap
+    msg.unread = false;
+    renderInboxItems(); 
 
     // Ekranı Aç
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.remove("hidden-view");
     document.body.style.overflow = "hidden"; 
 
-    // Inbox panelini kapat (Alttaki paneli gizle)
+    // Inbox panelini kapat
     const panel = document.getElementById("inbox-panel");
     const overlay = document.getElementById("inbox-overlay");
     if(panel) panel.classList.remove("open");
     if(overlay) overlay.classList.add("hidden");
 }
+
 // 2. MESAJI KAPATMA
 function closeMessageView() {
     const viewer = document.getElementById("view-message");
@@ -5116,43 +5098,24 @@ async function initRealData() {
   }
 }
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
-async function markAllInboxRead() {
-    // Okunmamış var mı kontrol et
-    const unreadMessages = messageList.filter(item => item.unread === true);
-    if (unreadMessages.length === 0) {
-        showToast("Info", "Tüm mesajlar zaten okundu.", "info");
-        return;
-    }
+function markAllInboxRead() {
+  // Okunmamış mesaj var mı kontrol et
+  const unreadExists = inboxData.some(item => item.unread === true);
 
-    const btn = document.querySelector("#inbox-panel button i.fa-check-double").parentElement;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+  if (!unreadExists) {
+    showToast("Info", "All messages are already read.", "info");
+    return;
+  }
 
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
+  // Hepsini okundu yap
+  inboxData.forEach(item => {
+    item.unread = false;
+  });
 
-        // 1. Veritabanında HEPSİNİ güncelle
-        const { error } = await supabaseClient
-            .from('messages')
-            .update({ is_read: true })
-            .eq('receiver_id', user.id)
-            .eq('is_read', false); // Sadece okunmamışları bulup güncelle
-
-        if (error) throw error;
-
-        // 2. Yerel listeyi güncelle
-        messageList.forEach(item => item.unread = false);
-        renderInboxItems();
-        
-        showToast("Success", "Tüm mesajlar okundu olarak işaretlendi.", "success");
-
-    } catch (error) {
-        console.error(error);
-        showToast("Error", "İşlem başarısız oldu.", "error");
-    } finally {
-        btn.innerHTML = originalText;
-    }
+  // Arayüzü güncelle (Kırmızı noktaları kaldır)
+  renderInboxItems();
+  
+  showToast("Success", "All messages marked as read.", "success");
 }
 /* --- AKILLI VİTRİN VE ARAMA SİSTEMİ --- */
 
