@@ -4431,14 +4431,46 @@ async function fetchInboxMessages() {
 }
 
 // Realtime Abonelik Başlat (Sayfa açılınca çağırılmalı)
+// ✅ DÜZELTİLMİŞ ABONELİK (Kendi mesajına bildirim vermez)
+/* --- GERÇEK ZAMANLI DİNLEME (REALTIME) --- */
 function subscribeToMessages() {
+    // Önceki abonelik varsa temizleyelim (Çift bildirim olmasın)
+    supabaseClient.removeAllChannels();
+
     supabaseClient
         .channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-            // Yeni mesaj geldiğinde inbox'ı yenile
-            console.log('New message received!', payload);
-            fetchInboxMessages();
-            showToast("New Message", "You have received a new message.", "info");
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+            
+            // 1. Oturum açmış kullanıcıyı bul
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return;
+
+            // --- SENARYO A: Biri BANA mesaj attı (Alıcı benim) ---
+            if (payload.new.receiver_id === user.id) {
+                console.log('Canlı: Yeni mesaj düştü!');
+                
+                // 1. Listeyi hemen yenile (Veritabanından taze veriyi çek)
+                // (Senin kodunda hangisi varsa onu çalıştırır)
+                if (typeof fetchMessages === 'function') fetchMessages(); 
+                else if (typeof fetchInboxMessages === 'function') fetchInboxMessages();
+                
+                // 2. Eğer "Gelen Kutusu" paneli KAPALIYSA bildirim (Toast) göster
+                const panel = document.getElementById("inbox-panel");
+                if (panel && !panel.classList.contains("open")) {
+                    showToast("Yeni Mesaj", "Gelen kutunuzda yeni bir mesaj var.", "info");
+                }
+                
+                // 3. Zil sesini veya kırmızı noktayı güncelle (render fonksiyonu bunu yapıyor zaten)
+            }
+
+            // --- SENARYO B: BEN mesaj attım (Gönderen benim) ---
+            // Eğer "Giden Kutusu" (Sent) sekmesi açıksa orayı da anlık güncelle
+            if (payload.new.sender_id === user.id) {
+                // Eğer şu an 'Sent' sekmesindeysek listeyi yenile ki gönderdiğimiz en üste düşsün
+                if (typeof currentTab !== 'undefined' && currentTab === 'sent') {
+                    fetchMessages();
+                }
+            }
         })
         .subscribe();
 }
