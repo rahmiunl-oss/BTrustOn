@@ -213,52 +213,6 @@
     SUPABASE_URL,
     SUPABASE_ANON_KEY
   );
-let quoteChannel = null;
-
-function subscribeQuoteRealtime(currentUserId) {
-  if (quoteChannel) {
-    supabaseClient.removeChannel(quoteChannel);
-    quoteChannel = null;
-  }
-
-  quoteChannel = supabaseClient
-    .channel("quote-requests-" + currentUserId)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "quote_requests",
-        // Eğer sende alıcı kolonu farklıysa bunu değiştir:
-        // filter: `receiver_id=eq.${currentUserId}`
-        filter: `target_user_id=eq.${currentUserId}`
-      },
-      (payload) => {
-        // En güvenli ve en kolay yöntem:
-        // Listeyi DB’den tekrar çekip UI’yi güncelle
-        if (typeof fetchQuoteRequests === "function") {
-          fetchQuoteRequests();
-        }
-
-        // Eğer badge sayın varsa güncelle
-        if (typeof updateQuoteBadge === "function") {
-          updateQuoteBadge();
-        }
-
-        if (typeof showToast === "function") {
-          showToast("Success", "New quote request arrived.", "success");
-        }
-      }
-    )
-    .subscribe();
-}
-
-function unsubscribeQuoteRealtime() {
-  if (quoteChannel) {
-    supabaseClient.removeChannel(quoteChannel);
-    quoteChannel = null;
-  }
-}
 
 </script>
 </head>
@@ -4169,10 +4123,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Mesajlar
     fetchInboxMessages();
     subscribeToMessages();
-
-    // Quote Requests (✅ BURAYA EKLE)
-    fetchQuoteRequests();      
-    subscribeQuoteRealtime();
     }
 });
 // Oturum durumu değişirse (Giriş/Çıkış) tetikle
@@ -4489,46 +4439,54 @@ async function fetchInboxMessages() {
 // Realtime Abonelik Başlat (Sayfa açılınca çağırılmalı)
 // ✅ DÜZELTİLMİŞ ABONELİK (Kendi mesajına bildirim vermez)
 /* --- GERÇEK ZAMANLI DİNLEME (REALTIME) --- */
+// ✅ Mesajlar ve Teklifler için Doğru Real-time Dinleyicisi
+let messageChannel = null;
+
 function subscribeToMessages() {
-    // Önceki abonelik varsa temizleyelim (Çift bildirim olmasın)
-    supabaseClient.removeAllChannels();
+  // 1. Önceki abonelik varsa temizle
+  if (messageChannel) {
+    supabaseClient.removeChannel(messageChannel);
+    messageChannel = null;
+  }
 
-    supabaseClient
-        .channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
-            
-            // 1. Oturum açmış kullanıcıyı bul
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
+  // 2. 'messages' tablosunu dinle
+  messageChannel = supabaseClient
+    .channel('public:messages')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages' },
+      async (payload) => {
+        // Mevcut kullanıcıyı al
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
 
-            // --- SENARYO A: Biri BANA mesaj attı (Alıcı benim) ---
-            if (payload.new.receiver_id === user.id) {
-                console.log('Canlı: Yeni mesaj düştü!');
-                
-                // 1. Listeyi hemen yenile (Veritabanından taze veriyi çek)
-                // (Senin kodunda hangisi varsa onu çalıştırır)
-                if (typeof fetchMessages === 'function') fetchMessages(); 
-                else if (typeof fetchInboxMessages === 'function') fetchInboxMessages();
-                
-                // 2. Eğer "Gelen Kutusu" paneli KAPALIYSA bildirim (Toast) göster
-                const panel = document.getElementById("inbox-panel");
-                if (panel && !panel.classList.contains("open")) {
-                    showToast("Yeni Mesaj", "Gelen kutunuzda yeni bir mesaj var.", "info");
-                }
-                
-                // 3. Zil sesini veya kırmızı noktayı güncelle (render fonksiyonu bunu yapıyor zaten)
-            }
+        // Mesaj bana gelmediyse durdur
+        if (payload.new.receiver_id !== user.id) return;
 
-            // --- SENARYO B: BEN mesaj attım (Gönderen benim) ---
-            // Eğer "Giden Kutusu" (Sent) sekmesi açıksa orayı da anlık güncelle
-            if (payload.new.sender_id === user.id) {
-                // Eğer şu an 'Sent' sekmesindeysek listeyi yenile ki gönderdiğimiz en üste düşsün
-                if (typeof currentTab !== 'undefined' && currentTab === 'sent') {
-                    fetchMessages();
-                }
-            }
-        })
-        .subscribe();
+        console.log("Realtime: Yeni veri alındı!", payload.new);
+
+        // 3. INBOX'I YENİLE (Bu işlem Kırmızı Badge'i otomatik günceller)
+        if (typeof fetchInboxMessages === 'function') {
+          await fetchInboxMessages();
+        }
+
+        // 4. Toast Bildirimi Göster
+        const isQuote = payload.new.msg_type === 'quote';
+        
+        // Türe göre metni ayarla
+        const title = isQuote ? "Yeni Teklif İsteği" : "Yeni Mesaj";
+        const body = isQuote 
+          ? "Yeni bir fiyat teklifi isteği aldınız." 
+          : (payload.new.subject || "Yeni bir mesajınız var.");
+
+        // Sadece Inbox paneli kapalıysa bildirim göster
+        const panel = document.getElementById("inbox-panel");
+        if (panel && !panel.classList.contains("open")) {
+            showToast(title, body, "info");
+        }
+      }
+    )
+    .subscribe();
 }
 function toggleInbox() {
   const panel = document.getElementById("inbox-panel");
