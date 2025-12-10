@@ -4178,19 +4178,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Oturum durumu değişirse (Giriş/Çıkış) tetikle
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN') {
-    checkUserAndOpenProfile();
 
-    // Mesajlar
+    // ✅ EKLE
+    if (typeof closeLoginModal === "function") closeLoginModal();
+
+    checkUserAndOpenProfile();
     fetchInboxMessages();
     subscribeToMessages();
-
-    // Quote Requests (✅ BURAYA EKLE)
-    fetchQuoteRequests();      // varsa
-    subscribeQuoteRealtime();  // 1. adımda eklediğin realtime fonksiyon
   } else if (event === 'SIGNED_OUT') {
     window.location.reload();
   }
 });
+
 /* --- MY COMPANY BUTONU DÜZELTME --- */
 
 // Eski fonksiyonu bununla değiştiriyoruz/eziyoruz:
