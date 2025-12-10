@@ -1545,10 +1545,18 @@
     <div id="inbox-content" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2 bg-slate-50/50">
         </div>
 
-    <div class="p-4 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
-        <button onclick="markAllInboxRead()" class="w-full py-3 rounded-xl border border-gray-200 text-gray-500 text-xs font-bold hover:bg-gray-50 transition flex items-center justify-center gap-2">
-    <i class="fa-solid fa-check-double"></i> MARK ALL AS READ
-</button>
+    <div class="p-4 border-t border-gray-200 bg-white/90 backdrop-blur-sm grid grid-cols-2 gap-3">
+        
+        <button onclick="markAllInboxRead()" class="py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-[10px] font-bold hover:bg-white hover:border-BTrustOn-accent hover:text-BTrustOn-accent transition flex items-center justify-center gap-2 group">
+            <i class="fa-solid fa-check-double text-gray-400 group-hover:text-BTrustOn-accent"></i> 
+            MARK READ
+        </button>
+
+        <button onclick="deleteAllInbox()" class="py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-[10px] font-bold hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition flex items-center justify-center gap-2 group">
+            <i class="fa-solid fa-trash text-gray-400 group-hover:text-red-500"></i> 
+            DELETE ALL
+        </button>
+
     </div>
 </div>
 <div id="view-message" class="hidden-view fixed inset-0 z-[10000] bg-slate-50 flex flex-col h-[100dvh]">
@@ -4465,7 +4473,7 @@ function toggleInbox() {
     }, 10);
   }
 }
-
+/* --- GÜNCELLENMİŞ INBOX RENDER (TEKLİ SİLME BUTONLU) --- */
 function renderInboxItems() {
   const container = document.getElementById("inbox-content");
   const badgeNav = document.getElementById("nav-badge");
@@ -4476,61 +4484,69 @@ function renderInboxItems() {
 
   let unreadCount = 0;
 
+  if (inboxData.length === 0) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+            <i class="fa-solid fa-inbox text-4xl mb-3 opacity-20"></i>
+            <p class="text-xs">No messages yet.</p>
+        </div>`;
+  }
+
   inboxData.forEach(item => {
     if(item.unread) unreadCount++;
 
-    // Kart Elementi Oluştur
+    // Kart Elementi
     const card = document.createElement("div");
     
-    // Tasarım Sınıfları
-    card.className = `inbox-item p-4 mb-1 cursor-pointer group ${item.unread ? 'unread' : 'bg-white/60 opacity-80'}`;
+    // Tasarım: group class'ı hover efekti için önemli
+    card.className = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 cursor-pointer group ${item.unread ? 'bg-white unread shadow-sm' : 'bg-white/60 opacity-90'}`;
     
-    // Tıklama Olayı
+    // Tıklama Olayı (Mesajı Aç)
     card.onclick = () => openMessage(item.id); 
     
-    // İkon Rengi (Type'a göre)
+    // İkon Rengi
     let iconBg = "bg-gray-100 text-gray-500";
     let icon = "fa-building";
     
     if(item.type === 'quote') { iconBg = "bg-cyan-50 text-BTrustOn-accent"; icon = "fa-file-invoice-dollar"; }
     if(item.type === 'system') { iconBg = "bg-emerald-50 text-emerald-600"; icon = "fa-shield-halved"; }
-    if(item.type === 'alert') { iconBg = "bg-amber-50 text-amber-600"; icon = "fa-triangle-exclamation"; }
 
-    // Eğer mesaj sayısı 1'den büyükse (aynı konuda konuşulmuşsa) badge göster
+    // Badge Sayısı
     const countBadge = item.count > 1 
-        ? `<span class="ml-2 bg-gray-200 text-gray-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">+${item.count - 1}</span>` 
+        ? `<span class="ml-2 bg-gray-100 text-gray-500 text-[9px] font-bold px-1.5 py-0.5 rounded-full">+${item.count - 1}</span>` 
         : '';
 
     card.innerHTML = `
+      <button 
+          onclick="deleteThread(${item.id}, '${item.title}', '${item.sender_id}', event)" 
+          class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white text-gray-300 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 shadow-sm"
+          title="Delete Thread"
+      >
+          <i class="fa-solid fa-trash-can text-[10px]"></i>
+      </button>
+
       <div class="flex gap-4 pointer-events-none"> 
-        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300 relative">
+        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 relative">
            <i class="fa-solid ${icon}"></i>
-           ${item.unread ? '<span class="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full"></span>' : ''}
+           ${item.unread ? '<span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>' : ''}
         </div>
 
-        <div class="flex-1 min-w-0">
-           <div class="flex justify-between items-start mb-1">
-              <div class="flex items-center">
-                  <h4 class="text-xs font-bold text-BTrustOn-primary leading-tight truncate max-w-[150px]">${item.title}</h4>
+        <div class="flex-1 min-w-0 pt-0.5">
+           <div class="flex justify-between items-start mb-0.5 pr-6"> <div class="flex items-center min-w-0">
+                  <h4 class="text-xs font-bold text-gray-800 leading-tight truncate pr-1">${item.title}</h4>
                   ${countBadge}
               </div>
-              <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2 shrink-0">${item.time}</span>
+              <span class="text-[9px] text-gray-400 whitespace-nowrap ml-2 shrink-0">${item.time}</span>
            </div>
            
-           <p class="text-xs text-gray-500 leading-relaxed mb-2 line-clamp-1">
-             <span class="font-semibold text-gray-700">Last:</span> ${item.desc}
+           <p class="text-xs text-gray-500 leading-relaxed mb-1.5 line-clamp-1">
+             <span class="font-medium text-gray-400 text-[10px]">Last:</span> ${item.desc}
            </p>
            
-           <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-wide truncate max-w-[120px]">
+           <div class="flex items-center">
+              <span class="text-[9px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[150px]">
                  ${item.company}
               </span>
-              
-              <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                 <button class="text-BTrustOn-accent text-[10px] font-bold flex items-center gap-1">
-                    OPEN THREAD <i class="fa-solid fa-arrow-right"></i>
-                 </button>
-              </div>
            </div>
         </div>
       </div>
@@ -4539,7 +4555,7 @@ function renderInboxItems() {
     container.appendChild(card);
   });
 
-  // Badge Güncelleme
+  // Badge Güncellemeleri
   if(badgeNav) {
       if(unreadCount > 0) {
           badgeNav.textContent = unreadCount;
@@ -4548,7 +4564,6 @@ function renderInboxItems() {
           badgeNav.classList.add("hidden");
       }
   }
-  
   if(badgeHeader) {
       if(unreadCount > 0) {
         badgeHeader.textContent = `${unreadCount} NEW`;
@@ -4558,6 +4573,7 @@ function renderInboxItems() {
       }
   }
 }
+
 // Sayfa açılınca badge'i kontrol et
 document.addEventListener("DOMContentLoaded", () => {
     // Hafif bir gecikmeyle çalıştır ki diğer yüklemeler bitsin
@@ -5617,6 +5633,74 @@ async function handleQuoteSubmit() {
     btn.innerHTML = originalText;
     btn.disabled = false;
   }
+}
+/* --- SİLME FONKSİYONLARI (TEKLİ & TOPLU) --- */
+
+// 1. TEK BİR SOHBETİ SİL (Thread Delete)
+function deleteThread(msgId, title, senderId, event) {
+    // Tıklamayı durdur (Mesajın açılmasını engeller)
+    if(event) event.stopPropagation();
+
+    openDeleteModal("Delete this conversation? It will be removed from your inbox.", async () => {
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) throw new Error("Login required");
+
+            // O Konudaki TÜM mesajları sil (Receiver ben, Sender o, Konu aynı)
+            // Not: Sadece listelenen son mesajı silmek yerine, bütün thread'i temizliyoruz.
+            const { error } = await supabaseClient
+                .from('messages')
+                .delete()
+                .eq('receiver_id', user.id)
+                .eq('sender_id', senderId)
+                .ilike('subject', `%${title}%`); // Konu eşleşmesi
+
+            if (error) throw error;
+
+            // Listeyi yerel olarak güncelle (Hızlı tepki)
+            // SenderId ve Title eşleşenleri çıkar
+            inboxData = inboxData.filter(m => !(m.sender_id === senderId && m.title === title));
+            
+            renderInboxItems();
+            showToast("Deleted", "Conversation deleted.", "success");
+
+        } catch (error) {
+            console.error(error);
+            showToast("Error", "Could not delete thread.", "error");
+        }
+    });
+}
+
+// 2. TÜM KUTUYU SİL (Delete All)
+function deleteAllInbox() {
+    if (inboxData.length === 0) {
+        showToast("Info", "Inbox is already empty.", "info");
+        return;
+    }
+
+    openDeleteModal("WARNING: This will delete ALL messages in your inbox. Are you sure?", async () => {
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return;
+
+            // Bana gelen tüm mesajları sil
+            const { error } = await supabaseClient
+                .from('messages')
+                .delete()
+                .eq('receiver_id', user.id);
+
+            if (error) throw error;
+
+            // Listeyi temizle
+            inboxData = [];
+            renderInboxItems();
+            showToast("Cleared", "All messages deleted.", "success");
+
+        } catch (error) {
+            console.error(error);
+            showToast("Error", "Failed to clear inbox.", "error");
+        }
+    });
 }
 </script>
 </html>
