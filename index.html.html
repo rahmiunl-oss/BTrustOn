@@ -4352,7 +4352,7 @@ function timeAgo(dateString) {
     if (interval > 1) return Math.floor(interval) + " mins ago";
     return "Just now";
 }
-/* --- GÜNCELLENMİŞ: fetchInboxMessages (Şirket Odaklı Liste) --- */
+/* --- DÜZELTİLMİŞ: fetchInboxMessages (Her Zaman Karşı Tarafın İsmi) --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
@@ -4367,6 +4367,7 @@ async function fetchInboxMessages() {
     if (error) return;
 
     const groupedMap = new Map();
+    const partnersToFetch = new Set(); // İsmi hafızada olmayanları buraya atacağız
 
     messages.forEach(msg => {
         const cleanSubject = msg.subject.replace(/^(Re:\s*)+/i, '').trim();
@@ -4376,29 +4377,40 @@ async function fetchInboxMessages() {
         const groupKey = cleanSubject + "_" + partnerId;
 
         if (!groupedMap.has(groupKey)) {
-            // Şirket Adını Belirle
-            let displayCompany = "Unknown Partner";
+            // --- İSİM BULMA MANTIĞI (GÜNCELLENDİ) ---
+            let displayCompany = "Loading...";
             
-            // Eğer mesaj O'ndan geldiyse veritabanındaki "related_company_name"i kullan
-            if (!isMeSender && msg.related_company_name) {
-                const match = msg.related_company_name.match(/\((.+)\)$/);
-                displayCompany = match ? match[1] : msg.related_company_name; // Parantez içini al
+            // 1. Önce hafızadaki (database) listeye bak. Partnerin ismi orada var mı?
+            // (Sayfa ilk açıldığında 'initRealData' tüm şirketleri çekmişti)
+            const localPartner = database.find(c => c.id == partnerId);
+
+            if (localPartner) {
+                displayCompany = localPartner.name;
             } else {
-                // Ben attıysam "Sent to Partner" mantığı (Basitlik için 'Outgoing' diyelim şimdilik)
-                // İdealde burada partnerin ID'sinden ismini çekmek gerekir ama kodunu şişirmemek için:
-                displayCompany = "Partner (Outgoing)"; 
+                // 2. Hafızada yoksa, mesajın içinden kurtarmayı dene
+                if (!isMeSender && msg.related_company_name) {
+                    // Mesaj ondan geldiyse ismi içinde yazıyordur
+                    const match = msg.related_company_name.match(/\((.+)\)$/);
+                    displayCompany = match ? match[1] : msg.related_company_name;
+                } else {
+                    // 3. Ben gönderdiysem ve hafızada yoksa, mecbur veritabanından soracağız
+                    displayCompany = "Company ID: " + partnerId.substr(0,4) + "..."; // Geçici isim
+                    partnersToFetch.add(partnerId);
+                }
             }
 
             groupedMap.set(groupKey, {
                 id: msg.id,
                 count: 1,
                 partner_id: partnerId,
-                company: displayCompany, // Listede görünecek isim
+                company: displayCompany,
                 title: cleanSubject,
                 desc: isMeSender ? `You: ${msg.content}` : msg.content,
                 time: timeAgo(msg.created_at),
                 unread: !msg.is_read && !isMeSender,
-                type: msg.msg_type
+                type: msg.msg_type,
+                // Logo için baş harfi al (İsim Loading ise 'P' koy)
+                logo: displayCompany === "Loading..." ? "P" : displayCompany.charAt(0).toUpperCase()
             });
         } else {
             const existing = groupedMap.get(groupKey);
@@ -4407,8 +4419,27 @@ async function fetchInboxMessages() {
         }
     });
 
+    // --- EKSİK İSİMLERİ SORGULA ---
+    if (partnersToFetch.size > 0) {
+        const { data: profiles } = await supabaseClient
+            .from('profiles')
+            .select('id, company_name')
+            .in('id', Array.from(partnersToFetch));
+        
+        if (profiles) {
+            // Map'i güncelle
+            groupedMap.forEach((val) => {
+                const found = profiles.find(p => p.id === val.partner_id);
+                if (found) {
+                    val.company = found.company_name;
+                    val.logo = found.company_name.charAt(0).toUpperCase();
+                }
+            });
+        }
+    }
+
     inboxData = Array.from(groupedMap.values());
-    renderInboxItems(); // Kırmızı ışığı ve listeyi günceller
+    renderInboxItems();
 }
 // Realtime Abonelik Başlat (Sayfa açılınca çağırılmalı)
 // ✅ DÜZELTİLMİŞ ABONELİK (Kendi mesajına bildirim vermez)
@@ -4598,7 +4629,7 @@ let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 let currentPartnerId = null; // Global değişken
 let currentSubject = null;
 let currentOpenMessageId = null;
-
+/* --- GÜNCELLENMİŞ: openMessage (Başlık İsim Garantili) --- */
 async function openMessage(itemId) {
     const item = inboxData.find(m => m.id === itemId);
     if (!item) return;
@@ -4607,11 +4638,23 @@ async function openMessage(itemId) {
     currentSubject = item.title;
     currentOpenMessageId = itemId;
 
-    // Okundu Yap (UI)
+    // --- KRİTİK DÜZELTME: BAŞLIK İSMİNİ CANLI VERİDEN AL ---
+    // Inbox listesindeki isme güvenmek yerine, veritabanı (database) hafızasındaki 
+    // güncel şirket kartını bulup ismini oradan çekiyoruz.
+    let fixedHeaderName = item.company; // Varsayılan (Eğer bulamazsa)
+    
+    // Veritabanı listesinden ID ile gerçek profili bul
+    const liveProfile = database.find(c => c.id == currentPartnerId);
+    if (liveProfile) {
+        fixedHeaderName = liveProfile.name;
+    }
+    // -------------------------------------------------------
+
+    // Okundu Yapma İşlemleri
     if (item.unread) {
         item.unread = false;
-        renderInboxItems();
-        // DB update
+        renderInboxItems(); // Soldaki listeyi güncelle
+        
         const { data: { user } } = await supabaseClient.auth.getUser();
         if(user) {
             supabaseClient.from('messages').update({ is_read: true })
@@ -4620,36 +4663,35 @@ async function openMessage(itemId) {
         }
     }
 
-    // --- BURASI DEĞİŞTİ: BAŞLIK VE TIKLANABİLİR ŞİRKET İSMİ ---
+    // 1. KONU BAŞLIĞI
     document.getElementById("msg-subject").textContent = item.title;
 
-    // Şirket ismini tıklanabilir buton yapıyoruz
+    // 2. ŞİRKET İSMİ (Sabitlenmiş İsim Kullanılıyor)
     document.getElementById("msg-company").innerHTML = `
         <div class="flex flex-col">
             <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">Conversation with</span>
             <button onclick="openProfile('${currentPartnerId}')" 
-                    class="text-left font-bold text-BTrustOn-accent hover:text-blue-700 hover:underline transition text-sm flex items-center gap-1.5"
-                    title="Go to Company Profile">
+                    class="text-left font-bold text-BTrustOn-accent hover:text-blue-700 hover:underline transition text-sm flex items-center gap-1.5">
                 <i class="fa-solid fa-building-user"></i>
-                ${item.company}
+                ${fixedHeaderName} 
             </button>
         </div>
     `;
 
-    // Logo Harfi
+    // 3. LOGO (Sabitlenmiş İsmin Baş Harfi)
     const logoEl = document.getElementById("msg-logo");
     if(logoEl) {
-        logoEl.textContent = item.company.charAt(0).toUpperCase();
-        // Logo rengini mavi/turkuaz yap
+        logoEl.textContent = fixedHeaderName.charAt(0).toUpperCase();
         logoEl.className = "w-10 h-10 rounded-lg bg-BTrustOn-accent text-white flex items-center justify-center text-lg font-bold shrink-0 shadow-md border-0";
     }
 
-    // Görüntüleyiciyi Aç
+    // Ekranı Aç
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.remove("hidden-view");
     document.body.style.overflow = "hidden";
     toggleInbox(); 
     
+    // Sohbeti Yükle
     await loadMessageThread(item.title, currentPartnerId);
 }
 
@@ -4742,12 +4784,13 @@ function closeMessageView() {
     if(viewer) viewer.classList.add("hidden-view");
     document.body.style.overflow = "auto";
 }
-/* --- DÜZELTİLMİŞ: sendReply (Değişken İsimleri Eşleştirildi) --- */
+
+/* --- DÜZELTİLMİŞ: sendReply (Şirket İsmini Korur) --- */
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
     
-    // Butonu bul (Hem mobilde hem desktopta çalışması için seçiciyi genişlettik)
+    // Buton seçimi (Mobil ve Desktop uyumlu)
     const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
     // 1. KONTROLLER
@@ -4756,9 +4799,8 @@ async function sendReply() {
         return;
     }
 
-    // HATA BURADAYDI: Artık 'currentPartnerId' ve 'currentSubject' kullanıyoruz
     if (!currentPartnerId || !currentSubject) {
-        showToast("Error", "Chat connection lost. Please close and reopen the message.", "error");
+        showToast("Error", "Chat connection lost. Please close and reopen.", "error");
         return;
     }
 
@@ -4772,39 +4814,56 @@ async function sendReply() {
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Please login again.");
+
+        // --- DÜZELTME BURADA BAŞLIYOR ---
+        // Şirket adını "selectedCompany" değişkeninden değil, veritabanından garanti olarak çekiyoruz.
+        let myDisplayName = "My Company"; 
+
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('company_name') // Sadece şirket adını al
+            .eq('id', user.id)
+            .single();
+
+        if (profile && profile.company_name) {
+            // İsterseniz formatı "Kişi (Şirket)" yerine direkt "Şirket Adı" yapabilirsiniz.
+            // Kullanıcı isteğine göre direkt ŞİRKET ADI yapıyoruz:
+            myDisplayName = profile.company_name; 
+            
+            // Eğer "Ahmet (Rönesans)" gibi olsun istersen aşağıdaki satırı aç:
+            // myDisplayName = `User (${profile.company_name})`;
+        }
+        // --- DÜZELTME BURADA BİTİYOR ---
         
-        // Konu Başlığı Ayarı (Re: eklemesi)
+        // Konu Başlığı (Re: eklemesi)
         const replySubject = currentSubject.startsWith("Re:") 
             ? currentSubject 
             : "Re: " + currentSubject;
 
         let finalContent = content;
         
-        // Dosya Eki Varsa Linke Çevir
+        // Dosya Eki Linklemesi
         if (currentAttachmentFile) {
-             // Not: Gerçek dosya yükleme kodunu buraya eklemeniz gerekebilir, 
-             // şimdilik sadece ismini ekliyoruz.
              finalContent += `\n\n[📎 Attachment: ${currentAttachmentFile.name}]`;
         }
 
         // 3. VERİTABANINA KAYDET
         const { error } = await supabaseClient.from('messages').insert([{
             sender_id: user.id,
-            receiver_id: currentPartnerId, // Düzeltilmiş değişken
+            receiver_id: currentPartnerId,
             content: finalContent,
             subject: replySubject,
-            related_company_name: selectedCompany ? selectedCompany.name : "Reply",
+            related_company_name: myDisplayName, // <--- ARTIK BURASI "Reply" OLMAYACAK, ŞİRKET ADI OLACAK
             msg_type: 'message',
             is_read: false
         }]);
 
         if (error) throw error;
 
-        // 4. TEMİZLİK VE EKRANI YENİLEME
+        // 4. TEMİZLİK
         inputEl.value = "";
         if (typeof removeAttachment === "function") removeAttachment(); 
         
-        // Sohbet balonlarını yenile
         await loadMessageThread(currentSubject, currentPartnerId);
 
     } catch (error) {
@@ -4817,7 +4876,6 @@ async function sendReply() {
         }
     }
 }
-
 // 1. MEVCUT MESAJI SİL
 // 1. MEVCUT MESAJI SİL (PROFESYONEL MODAL İLE)
 // MEVCUT MESAJI SİL (HEM EKRANDAN HEM VERİTABANINDAN)
