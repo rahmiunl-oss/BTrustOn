@@ -4511,7 +4511,7 @@ function toggleInbox() {
     }, 10);
   }
 }
-/* --- GÜNCELLENMİŞ INBOX RENDER (TEKLİ SİLME BUTONLU) --- */
+/* --- DÜZELTİLMİŞ: renderInboxItems (ID ve Tırnak İşareti Hatası Giderildi) --- */
 function renderInboxItems() {
   const container = document.getElementById("inbox-content");
   const badgeNav = document.getElementById("nav-badge");
@@ -4533,10 +4533,13 @@ function renderInboxItems() {
   inboxData.forEach(item => {
     if(item.unread) unreadCount++;
 
+    // Tırnak işaretli başlıklar (Örn: "Ahmet's Offer") kod hatası vermesin diye escape yapıyoruz
+    const safeTitle = item.title.replace(/'/g, "\\'");
+
     // Kart Elementi
     const card = document.createElement("div");
     
-    // Tasarım: group class'ı hover efekti için önemli
+    // Tasarım
     card.className = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 cursor-pointer group ${item.unread ? 'bg-white unread shadow-sm' : 'bg-white/60 opacity-90'}`;
     
     // Tıklama Olayı (Mesajı Aç)
@@ -4549,14 +4552,13 @@ function renderInboxItems() {
     if(item.type === 'quote') { iconBg = "bg-cyan-50 text-BTrustOn-accent"; icon = "fa-file-invoice-dollar"; }
     if(item.type === 'system') { iconBg = "bg-emerald-50 text-emerald-600"; icon = "fa-shield-halved"; }
 
-    // Badge Sayısı
     const countBadge = item.count > 1 
         ? `<span class="ml-2 bg-gray-100 text-gray-500 text-[9px] font-bold px-1.5 py-0.5 rounded-full">+${item.count - 1}</span>` 
         : '';
 
     card.innerHTML = `
       <button 
-          onclick="deleteThread(${item.id}, '${item.title}', '${item.sender_id}', event)" 
+          onclick="deleteThread(${item.id}, '${safeTitle}', '${item.partner_id}', event)" 
           class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white text-gray-300 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 shadow-sm"
           title="Delete Thread"
       >
@@ -4570,7 +4572,8 @@ function renderInboxItems() {
         </div>
 
         <div class="flex-1 min-w-0 pt-0.5">
-           <div class="flex justify-between items-start mb-0.5 pr-6"> <div class="flex items-center min-w-0">
+           <div class="flex justify-between items-start mb-0.5 pr-6"> 
+              <div class="flex items-center min-w-0">
                   <h4 class="text-xs font-bold text-gray-800 leading-tight truncate pr-1">${item.title}</h4>
                   ${countBadge}
               </div>
@@ -4611,7 +4614,6 @@ function renderInboxItems() {
       }
   }
 }
-
 // Sayfa açılınca badge'i kontrol et
 document.addEventListener("DOMContentLoaded", () => {
     // Hafif bir gecikmeyle çalıştır ki diğer yüklemeler bitsin
@@ -5686,29 +5688,42 @@ async function handleQuoteSubmit() {
 }
 
 // 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
+/* --- DÜZELTİLMİŞ: deleteThread (Konu Başlığı Temizliği) --- */
 function deleteThread(msgId, title, partnerId, event) {
-    if(event) event.stopPropagation();
+    // Tıklamanın kartı açmasını engelle (Propagation stop)
+    if(event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    if (!partnerId || partnerId === 'undefined') {
+        showToast("Error", "Cannot identify the partner. Please refresh.", "error");
+        return;
+    }
 
     openDeleteModal("Delete this conversation? (Both sent and received messages will be removed)", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("Login required");
 
-            // 1. Veritabanından SİL (Hem gelen hem giden)
-            // Mantık: (Ben gönderdim VE O aldı) VEYA (O gönderdi VE Ben aldım)
-            // VE Konu başlığı tutuyor.
-            
+            // Başlıktaki "Re:" gibi ekleri temizle ki veritabanında daha rahat bulsun
+            // Örn: Ekranda "Re: Kazı" yazar ama DB'de "Kazı" olabilir.
+            // %Kazı% diye aratırsak ikisini de buluruz.
+            const cleanSearchTitle = title.replace(/^(Re:\s*)+/i, '').trim();
+
             const { error } = await supabaseClient
                 .from('messages')
                 .delete()
+                // Mantık: (Ben gönderdim VE O aldı) VEYA (O gönderdi VE Ben aldım)
                 .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-                .ilike('subject', `%${title}%`); // Konu eşleşmesi (Re: dahil)
+                // Konu başlığı benzer olanları sil
+                .ilike('subject', `%${cleanSearchTitle}%`); 
 
             if (error) throw error;
 
-            // 2. Ekrandan SİL (Anlık yok et)
-            // Bu partner ve bu konuyla eşleşen her şeyi listeden çıkar
-            inboxData = inboxData.filter(m => !(m.sender_id === partnerId && m.title === title));
+            // Ekrandan SİL (Anlık yok et)
+            // Partner ID ve Başlık eşleşenleri listeden çıkar
+            inboxData = inboxData.filter(m => !(m.partner_id === partnerId && m.title === title));
             
             renderInboxItems();
             showToast("Deleted", "Conversation deleted permanently.", "success");
@@ -5719,7 +5734,6 @@ function deleteThread(msgId, title, partnerId, event) {
         }
     });
 }
-
 // 2. TÜM KUTUYU SİL (HEM GELENİ HEM GİDENİ SİLER)
 function deleteAllInbox() {
     if (inboxData.length === 0) {
