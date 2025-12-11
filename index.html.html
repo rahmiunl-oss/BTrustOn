@@ -1793,13 +1793,24 @@
   });
 
   // Logout
+  /* --- GÜNCELLENMİŞ: partnerLogout (Hafıza Temizliği Eklenmiş) --- */
   async function partnerLogout() {
     try {
+      // 1. Supabase oturumunu kapat
       await supabaseClient.auth.signOut();
+      
+      // 2. ✅ EKLENEN KISIM: Tarayıcı hafızasındaki şirket kimliğini sil
+      localStorage.removeItem("BTrustOn_my_company_id");
+      
+      // 3. Değişkeni de boşalt (Sayfa yenilenmezse diye önlem)
+      selectedCompany = null;
+
+      showToast("Logged out", "See you soon!", "success");
+
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      // İstersen burada ana ekrana döndürürüz
+      // 4. Ana sayfaya yönlendir (veya sayfayı yenile)
       window.location.href = "/";
     }
   }
@@ -4105,6 +4116,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     fetchInboxMessages();
     subscribeToMessages();
   } else if (event === 'SIGNED_OUT') {
+    localStorage.removeItem("BTrustOn_my_company_id");
     window.location.reload();
   }
 });
