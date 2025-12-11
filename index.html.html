@@ -4943,7 +4943,7 @@ function closeMessageView() {
     if(viewer) viewer.classList.add("hidden-view");
     document.body.style.overflow = "auto";
 }
-/* --- GÜNCELLENMİŞ: sendReply (Sıfır Gecikme) --- */
+/* --- GÜNCELLENMİŞ: sendReply (ROKET HIZI - SIFIR GECİKME) --- */
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
@@ -4974,11 +4974,27 @@ async function sendReply() {
         
         let finalContent = content;
 
+        // Dosya varsa önce onu yükle (Burası mecbur bekleyecek, dosya yüklenmeden mesaj gitmez)
         if (currentAttachmentFile) {
              const publicUrl = await uploadFileToSupabase(currentAttachmentFile, 'chat');
              finalContent += `\n\n[FILE_ATTACHMENT|${currentAttachmentFile.name}|${publicUrl}]`;
         }
 
+        // --- HIZLANDIRMA BURADA BAŞLIYOR ---
+
+        // 1. ANINDA GÖRÜNTÜ (Optimistic UI)
+        // Veritabanını beklemeden ekranı güncelle
+        inputEl.value = ""; // Kutuyu temizle
+        if (typeof removeAttachment === "function") removeAttachment(); 
+
+        // Sağdaki sohbete balonu ekle
+        appendLocalMessage(finalContent); 
+        
+        // Soldaki listeyi güncelle
+        manualInboxUpdate(currentPartnerId, currentSubject, finalContent, false); 
+
+
+        // 2. ARKA PLANDA GÖNDER (Kullanıcı beklemez)
         const { error } = await supabaseClient.from('messages').insert([{
             sender_id: user.id,
             receiver_id: currentPartnerId,
@@ -4989,20 +5005,11 @@ async function sendReply() {
             is_read: false
         }]);
 
-        if (error) throw error;
-
-        // Temizlik
-        inputEl.value = "";
-        if (typeof removeAttachment === "function") removeAttachment(); 
-        
-        // 1. Sağdaki Sohbeti Yenile (Bunu bekleyelim ki balon çıksın)
-        await loadMessageThread(currentSubject, currentPartnerId);
-
-        // 2. 👇 SOLDAKİ LİSTEYİ ANLIK GÜNCELLE (Database'i bekleme) 👇
-        manualInboxUpdate(currentPartnerId, currentSubject, finalContent, false);
-        
-        // *Opsiyonel: Arka planda sessizce senkronize et (Kullanıcı fark etmez)
-        fetchInboxMessages(); 
+        if (error) {
+            // Hata olursa kullanıcıyı uyar (Çok nadir olur)
+            showToast("Error", "Message failed to send!", "error");
+            console.error(error);
+        }
 
     } catch (error) {
         console.error(error);
@@ -5945,6 +5952,45 @@ function triggerProfileLogoUpload() {
         // Başkasının profili ise tıklanmasın (Opsiyonel: Fotoğrafı büyütebilirsiniz)
         console.log("Cannot edit another company's logo.");
     }
+}
+/* --- YENİ YARDIMCI: Sohbet Balonunu Anında Ekrana Bas --- */
+function appendLocalMessage(content) {
+    const container = document.getElementById("message-thread-container");
+    if (!container) return;
+
+    // Eğer "Start conversation..." yazısı varsa temizle
+    if (container.innerHTML.includes("Start the conversation")) container.innerHTML = "";
+
+    // Tarih
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Satır başlarını <br> yap
+    let cleanContent = content.replace(/\n/g, '<br>');
+    
+    // Dosya eki formatını görselleştir (Opsiyonel)
+    if (cleanContent.includes("[FILE_ATTACHMENT")) {
+        cleanContent = cleanContent.replace(/\[FILE_ATTACHMENT\|(.*?)\|(.*?)\]/g, 
+            '<div class="flex items-center gap-2 mt-2 p-2 bg-white border rounded-lg"><i class="fa-solid fa-paperclip text-BTrustOn-accent"></i> <span class="text-xs font-bold">$1</span></div>'
+        );
+    }
+
+    const bubble = document.createElement("div");
+    bubble.className = `flex justify-end mb-4 animate-fade-in`; // Biz gönderdiğimiz için hep sağda (justify-end)
+    
+    bubble.innerHTML = `
+        <div class="max-w-[85%] bg-cyan-50 border border-cyan-100 rounded-tr-none p-4 rounded-xl shadow-sm">
+            <div class="flex justify-between items-center mb-1 gap-4">
+                <span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>
+                <span class="text-[9px] text-gray-400">${time}</span>
+            </div>
+            <div class="text-sm text-gray-700 leading-relaxed break-words">
+                ${cleanContent}
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight; // En alta kaydır
 }
 </script>
 </html>
