@@ -4950,7 +4950,7 @@ async function openMessage(itemId) {
         if (warningBanner) warningBanner.classList.add("hidden");
     }
 }
-/* --- GÜNCELLENMİŞ: loadMessageThread (GÖNDEREN GÖRÜR - ALICI İNDİRİR) --- */
+/* --- GÜNCELLENMİŞ: loadMessageThread (MİSAFİR HATASI GİDERİLMİŞ) --- */
 async function loadMessageThread(cleanSubject, partnerId) {
     const container = document.getElementById("message-thread-container");
     container.innerHTML = '<div class="flex justify-center p-4"><i class="fa-solid fa-spinner fa-spin text-BTrustOn-accent"></i></div>';
@@ -4959,37 +4959,68 @@ async function loadMessageThread(cleanSubject, partnerId) {
     if(!user) return;
 
     let fixedPartnerName = "Partner";
-    const partnerProfile = database.find(c => c.id == partnerId);
-    if (partnerProfile) fixedPartnerName = partnerProfile.name;
+    
+    // Partner ismini bulmaya çalış (Misafir ise 'Guest User' kalır veya related_company_name'den gelir)
+    if (partnerId && partnerId !== 'null') {
+        const partnerProfile = database.find(c => c.id == partnerId);
+        if (partnerProfile) fixedPartnerName = partnerProfile.name;
+    }
 
-    const { data: thread, error } = await supabaseClient
+    // --- SORGULAMA MANTIĞI DEĞİŞTİ ---
+    let query = supabaseClient
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-        .ilike('subject', `%${cleanSubject}%`) 
         .order('created_at', { ascending: true });
 
+    // Eğer Partner ID 'null' ise (MİSAFİR SENARYOSU)
+    if (!partnerId || partnerId === 'null' || partnerId === 'undefined') {
+        // "Gönderen BOŞ (null) VE Alıcı BEN olan mesajları getir"
+        query = query
+            .is('sender_id', null)       // Sender ID NULL olmalı
+            .eq('receiver_id', user.id)  // Alıcı BEN olmalıyım
+            .ilike('subject', `%${cleanSubject}%`); // Konu başlığı uymalı
+    } 
+    else {
+        // NORMAL KULLANICI SENARYOSU (Eski Mantık)
+        // "Benim gönderdiğim VEYA bana gelen mesajları getir"
+        query = query
+            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+            .ilike('subject', `%${cleanSubject}%`);
+    }
+
+    const { data: thread, error } = await query;
+
     if (error) {
-        container.innerHTML = '<p class="text-red-500 text-xs">Error loading history.</p>';
+        console.error("Load Thread Error:", error);
+        container.innerHTML = '<p class="text-red-500 text-xs text-center mt-4">Error loading history.</p>';
         return;
     }
+    
     container.innerHTML = ""; 
 
     if(!thread || thread.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-xs text-center italic">Start the conversation...</p>';
+        container.innerHTML = '<p class="text-gray-400 text-xs text-center italic mt-10">Start the conversation...</p>';
         return;
     }
 
     thread.forEach(m => {
         const isMe = m.sender_id === user.id; // Mesajı ben mi attım?
         
+        // Misafir ismini mesajın içinden (related_company_name) çekmeye çalış
+        let senderDisplayName = fixedPartnerName;
+        if (!isMe && m.related_company_name) {
+             // "Rahmi (Guest)" şeklindeki isimleri temizle, sadece ismi al
+             senderDisplayName = m.related_company_name.split('(')[0].trim(); 
+        }
+
         let displayNameHtml = isMe 
             ? `<span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>`
-            : `<span onclick="openProfile('${m.sender_id}')" class="text-[10px] font-bold text-gray-600 hover:text-BTrustOn-accent hover:underline cursor-pointer transition uppercase tracking-wide">${fixedPartnerName}</span>`;
+            : `<span class="text-[10px] font-bold text-gray-600 uppercase tracking-wide cursor-default">${senderDisplayName}</span>`;
+            // Misafir olduğu için isme tıklama (cursor-default) özelliği verdik
 
         let cleanContent = m.content || "";
 
-        // --- DOSYA KARTI OLUŞTURMA ---
+        // --- DOSYA KARTI OLUŞTURMA (Önceki İndirme Logic'i Korundu) ---
         cleanContent = cleanContent.replace(/\[FILE_ATTACHMENT\|(.*?)\|(.*?)\]/g, function(match, fileName, fileUrl) {
             
             let icon = "fa-file-lines";
@@ -4998,33 +5029,26 @@ async function loadMessageThread(cleanSubject, partnerId) {
             if(fileName.match(/\.(doc|docx)$/i)) icon = "fa-file-word";
             if(fileName.match(/\.(xls|xlsx)$/i)) icon = "fa-file-excel";
 
-            // --- KRİTİK AYRIM BURADA ---
-            // Eğer mesajı ben atmadıysam (!isMe), indirme butonunu oluştur.
-            // Ben attıysam boş string ('') olsun.
+            // İndirme butonu sadece alıcıya (Bana) görünsün
             const downloadBtnHtml = !isMe ? `
                 <button onclick="downloadFile('${fileUrl}', '${fileName}')" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 hover:text-BTrustOn-accent flex items-center justify-center transition" title="Download File">
                     <i class="fa-solid fa-download"></i>
                 </button>
             ` : '';
 
-            // Gönderen için açıklama metni "Click to verify", alıcı için "Click to view" olsun
             const actionText = isMe ? "Click to verify upload" : "Click to view";
 
             return `
                 <div class="mt-3 group">
                     <div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-BTrustOn-accent hover:shadow-md transition-all">
-                        
                         <div onclick="window.open('${fileUrl}', '_blank')" class="cursor-pointer w-10 h-10 rounded-lg bg-gray-50 text-BTrustOn-accent flex items-center justify-center text-lg group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
                             <i class="fa-solid ${icon}"></i>
                         </div>
-                        
                         <div onclick="window.open('${fileUrl}', '_blank')" class="cursor-pointer flex-1 min-w-0">
                             <p class="text-xs font-bold text-gray-700 truncate group-hover:text-BTrustOn-accent transition-colors" title="${fileName}">${fileName}</p>
                             <p class="text-[10px] text-gray-400">${actionText}</p>
                         </div>
-                        
                         ${downloadBtnHtml}
-
                     </div>
                 </div>
             `;
@@ -5048,6 +5072,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
         `;
         container.appendChild(bubble);
         
+        // Mesajı okundu işaretle
         if (!isMe && !m.is_read) {
             supabaseClient.from('messages').update({ is_read: true }).eq('id', m.id).then(()=>{});
         }
@@ -5055,7 +5080,6 @@ async function loadMessageThread(cleanSubject, partnerId) {
 
     container.scrollTop = container.scrollHeight;
 }
-
 // 2. MESAJI KAPATMA
 function closeMessageView() {
     const viewer = document.getElementById("view-message");
