@@ -4697,14 +4697,18 @@ async function openMessage(itemId) {
     await loadMessageThread(item.title, currentPartnerId);
 }
 
-/* --- SOHBET BALONLARI (SADECE ŞİRKET ADI) --- */
-/* --- GÜNCELLENMİŞ BALON YÜKLEME (TIKLANABİLİR İSİMLER) --- */
+/* --- GÜNCELLENMİŞ: loadMessageThread (Şık Dosya Kartı Görünümü) --- */
 async function loadMessageThread(cleanSubject, partnerId) {
     const container = document.getElementById("message-thread-container");
     container.innerHTML = '<div class="flex justify-center p-4"><i class="fa-solid fa-spinner fa-spin text-BTrustOn-accent"></i></div>';
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     if(!user) return;
+
+    // Partner ismini bul
+    let fixedPartnerName = "Partner";
+    const partnerProfile = database.find(c => c.id == partnerId);
+    if (partnerProfile) fixedPartnerName = partnerProfile.name;
 
     const { data: thread, error } = await supabaseClient
         .from('messages')
@@ -4717,7 +4721,6 @@ async function loadMessageThread(cleanSubject, partnerId) {
         container.innerHTML = '<p class="text-red-500 text-xs">Error loading history.</p>';
         return;
     }
-
     container.innerHTML = ""; 
 
     if(!thread || thread.length === 0) {
@@ -4727,33 +4730,44 @@ async function loadMessageThread(cleanSubject, partnerId) {
 
     thread.forEach(m => {
         const isMe = m.sender_id === user.id;
-        let displayNameHtml = "";
+        let displayNameHtml = isMe 
+            ? `<span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>`
+            : `<span onclick="openProfile('${m.sender_id}')" class="text-[10px] font-bold text-gray-600 hover:text-BTrustOn-accent hover:underline cursor-pointer transition uppercase tracking-wide">${fixedPartnerName}</span>`;
 
-        if (isMe) {
-            // BEN: Tıklanmaz, sadece ME yazar.
-            displayNameHtml = `<span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>`;
-        } else {
-            // PARTNER: Tıklanabilir Şirket Adı
-            // İsmi veritabanındaki "İsim (Şirket)" formatından ayıkla
-            let nameToShow = "Partner";
-            const raw = m.related_company_name || "";
-            const match = raw.match(/\((.+)\)$/);
-            if(match) nameToShow = match[1]; // Sadece Şirket Adı
-            else if(raw) nameToShow = raw;
+        let cleanContent = m.content || "";
 
-            displayNameHtml = `
-                <span onclick="openProfile('${m.sender_id}')" 
-                      class="text-[10px] font-bold text-gray-600 hover:text-BTrustOn-accent hover:underline cursor-pointer transition uppercase tracking-wide">
-                    ${nameToShow}
-                </span>`;
-        }
+        // --- DOSYA FORMATINI HTML KARTA ÇEVİRME ---
+        // Regex: [FILE_ATTACHMENT|DosyaAdi|URL]
+        cleanContent = cleanContent.replace(/\[FILE_ATTACHMENT\|(.*?)\|(.*?)\]/g, function(match, fileName, fileUrl) {
+            
+            // Dosya uzantısına göre ikon seçimi (Opsiyonel güzellik)
+            let icon = "fa-file-lines";
+            if(fileName.match(/\.(jpg|jpeg|png|gif)$/i)) icon = "fa-image";
+            if(fileName.match(/\.(pdf)$/i)) icon = "fa-file-pdf";
+            if(fileName.match(/\.(doc|docx)$/i)) icon = "fa-file-word";
+            if(fileName.match(/\.(xls|xlsx)$/i)) icon = "fa-file-excel";
 
-        // İçerik Temizliği
-        let cleanContent = m.content.replace(/\[CONTACT_EMAIL:.*?\]/g, "");
-        let formattedContent = cleanContent
-            .replace(/\n/g, '<br>')
-            .replace(/\[📎 Attachment: (.*?)\]\((.*?)\)/g, 
-                '<a href="$2" target="_blank" class="block mt-2 p-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-BTrustOn-accent hover:underline flex items-center gap-2"><i class="fa-solid fa-paperclip"></i> $1</a>');
+            // ŞIK DOSYA KARTI TASARIMI
+            return `
+                <a href="${fileUrl}" target="_blank" class="block mt-3 group decoration-0">
+                    <div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-BTrustOn-accent hover:shadow-md transition-all cursor-pointer">
+                        <div class="w-10 h-10 rounded-lg bg-gray-50 text-BTrustOn-accent flex items-center justify-center text-lg group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
+                            <i class="fa-solid ${icon}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold text-gray-700 truncate group-hover:text-BTrustOn-accent transition-colors">${fileName}</p>
+                            <p class="text-[10px] text-gray-400">Click to view file</p>
+                        </div>
+                        <div class="text-gray-300 group-hover:text-BTrustOn-accent">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+
+        // Satır başlarını <br> yap
+        cleanContent = cleanContent.replace(/\n/g, '<br>');
 
         const bubble = document.createElement("div");
         bubble.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-fade-in`;
@@ -4765,13 +4779,12 @@ async function loadMessageThread(cleanSubject, partnerId) {
                     <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div class="text-sm text-gray-700 leading-relaxed break-words">
-                    ${formattedContent}
+                    ${cleanContent}
                 </div>
             </div>
         `;
         container.appendChild(bubble);
         
-        // DB Okundu Yap (Eğer ben okuyorsam)
         if (!isMe && !m.is_read) {
             supabaseClient.from('messages').update({ is_read: true }).eq('id', m.id).then(()=>{});
         }
@@ -4779,105 +4792,85 @@ async function loadMessageThread(cleanSubject, partnerId) {
 
     container.scrollTop = container.scrollHeight;
 }
-
 // 2. MESAJI KAPATMA
 function closeMessageView() {
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.add("hidden-view");
     document.body.style.overflow = "auto";
 }
-
-/* --- DÜZELTİLMİŞ: sendReply (Şirket İsmini Korur) --- */
+/* --- GÜNCELLENMİŞ: sendReply (Dosya Linki Ekler) --- */
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
-    
-    // Buton seçimi (Mobil ve Desktop uyumlu)
+    // Butonu buluyoruz
     const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
-    // 1. KONTROLLER
+    // Kontrol: Hem mesaj boşsa HEM DE dosya yoksa uyarı ver
     if (!content && !currentAttachmentFile) {
         showToast("Warning", "Please write a message.", "error");
         return;
     }
 
     if (!currentPartnerId || !currentSubject) {
-        showToast("Error", "Chat connection lost. Please close and reopen.", "error");
+        showToast("Error", "Chat connection lost.", "error");
         return;
     }
 
-    // 2. BUTONU KİLİTLE
+    // Butonu kilitle
     const originalText = btn ? btn.innerHTML : "SEND";
-    if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        btn.disabled = true;
-    }
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btn.disabled = true; }
 
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Please login again.");
 
-        // --- DÜZELTME BURADA BAŞLIYOR ---
-        // Şirket adını "selectedCompany" değişkeninden değil, veritabanından garanti olarak çekiyoruz.
+        // Gönderen ismini (Şirket Adı) veritabanından al
         let myDisplayName = "My Company"; 
+        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
+        if (profile && profile.company_name) myDisplayName = profile.company_name;
 
-        const { data: profile } = await supabaseClient
-            .from('profiles')
-            .select('company_name') // Sadece şirket adını al
-            .eq('id', user.id)
-            .single();
-
-        if (profile && profile.company_name) {
-            // İsterseniz formatı "Kişi (Şirket)" yerine direkt "Şirket Adı" yapabilirsiniz.
-            // Kullanıcı isteğine göre direkt ŞİRKET ADI yapıyoruz:
-            myDisplayName = profile.company_name; 
-            
-            // Eğer "Ahmet (Rönesans)" gibi olsun istersen aşağıdaki satırı aç:
-            // myDisplayName = `User (${profile.company_name})`;
-        }
-        // --- DÜZELTME BURADA BİTİYOR ---
+        // Konu başlığı (Re: eklemesi)
+        const replySubject = currentSubject.startsWith("Re:") ? currentSubject : "Re: " + currentSubject;
         
-        // Konu Başlığı (Re: eklemesi)
-        const replySubject = currentSubject.startsWith("Re:") 
-            ? currentSubject 
-            : "Re: " + currentSubject;
-
         let finalContent = content;
-        
-        // Dosya Eki Linklemesi
+
+        // --- DOSYA YÜKLEME KISMI (Sadece dosya varsa çalışır) ---
         if (currentAttachmentFile) {
-             finalContent += `\n\n[📎 Attachment: ${currentAttachmentFile.name}]`;
+             // 1. Adımdaki yardımcı fonksiyonu kullanıp yüklüyoruz
+             const publicUrl = await uploadFileToSupabase(currentAttachmentFile, 'chat');
+             
+             // Linki mesaja özel formatta ekliyoruz
+             finalContent += `\n\n[FILE_ATTACHMENT|${currentAttachmentFile.name}|${publicUrl}]`;
         }
 
-        // 3. VERİTABANINA KAYDET
+        // Mesajı Kaydet
         const { error } = await supabaseClient.from('messages').insert([{
             sender_id: user.id,
             receiver_id: currentPartnerId,
             content: finalContent,
             subject: replySubject,
-            related_company_name: myDisplayName, // <--- ARTIK BURASI "Reply" OLMAYACAK, ŞİRKET ADI OLACAK
+            related_company_name: myDisplayName,
             msg_type: 'message',
             is_read: false
         }]);
 
         if (error) throw error;
 
-        // 4. TEMİZLİK
+        // Temizlik
         inputEl.value = "";
         if (typeof removeAttachment === "function") removeAttachment(); 
         
+        // Sohbeti yenile
         await loadMessageThread(currentSubject, currentPartnerId);
 
     } catch (error) {
         console.error(error);
         showToast("Error", "Failed to send: " + error.message, "error");
     } finally {
-        if (btn) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
     }
 }
+
 // 1. MEVCUT MESAJI SİL
 // 1. MEVCUT MESAJI SİL (PROFESYONEL MODAL İLE)
 // MEVCUT MESAJI SİL (HEM EKRANDAN HEM VERİTABANINDAN)
@@ -5619,6 +5612,7 @@ function openQuoteModal(companyId, companyName) {
 
 // Teklifi Veritabanına Gönderme
 /* --- GÜNCELLENMİŞ: handleQuoteSubmit (Şirket Adı Ekler) --- */
+/* --- GÜNCELLENMİŞ: handleQuoteSubmit (Dosya Linki Ekler) --- */
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
@@ -5629,54 +5623,55 @@ async function handleQuoteSubmit() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Please login to send a quote.");
 
-    // 1. GÖNDERENİN KENDİ ŞİRKET ADINI ÇEK
+    // Şirket Adını Çek
     let myCompanyName = "Private User"; 
     const { data: profile } = await supabaseClient
         .from('profiles')
         .select('company_name')
         .eq('id', user.id)
         .single();
-    
     if (profile && profile.company_name) myCompanyName = profile.company_name;
 
-    // 2. FORM VERİLERİNİ AL
+    // Form Verileri
     const targetId = document.getElementById("input-target-id").value;
     const targetName = document.getElementById("input-target-company").value;
-    const senderPerson = document.querySelector("#modal-quote input[name='name']").value.trim(); 
+    const senderName = document.querySelector("#modal-quote input[name='name']").value.trim(); 
     const subjectRaw = document.getElementById("quote-subject").value.trim();
     const messageRaw = document.querySelector("#modal-quote textarea[name='message']").value;
-    
-    // Dosya (Varsa) - Basit dosya adı ekleme simülasyonu
-    let finalContent = messageRaw;
     const fileInput = document.getElementById("quote-file");
+
+    let finalContent = messageRaw;
+
+    // --- DOSYA YÜKLEME İŞLEMİ ---
     if (fileInput.files && fileInput.files[0]) {
-        finalContent += `\n\n[📎 Attachment: ${fileInput.files[0].name}]`;
+        showToast("Uploading...", "Attaching your file...", "info");
+        const publicUrl = await uploadFileToSupabase(fileInput.files[0], 'quotes');
+        
+        // Mesajın sonuna özel formatta ekliyoruz:
+        // [FILE_ATTACHMENT|DosyaAdı|URL]
+        finalContent += `\n\n[FILE_ATTACHMENT|${fileInput.files[0].name}|${publicUrl}]`;
     }
 
-    // 3. KRİTİK NOKTA: GÖNDEREN ADINI "İsim (Şirket)" FORMATINA ÇEVİR
-    const displaySender = `${senderPerson} (${myCompanyName})`;
+    const displaySender = `${senderName} (${myCompanyName})`;
 
-    // 4. MESAJI KAYDET
     const { error } = await supabaseClient
       .from('messages')
-      .insert([
-        {
+      .insert([{
           sender_id: user.id,
           receiver_id: targetId,
           subject: subjectRaw, 
           content: finalContent,
-          related_company_name: displaySender, // <--- Şirket adı buraya işleniyor
+          related_company_name: displaySender, 
           msg_type: 'quote',
           is_read: false
-        }
-      ]);
+      }]);
 
     if (error) throw error;
 
-    showToast("Quote Sent", `Your request has been sent to ${targetName}.`, "success");
+    showToast("Quote Sent", `Request sent to ${targetName}.`, "success");
     toggleModal('modal-quote');
     document.querySelector("#modal-quote form").reset();
-    document.getElementById('quote-file-name').textContent = "";
+    document.getElementById('quote-file-name').textContent = ""; 
 
   } catch (error) {
     console.error(error);
@@ -5686,7 +5681,6 @@ async function handleQuoteSubmit() {
     btn.disabled = false;
   }
 }
-
 // 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
 /* --- DÜZELTİLMİŞ: deleteThread (Konu Başlığı Temizliği) --- */
 function deleteThread(msgId, title, partnerId, event) {
@@ -5765,6 +5759,32 @@ function deleteAllInbox() {
         }
     });
 }
+/* --- YENİ YARDIMCI FONKSİYON: Dosya Yükle ve Link Al --- */
+async function uploadFileToSupabase(file, folder = 'uploads') {
+    if (!file) return null;
 
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("User not logged in");
+
+    // Benzersiz dosya ismi oluştur: user_id + timestamp + orjinal isim
+    const fileExt = file.name.split('.').pop();
+    const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_'); // Türkçe karakter sorununu önlemek için
+    const filePath = `${folder}/${user.id}-${Date.now()}-${cleanName}.${fileExt}`;
+
+    // 1. Storage'a Yükle (Bucket adı 'logos' veya 'files' olmalı. 
+    // Sizin kodunuzda 'logos' bucket'ı var gibi görünüyor, onu kullanalım)
+    const { error: uploadError } = await supabaseClient.storage
+        .from('logos') 
+        .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // 2. Public URL Al (Tıklanabilir Link)
+    const { data } = supabaseClient.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+    return data.publicUrl;
+}
 </script>
 </html>
