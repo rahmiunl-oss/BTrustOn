@@ -763,14 +763,13 @@
       class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10"
     >
     <div id="p-logo-container" 
-     class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative group transition-all"
-     onclick="triggerProfileLogoUpload()">
+     class="w-32 h-32 rounded-2xl border border-white shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative transition-all">
     
     <i id="p-default-icon" class="fa-solid fa-building text-5xl text-gray-300"></i>
     
     <img id="p-logo-image" class="hidden w-full h-full object-cover" alt="Company Logo" />
 
-    <div id="p-logo-overlay" class="hidden absolute inset-0 bg-slate-900/60 flex-col items-center justify-center text-white backdrop-blur-[1px] cursor-pointer">
+    <div id="p-logo-overlay" class="hidden">
         <i class="fa-solid fa-camera text-2xl mb-1"></i>
         <span class="text-[9px] font-bold uppercase tracking-widest">UPDATE</span>
     </div>
@@ -3203,27 +3202,62 @@ async function openProfile(companyId) {
     }
   }
 
-  // --- Yetki Kontrolü (Butonlar) ---
+  // --- Yetki Kontrolü (Butonlar ve Logo Düzenleme) ---
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
+  
   const btnEdit = document.getElementById("btn-edit-profile");
   const btnAddAsset = document.getElementById("btn-add-asset");
   const btnQuote = document.getElementById("btn-req-quote");
   const btnAddProject = document.getElementById("btn-add-project");
   const btnAddCert = document.getElementById("btn-add-cert");
+  
+  // Logo Elementleri
+  const logoContainer = document.getElementById("p-logo-container");
+  const logoOverlay = document.getElementById("p-logo-overlay");
 
   if (isMyProfile) {
+      // --- BENİM PROFİLİM ---
       if(btnEdit) btnEdit.classList.remove("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.remove("hidden-view");
       if(btnAddProject) btnAddProject.classList.remove("hidden-view");
       if(btnAddCert) btnAddCert.classList.remove("hidden-view");
       if(btnQuote) btnQuote.classList.add("hidden-view");
+
+      // Logo Düzenleme Aktif (Mouse gelince UPDATE yazsın)
+      if (logoContainer) {
+          logoContainer.classList.add("cursor-pointer", "group"); // 'group' class'ı hover efektini tetikler
+          logoContainer.setAttribute("onclick", "triggerProfileLogoUpload()");
+      }
+      if (logoOverlay) {
+          // Overlay'i görünür yap ama opacity ile sakla (CSS: group-hover:flex group-hover:opacity-100)
+          logoOverlay.classList.remove("hidden");
+          logoOverlay.className = ""; // Önceki sınıfları temizle ki çakışma olmasın
+        logoOverlay.classList.add(
+            "absolute", "inset-0", "bg-slate-900/60", // Pozisyon ve Siyah Arka Plan
+            "flex", "flex-col", "items-center", "justify-center", // Ortalama
+            "opacity-0", "group-hover:opacity-100", // Hover Efekti
+            "transition-opacity", "duration-300", "z-20" // Animasyon
+        );
+      }
+
   } else {
+      // --- BAŞKASININ PROFİLİ ---
       if(btnEdit) btnEdit.classList.add("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.add("hidden-view");
       if(btnAddProject) btnAddProject.classList.add("hidden-view");
       if(btnAddCert) btnAddCert.classList.add("hidden-view");
       if(btnQuote) btnQuote.classList.remove("hidden-view");
+
+      // Logo Düzenleme Pasif
+      if (logoContainer) {
+          logoContainer.classList.remove("cursor-pointer", "group");
+          logoContainer.removeAttribute("onclick");
+      }
+      if (logoOverlay) {
+          logoOverlay.classList.add("hidden");
+          logoOverlay.classList.remove("flex", "group-hover:opacity-100");
+      }
   }
 
   // Varsayılan sekmeyi aç
@@ -5785,6 +5819,19 @@ async function uploadFileToSupabase(file, folder = 'uploads') {
         .getPublicUrl(filePath);
 
     return data.publicUrl;
+}
+/* --- EKSİK OLAN FONKSİYON: Profil Logosuna Tıklama --- */
+function triggerProfileLogoUpload() {
+    // Güvenlik Kontrolü: Şu an ekranda açık olan şirket benim şirketim mi?
+    const myId = localStorage.getItem("BTrustOn_my_company_id");
+    
+    if (selectedCompany && String(selectedCompany.id) === String(myId)) {
+        // Gizli inputa tıkla
+        document.getElementById('profile-logo-input').click();
+    } else {
+        // Başkasının profili ise tıklanmasın (Opsiyonel: Fotoğrafı büyütebilirsiniz)
+        console.log("Cannot edit another company's logo.");
+    }
 }
 </script>
 </html>
