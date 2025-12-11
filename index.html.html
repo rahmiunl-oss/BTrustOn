@@ -4001,44 +4001,32 @@ async function fetchAllPublicProfiles() {
   renderTopCompanies();
 }
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
-// ✅ BUNU YAPIŞTIR
-// ✅ 2. GÜNCELLENMİŞ VERİ ÇEKME FONKSİYONU
-// ✅ YENİ GÜNCELLENMİŞ VERSİYON (Grup Kontrollü)
+/* --- GÜNCELLENMİŞ: checkUserAndOpenProfile (ANINDA TEPKİ) --- */
 async function checkUserAndOpenProfile(forceOpen = false) {
+  // 1. Oturumu Kontrol Et
   const { data: { session } } = await supabaseClient.auth.getSession();
   
-  // 1. Grupları Seç (Artık tek tek buton değil, grup yönetiyoruz)
-  const guestGroup = document.getElementById("guest-actions"); // Misafirler
-  const userGroup = document.getElementById("user-actions");   // Üyeler
+  // Grupları Seç
+  const guestGroup = document.getElementById("guest-actions"); 
+  const userGroup = document.getElementById("user-actions");
 
+  // 2. UI'I ANINDA GÜNCELLE (Veritabanını beklemeden)
   if (!session) {
-    // --- OTURUM YOKSA ---
-    // Misafir grubunu göster (Flex yaparak hizayı koru)
-    if(guestGroup) {
-        guestGroup.classList.remove("hidden");
-        guestGroup.classList.add("flex");
-    }
-    // Üye grubunu gizle
-    if(userGroup) {
-        userGroup.classList.add("hidden");
-        userGroup.classList.remove("flex");
-    }
-    return;
+    // --- MİSAFİR MODU ---
+    if(guestGroup) { guestGroup.classList.remove("hidden"); guestGroup.classList.add("flex"); }
+    if(userGroup) { userGroup.classList.add("hidden"); userGroup.classList.remove("flex"); }
+    return; // Oturum yoksa buradna dön
   } else {
-    // --- OTURUM VARSA ---
-    // Misafir grubunu (Join + Login) gizle
-    if(guestGroup) {
-        guestGroup.classList.add("hidden");
-        guestGroup.classList.remove("flex");
-    }
-    // Üye grubunu (My Company + Logout) göster
-    if(userGroup) {
-        userGroup.classList.remove("hidden");
-        userGroup.classList.add("flex");
-    }
+    // --- ÜYE MODU ---
+    if(guestGroup) { guestGroup.classList.add("hidden"); guestGroup.classList.remove("flex"); }
+    if(userGroup) { userGroup.classList.remove("hidden"); userGroup.classList.add("flex"); }
+    
+    // Mesajları ve abonelikleri hemen başlat
+    fetchInboxMessages();
+    subscribeToMessages();
   }
 
-  // 2. Veritabanından veriyi çek
+  // 3. PROFİL VERİSİNİ ÇEK (Arka planda)
   const { data: profile, error } = await supabaseClient
     .from('profiles')
     .select('*')
@@ -4047,7 +4035,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 
   if (error || !profile) { console.log("Profil verisi çekilemedi."); return; }
 
-  // 3. Veriyi site formatına çevir
+  // 4. Veriyi site formatına çevir ve hafızaya al
   const mappedProfile = {
     id: profile.id,
     name: profile.company_name,
@@ -4055,12 +4043,9 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     tagline: profile.tagline || "",
     sector: profile.sector || "construction",
     desc: profile.description || "",
-    
-    // Yeni alanlar
     type_label: profile.company_type || "Industrial Supplier",
     size_label: profile.company_size || "Size N/A",
     year_label: profile.founded_year || "",
-
     services: profile.services ? profile.services.split(',') : [],
     logo_url: profile.logo_url || null,
     website: profile.website || "",
@@ -4068,10 +4053,9 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     contact_email: profile.contact_email || "",
     trust: "verified",
     meta: { references: 50, delivery: 50, years: 1, financial: 50, digital: 50 },
-    // ...
     certificates: profile.certificates || [],
     assets: profile.assets || [],
-    projects: profile.projects || [] // <--- DÜZELTİLDİ
+    projects: profile.projects || [] 
   };
 
   if (typeof database !== 'undefined') {
@@ -4079,18 +4063,17 @@ async function checkUserAndOpenProfile(forceOpen = false) {
       if (idx > -1) { database[idx] = mappedProfile; } 
       else { database.unshift(mappedProfile); }
       
+      // ID'yi tarayıcı hafızasına sabitle (Logout yapana kadar kalır)
       localStorage.setItem("BTrustOn_my_company_id", profile.id);
 
+      // Eğer zorla aç denildiyse (Login sonrası gibi) profili aç
       if (forceOpen === true) { openProfile(profile.id); }
   }
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
+/* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Profil ve Verileri Çek
-    setTimeout(fetchAllPublicProfiles, 100);
-    setTimeout(checkUserAndOpenProfile, 500);
-    
-    // 2. Başlangıç Ayarları
+    // 1. Önce Statik Sistemleri Başlat
     applyTranslations();
     initTopCompaniesOrder();
     renderTopCompanies();
@@ -4099,30 +4082,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     initRealData();
     initShowcaseSystem();
 
-    // 👇👇👇 3. YENİ EKLENECEK: MESAJLARI ÇEK VE DİNLE 👇👇👇
-     const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    // Mesajlar
-    fetchInboxMessages();
-    subscribeToMessages();
-    }
+    // 2. Verileri Çek (Gecikmesiz)
+    fetchAllPublicProfiles(); 
+    
+    // 3. Kullanıcı Kontrolünü HEMEN Yap (Timeout yok!)
+    await checkUserAndOpenProfile();
 });
-// Oturum durumu değişirse (Giriş/Çıkış) tetikle
+
+// Oturum durumu değişirse (Login/Logout) anında tepki ver
 supabaseClient.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN') {
-
-    // ✅ EKLE
+  if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+    // Giriş yapıldıysa veya sayfa yenilenip oturum hatırlandıysa
     if (typeof closeLoginModal === "function") closeLoginModal();
-
-    checkUserAndOpenProfile();
-    fetchInboxMessages();
-    subscribeToMessages();
-  } else if (event === 'SIGNED_OUT') {
+    checkUserAndOpenProfile(); 
+  } 
+  else if (event === 'SIGNED_OUT') {
+    // Çıkış yapıldıysa temizle
     localStorage.removeItem("BTrustOn_my_company_id");
-    window.location.reload();
+    window.location.href = "/"; // Sayfayı yenile
   }
 });
-
 /* --- MY COMPANY BUTONU DÜZELTME --- */
 
 // Eski fonksiyonu bununla değiştiriyoruz/eziyoruz:
