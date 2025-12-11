@@ -4515,6 +4515,55 @@ async function fetchInboxMessages() {
     inboxData = Array.from(groupedMap.values());
     renderInboxItems();
 }
+
+/* --- YENİ YARDIMCI: Anlık Liste Güncelleyici (Gecikmeyi Önler) --- */
+function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
+    // 1. Konu başlığını temizle
+    const cleanSubject = subject.replace(/^(Re:\s*)+/i, '').trim();
+    
+    // 2. Partnerin (Alıcının) İsmini Bul
+    let partnerName = "Loading...";
+    // Veritabanı listesinden bulmaya çalış
+    const partnerProfile = database.find(c => c.id == partnerId);
+    if (partnerProfile) {
+        partnerName = partnerProfile.name;
+    } else {
+        // Bulamazsak inputlardan veya mevcut ekrandan almaya çalış
+        const msgHeaderName = document.getElementById("quote-target-company");
+        if(msgHeaderName && msgHeaderName.textContent) partnerName = msgHeaderName.textContent;
+    }
+
+    // 3. Listede bu konuşma var mı?
+    const existingIndex = inboxData.findIndex(item => 
+        String(item.partner_id) === String(partnerId) && item.title === cleanSubject
+    );
+
+    // 4. Yeni veri objesi
+    const newItem = {
+        id: Date.now(), // Geçici ID (Ekran için yeterli)
+        count: existingIndex > -1 ? inboxData[existingIndex].count + 1 : 1,
+        partner_id: partnerId,
+        company: partnerName,
+        title: cleanSubject,
+        desc: "You: " + content, // "You" ekledik ki Sent formatına uysun
+        time: "Just now",
+        unread: false,
+        type: isQuote ? 'quote' : 'message',
+        logo: partnerName.charAt(0).toUpperCase(),
+        isSentByMe: true // Kilit nokta: SENT kutusunda görünmesini sağlar
+    };
+
+    // 5. Eski kaydı listeden çıkar (Varsa)
+    if (existingIndex > -1) {
+        inboxData.splice(existingIndex, 1);
+    }
+
+    // 6. Yeni kaydı EN BAŞA ekle
+    inboxData.unshift(newItem);
+
+    // 7. Listeyi hemen boya (Hiç beklemeden)
+    renderInboxItems();
+}
 // Realtime Abonelik Başlat (Sayfa açılınca çağırılmalı)
 // ✅ DÜZELTİLMİŞ ABONELİK (Kendi mesajına bildirim vermez)
 /* --- GERÇEK ZAMANLI DİNLEME (REALTIME) --- */
@@ -4894,14 +4943,12 @@ function closeMessageView() {
     if(viewer) viewer.classList.add("hidden-view");
     document.body.style.overflow = "auto";
 }
-/* --- GÜNCELLENMİŞ: sendReply (Dosya Linki Ekler) --- */
+/* --- GÜNCELLENMİŞ: sendReply (Sıfır Gecikme) --- */
 async function sendReply() {
     const inputEl = document.getElementById("reply-input");
     const content = inputEl.value.trim();
-    // Butonu buluyoruz
     const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
-    // Kontrol: Hem mesaj boşsa HEM DE dosya yoksa uyarı ver
     if (!content && !currentAttachmentFile) {
         showToast("Warning", "Please write a message.", "error");
         return;
@@ -4912,7 +4959,6 @@ async function sendReply() {
         return;
     }
 
-    // Butonu kilitle
     const originalText = btn ? btn.innerHTML : "SEND";
     if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btn.disabled = true; }
 
@@ -4920,26 +4966,19 @@ async function sendReply() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Please login again.");
 
-        // Gönderen ismini (Şirket Adı) veritabanından al
         let myDisplayName = "My Company"; 
         const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
         if (profile && profile.company_name) myDisplayName = profile.company_name;
 
-        // Konu başlığı (Re: eklemesi)
         const replySubject = currentSubject.startsWith("Re:") ? currentSubject : "Re: " + currentSubject;
         
         let finalContent = content;
 
-        // --- DOSYA YÜKLEME KISMI (Sadece dosya varsa çalışır) ---
         if (currentAttachmentFile) {
-             // 1. Adımdaki yardımcı fonksiyonu kullanıp yüklüyoruz
              const publicUrl = await uploadFileToSupabase(currentAttachmentFile, 'chat');
-             
-             // Linki mesaja özel formatta ekliyoruz
              finalContent += `\n\n[FILE_ATTACHMENT|${currentAttachmentFile.name}|${publicUrl}]`;
         }
 
-        // Mesajı Kaydet
         const { error } = await supabaseClient.from('messages').insert([{
             sender_id: user.id,
             receiver_id: currentPartnerId,
@@ -4956,8 +4995,14 @@ async function sendReply() {
         inputEl.value = "";
         if (typeof removeAttachment === "function") removeAttachment(); 
         
-        // Sohbeti yenile
+        // 1. Sağdaki Sohbeti Yenile (Bunu bekleyelim ki balon çıksın)
         await loadMessageThread(currentSubject, currentPartnerId);
+
+        // 2. 👇 SOLDAKİ LİSTEYİ ANLIK GÜNCELLE (Database'i bekleme) 👇
+        manualInboxUpdate(currentPartnerId, currentSubject, finalContent, false);
+        
+        // *Opsiyonel: Arka planda sessizce senkronize et (Kullanıcı fark etmez)
+        fetchInboxMessages(); 
 
     } catch (error) {
         console.error(error);
@@ -4966,7 +5011,6 @@ async function sendReply() {
         if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
     }
 }
-
 // 1. MEVCUT MESAJI SİL
 // 1. MEVCUT MESAJI SİL (PROFESYONEL MODAL İLE)
 // MEVCUT MESAJI SİL (HEM EKRANDAN HEM VERİTABANINDAN)
@@ -5707,8 +5751,7 @@ function openQuoteModal(companyId, companyName) {
 }
 
 // Teklifi Veritabanına Gönderme
-/* --- GÜNCELLENMİŞ: handleQuoteSubmit (Şirket Adı Ekler) --- */
-/* --- GÜNCELLENMİŞ: handleQuoteSubmit (Dosya Linki Ekler) --- */
+/* --- GÜNCELLENMİŞ: handleQuoteSubmit (Sıfır Gecikme) --- */
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
@@ -5719,18 +5762,12 @@ async function handleQuoteSubmit() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Please login to send a quote.");
 
-    // Şirket Adını Çek
     let myCompanyName = "Private User"; 
-    const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('company_name')
-        .eq('id', user.id)
-        .single();
+    const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
     if (profile && profile.company_name) myCompanyName = profile.company_name;
 
-    // Form Verileri
     const targetId = document.getElementById("input-target-id").value;
-    const targetName = document.getElementById("input-target-company").value;
+    const targetName = document.getElementById("input-target-company").value; // Şirket Adı Buradan Alınır
     const senderName = document.querySelector("#modal-quote input[name='name']").value.trim(); 
     const subjectRaw = document.getElementById("quote-subject").value.trim();
     const messageRaw = document.querySelector("#modal-quote textarea[name='message']").value;
@@ -5738,21 +5775,15 @@ async function handleQuoteSubmit() {
 
     let finalContent = messageRaw;
 
-    // --- DOSYA YÜKLEME İŞLEMİ ---
     if (fileInput.files && fileInput.files[0]) {
         showToast("Uploading...", "Attaching your file...", "info");
         const publicUrl = await uploadFileToSupabase(fileInput.files[0], 'quotes');
-        
-        // Mesajın sonuna özel formatta ekliyoruz:
-        // [FILE_ATTACHMENT|DosyaAdı|URL]
         finalContent += `\n\n[FILE_ATTACHMENT|${fileInput.files[0].name}|${publicUrl}]`;
     }
 
     const displaySender = `${senderName} (${myCompanyName})`;
 
-    const { error } = await supabaseClient
-      .from('messages')
-      .insert([{
+    const { error } = await supabaseClient.from('messages').insert([{
           sender_id: user.id,
           receiver_id: targetId,
           subject: subjectRaw, 
@@ -5768,6 +5799,26 @@ async function handleQuoteSubmit() {
     toggleModal('modal-quote');
     document.querySelector("#modal-quote form").reset();
     document.getElementById('quote-file-name').textContent = ""; 
+
+    // 👇 MANUEL GÜNCELLEME İLE ANINDA GÖRÜNTÜ 👇
+    // targetId ve targetName bilgilerini kullanıyoruz
+    
+    // Veritabanımızda bu şirket yoksa bile ismi geçici olarak ekleyelim
+    if (!database.find(c => c.id == targetId)) {
+        database.push({ id: targetId, name: targetName });
+    }
+
+    manualInboxUpdate(targetId, subjectRaw, finalContent, true);
+
+    // Paneli aç ve Sent sekmesine geç
+    const panel = document.getElementById("inbox-panel");
+    if (panel && !panel.classList.contains("open")) {
+        toggleInbox();
+    }
+    switchInboxView('sent');
+    
+    // *Opsiyonel: Arka planda tam senkronizasyon
+    fetchInboxMessages();
 
   } catch (error) {
     console.error(error);
