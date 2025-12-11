@@ -4429,18 +4429,30 @@ function timeAgo(dateString) {
     if (interval > 1) return Math.floor(interval) + " mins ago";
     return "Just now";
 }
+/* --- fetchInboxMessages (SOFT DELETE UYUMLU) --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // Mesajları çek
-    const { data: messages, error } = await supabaseClient
+    // 1. Tüm mesajları çek (Silinenler dahil gelir)
+    const { data: rawMessages, error } = await supabaseClient
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
     if (error) return;
+
+    // 2. 👇 FİLTRELEME: Benden silinenleri listeden çıkar 👇
+    const messages = rawMessages.filter(m => {
+        // Ben gönderdim ama benden silinmişse -> Gösterme
+        if (m.sender_id === user.id && m.sender_delete === true) return false;
+        
+        // Bana gelmiş ama ben silmişsem -> Gösterme
+        if (m.receiver_id === user.id && m.receiver_delete === true) return false;
+
+        return true;
+    });
 
     const groupedMap = new Map();
     const partnersToFetch = new Set();
@@ -4452,13 +4464,9 @@ async function fetchInboxMessages() {
         
         const groupKey = cleanSubject + "_" + partnerId;
 
-        // GRUPLAMA MANTIĞI:
-        // İlk kez karşılaşılan mesaj (created_at desc olduğu için) EN YENİ mesajdır.
-        // Bu mesajın durumu (ben mi attım o mu attı) o grubun durumunu belirler.
         if (!groupedMap.has(groupKey)) {
             let displayCompany = "Loading...";
             
-            // Partner ismini bul
             const localPartner = database.find(c => c.id == partnerId);
             if (localPartner) {
                 displayCompany = localPartner.name;
@@ -4483,8 +4491,6 @@ async function fetchInboxMessages() {
                 unread: !msg.is_read && !isMeSender,
                 type: msg.msg_type,
                 logo: displayCompany === "Loading..." ? "P" : displayCompany.charAt(0).toUpperCase(),
-                
-                // 👇 KRİTİK EKLENTİ: Bu konuşmanın son mesajını ben mi attım?
                 isSentByMe: isMeSender 
             });
         } else {
@@ -4494,7 +4500,6 @@ async function fetchInboxMessages() {
         }
     });
 
-    // Eksik isimleri veritabanından tamamla
     if (partnersToFetch.size > 0) {
         const { data: profiles } = await supabaseClient
             .from('profiles')
@@ -4515,7 +4520,6 @@ async function fetchInboxMessages() {
     inboxData = Array.from(groupedMap.values());
     renderInboxItems();
 }
-
 /* --- YENİ YARDIMCI: Anlık Liste Güncelleyici (Gecikmeyi Önler) --- */
 function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
     // 1. Konu başlığını temizle
@@ -5025,38 +5029,38 @@ async function sendReply() {
 /* --- GÜNCELLENMİŞ SİLME VE OKUNMADI İŞLEMLERİ --- */
 
 // 1. MESAJI (SOHBETİ) SİL
+/* --- deleteCurrentMessage (TEK MESAJI BENDEN GİZLE) --- */
 function deleteCurrentMessage() {
     if (!currentOpenMessageId) return;
 
-    openDeleteModal("Delete this conversation history permanently?", async () => {
+    openDeleteModal("Remove this conversation from your view?", async () => {
         try {
-            // Sadece tek mesajı değil, o konudaki sohbeti temizleyelim mi?
-            // Şimdilik sadece Inbox'taki o satırı (ve bağlı mesajı) siliyoruz.
-            // Gerçek bir "herkes için sil" yerine "benden sil" mantığı daha güvenlidir ama
-            // burada basitlik adına ID ile siliyoruz.
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            // Bu mesajın detayını bul (Gönderen ben miyim alıcı mı?)
+            // ID'den mesajı çekip bakabiliriz ama thread'i komple sildiğimiz için
+            // deleteThread fonksiyonunu çağırmak daha mantıklı.
+            // Ancak tek mesaj silme butonu detay sayfasında olduğu için:
             
-            const { error } = await supabaseClient
-                .from('messages')
-                .delete()
-                .eq('id', currentOpenMessageId); // Inbox'taki ana mesajı siler
-
-            if (error) throw error;
-
-            // Listeden çıkar
-            inboxData = inboxData.filter(m => m.id !== currentOpenMessageId);
-            
-            // Ekranı güncelle
-            renderInboxItems();
-            closeMessageView();
-            showToast("Deleted", "Conversation removed from inbox.", "success");
+            const item = inboxData.find(m => m.id === currentOpenMessageId);
+            if (item) {
+                // Thread silme fonksiyonunu kullan (daha temiz)
+                await deleteThread(null, item.title, item.partner_id, null);
+                closeMessageView();
+            } else {
+                // Eğer listede yoksa manuel update dene (Yedek plan)
+                await supabaseClient.from('messages').update({ sender_delete: true }).eq('id', currentOpenMessageId).eq('sender_id', user.id);
+                await supabaseClient.from('messages').update({ receiver_delete: true }).eq('id', currentOpenMessageId).eq('receiver_id', user.id);
+                
+                closeMessageView();
+                fetchInboxMessages(); // Listeyi tazele
+            }
 
         } catch (error) {
             console.error("Delete error:", error);
-            showToast("Error", "Could not delete: " + error.message, "error");
+            showToast("Error", "Could not delete.", "error");
         }
     });
 }
-
 // 2. OKUNMADI OLARAK İŞARETLE
 /* --- TEK MESAJI OKUNMADI YAP --- */
 async function markAsUnreadCurrentMessage() {
@@ -5836,76 +5840,85 @@ async function handleQuoteSubmit() {
   }
 }
 // 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
-/* --- DÜZELTİLMİŞ: deleteThread (Konu Başlığı Temizliği) --- */
+/* --- deleteThread (SADECE BENİM KUTUMDAN SİL) --- */
 function deleteThread(msgId, title, partnerId, event) {
-    // Tıklamanın kartı açmasını engelle (Propagation stop)
-    if(event) {
-        event.stopPropagation();
-        event.preventDefault();
-    }
+    if(event) { event.stopPropagation(); event.preventDefault(); }
 
     if (!partnerId || partnerId === 'undefined') {
-        showToast("Error", "Cannot identify the partner. Please refresh.", "error");
+        showToast("Error", "Cannot identify the partner.", "error");
         return;
     }
 
-    openDeleteModal("Delete this conversation? (Both sent and received messages will be removed)", async () => {
+    openDeleteModal("Remove this conversation from your view? (Other party will still see it)", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("Login required");
 
-            // Başlıktaki "Re:" gibi ekleri temizle ki veritabanında daha rahat bulsun
-            // Örn: Ekranda "Re: Kazı" yazar ama DB'de "Kazı" olabilir.
-            // %Kazı% diye aratırsak ikisini de buluruz.
             const cleanSearchTitle = title.replace(/^(Re:\s*)+/i, '').trim();
 
-            const { error } = await supabaseClient
+            // 1. Durum: Ben GÖNDERİCİ isem -> sender_delete = true yap
+            const updateSender = supabaseClient
                 .from('messages')
-                .delete()
-                // Mantık: (Ben gönderdim VE O aldı) VEYA (O gönderdi VE Ben aldım)
-                .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-                // Konu başlığı benzer olanları sil
-                .ilike('subject', `%${cleanSearchTitle}%`); 
+                .update({ sender_delete: true })
+                .eq('sender_id', user.id)
+                .eq('receiver_id', partnerId)
+                .ilike('subject', `%${cleanSearchTitle}%`);
 
-            if (error) throw error;
+            // 2. Durum: Ben ALICI isem -> receiver_delete = true yap
+            const updateReceiver = supabaseClient
+                .from('messages')
+                .update({ receiver_delete: true })
+                .eq('receiver_id', user.id)
+                .eq('sender_id', partnerId)
+                .ilike('subject', `%${cleanSearchTitle}%`);
 
-            // Ekrandan SİL (Anlık yok et)
-            // Partner ID ve Başlık eşleşenleri listeden çıkar
+            // İkisini paralel çalıştır
+            const [res1, res2] = await Promise.all([updateSender, updateReceiver]);
+
+            if (res1.error) throw res1.error;
+            if (res2.error) throw res2.error;
+
+            // Listeden çıkar
             inboxData = inboxData.filter(m => !(m.partner_id === partnerId && m.title === title));
             
             renderInboxItems();
-            showToast("Deleted", "Conversation deleted permanently.", "success");
+            showToast("Removed", "Conversation removed from your inbox.", "success");
 
         } catch (error) {
             console.error(error);
-            showToast("Error", "Could not delete thread completely.", "error");
+            showToast("Error", "Could not remove thread.", "error");
         }
     });
 }
-// 2. TÜM KUTUYU SİL (HEM GELENİ HEM GİDENİ SİLER)
+/* --- deleteAllInbox (SADECE BENİM KUTUMU TEMİZLE) --- */
 function deleteAllInbox() {
     if (inboxData.length === 0) {
         showToast("Info", "Inbox is already empty.", "info");
         return;
     }
 
-    openDeleteModal("WARNING: This will delete ALL messages (Sent & Received). Are you sure?", async () => {
+    openDeleteModal("Clear your entire inbox view?", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) return;
 
-            // Bana gelen VEYA Benim gönderdiğim her şeyi sil
-            const { error } = await supabaseClient
+            // Ben göndericiysem -> sender_delete = true
+            const up1 = supabaseClient
                 .from('messages')
-                .delete()
-                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+                .update({ sender_delete: true })
+                .eq('sender_id', user.id);
 
-            if (error) throw error;
+            // Ben alıcıysam -> receiver_delete = true
+            const up2 = supabaseClient
+                .from('messages')
+                .update({ receiver_delete: true })
+                .eq('receiver_id', user.id);
 
-            // Listeyi temizle
+            await Promise.all([up1, up2]);
+
             inboxData = [];
             renderInboxItems();
-            showToast("Cleared", "All messages deleted.", "success");
+            showToast("Cleared", "Inbox view cleared.", "success");
 
         } catch (error) {
             console.error(error);
