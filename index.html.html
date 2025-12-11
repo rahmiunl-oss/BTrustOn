@@ -4429,7 +4429,7 @@ function timeAgo(dateString) {
     if (interval > 1) return Math.floor(interval) + " mins ago";
     return "Just now";
 }
-/* --- fetchInboxMessages (KESİN FİLTRELEME) --- */
+/* --- GÜNCELLENMİŞ: fetchInboxMessages (Kesin Filtreleme) --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
@@ -4441,7 +4441,10 @@ async function fetchInboxMessages() {
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
-    if (error) return;
+    if (error) {
+        console.error("Fetch Error:", error);
+        return;
+    }
 
     // 2. 👇 FİLTRELEME: Silinenleri Kesin Olarak Gizle 👇
     const messages = rawMessages.filter(m => {
@@ -4460,8 +4463,8 @@ async function fetchInboxMessages() {
     const partnersToFetch = new Set();
 
     messages.forEach(msg => {
-        // Konu başlığını temizle (Re: kısımlarını at)
-        const cleanSubject = msg.subject.replace(/^(Re:\s*)+/i, '').trim();
+        // Konu başlığını temizle
+        const cleanSubject = msg.subject ? msg.subject.replace(/^(Re:\s*)+/i, '').trim() : "No Subject";
         const isMeSender = (msg.sender_id === user.id);
         const partnerId = isMeSender ? msg.receiver_id : msg.sender_id;
         
@@ -4476,10 +4479,11 @@ async function fetchInboxMessages() {
                 displayCompany = localPartner.name;
             } else {
                 if (!isMeSender && msg.related_company_name) {
+                    // Parantez içini temizle veya direkt ismi al
                     const match = msg.related_company_name.match(/\((.+)\)$/);
                     displayCompany = match ? match[1] : msg.related_company_name;
                 } else {
-                    displayCompany = "Company ID: " + partnerId.substr(0,4) + "...";
+                    displayCompany = "User ID: " + partnerId.substr(0,4) + "...";
                     partnersToFetch.add(partnerId);
                 }
             }
@@ -4500,11 +4504,12 @@ async function fetchInboxMessages() {
         } else {
             const existing = groupedMap.get(groupKey);
             existing.count += 1;
+            // Eğer gruptaki herhangi bir mesaj okunmamışsa grubu okunmamış yap
             if (!msg.is_read && !isMeSender) existing.unread = true;
         }
     });
 
-    // İsimleri tamamla
+    // Eksik isimleri veritabanından tamamla
     if (partnersToFetch.size > 0) {
         const { data: profiles } = await supabaseClient
             .from('profiles')
@@ -5845,8 +5850,8 @@ async function handleQuoteSubmit() {
   }
 }
 // 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
-/* --- deleteThread (GÜÇLENDİRİLMİŞ SİLME) --- */
-function deleteThread(msgId, title, partnerId, event) {
+/* --- GÜNCELLENMİŞ: deleteThread (Hata Kontrollü) --- */
+async function deleteThread(msgId, title, partnerId, event) {
     if(event) { event.stopPropagation(); event.preventDefault(); }
 
     if (!partnerId || partnerId === 'undefined') {
@@ -5863,33 +5868,34 @@ function deleteThread(msgId, title, partnerId, event) {
             const cleanSearchTitle = title.replace(/^(Re:\s*)+/i, '').trim();
 
             // 1. Ben GÖNDEREN isem -> sender_delete = true yap
-            // Konu başlığı içinde (ilike) aradığımız metin geçen her şeyi sil
-            const up1 = supabaseClient
+            const { error: err1 } = await supabaseClient
                 .from('messages')
                 .update({ sender_delete: true })
                 .eq('sender_id', user.id)
                 .eq('receiver_id', partnerId)
                 .ilike('subject', `%${cleanSearchTitle}%`);
 
+            if (err1) throw err1;
+
             // 2. Ben ALICI isem -> receiver_delete = true yap
-            const up2 = supabaseClient
+            const { error: err2 } = await supabaseClient
                 .from('messages')
                 .update({ receiver_delete: true })
                 .eq('receiver_id', user.id)
                 .eq('sender_id', partnerId)
                 .ilike('subject', `%${cleanSearchTitle}%`);
 
-            await Promise.all([up1, up2]);
+            if (err2) throw err2;
 
-            // Ekran listesinden anında kaldır (Hız için)
+            // Ekran listesinden anında kaldır
             inboxData = inboxData.filter(m => !(m.partner_id === partnerId && m.title === title));
             
             renderInboxItems();
             showToast("Removed", "Conversation removed.", "success");
 
         } catch (error) {
-            console.error(error);
-            showToast("Error", "Could not remove thread.", "error");
+            console.error("Delete Thread Error:", error);
+            showToast("Error", "Could not remove thread. Check console.", "error");
         }
     });
 }
