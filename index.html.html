@@ -1245,7 +1245,7 @@
             <label
               class="block text-xs font-bold text-gray-600 mb-1.5"
               data-i18n="field_project"
-              >Project Details</label
+              >Details</label
             >
             <textarea
               name="message"
@@ -4676,7 +4676,7 @@ function toggleInbox() {
     }, 10);
   }
 }
-/* --- renderInboxItems (GÜNCELLENMİŞ - KESİN ÇÖZÜM) --- */
+/* --- GÜNCELLENMİŞ: renderInboxItems (RENKLİ LEAD DESTEKLİ) --- */
 function renderInboxItems() {
   const container = document.getElementById("inbox-content");
   const badgeNav = document.getElementById("nav-badge");
@@ -4689,7 +4689,7 @@ function renderInboxItems() {
   let totalUnreadCount = 0;
   inboxData.forEach(item => { if(item.unread) totalUnreadCount++; });
 
-  // 2. FİLTRELEME: Hangi sekmedeyiz?
+  // 2. FİLTRELEME
   const filteredData = inboxData.filter(item => {
       if (currentInboxView === 'inbox') {
           return item.isSentByMe === false; 
@@ -4707,37 +4707,60 @@ function renderInboxItems() {
             <p class="text-xs">${msg}</p>
         </div>`;
       
-      updateBadges(totalUnreadCount); // Boşsa da badge güncellensin
+      updateBadges(totalUnreadCount);
       return;
   }
 
   // Kartları Oluştur
   filteredData.forEach(item => {
     const safeTitle = item.title.replace(/'/g, "\\'");
-
-    // ETİKET AYARI: Sent ise "To:", Inbox ise "From:"
     const directionLabel = currentInboxView === 'sent' ? 'To:' : 'From:';
-    
-    // Mesaj içeriğinden "You:" yazısını temizle (Önizleme için)
     const previewText = item.desc.replace(/^You:\s*/, '');
 
-    const card = document.createElement("div");
-    card.className = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 cursor-pointer group ${item.unread ? 'bg-white unread shadow-sm' : 'bg-white/60 opacity-90'}`;
-    
-    card.onclick = () => openMessage(item.id); 
-    
-    let iconBg = "bg-gray-100 text-gray-500";
-    let icon = "fa-building";
-    if(item.type === 'quote') { iconBg = "bg-cyan-50 text-BTrustOn-accent"; icon = "fa-file-invoice-dollar"; }
-    
+    // --- RENK VE STİL AYARI ---
+    // 'G' logosu veya 'null' ID, bunun bir Misafir/Lead olduğunu gösterir.
+    const isLead = (item.logo === 'G') || (item.partner_id === 'null') || (item.partner_id === null);
+
+    let cardClasses = "";
+    let iconBg = "";
+    let iconName = "";
+
+    if (isLead) {
+        // --- LEAD (TURUNCU/AMBER) TASARIMI ---
+        // Okunmamışsa daha koyu, okunmuşsa şeffaf turuncu
+        const bg = item.unread ? "bg-amber-50 border-l-4 border-l-amber-500 shadow-sm" : "bg-amber-50/50 border-l-4 border-l-transparent opacity-90";
+        cardClasses = `inbox-item relative p-4 mb-2 rounded-xl border-y border-r border-amber-100 ${bg} hover:border-amber-300 transition-all duration-200 cursor-pointer group`;
+        
+        iconBg = "bg-amber-100 text-amber-600";
+        iconName = "fa-user-clock"; // Lead için özel ikon
+    } 
+    else {
+        // --- STANDART (BEYAZ/GRİ) TASARIMI ---
+        const bg = item.unread ? "bg-white unread shadow-sm" : "bg-white/60 opacity-90";
+        cardClasses = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-gray-200 ${bg} transition-all duration-200 cursor-pointer group`;
+        
+        iconBg = "bg-gray-100 text-gray-500";
+        iconName = "fa-building";
+        
+        // Eğer Teklif ise (Lead değil ama kayıtlı üyeden teklif)
+        if(item.type === 'quote') { 
+            iconBg = "bg-cyan-50 text-BTrustOn-accent"; 
+            iconName = "fa-file-invoice-dollar"; 
+        }
+    }
+
     const countBadge = item.count > 1 
         ? `<span class="ml-2 bg-gray-100 text-gray-500 text-[9px] font-bold px-1.5 py-0.5 rounded-full">+${item.count - 1}</span>` 
         : '';
 
+    const card = document.createElement("div");
+    card.className = cardClasses;
+    card.onclick = () => openMessage(item.id); 
+
     card.innerHTML = `
       <button 
           onclick="deleteThread(${item.id}, '${safeTitle}', '${item.partner_id}', event)" 
-          class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white text-gray-300 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 shadow-sm"
+          class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/80 text-gray-300 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 shadow-sm"
           title="Delete Thread"
       >
           <i class="fa-solid fa-trash-can text-[10px]"></i>
@@ -4745,7 +4768,7 @@ function renderInboxItems() {
 
       <div class="flex gap-3 pointer-events-none"> 
         <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm relative mt-1">
-           <i class="fa-solid ${icon}"></i>
+           <i class="fa-solid ${iconName}"></i>
            ${item.unread ? '<span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>' : ''}
         </div>
 
@@ -4761,12 +4784,12 @@ function renderInboxItems() {
 
            <div class="flex items-center gap-1.5 mb-1.5">
               <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wide">${directionLabel}</span>
-              <span class="text-xs font-bold text-BTrustOn-accent truncate">
+              <span class="text-xs font-bold ${isLead ? 'text-amber-600' : 'text-BTrustOn-accent'} truncate">
                  ${item.company} 
               </span>
            </div>
            
-           <p class="text-[10px] text-gray-500 leading-relaxed line-clamp-1 italic border-l-2 border-gray-200 pl-2">
+           <p class="text-[10px] text-gray-500 leading-relaxed line-clamp-1 italic border-l-2 ${isLead ? 'border-amber-200' : 'border-gray-200'} pl-2">
              "${previewText}"
            </p>
            
@@ -4778,7 +4801,6 @@ function renderInboxItems() {
 
   updateBadges(totalUnreadCount);
 }
-
 // Yardımcı Badge Fonksiyonu (Eğer yoksa bunu da ekle, varsa gerek yok)
 function updateBadges(count) {
   const badgeNav = document.getElementById("nav-badge");
@@ -5888,18 +5910,67 @@ async function markAllInboxRead() {
     }
 // --- TEKLİF FORMU GÖNDERME (YENİ) ---
 // Teklif Modalını Açma (ID parametresi eklendi)
-function openQuoteModal(companyId, companyName) {
+/* --- GÜNCELLENMİŞ: openQuoteModal (MİSAFİR DOSYA KİLİDİ) --- */
+async function openQuoteModal(companyId, companyName) {
+  // 1. Hedef bilgilerini doldur
   const targetNameEl = document.getElementById("quote-target-company");
   const inputName = document.getElementById("input-target-company");
   const inputId = document.getElementById("input-target-id");
 
   if (targetNameEl) targetNameEl.textContent = companyName || "";
   if (inputName) inputName.value = companyName || "";
-  if (inputId) inputId.value = companyId || ""; // ID'yi sakla
+  if (inputId) inputId.value = companyId || ""; 
 
+  // 2. KULLANICI KONTROLÜ VE DOSYA KUTUSU AYARI
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  
+  const fileInput = document.getElementById("quote-file");
+  const fileLabel = fileInput.closest("label"); // "Select File" butonu (label etiketi)
+  const fileNameDisplay = document.getElementById("quote-file-name");
+  const container = fileLabel.parentElement; // Kapsayıcı div
+
+  // Uyarı mesajı daha önce eklenmemişse oluştur (Dinamik Ekleme)
+  let warningMsg = document.getElementById("guest-file-warning");
+  if (!warningMsg) {
+      warningMsg = document.createElement("span");
+      warningMsg.id = "guest-file-warning";
+      warningMsg.className = "text-[10px] text-amber-600 font-bold ml-2 hidden items-center gap-1";
+      // Tıklayınca önce Quote modalını kapatır, sonra Join modalını açar
+      warningMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Please <a href="javascript:void(0)" onclick="toggleModal(\'modal-quote\'); setTimeout(() => toggleModal(\'modal-join\'), 200)" class="underline hover:text-amber-800">join BTrustOn</a> to attach files.';
+      container.appendChild(warningMsg);
+  }
+
+  if (session) {
+      // --- ÜYE İSE: Dosya seçimi serbest ---
+      fileInput.disabled = false;
+      
+      // Görseli normal hale getir
+      fileLabel.classList.remove("opacity-50", "cursor-not-allowed", "bg-gray-100");
+      fileLabel.classList.add("cursor-pointer", "hover:bg-gray-50");
+      fileLabel.title = ""; // Tooltip'i temizle
+      
+      // Uyarıyı gizle
+      warningMsg.classList.add("hidden");
+      fileNameDisplay.classList.remove("hidden");
+  } else {
+      // --- MİSAFİR İSE: Dosya seçimi yasak ---
+      fileInput.disabled = true; // Tıklamayı engelle
+      fileInput.value = ""; // Varsa seçili dosyayı temizle
+      fileNameDisplay.textContent = "";
+
+      // Görseli pasif (gri) hale getir
+      fileLabel.classList.add("opacity-50", "cursor-not-allowed", "bg-gray-100");
+      fileLabel.classList.remove("cursor-pointer", "hover:bg-gray-50");
+      fileLabel.title = "Login required to attach files"; // Mouse üzerine gelince ipucu
+      
+      // Uyarıyı göster ve dosya ismini gizle
+      warningMsg.classList.remove("hidden");
+      fileNameDisplay.classList.add("hidden");
+  }
+
+  // 3. Modalı Aç
   toggleModal("modal-quote");
 }
-
 // Teklifi Veritabanına Gönderme
 /* --- GÜNCELLENMİŞ: handleQuoteSubmit (MİSAFİR DESTEKLİ) --- */
 async function handleQuoteSubmit() {
