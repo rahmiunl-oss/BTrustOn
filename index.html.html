@@ -6067,88 +6067,76 @@ async function handleQuoteSubmit() {
   }
 }
 // 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
-/* --- GÜNCELLENMİŞ: deleteThread (Hata Kontrollü) --- */
-async function deleteThread(msgId, title, partnerId, event) {
+/* --- GÜNCELLENMİŞ: deleteThread (MİSAFİR SİLME FİXLENDİ) --- */
+function deleteThread(msgId, title, partnerId, event) {
     if(event) { event.stopPropagation(); event.preventDefault(); }
-
-    if (!partnerId || partnerId === 'undefined') {
-        showToast("Error", "Cannot identify the partner.", "error");
-        return;
-    }
 
     openDeleteModal("Remove this conversation view?", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("Login required");
 
-            // "Re:" kısımlarını temizleyip saf başlığı alıyoruz
             const cleanSearchTitle = title.replace(/^(Re:\s*)+/i, '').trim();
 
-            // 1. Ben GÖNDEREN isem -> sender_delete = true yap
-            const { error: err1 } = await supabaseClient
+            // Misafir Kontrolü (ID null mu, 'null' stringi mi?)
+            const isGuest = !partnerId || partnerId === 'null' || partnerId === 'undefined';
+
+            // 1. BENİM GÖNDERDİKLERİMİ SİL (sender_delete = true)
+            // (Normalde misafire mesaj atamıyoruz ama sistem tutarlılığı için kalsın)
+            let querySent = supabaseClient
                 .from('messages')
                 .update({ sender_delete: true })
                 .eq('sender_id', user.id)
-                .eq('receiver_id', partnerId)
                 .ilike('subject', `%${cleanSearchTitle}%`);
 
-            if (err1) throw err1;
+            if (isGuest) {
+                // Eğer alıcı misafirse (teorik olarak), receiver_id NULL'dur
+                querySent = querySent.filter('receiver_id', 'is', 'null');
+            } else {
+                querySent = querySent.eq('receiver_id', partnerId);
+            }
 
-            // 2. Ben ALICI isem -> receiver_delete = true yap
-            const { error: err2 } = await supabaseClient
+            // 2. BANA GELENLERİ SİL (receiver_delete = true) -> ASIL ÖNEMLİ KISIM BURASI
+            let queryReceived = supabaseClient
                 .from('messages')
                 .update({ receiver_delete: true })
                 .eq('receiver_id', user.id)
-                .eq('sender_id', partnerId)
                 .ilike('subject', `%${cleanSearchTitle}%`);
 
-            if (err2) throw err2;
+            if (isGuest) {
+                // ✅ DÜZELTME: .eq('sender_id', 'null') YERİNE .filter('sender_id', 'is', 'null')
+                // Bu sayede veritabanı "UUID hatası" vermez, boş olanları bulur.
+                queryReceived = queryReceived.filter('sender_id', 'is', 'null');
+            } else {
+                queryReceived = queryReceived.eq('sender_id', partnerId);
+            }
+
+            // İki işlemi de paralel çalıştır
+            const [res1, res2] = await Promise.all([querySent, queryReceived]);
+
+            if (res1.error) throw res1.error;
+            if (res2.error) throw res2.error;
 
             // Ekran listesinden anında kaldır
-            inboxData = inboxData.filter(m => !(m.partner_id === partnerId && m.title === title));
+            inboxData = inboxData.filter(m => {
+                // Eğer bu satırın partnerId'si bizim silmeye çalıştığımızla aynıysa LİSTEDEN AT
+                // Hem 'null' string hem de null değer kontrolü yapıyoruz
+                const itemPartnerId = m.partner_id || 'null';
+                const targetPartnerId = partnerId || 'null';
+                
+                // Başlık ve ID eşleşiyorsa filtrele (yani sil)
+                if (String(itemPartnerId) === String(targetPartnerId) && m.title === title) {
+                    return false; 
+                }
+                return true;
+            });
             
             renderInboxItems();
             showToast("Removed", "Conversation removed.", "success");
 
         } catch (error) {
-            console.error("Delete Thread Error:", error);
-            showToast("Error", "Could not remove thread. Check console.", "error");
-        }
-    });
-}
-/* --- deleteAllInbox (SADECE BENİM KUTUMU TEMİZLE) --- */
-function deleteAllInbox() {
-    if (inboxData.length === 0) {
-        showToast("Info", "Inbox is already empty.", "info");
-        return;
-    }
-
-    openDeleteModal("Clear your entire inbox view?", async () => {
-        try {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
-
-            // Ben göndericiysem -> sender_delete = true
-            const up1 = supabaseClient
-                .from('messages')
-                .update({ sender_delete: true })
-                .eq('sender_id', user.id);
-
-            // Ben alıcıysam -> receiver_delete = true
-            const up2 = supabaseClient
-                .from('messages')
-                .update({ receiver_delete: true })
-                .eq('receiver_id', user.id);
-
-            await Promise.all([up1, up2]);
-
-            inboxData = [];
-            renderInboxItems();
-            showToast("Cleared", "Inbox view cleared.", "success");
-
-        } catch (error) {
-            console.error(error);
-            showToast("Error", "Failed to clear inbox.", "error");
+            console.error("Delete Error Details:", error);
+            showToast("Error", "Could not remove thread: " + error.message, "error");
         }
     });
 }
