@@ -3207,9 +3207,9 @@ async function openProfile(companyId) {
       });
     }
   }
-
-  // --- Yetki Kontrolü (Butonlar ve Logo Düzenleme) ---
+// --- Yetki Kontrolü (Butonlar ve Logo Düzenleme) ---
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
+  // Eğer oturum yoksa (misafir) isMyProfile false olur, bu da istediğimiz şeydir.
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
   
   const btnEdit = document.getElementById("btn-edit-profile");
@@ -3223,38 +3223,43 @@ async function openProfile(companyId) {
   const logoOverlay = document.getElementById("p-logo-overlay");
 
   if (isMyProfile) {
-      // --- BENİM PROFİLİM ---
+      // --- BENİM PROFİLİM (Yönetici Modu) ---
       if(btnEdit) btnEdit.classList.remove("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.remove("hidden-view");
       if(btnAddProject) btnAddProject.classList.remove("hidden-view");
       if(btnAddCert) btnAddCert.classList.remove("hidden-view");
+      
+      // Kendi kendime teklif veremem, butonu gizle
       if(btnQuote) btnQuote.classList.add("hidden-view");
 
       // Logo Düzenleme Aktif (Mouse gelince UPDATE yazsın)
       if (logoContainer) {
-          logoContainer.classList.add("cursor-pointer", "group"); // 'group' class'ı hover efektini tetikler
+          logoContainer.classList.add("cursor-pointer", "group"); 
           logoContainer.setAttribute("onclick", "triggerProfileLogoUpload()");
       }
       if (logoOverlay) {
-          // Overlay'i görünür yap ama opacity ile sakla (CSS: group-hover:flex group-hover:opacity-100)
           logoOverlay.classList.remove("hidden");
-          logoOverlay.className = ""; // Önceki sınıfları temizle ki çakışma olmasın
-        logoOverlay.classList.add(
-    "absolute", "inset-0", 
-    "bg-slate-900/30",       // %60 yerine %30 koyuluk (Daha şeffaf)
-    "backdrop-blur-sm",      // Arka planı hafifçe buzlar (Bulanıklaştırır)
-    "flex", "flex-col", "items-center", "justify-center",
-    "opacity-0", "group-hover:opacity-100", 
-    "transition-all", "duration-500", "z-20" // Süreyi 300'den 500'e çıkardık (Daha yumuşak)
-);
+          logoOverlay.className = ""; 
+          logoOverlay.classList.add(
+              "absolute", "inset-0", 
+              "bg-slate-900/30",       
+              "backdrop-blur-sm",      
+              "flex", "flex-col", "items-center", "justify-center",
+              "opacity-0", "group-hover:opacity-100", 
+              "transition-all", "duration-500", "z-20"
+          );
       }
 
   } else {
-      // --- BAŞKASININ PROFİLİ ---
+      // --- BAŞKASININ PROFİLİ VEYA MİSAFİR (Ziyaretçi Modu) ---
+      
+      // Düzenleme butonlarını gizle
       if(btnEdit) btnEdit.classList.add("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.add("hidden-view");
       if(btnAddProject) btnAddProject.classList.add("hidden-view");
       if(btnAddCert) btnAddCert.classList.add("hidden-view");
+      
+      // ✅ KRİTİK NOKTA: Teklif butonu misafirler dahil herkese açık olsun
       if(btnQuote) btnQuote.classList.remove("hidden-view");
 
       // Logo Düzenleme Pasif
@@ -3267,6 +3272,7 @@ async function openProfile(companyId) {
           logoOverlay.classList.remove("flex", "group-hover:opacity-100");
       }
   }
+  
 
   // Varsayılan sekmeyi aç
   switchProfileTab("overview");
@@ -4462,29 +4468,51 @@ async function fetchInboxMessages() {
     const groupedMap = new Map();
     const partnersToFetch = new Set();
 
+    // 👇 messages.forEach bloğunu tamamen bununla değiştirin 👇
     messages.forEach(msg => {
-        // Konu başlığını temizle
+        // Konu başlığını temizle (Re: kısımlarını at)
         const cleanSubject = msg.subject ? msg.subject.replace(/^(Re:\s*)+/i, '').trim() : "No Subject";
         const isMeSender = (msg.sender_id === user.id);
-        const partnerId = isMeSender ? msg.receiver_id : msg.sender_id;
+        
+        // ✅ DEĞİŞİKLİK 1: Eğer sender_id yoksa (Misafir), partnerId'yi string 'null' yap
+        const partnerId = isMeSender ? msg.receiver_id : (msg.sender_id || 'null');
         
         const groupKey = cleanSubject + "_" + partnerId;
 
         if (!groupedMap.has(groupKey)) {
             let displayCompany = "Loading...";
-            
-            // Partner ismini bul
-            const localPartner = database.find(c => c.id == partnerId);
-            if (localPartner) {
-                displayCompany = localPartner.name;
-            } else {
-                if (!isMeSender && msg.related_company_name) {
-                    // Parantez içini temizle veya direkt ismi al
-                    const match = msg.related_company_name.match(/\((.+)\)$/);
-                    displayCompany = match ? match[1] : msg.related_company_name;
+            let logoChar = "P";
+
+            // ✅ DEĞİŞİKLİK 2: MİSAFİR KONTROLÜ
+            if (partnerId === 'null') {
+                displayCompany = "Guest User";
+                logoChar = "G";
+
+                // Eğer mesajda "Ahmet (Guest)" gibi bir isim saklıysa onu al
+                if (msg.related_company_name) {
+                    displayCompany = msg.related_company_name;
+                    // Baş harfini logo yap (Örn: Ahmet -> A)
+                    // Parantez içini temizleyip saf ismi almaya çalışalım
+                    const nameMatch = displayCompany.match(/^(.*?)\s*\(/);
+                    if(nameMatch) logoChar = nameMatch[1].charAt(0).toUpperCase();
+                    else logoChar = displayCompany.charAt(0).toUpperCase();
+                }
+            } 
+            else {
+                // --- NORMAL ŞİRKET BULMA MANTIĞI (Eskisi Gibi) ---
+                const localPartner = database.find(c => c.id == partnerId);
+                if (localPartner) {
+                    displayCompany = localPartner.name;
+                    logoChar = displayCompany.charAt(0).toUpperCase();
                 } else {
-                    displayCompany = "User ID: " + partnerId.substr(0,4) + "...";
-                    partnersToFetch.add(partnerId);
+                    if (!isMeSender && msg.related_company_name) {
+                        const match = msg.related_company_name.match(/\((.+)\)$/);
+                        displayCompany = match ? match[1] : msg.related_company_name;
+                        logoChar = displayCompany.charAt(0).toUpperCase();
+                    } else {
+                        displayCompany = "Company ID: " + partnerId.substr(0,4) + "...";
+                        partnersToFetch.add(partnerId);
+                    }
                 }
             }
 
@@ -4498,16 +4526,16 @@ async function fetchInboxMessages() {
                 time: timeAgo(msg.created_at),
                 unread: !msg.is_read && !isMeSender,
                 type: msg.msg_type,
-                logo: displayCompany === "Loading..." ? "P" : displayCompany.charAt(0).toUpperCase(),
+                logo: logoChar,
                 isSentByMe: isMeSender 
             });
         } else {
             const existing = groupedMap.get(groupKey);
             existing.count += 1;
-            // Eğer gruptaki herhangi bir mesaj okunmamışsa grubu okunmamış yap
             if (!msg.is_read && !isMeSender) existing.unread = true;
         }
     });
+    // 👆 messages.forEach bloğu burada bitiyor 👆
 
     // Eksik isimleri veritabanından tamamla
     if (partnersToFetch.size > 0) {
@@ -4828,16 +4856,37 @@ async function openMessage(itemId) {
     document.getElementById("msg-subject").textContent = item.title;
 
     // 2. ŞİRKET İSMİ (Sabitlenmiş İsim Kullanılıyor)
-    document.getElementById("msg-company").innerHTML = `
-        <div class="flex flex-col">
-            <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">Conversation with</span>
-            <button onclick="openProfile('${currentPartnerId}')" 
-                    class="text-left font-bold text-BTrustOn-accent hover:text-blue-700 hover:underline transition text-sm flex items-center gap-1.5">
-                <i class="fa-solid fa-building-user"></i>
-                ${fixedHeaderName} 
-            </button>
-        </div>
-    `;
+    // 2. ŞİRKET İSMİ (Misafir Kontrolü Eklenmiş Hali)
+    let companyHeaderHtml = "";
+    
+    // Eğer partnerId 'null' ise veya tanımsızsa (Yani Misafir ise)
+    if (!currentPartnerId || currentPartnerId === 'null' || currentPartnerId === 'undefined') {
+        // MİSAFİR İSE: Tıklanamayan düz yazı ve 'Guest User' etiketi
+        companyHeaderHtml = `
+            <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">Guest User</span>
+                <span class="text-left font-bold text-gray-800 text-sm flex items-center gap-1.5 cursor-default">
+                    <i class="fa-solid fa-user-clock text-amber-500"></i>
+                    ${fixedHeaderName} 
+                </span>
+            </div>
+        `;
+    } else {
+        // KAYITLI ŞİRKET İSE: Tıklanabilir Profil Linki (Eski hali)
+        companyHeaderHtml = `
+            <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">Conversation with</span>
+                <button onclick="openProfile('${currentPartnerId}')" 
+                        class="text-left font-bold text-BTrustOn-accent hover:text-blue-700 hover:underline transition text-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-building-user"></i>
+                    ${fixedHeaderName} 
+                </button>
+            </div>
+        `;
+    }
+
+    // HTML'i sayfaya bas
+    document.getElementById("msg-company").innerHTML = companyHeaderHtml;
 
     // 3. LOGO (Sabitlenmiş İsmin Baş Harfi)
     const logoEl = document.getElementById("msg-logo");
@@ -4854,6 +4903,52 @@ async function openMessage(itemId) {
     
     // Sohbeti Yükle
     await loadMessageThread(item.title, currentPartnerId);
+// Cevap yazma kutusunu (input area) seç
+    const replyInputArea = document.querySelector("#view-message .border-t"); 
+    
+    // Eğer partner ID yoksa veya 'null'/'undefined' stringi ise bu bir misafirdir
+    if (!currentPartnerId || currentPartnerId === 'null' || currentPartnerId === 'undefined') {
+        
+        // 1. Input alanını GİZLE
+        if(replyInputArea) replyInputArea.classList.add("hidden");
+
+        // 2. Uyarı mesajı GÖSTER (Daha önce eklenmediyse ekle)
+        const warningBanner = document.getElementById("guest-reply-warning");
+        if (!warningBanner) {
+            const warning = document.createElement("div");
+            warning.id = "guest-reply-warning";
+            warning.className = "p-4 bg-amber-50 border-t border-amber-100 text-center animate-fade-in";
+            warning.innerHTML = `
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                        <i class="fa-solid fa-user-clock text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">Guest User</p>
+                        <p class="text-[11px] text-amber-700 mt-0.5">
+                            This request is from an unregistered guest. You cannot reply via chat.
+                            <br>Please reply via email using the contact details above.
+                        </p>
+                    </div>
+                </div>
+            `;
+            // Mesaj ekranının en altına (inputun olduğu yere) ekle
+            document.getElementById("view-message").appendChild(warning);
+        } else {
+            // Zaten varsa görünür yap
+            warningBanner.classList.remove("hidden");
+        }
+
+    } else {
+        // --- NORMAL KULLANICI İSE ---
+        
+        // Inputu GÖSTER
+        if(replyInputArea) replyInputArea.classList.remove("hidden");
+        
+        // Uyarıyı GİZLE
+        const warningBanner = document.getElementById("guest-reply-warning");
+        if (warningBanner) warningBanner.classList.add("hidden");
+    }
 }
 /* --- GÜNCELLENMİŞ: loadMessageThread (GÖNDEREN GÖRÜR - ALICI İNDİRİR) --- */
 async function loadMessageThread(cleanSubject, partnerId) {
@@ -5782,7 +5877,7 @@ function openQuoteModal(companyId, companyName) {
 }
 
 // Teklifi Veritabanına Gönderme
-/* --- GÜNCELLENMİŞ: handleQuoteSubmit (Sıfır Gecikme) --- */
+/* --- GÜNCELLENMİŞ: handleQuoteSubmit (MİSAFİR DESTEKLİ) --- */
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
@@ -5790,66 +5885,83 @@ async function handleQuoteSubmit() {
   btn.disabled = true;
 
   try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Please login to send a quote.");
+    // Mevcut oturumu kontrol et
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const user = session ? session.user : null;
 
-    let myCompanyName = "Private User"; 
-    const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
-    if (profile && profile.company_name) myCompanyName = profile.company_name;
-
+    // Form verilerini al
     const targetId = document.getElementById("input-target-id").value;
-    const targetName = document.getElementById("input-target-company").value; // Şirket Adı Buradan Alınır
+    const targetName = document.getElementById("input-target-company").value;
     const senderName = document.querySelector("#modal-quote input[name='name']").value.trim(); 
+    const senderEmail = document.querySelector("#modal-quote input[name='email']").value.trim(); // Email inputu HTML'de var varsayıyorum
     const subjectRaw = document.getElementById("quote-subject").value.trim();
     const messageRaw = document.querySelector("#modal-quote textarea[name='message']").value;
     const fileInput = document.getElementById("quote-file");
 
     let finalContent = messageRaw;
+    let senderIdToSend = null;
+    let displaySenderName = senderName;
 
-    if (fileInput.files && fileInput.files[0]) {
-        showToast("Uploading...", "Attaching your file...", "info");
-        const publicUrl = await uploadFileToSupabase(fileInput.files[0], 'quotes');
-        finalContent += `\n\n[FILE_ATTACHMENT|${fileInput.files[0].name}|${publicUrl}]`;
+    // 1. KULLANICI LOGIC'İ
+    if (user) {
+        // Kayıtlı kullanıcı
+        senderIdToSend = user.id;
+        let myCompanyName = "Private User";
+        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
+        if (profile && profile.company_name) myCompanyName = profile.company_name;
+        displaySenderName = `${senderName} (${myCompanyName})`;
+    } else {
+        // 2. MİSAFİR LOGIC'İ (GUEST)
+        // İletişim bilgilerini mesaja ekle
+        finalContent = `--- GUEST REQUEST ---\nName: ${senderName}\nEmail: ${senderEmail}\n---------------------\n\n${messageRaw}`;
+        displaySenderName = `${senderName} (Guest)`;
+        
+        // Misafir email girmemişse uyar
+        if(!senderEmail) {
+            throw new Error("Please enter your email so they can reply.");
+        }
     }
 
-    const displaySender = `${senderName} (${myCompanyName})`;
+    // Dosya varsa yükle
+    if (fileInput.files && fileInput.files[0]) {
+        // Misafirler için de dosya yüklemeye izin veriyoruz (Supabase bucket policy 'public' ise çalışır)
+        // Eğer çalışmazsa try-catch ile yakalayabiliriz ama genelde auth gerekir. 
+        // *Güvenlik notu: Misafir upload'u için storage bucket policy'sini de 'public insert' yapmak gerekir.
+        // Şimdilik sadece user varsa yüklesin diyebiliriz veya bucket ayarını açmalısınız.
+        if(user) {
+            showToast("Uploading...", "Attaching your file...", "info");
+            const publicUrl = await uploadFileToSupabase(fileInput.files[0], 'quotes');
+            finalContent += `\n\n[FILE_ATTACHMENT|${fileInput.files[0].name}|${publicUrl}]`;
+        } else {
+             finalContent += `\n\n(File attachment skipped - Login required to attach files)`;
+        }
+    }
 
+    // Mesajı Gönder
     const { error } = await supabaseClient.from('messages').insert([{
-          sender_id: user.id,
+          sender_id: senderIdToSend, // Misafir ise NULL gider
           receiver_id: targetId,
-          subject: subjectRaw, 
+          subject: user ? subjectRaw : `[LEAD] ${subjectRaw}`, // Misafir mesajı belli olsun
           content: finalContent,
-          related_company_name: displaySender, 
+          related_company_name: displaySenderName, 
           msg_type: 'quote',
           is_read: false
       }]);
 
     if (error) throw error;
 
-    showToast("Quote Sent", `Request sent to ${targetName}.`, "success");
+    showToast("Success", `Request sent to ${targetName}. They will contact you via email.`, "success");
     toggleModal('modal-quote');
     document.querySelector("#modal-quote form").reset();
     document.getElementById('quote-file-name').textContent = ""; 
 
-    // 👇 MANUEL GÜNCELLEME İLE ANINDA GÖRÜNTÜ 👇
-    // targetId ve targetName bilgilerini kullanıyoruz
-    
-    // Veritabanımızda bu şirket yoksa bile ismi geçici olarak ekleyelim
-    if (!database.find(c => c.id == targetId)) {
-        database.push({ id: targetId, name: targetName });
+    // Eğer giriş yapmışsa Sent kutusunu güncelle
+    if(user) {
+        manualInboxUpdate(targetId, subjectRaw, finalContent, true);
+        const panel = document.getElementById("inbox-panel");
+        if (panel && !panel.classList.contains("open")) toggleInbox();
+        switchInboxView('sent');
     }
-
-    manualInboxUpdate(targetId, subjectRaw, finalContent, true);
-
-    // Paneli aç ve Sent sekmesine geç
-    const panel = document.getElementById("inbox-panel");
-    if (panel && !panel.classList.contains("open")) {
-        toggleInbox();
-    }
-    switchInboxView('sent');
-    
-    // *Opsiyonel: Arka planda tam senkronizasyon
-    fetchInboxMessages();
 
   } catch (error) {
     console.error(error);
