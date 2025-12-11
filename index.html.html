@@ -1244,7 +1244,7 @@
           <div>
             <label
               class="block text-xs font-bold text-gray-600 mb-1.5"
-              data-i18n="field_project"
+              
               >Details</label
             >
             <textarea
@@ -1704,7 +1704,7 @@
 
       <div>
         <h4 class="font-bold text-BTrustOn-primary uppercase mb-1">4. Indemnification</h4>
-        <p>You agree to indemnify and hold BTrustOn harmless from any claims, damages, liabilities, costs, and expenses (including legal fees) arising from: (a) your use of the platform; (b) any content you upload (including logos, project details); (c) your violation of any third-party rights or laws.</p>
+        <p>You agree to indemnify and hold BTrustOn harmless from any claims, damages, liabilities, costs, and expenses (including legal fees) arising from: (a) your use of the platform; (b) any content you upload (including logos, details); (c) your violation of any third-party rights or laws.</p>
       </div>
 
       <div>
@@ -1793,27 +1793,29 @@
   });
 
   // Logout
-  /* --- GÜNCELLENMİŞ: partnerLogout (Hafıza Temizliği Eklenmiş) --- */
-  async function partnerLogout() {
-    try {
-      // 1. Supabase oturumunu kapat
-      await supabaseClient.auth.signOut();
-      
-      // 2. ✅ EKLENEN KISIM: Tarayıcı hafızasındaki şirket kimliğini sil
-      localStorage.removeItem("BTrustOn_my_company_id");
-      
-      // 3. Değişkeni de boşalt (Sayfa yenilenmezse diye önlem)
-      selectedCompany = null;
-
-      showToast("Logged out", "See you soon!", "success");
-
-    } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
-      // 4. Ana sayfaya yönlendir (veya sayfayı yenile)
-      window.location.href = "/";
+  /* --- GÜNCELLENMİŞ: partnerLogout (Sessiz ve Temiz) --- */
+async function partnerLogout() {
+  try {
+    // Varsa mesaj dinlemeyi durdur (Hata vermemesi için)
+    if (typeof messageChannel !== 'undefined' && messageChannel) {
+        supabaseClient.removeChannel(messageChannel);
     }
+
+    // 1. Supabase oturumunu kapat
+    await supabaseClient.auth.signOut();
+    
+    // 2. Hafızayı temizle
+    localStorage.removeItem("BTrustOn_my_company_id");
+    if(typeof selectedCompany !== 'undefined') selectedCompany = null;
+
+    // 3. Bildirim göstermeden direkt ana sayfaya dön
+    window.location.href = "/";
+
+  } catch (err) {
+    console.error("Logout error:", err);
+    window.location.href = "/"; // Hata olsa bile sayfayı yenile
   }
+}
 </script>
 
 
@@ -5922,7 +5924,7 @@ async function markAllInboxRead() {
     }
 // --- TEKLİF FORMU GÖNDERME (YENİ) ---
 // Teklif Modalını Açma (ID parametresi eklendi)
-/* --- GÜNCELLENMİŞ: openQuoteModal (MİSAFİR DOSYA KİLİDİ) --- */
+/* --- GÜNCELLENMİŞ: openQuoteModal (MİSAFİR DOSYA KİLİDİ GERİ GELDİ) --- */
 async function openQuoteModal(companyId, companyName) {
   // 1. Hedef bilgilerini doldur
   const targetNameEl = document.getElementById("quote-target-company");
@@ -5937,7 +5939,7 @@ async function openQuoteModal(companyId, companyName) {
   const { data: { session } } = await supabaseClient.auth.getSession();
   
   const fileInput = document.getElementById("quote-file");
-  const fileLabel = fileInput.closest("label"); // "Select File" butonu (label etiketi)
+  const fileLabel = fileInput.closest("label"); // "Select File" butonu
   const fileNameDisplay = document.getElementById("quote-file-name");
   const container = fileLabel.parentElement; // Kapsayıcı div
 
@@ -5948,24 +5950,24 @@ async function openQuoteModal(companyId, companyName) {
       warningMsg.id = "guest-file-warning";
       warningMsg.className = "text-[10px] text-amber-600 font-bold ml-2 hidden items-center gap-1";
       // Tıklayınca önce Quote modalını kapatır, sonra Join modalını açar
-      warningMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Please <a href="javascript:void(0)" onclick="toggleModal(\'modal-quote\'); setTimeout(() => toggleModal(\'modal-join\'), 200)" class="underline hover:text-amber-800">join BTrustOn</a> to attach files.';
+      warningMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Please <a href="javascript:void(0)" onclick="toggleModal(\'modal-quote\'); setTimeout(() => toggleModal(\'modal-join\'), 200)" class="underline hover:text-amber-800">join to attach files</a>.';
       container.appendChild(warningMsg);
   }
 
   if (session) {
-      // --- ÜYE İSE: Dosya seçimi serbest ---
+      // --- ÜYE İSE: Dosya seçimi SERBEST ---
       fileInput.disabled = false;
       
       // Görseli normal hale getir
       fileLabel.classList.remove("opacity-50", "cursor-not-allowed", "bg-gray-100");
       fileLabel.classList.add("cursor-pointer", "hover:bg-gray-50");
-      fileLabel.title = ""; // Tooltip'i temizle
+      fileLabel.title = ""; 
       
       // Uyarıyı gizle
       warningMsg.classList.add("hidden");
       fileNameDisplay.classList.remove("hidden");
   } else {
-      // --- MİSAFİR İSE: Dosya seçimi yasak ---
+      // --- MİSAFİR İSE: Dosya seçimi YASAK ---
       fileInput.disabled = true; // Tıklamayı engelle
       fileInput.value = ""; // Varsa seçili dosyayı temizle
       fileNameDisplay.textContent = "";
@@ -5973,7 +5975,7 @@ async function openQuoteModal(companyId, companyName) {
       // Görseli pasif (gri) hale getir
       fileLabel.classList.add("opacity-50", "cursor-not-allowed", "bg-gray-100");
       fileLabel.classList.remove("cursor-pointer", "hover:bg-gray-50");
-      fileLabel.title = "Login required to attach files"; // Mouse üzerine gelince ipucu
+      fileLabel.title = "Login required to attach files"; 
       
       // Uyarıyı göster ve dosya ismini gizle
       warningMsg.classList.remove("hidden");
