@@ -4585,8 +4585,7 @@ function toggleInbox() {
     }, 10);
   }
 }
-/* --- DÜZELTİLMİŞ: renderInboxItems (ID ve Tırnak İşareti Hatası Giderildi) --- */
-/* --- renderInboxItems (GÜNCELLENMİŞ) --- */
+/* --- renderInboxItems (GÜNCELLENMİŞ - KESİN ÇÖZÜM) --- */
 function renderInboxItems() {
   const container = document.getElementById("inbox-content");
   const badgeNav = document.getElementById("nav-badge");
@@ -4595,16 +4594,16 @@ function renderInboxItems() {
   if (!container) return;
   container.innerHTML = "";
 
-  // 1. TOPLAM OKUNMAMIŞ SAYISI (Sekmeden bağımsız, tüm okunmamışlar)
+  // 1. TOPLAM OKUNMAMIŞ SAYISI
   let totalUnreadCount = 0;
   inboxData.forEach(item => { if(item.unread) totalUnreadCount++; });
 
   // 2. FİLTRELEME: Hangi sekmedeyiz?
   const filteredData = inboxData.filter(item => {
       if (currentInboxView === 'inbox') {
-          return item.isSentByMe === false; // Son mesajı O attıysa Inbox'tadır
+          return item.isSentByMe === false; 
       } else {
-          return item.isSentByMe === true;  // Son mesajı BEN attıysam Sent'tedir
+          return item.isSentByMe === true; 
       }
   });
 
@@ -4616,16 +4615,24 @@ function renderInboxItems() {
             <i class="fa-solid ${currentInboxView === 'inbox' ? 'fa-inbox' : 'fa-paper-plane'} text-4xl mb-3 opacity-20"></i>
             <p class="text-xs">${msg}</p>
         </div>`;
+      
+      updateBadges(totalUnreadCount); // Boşsa da badge güncellensin
+      return;
   }
 
   // Kartları Oluştur
   filteredData.forEach(item => {
     const safeTitle = item.title.replace(/'/g, "\\'");
 
+    // ETİKET AYARI: Sent ise "To:", Inbox ise "From:"
+    const directionLabel = currentInboxView === 'sent' ? 'To:' : 'From:';
+    
+    // Mesaj içeriğinden "You:" yazısını temizle (Önizleme için)
+    const previewText = item.desc.replace(/^You:\s*/, '');
+
     const card = document.createElement("div");
     card.className = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-gray-200 transition-all duration-200 cursor-pointer group ${item.unread ? 'bg-white unread shadow-sm' : 'bg-white/60 opacity-90'}`;
     
-    // Tıklayınca sohbeti aç
     card.onclick = () => openMessage(item.id); 
     
     let iconBg = "bg-gray-100 text-gray-500";
@@ -4645,49 +4652,58 @@ function renderInboxItems() {
           <i class="fa-solid fa-trash-can text-[10px]"></i>
       </button>
 
-      <div class="flex gap-4 pointer-events-none"> 
-        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm relative">
+      <div class="flex gap-3 pointer-events-none"> 
+        <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 shadow-sm relative mt-1">
            <i class="fa-solid ${icon}"></i>
            ${item.unread ? '<span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>' : ''}
         </div>
 
-        <div class="flex-1 min-w-0 pt-0.5">
-           <div class="flex justify-between items-start mb-0.5 pr-6"> 
+        <div class="flex-1 min-w-0">
+           
+           <div class="flex justify-between items-start mb-1 pr-6"> 
               <div class="flex items-center min-w-0">
                   <h4 class="text-xs font-bold text-gray-800 leading-tight truncate pr-1">${item.title}</h4>
                   ${countBadge}
               </div>
               <span class="text-[9px] text-gray-400 whitespace-nowrap ml-2 shrink-0">${item.time}</span>
            </div>
-           
-           <p class="text-xs text-gray-500 leading-relaxed mb-1.5 line-clamp-1">
-             <span class="font-medium text-gray-400 text-[10px]">${currentInboxView === 'sent' ? 'To:' : 'From:'}</span> 
-             ${item.desc.replace('You:', '')}
-           </p>
-           
-           <div class="flex items-center">
-              <span class="text-[9px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[150px]">
-                 ${item.company}
+
+           <div class="flex items-center gap-1.5 mb-1.5">
+              <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wide">${directionLabel}</span>
+              <span class="text-xs font-bold text-BTrustOn-accent truncate">
+                 ${item.company} 
               </span>
            </div>
+           
+           <p class="text-[10px] text-gray-500 leading-relaxed line-clamp-1 italic border-l-2 border-gray-200 pl-2">
+             "${previewText}"
+           </p>
+           
         </div>
       </div>
     `;
     container.appendChild(card);
   });
 
-  // Badge Güncellemeleri
+  updateBadges(totalUnreadCount);
+}
+
+// Yardımcı Badge Fonksiyonu (Eğer yoksa bunu da ekle, varsa gerek yok)
+function updateBadges(count) {
+  const badgeNav = document.getElementById("nav-badge");
+  const badgeHeader = document.getElementById("inbox-badge-count");
+
   if(badgeNav) {
-      if(totalUnreadCount > 0) {
-          badgeNav.textContent = totalUnreadCount;
+      if(count > 0) {
+          badgeNav.textContent = count;
           badgeNav.classList.remove("hidden");
       } else {
           badgeNav.classList.add("hidden");
       }
   }
   if(badgeHeader) {
-      if(totalUnreadCount > 0) {
-        badgeHeader.textContent = `${totalUnreadCount} NEW`;
+      if(count > 0) {
+        badgeHeader.textContent = `${count} NEW`;
         badgeHeader.classList.remove("hidden");
       } else {
         badgeHeader.classList.add("hidden");
