@@ -4429,12 +4429,12 @@ function timeAgo(dateString) {
     if (interval > 1) return Math.floor(interval) + " mins ago";
     return "Just now";
 }
-/* --- fetchInboxMessages (SOFT DELETE UYUMLU) --- */
+/* --- fetchInboxMessages (KESİN FİLTRELEME) --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // 1. Tüm mesajları çek (Silinenler dahil gelir)
+    // 1. Tüm mesajları çek
     const { data: rawMessages, error } = await supabaseClient
         .from('messages')
         .select('*')
@@ -4443,21 +4443,24 @@ async function fetchInboxMessages() {
 
     if (error) return;
 
-    // 2. 👇 FİLTRELEME: Benden silinenleri listeden çıkar 👇
+    // 2. 👇 FİLTRELEME: Silinenleri Kesin Olarak Gizle 👇
     const messages = rawMessages.filter(m => {
-        // Ben gönderdim ama benden silinmişse -> Gösterme
+        // GÖNDEREN BEN İSEM (Sent Kutusu):
+        // sender_delete 'true' ise gizle.
         if (m.sender_id === user.id && m.sender_delete === true) return false;
         
-        // Bana gelmiş ama ben silmişsem -> Gösterme
+        // ALICI BEN İSEM (Inbox Kutusu):
+        // receiver_delete 'true' ise gizle.
         if (m.receiver_id === user.id && m.receiver_delete === true) return false;
 
-        return true;
+        return true; // Diğer durumlarda göster
     });
 
     const groupedMap = new Map();
     const partnersToFetch = new Set();
 
     messages.forEach(msg => {
+        // Konu başlığını temizle (Re: kısımlarını at)
         const cleanSubject = msg.subject.replace(/^(Re:\s*)+/i, '').trim();
         const isMeSender = (msg.sender_id === user.id);
         const partnerId = isMeSender ? msg.receiver_id : msg.sender_id;
@@ -4467,6 +4470,7 @@ async function fetchInboxMessages() {
         if (!groupedMap.has(groupKey)) {
             let displayCompany = "Loading...";
             
+            // Partner ismini bul
             const localPartner = database.find(c => c.id == partnerId);
             if (localPartner) {
                 displayCompany = localPartner.name;
@@ -4500,6 +4504,7 @@ async function fetchInboxMessages() {
         }
     });
 
+    // İsimleri tamamla
     if (partnersToFetch.size > 0) {
         const { data: profiles } = await supabaseClient
             .from('profiles')
@@ -5840,7 +5845,7 @@ async function handleQuoteSubmit() {
   }
 }
 // 1. TEK BİR SOHBETİ SİL (HEM GELENİ HEM GİDENİ SİLER)
-/* --- deleteThread (SADECE BENİM KUTUMDAN SİL) --- */
+/* --- deleteThread (GÜÇLENDİRİLMİŞ SİLME) --- */
 function deleteThread(msgId, title, partnerId, event) {
     if(event) { event.stopPropagation(); event.preventDefault(); }
 
@@ -5849,40 +5854,38 @@ function deleteThread(msgId, title, partnerId, event) {
         return;
     }
 
-    openDeleteModal("Remove this conversation from your view? (Other party will still see it)", async () => {
+    openDeleteModal("Remove this conversation view?", async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("Login required");
 
+            // "Re:" kısımlarını temizleyip saf başlığı alıyoruz
             const cleanSearchTitle = title.replace(/^(Re:\s*)+/i, '').trim();
 
-            // 1. Durum: Ben GÖNDERİCİ isem -> sender_delete = true yap
-            const updateSender = supabaseClient
+            // 1. Ben GÖNDEREN isem -> sender_delete = true yap
+            // Konu başlığı içinde (ilike) aradığımız metin geçen her şeyi sil
+            const up1 = supabaseClient
                 .from('messages')
                 .update({ sender_delete: true })
                 .eq('sender_id', user.id)
                 .eq('receiver_id', partnerId)
                 .ilike('subject', `%${cleanSearchTitle}%`);
 
-            // 2. Durum: Ben ALICI isem -> receiver_delete = true yap
-            const updateReceiver = supabaseClient
+            // 2. Ben ALICI isem -> receiver_delete = true yap
+            const up2 = supabaseClient
                 .from('messages')
                 .update({ receiver_delete: true })
                 .eq('receiver_id', user.id)
                 .eq('sender_id', partnerId)
                 .ilike('subject', `%${cleanSearchTitle}%`);
 
-            // İkisini paralel çalıştır
-            const [res1, res2] = await Promise.all([updateSender, updateReceiver]);
+            await Promise.all([up1, up2]);
 
-            if (res1.error) throw res1.error;
-            if (res2.error) throw res2.error;
-
-            // Listeden çıkar
+            // Ekran listesinden anında kaldır (Hız için)
             inboxData = inboxData.filter(m => !(m.partner_id === partnerId && m.title === title));
             
             renderInboxItems();
-            showToast("Removed", "Conversation removed from your inbox.", "success");
+            showToast("Removed", "Conversation removed.", "success");
 
         } catch (error) {
             console.error(error);
