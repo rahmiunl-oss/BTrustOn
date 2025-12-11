@@ -4857,6 +4857,7 @@ async function openMessage(itemId) {
 }
 
 /* --- GÜNCELLENMİŞ: loadMessageThread (Şık Dosya Kartı Görünümü) --- */
+/* --- GÜNCELLENMİŞ: loadMessageThread (İndirme Butonlu) --- */
 async function loadMessageThread(cleanSubject, partnerId) {
     const container = document.getElementById("message-thread-container");
     container.innerHTML = '<div class="flex justify-center p-4"><i class="fa-solid fa-spinner fa-spin text-BTrustOn-accent"></i></div>';
@@ -4864,7 +4865,6 @@ async function loadMessageThread(cleanSubject, partnerId) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if(!user) return;
 
-    // Partner ismini bul
     let fixedPartnerName = "Partner";
     const partnerProfile = database.find(c => c.id == partnerId);
     if (partnerProfile) fixedPartnerName = partnerProfile.name;
@@ -4895,37 +4895,39 @@ async function loadMessageThread(cleanSubject, partnerId) {
 
         let cleanContent = m.content || "";
 
-        // --- DOSYA FORMATINI HTML KARTA ÇEVİRME ---
+        // --- DOSYA FORMATINI GELİŞMİŞ KARTA ÇEVİRME ---
         // Regex: [FILE_ATTACHMENT|DosyaAdi|URL]
         cleanContent = cleanContent.replace(/\[FILE_ATTACHMENT\|(.*?)\|(.*?)\]/g, function(match, fileName, fileUrl) {
             
-            // Dosya uzantısına göre ikon seçimi (Opsiyonel güzellik)
             let icon = "fa-file-lines";
             if(fileName.match(/\.(jpg|jpeg|png|gif)$/i)) icon = "fa-image";
             if(fileName.match(/\.(pdf)$/i)) icon = "fa-file-pdf";
             if(fileName.match(/\.(doc|docx)$/i)) icon = "fa-file-word";
             if(fileName.match(/\.(xls|xlsx)$/i)) icon = "fa-file-excel";
 
-            // ŞIK DOSYA KARTI TASARIMI
+            // YENİ TASARIM: İNDİRME BUTONU EKLENDİ
             return `
-                <a href="${fileUrl}" target="_blank" class="block mt-3 group decoration-0">
-                    <div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-BTrustOn-accent hover:shadow-md transition-all cursor-pointer">
-                        <div class="w-10 h-10 rounded-lg bg-gray-50 text-BTrustOn-accent flex items-center justify-center text-lg group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
+                <div class="mt-3 group">
+                    <div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-BTrustOn-accent hover:shadow-md transition-all">
+                        
+                        <div onclick="window.open('${fileUrl}', '_blank')" class="cursor-pointer w-10 h-10 rounded-lg bg-gray-50 text-BTrustOn-accent flex items-center justify-center text-lg group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
                             <i class="fa-solid ${icon}"></i>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs font-bold text-gray-700 truncate group-hover:text-BTrustOn-accent transition-colors">${fileName}</p>
-                            <p class="text-[10px] text-gray-400">Click to view file</p>
+                        
+                        <div onclick="window.open('${fileUrl}', '_blank')" class="cursor-pointer flex-1 min-w-0">
+                            <p class="text-xs font-bold text-gray-700 truncate group-hover:text-BTrustOn-accent transition-colors" title="${fileName}">${fileName}</p>
+                            <p class="text-[10px] text-gray-400">Click to view</p>
                         </div>
-                        <div class="text-gray-300 group-hover:text-BTrustOn-accent">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                        </div>
+                        
+                        <button onclick="downloadFile('${fileUrl}', '${fileName}')" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 hover:text-BTrustOn-accent flex items-center justify-center transition" title="Download File">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+
                     </div>
-                </a>
+                </div>
             `;
         });
 
-        // Satır başlarını <br> yap
         cleanContent = cleanContent.replace(/\n/g, '<br>');
 
         const bubble = document.createElement("div");
@@ -6013,6 +6015,42 @@ function appendLocalMessage(content) {
     
     container.appendChild(bubble);
     container.scrollTop = container.scrollHeight; // En alta kaydır
+}
+/* --- YENİ YARDIMCI: Dosyayı İndirmeye Zorla --- */
+async function downloadFile(fileUrl, fileName) {
+    // Tıklama olayının yukarı (karta) gitmesini engelle (eğer iç içe ise)
+    if(event) { event.stopPropagation(); event.preventDefault(); }
+
+    showToast("Downloading...", "Please wait while the file is prepared.", "info");
+
+    try {
+        // 1. Dosyayı veritabanından çek
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error("Network response was not ok");
+        
+        // 2. Veriyi Blob formatına çevir
+        const blob = await response.blob();
+        
+        // 3. Geçici bir indirme linki oluştur
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName; // İndirilecek dosyanın adı
+        
+        // 4. Linke tıkla ve temizle
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+
+        showToast("Saved", "File downloaded successfully.", "success");
+
+    } catch (error) {
+        console.error("Download failed:", error);
+        // Hata olursa kullanıcıyı uyar ve yeni sekmede açmayı dene (Yedek plan)
+        showToast("Error", "Download failed, opening in new tab...", "error");
+        window.open(fileUrl, '_blank');
+    }
 }
 </script>
 </html>
