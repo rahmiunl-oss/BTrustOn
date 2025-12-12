@@ -4475,6 +4475,10 @@ async function fetchAllPublicProfiles() {
 
   // 2. Gelen veriyi site formatına uydur
   profiles.forEach(profile => {
+if (profile.email === ADMIN_EMAIL) {
+        return; // Admin maili ise bu turu atla, listeye ekleme!
+    }
+    // 👆👆👆 --------------------------- 👆👆👆
     // Listede zaten var mı? Varsa üstüne yazmayalım, sadece eksikleri güncelleyelim.
     const exists = database.find(c => c.id == profile.id);
     
