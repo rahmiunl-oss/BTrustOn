@@ -981,7 +981,7 @@
       </div> <div class="lg:col-span-4 space-y-6">
         
         <div class="sticky top-28">
-    <div class="bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
+    <div id="profile-analytics-card" class="hidden bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
   
   <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
   
@@ -3635,21 +3635,28 @@ async function openProfile(companyId) {
           });
       }
   }
-// 👇 ANALİTİK SİSTEMİNİ ÇALIŞTIR 👇
+// 👇 GÜNCELLENMİŞ ANALİTİK YÖNETİMİ (GİZLİLİK AYARLI) 👇
   
-  // 1. Ziyaret Edildiğini Kaydet (Günde 1 Kez)
+  // 1. Ziyaret Sayacı: Herkes için çalışır (Arka planda kaydeder)
   trackProfileView(company.id);
 
-  // 2. Geçmiş Ziyaretçileri Listele
-  loadProfileAnalytics(company.id);
-}
-    // --- EDITOR FUNCTIONS ---
-    function showEditorView() {
-        document.getElementById("view-dashboard").classList.add("hidden-view");
-        document.getElementById("view-profile").classList.add("hidden-view");
-        document.getElementById("view-editor").classList.remove("hidden-view");
-        document.getElementById("back-btn").classList.remove("hidden", "hidden-view");
-        window.scrollTo(0,0);
+  // 2. Analitik Kartı Gösterimi: SADECE SAHİBİNE
+  const analyticsCard = document.getElementById("profile-analytics-card");
+  
+  if (analyticsCard) {
+      if (isMyProfile) {
+          // A. Benim profilimse kartı göster (Hidden sınıfını kaldır)
+          analyticsCard.classList.remove("hidden");
+          
+          // B. Verileri veritabanından çek ve doldur
+          loadProfileAnalytics(company.id);
+      } else {
+          // A. Başkasının profiliyse kartı gizle
+          analyticsCard.classList.add("hidden");
+          
+          // B. Veri çekme işlemini yapma (Gereksiz yük olmasın)
+      }
+  }
     }
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
