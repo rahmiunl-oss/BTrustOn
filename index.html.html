@@ -4113,7 +4113,7 @@ async function fetchAllPublicProfiles() {
   renderTopCompanies();
 }
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
-/* --- GÜNCELLENMİŞ: checkUserAndOpenProfile (ANINDA TEPKİ) --- */
+/* --- GÜNCELLENMİŞ: checkUserAndOpenProfile (COUNTRY EKLENDİ) --- */
 async function checkUserAndOpenProfile(forceOpen = false) {
   // 1. Oturumu Kontrol Et
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -4122,23 +4122,20 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   const guestGroup = document.getElementById("guest-actions"); 
   const userGroup = document.getElementById("user-actions");
 
-  // 2. UI'I ANINDA GÜNCELLE (Veritabanını beklemeden)
+  // 2. UI'I ANINDA GÜNCELLE
   if (!session) {
-    // --- MİSAFİR MODU ---
     if(guestGroup) { guestGroup.classList.remove("hidden"); guestGroup.classList.add("flex"); }
     if(userGroup) { userGroup.classList.add("hidden"); userGroup.classList.remove("flex"); }
-    return; // Oturum yoksa buradna dön
+    return; 
   } else {
-    // --- ÜYE MODU ---
     if(guestGroup) { guestGroup.classList.add("hidden"); guestGroup.classList.remove("flex"); }
     if(userGroup) { userGroup.classList.remove("hidden"); userGroup.classList.add("flex"); }
     
-    // Mesajları ve abonelikleri hemen başlat
     fetchInboxMessages();
     subscribeToMessages();
   }
 
-  // 3. PROFİL VERİSİNİ ÇEK (Arka planda)
+  // 3. PROFİL VERİSİNİ ÇEK
   const { data: profile, error } = await supabaseClient
     .from('profiles')
     .select('*')
@@ -4147,11 +4144,15 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 
   if (error || !profile) { console.log("Profil verisi çekilemedi."); return; }
 
-  // 4. Veriyi site formatına çevir ve hafızaya al
+  // 4. VERİYİ FORMATLA (Buraya country eklendi)
   const mappedProfile = {
     id: profile.id,
     name: profile.company_name,
     city: profile.city,
+    
+    // ✅ İŞTE EKSİK OLAN BU SATIRDI:
+    country: profile.country || "Turkey", 
+    
     tagline: profile.tagline || "",
     sector: profile.sector || "construction",
     desc: profile.description || "",
@@ -4175,10 +4176,8 @@ async function checkUserAndOpenProfile(forceOpen = false) {
       if (idx > -1) { database[idx] = mappedProfile; } 
       else { database.unshift(mappedProfile); }
       
-      // ID'yi tarayıcı hafızasına sabitle (Logout yapana kadar kalır)
       localStorage.setItem("BTrustOn_my_company_id", profile.id);
 
-      // Eğer zorla aç denildiyse (Login sonrası gibi) profili aç
       if (forceOpen === true) { openProfile(profile.id); }
   }
 }
