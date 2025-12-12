@@ -5755,39 +5755,78 @@ async function markAllInboxRead() {
 
     // 3. ARAMA MODU (Filtreli Liste)
     // 3. ARAMA VE LİSTELEME MODU (GÜNCELLENMİŞ)
-    function renderSearchResults(query) {
-        const q = (query || "").toLowerCase().trim();
+   /* --- GÜNCELLENMİŞ: renderSearchResults (DERİN ARAMA) --- */
+function renderSearchResults(query) {
+    const q = (query || "").toLowerCase().trim();
 
-        // A. FİLTRELEME
-        let filtered = database.filter((company) => {
-            // 1. Sektör Filtresi
-            if (currentSector !== "all" && company.sector !== currentSector) return false;
-            
-            // 2. Ülke Filtresi (YENİ)
-            if (currentCountryFilter !== "all") {
-                const companyCountry = getCountryFromCity(company.city);
-                if (companyCountry !== currentCountryFilter) return false;
-            }
+    // A. FİLTRELEME
+    let filtered = database.filter((company) => {
+        // 1. Sektör Filtresi (Eğer "All" değilse eşleşmeli)
+        if (currentSector !== "all" && company.sector !== currentSector) return false;
+        
+        // 2. Ülke Filtresi (Eğer "All" değilse eşleşmeli)
+        if (currentCountryFilter !== "all") {
+            const companyCountry = getCountryFromCity(company.city);
+            if (companyCountry !== currentCountryFilter) return false;
+        }
 
-            // 3. Metin Araması
-            if (!q) return true; // Metin yoksa geç
+        // 3. METİN ARAMASI (HAYSTACK MANTIĞI)
+        if (!q) return true; // Arama kutusu boşsa herkesi göster
 
-            const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
-            const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
-            
-            const haystack = [
-                company.name, company.city, company.sector, desc, ...(services || [])
-            ].join(" ").toLowerCase();
+        // --- DERİN VERİ TOPLAMA ---
+        
+        // a. Temel Bilgiler
+        const baseInfo = [
+            company.name, 
+            company.city, 
+            company.sector, 
+            company.type_label,
+            company.desc, 
+            company.tagline
+        ].join(" ").toLowerCase();
 
-            return haystack.includes(q);
-        });
+        // b. Hizmetler (Array)
+        const servicesText = (company.services || []).join(" ").toLowerCase();
 
-        // B. SIRALAMA (YENİ)
-        filtered = sortCompanyList(filtered);
+        // c. Varlıklar (Assets - Obje Dizisi)
+        // Asset'in Tipini ve Özelliklerini (Spec) alıyoruz
+        const assetsText = (company.assets || []).map(a => 
+            `${a.type} ${a.spec} ${a.location}`
+        ).join(" ").toLowerCase();
 
-        // C. EKRANA BASMA
-        drawCardsToScreen(filtered, "search");
-    }
+        // d. Projeler (Projects - Obje Dizisi)
+        // Proje başlığını ve açıklamasını alıyoruz
+        const projectsText = (company.projects || []).map(p => 
+            `${p.title} ${p.desc} ${p.loc}`
+        ).join(" ").toLowerCase();
+
+        // e. Sertifikalar (Certificates)
+        // Hem string hem obje formatını destekleyelim
+        const certsText = (company.certificates || []).map(c => {
+            if (typeof c === 'string') return c;
+            return `${c.name} ${c.issuer}`;
+        }).join(" ").toLowerCase();
+
+        // --- DEVASA ARAMA HAVUZU (HAYSTACK) ---
+        // Tüm verileri tek bir uzun metinde birleştir
+        const fullHaystack = `
+            ${baseInfo} 
+            ${servicesText} 
+            ${assetsText} 
+            ${projectsText} 
+            ${certsText}
+        `;
+
+        // Aranan kelime bu dev metnin içinde geçiyor mu?
+        return fullHaystack.includes(q);
+    });
+
+    // B. SIRALAMA
+    filtered = sortCompanyList(filtered);
+
+    // C. EKRANA BASMA
+    drawCardsToScreen(filtered, "search");
+}
 
     // 4. BAŞLATICI VE YÖNETİCİ (Controller)
     function initShowcaseSystem() {
