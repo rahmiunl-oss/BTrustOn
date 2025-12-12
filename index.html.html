@@ -300,7 +300,14 @@
       <i class="fa-solid fa-building-user"></i>
       MY COMPANY
     </button>
-
+<button
+  id="btn-admin-panel"
+  onclick="showAdminView()"
+  class="hidden flex items-center gap-2 px-3 py-2 bg-slate-800 text-white border border-slate-700 rounded-lg text-xs font-bold hover:bg-slate-700 transition shadow-sm mr-2"
+>
+  <i class="fa-solid fa-user-shield"></i>
+  ADMIN
+</button>
     <button
       id="btn-partner-logout"
       onclick="partnerLogout()"
@@ -1764,7 +1771,55 @@
         </div>
     </div>
 </div>
-</div> </div> <div id="modal-about" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]">  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-about')"></div>
+</div> </div> 
+
+<div id="view-admin" class="hidden-view fade-in min-h-screen bg-slate-100 pb-20">
+    <div class="bg-slate-900 text-white pt-24 pb-12 px-4 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-header font-bold flex items-center gap-3">
+                    <i class="fa-solid fa-shield-cat text-emerald-400"></i> Admin Dashboard
+                </h1>
+                <p class="text-slate-400 text-sm mt-2">Manage verifications and subscriptions.</p>
+            </div>
+            <div class="flex gap-4">
+                 <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                    <span class="block text-[10px] text-slate-400 uppercase">Pending Requests</span>
+                    <span id="admin-pending-count" class="text-2xl font-bold text-white">0</span>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 -mt-6">
+        <div class="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="font-bold text-gray-700">Verification Requests</h3>
+                <button onclick="loadAdminData()" class="text-xs text-BTrustOn-accent font-bold hover:underline">
+                    <i class="fa-solid fa-rotate"></i> Refresh
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4">Company</th>
+                            <th class="px-6 py-4">Tax ID / Info</th>
+                            <th class="px-6 py-4">Submitted At</th>
+                            <th class="px-6 py-4">Document</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-request-list" class="divide-y divide-gray-100">
+                        <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 italic">Loading requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="modal-about" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]">  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-about')"></div>
   <div class="modal-container bg-white w-11/12 md:max-w-2xl mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col">
     
     <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
@@ -6953,6 +7008,157 @@ function updateVerificationUI(status) {
     // İki tarafı da aynı duruma getir
     setStatus(editAlert, editBtn, editInputs, status);
     setStatus(widgetAlert, widgetBtn, widgetInputs, status);
+}
+/* --- ADMIN PANEL SİSTEMİ --- */
+
+// 1. AYARLAR
+const ADMIN_EMAIL = "rahmiunl@gmail.com"; // BURAYI KENDİ MAİLİNİZLE DEĞİŞTİRİN
+
+// 2. ADMIN KONTROLÜ (Giriş yapıldığında çalışır)
+async function checkAdminAccess() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const adminBtn = document.getElementById("btn-admin-panel");
+    
+    if (user && user.email === ADMIN_EMAIL) {
+        if(adminBtn) adminBtn.classList.remove("hidden");
+    } else {
+        if(adminBtn) adminBtn.classList.add("hidden");
+    }
+}
+
+// checkUserAndOpenProfile fonksiyonunun en sonuna şu satırı ekleyin:
+// checkAdminAccess(); 
+// (Bunu manuel eklemeyi unutmayın, yoksa buton çıkmaz)
+
+
+// 3. ADMIN PANELİNİ AÇMA
+function showAdminView() {
+    // Diğer ekranları gizle
+    document.getElementById("view-dashboard").classList.add("hidden-view");
+    document.getElementById("view-profile").classList.add("hidden-view");
+    document.getElementById("view-editor").classList.add("hidden-view");
+    document.getElementById("view-admin").classList.remove("hidden-view");
+    
+    // Verileri yükle
+    loadAdminData();
+}
+
+
+// 4. BEKLEYEN İSTEKLERİ ÇEKME
+async function loadAdminData() {
+    const listContainer = document.getElementById("admin-request-list");
+    const countBadge = document.getElementById("admin-pending-count");
+    
+    listContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center"><i class="fa-solid fa-spinner fa-spin text-2xl text-gray-300"></i></td></tr>';
+
+    // Supabase'den 'pending' olanları çek
+    const { data: requests, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('verification_status', 'pending')
+        .order('updated_at', { ascending: false });
+
+    if (error) {
+        console.error(error);
+        listContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading data.</td></tr>';
+        return;
+    }
+
+    if (countBadge) countBadge.textContent = requests.length;
+
+    if (requests.length === 0) {
+        listContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 italic">No pending requests found.</td></tr>';
+        return;
+    }
+
+    listContainer.innerHTML = "";
+
+    requests.forEach(req => {
+        // Belge Linki (Varsa)
+        let docLink = '<span class="text-gray-300 text-xs">No file</span>';
+        if (req.verification_docs_url) {
+            docLink = `<a href="${req.verification_docs_url}" target="_blank" class="flex items-center gap-1 text-blue-600 hover:underline font-bold text-xs"><i class="fa-solid fa-file-pdf"></i> View Doc</a>`;
+        } else if (req.duns_number) {
+             docLink = `<span class="text-xs text-gray-500">DUNS: ${req.duns_number}</span>`;
+        }
+
+        const dateStr = new Date(req.updated_at).toLocaleDateString() + " " + new Date(req.updated_at).toLocaleTimeString();
+
+        const row = document.createElement("tr");
+        row.className = "hover:bg-slate-50 transition";
+        row.innerHTML = `
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                        ${req.company_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800">${req.company_name}</div>
+                        <div class="text-[10px] text-gray-400">${req.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                <div class="font-mono text-xs bg-gray-100 px-2 py-1 rounded inline-block text-gray-600">
+                    ${req.tax_id || 'N/A'}
+                </div>
+            </td>
+            <td class="px-6 py-4 text-xs text-gray-500">${dateStr}</td>
+            <td class="px-6 py-4">${docLink}</td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                    <button onclick="processVerification('${req.id}', 'reject')" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition flex items-center justify-center" title="Reject">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <button onclick="processVerification('${req.id}', 'approve')" class="px-4 py-2 rounded-lg bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 transition shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> APPROVE (Pro)
+                    </button>
+                </div>
+            </td>
+        `;
+        listContainer.appendChild(row);
+    });
+}
+
+
+// 5. ONAYLAMA / REDDETME İŞLEMİ
+async function processVerification(userId, action) {
+    // Kullanıcıya sor
+    if (!confirm(`Are you sure you want to ${action} this company?`)) return;
+
+    let updates = {};
+
+    if (action === 'approve') {
+        // 3 Ay sonrasını hesapla
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3);
+
+        updates = {
+            verification_status: 'verified',
+            subscription_tier: 'pro',
+            subscription_status: 'active_trial',
+            trial_end_date: endDate.toISOString()
+        };
+    } else {
+        updates = {
+            verification_status: 'rejected',
+            // Reddedilince Pro'yu almıyoruz, sadece doğrulamayı reddediyoruz.
+            // Ama isterseniz subscription_tier: 'free' de yapabilirsiniz.
+        };
+    }
+
+    // Veritabanını güncelle
+    const { error } = await supabaseClient
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+    if (error) {
+        alert("Error: " + error.message);
+    } else {
+        showToast("Success", `Company ${action}d successfully.`, "success");
+        loadAdminData(); // Listeyi yenile
+    }
 }
 
 </script>
