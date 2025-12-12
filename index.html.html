@@ -862,11 +862,7 @@
 
           <div class="flex flex-wrap items-center gap-2">
             <div id="p-badge" class="flex flex-wrap gap-2"></div>
-            <span
-              class="text-[11px] text-gray-400 uppercase tracking-wide"
-            >
-              Top Verified Company
-            </span>
+            
           </div>
         </div>
 
@@ -3553,12 +3549,23 @@ async function openProfile(companyId) {
   const pSize = document.getElementById("p-size-tag");
   const pYear = document.getElementById("p-year-tag");
 
-  if (nameEl) nameEl.textContent = company.name;
-  if (cityEl) {
-      // Eğer ülke verisi varsa "Istanbul, Turkey" yap, yoksa sadece şehri yaz
-      const countryDisplay = company.country ? `, ${company.country}` : "";
-      cityEl.textContent = `${company.city}${countryDisplay}`;
-  }
+  if (nameEl) {
+    // 1. Önce sadece ismi yaz
+    nameEl.innerHTML = company.name;
+
+    // 2. Doğrulama kontrolü yap
+    const isVerified = company.verification_status === 'verified' || company.trust === 'verified';
+
+    // 3. Eğer onaylıysa yanına havalı tiki ekle
+    if (isVerified) {
+        nameEl.innerHTML += `
+            <i class="fa-solid fa-circle-check text-blue-500 ml-2 align-middle text-2xl" 
+               style="filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));" 
+               title="Official Verified Account">
+            </i>
+        `;
+    }
+}
   
   // Sektör (Dil Desteği)
   if (sectorEl) {
