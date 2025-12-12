@@ -4594,6 +4594,7 @@ subscription_tier: profile.subscription_tier || 'free',
 
       if (forceOpen === true) { openProfile(profile.id); }
   }
+checkAdminAccess();
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 /* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
@@ -4616,18 +4617,25 @@ populateCountrySelects(); // 👈 İŞTE EKSİK OLAN SATIR BU!
 });
 
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
+// Oturum durumu değişirse (Login/Logout) anında tepki ver
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-    // Giriş yapıldıysa veya sayfa yenilenip oturum hatırlandıysa
+    // Giriş yapıldıysa
     if (typeof closeLoginModal === "function") closeLoginModal();
+    
+    // 1. Önce Admin mi diye bak (Bunu ekleyin)
+    if (typeof checkAdminAccess === "function") checkAdminAccess();
+
+    // 2. Sonra profili çek
     checkUserAndOpenProfile(); 
   } 
   else if (event === 'SIGNED_OUT') {
     // Çıkış yapıldıysa temizle
     localStorage.removeItem("BTrustOn_my_company_id");
-    window.location.href = "/"; // Sayfayı yenile
+    window.location.href = "/"; 
   }
 });
+
 /* --- MY COMPANY BUTONU DÜZELTME --- */
 
 // Eski fonksiyonu bununla değiştiriyoruz/eziyoruz:
