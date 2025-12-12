@@ -4181,7 +4181,8 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 /* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Önce Statik Sistemleri Başlat
+populateCountrySelects(); // 👈 İŞTE EKSİK OLAN SATIR BU!    
+// 1. Önce Statik Sistemleri Başlat
     applyTranslations();
     initTopCompaniesOrder();
     renderTopCompanies();
