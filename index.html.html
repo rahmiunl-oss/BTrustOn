@@ -4585,6 +4585,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   // 4. VERİYİ FORMATLA (Buraya country eklendi)
   const mappedProfile = {
     id: profile.id,
+    email: profile.email, // 👈 BU SATIR EKSİKTİ, MUTLAKA EKLE!
     name: profile.company_name,
     city: profile.city,
     
