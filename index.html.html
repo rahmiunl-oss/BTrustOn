@@ -3779,7 +3779,28 @@ address: address, // <-- Buraya
       if (viewEditor) viewEditor.classList.add("hidden-view");
       if (backBtn) backBtn.classList.add("hidden", "hidden-view");
     }
+/* --- EKSİK OLAN FONKSİYON: Editör Ekranını Göster --- */
+function showEditorView() {
+  const viewDashboard = document.getElementById("view-dashboard");
+  const viewProfile = document.getElementById("view-profile");
+  const viewEditor = document.getElementById("view-editor");
+  const viewMessage = document.getElementById("view-message"); 
+  const backBtn = document.getElementById("back-btn");
 
+  // 1. Diğer tüm ekranları gizle
+  if (viewDashboard) viewDashboard.classList.add("hidden-view");
+  if (viewProfile) viewProfile.classList.add("hidden-view");
+  if (viewMessage) viewMessage.classList.add("hidden-view");
+  
+  // 2. Editör ekranını aç
+  if (viewEditor) viewEditor.classList.remove("hidden-view");
+  
+  // 3. Back butonunu gizle (Editörde kendi Cancel butonu var)
+  if (backBtn) backBtn.classList.add("hidden", "hidden-view"); 
+
+  // 4. Sayfayı en üste kaydır
+  window.scrollTo(0, 0);
+}
     function toggleModal(id) {
       const modal = document.getElementById(id);
       if (!modal) return;
