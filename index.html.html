@@ -639,22 +639,28 @@
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">City <span class="text-red-500">*</span></label>
-                                        <input type="text" id="edit-city" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Istanbul, TR" required />
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Country <span class="text-red-500">*</span></label>
+                                        <select id="edit-country" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
+                                             </select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector <span class="text-red-500">*</span></label>
-                                        <select id="edit-sector" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
-    <option value="">Select sector…</option>
-    <option value="construction">Construction & Infrastructure</option>
-    <option value="energy">Energy & Oil/Gas</option>
-    <option value="mining">Mining & Metals</option>
-    <option value="manufacturing">Manufacturing & Machinery</option>
-    <option value="technology">Technology & Automation</option>
-    <option value="logistics">Logistics & Trade</option>
-    <option value="engineering">Engineering & Services</option>
-</select>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">City <span class="text-red-500">*</span></label>
+                                        <input type="text" id="edit-city" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Berlin" required />
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector <span class="text-red-500">*</span></label>
+                                    <select id="edit-sector" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
+                                        <option value="">Select sector…</option>
+                                        <option value="construction">Construction & Infrastructure</option>
+                                        <option value="energy">Energy & Oil/Gas</option>
+                                        <option value="mining">Mining & Metals</option>
+                                        <option value="manufacturing">Manufacturing & Machinery</option>
+                                        <option value="technology">Technology & Automation</option>
+                                        <option value="logistics">Logistics & Trade</option>
+                                        <option value="engineering">Engineering & Services</option>
+                                    </select>
                                 </div>
 
                                 <div>
@@ -1128,10 +1134,17 @@
     </div>
   </div>
 
-  <div class="mt-4">
-      <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_city">City</label>
-      <input type="text" id="join-city" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" required />
-  </div>
+  <div class="grid grid-cols-2 gap-4 mt-4">
+    <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1.5">Country</label>
+        <select id="join-country" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" required>
+            </select>
+    </div>
+    <div>
+        <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_city">City</label>
+        <input type="text" id="join-city" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" placeholder="e.g. Istanbul" required />
+    </div>
+</div>
 
   <div>
     <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_services">Core Services</label>
@@ -2033,6 +2046,69 @@ async function partnerLogout() {
     let currentLang = "en";
     let currentSector = "all";
     let selectedCompany = null;
+/* --- GENİŞLETİLMİŞ ÜLKE LİSTESİ --- */
+const countryList = [
+    // Asya & Pasifik
+    "Afghanistan", "Australia", "Bangladesh", "China", "India", "Indonesia", "Japan", 
+    "Kazakhstan", "Malaysia", "Mongolia", "New Zealand", "Pakistan", "Philippines", 
+    "Singapore", "South Korea", "Thailand", "Turkmenistan", "Uzbekistan", "Vietnam",
+    
+    // Avrupa
+    "Albania", "Austria", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", 
+    "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", 
+    "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Netherlands", "Norway", 
+    "Poland", "Portugal", "Romania", "Russia", "Serbia", "Spain", "Sweden", 
+    "Switzerland", "Ukraine", "United Kingdom",
+    
+    // Orta Doğu & Afrika
+    "Algeria", "Azerbaijan", "Bahrain", "Egypt", "Georgia", "Iran", "Iraq", "Israel", 
+    "Jordan", "Kuwait", "Lebanon", "Libya", "Morocco", "Nigeria", "Oman", "Qatar", 
+    "Saudi Arabia", "South Africa", "Tunisia", "UAE",
+    
+    // Amerika
+    "Argentina", "Brazil", "Canada", "Chile", "Colombia", "Mexico", "Peru", "USA", "Venezuela"
+].sort(); // Önce hepsini alfabetik diziyoruz
+
+// Sayfa açılınca kutuları dolduran fonksiyon (TÜRKİYE ÖNCELİKLİ)
+function populateCountrySelects() {
+    const selects = ["join-country", "edit-country"];
+    
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        el.innerHTML = '<option value="">Select Country...</option>';
+        
+        // 1. TÜRKİYE'Yİ EN BAŞA SABİTLE (Kolaylık olsun)
+        const trOption = document.createElement("option");
+        trOption.value = "Turkey";
+        trOption.textContent = "Turkey";
+        el.appendChild(trOption);
+
+        // Araya çizgi (Separator) atalım
+        const separator = document.createElement("option");
+        separator.disabled = true;
+        separator.textContent = "────────────────────";
+        el.appendChild(separator);
+
+        // 2. DİĞER ÜLKELERİ ALFABETİK EKLE
+        countryList.forEach(c => {
+            // Listede Turkey varsa tekrar ekleme (zaten başa koyduk)
+            if (c !== "Turkey") {
+                const option = document.createElement("option");
+                option.value = c;
+                option.textContent = c;
+                el.appendChild(option);
+            }
+        });
+        
+        // Listenin sonuna "Other" ekle
+        const otherOpt = document.createElement("option");
+        otherOpt.value = "Other";
+        otherOpt.textContent = "Other / Not Listed";
+        el.appendChild(otherOpt);
+    });
+}
 
     // Top band animasyon & canlı görünüm için
     let topCompaniesOrder = [];
@@ -3432,6 +3508,7 @@ async function saveProfileData() {
     // 2. DİĞER VERİLERİ HAZIRLA
     const name = document.getElementById("edit-name").value.trim();
     const city = document.getElementById("edit-city").value.trim();
+    const country = document.getElementById("edit-country").value; // YENİ
     const sector = document.getElementById("edit-sector").value;
     const desc = document.getElementById("edit-desc").value.trim();
     const servicesStr = document.getElementById("edit-services").value.trim();
@@ -3445,6 +3522,7 @@ async function saveProfileData() {
     const updates = {
       company_name: name,
       city: city,
+      country: country, // YENİ
       tagline: tagline,
       sector: sector,
       description: desc,
@@ -3928,6 +4006,7 @@ async function handleJoin() {
     const sector = document.getElementById("join-sector").value;
     const typeVal = document.getElementById("join-type").value;
     const city = document.getElementById("join-city").value;
+    const country = document.getElementById("join-country").value; // YENİ
     const services = document.getElementById("join-services").value;
     const errEl = document.getElementById("join-error");
 
@@ -3944,6 +4023,7 @@ async function handleJoin() {
         sector: sector,
         company_type: typeVal,
         city: city,
+        country: country, // YENİ SÜTUN
         services: services,
         description: "",
         size: "1-10"
@@ -4168,35 +4248,40 @@ function openMyCompanyIfExists() {
    GÜNCELLENMİŞ EDİTÖR FONKSİYONU (Sertifikasız & Temiz)
    ========================================= */
 /* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL) --- */
-/* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL - EMAIL DAHİL) --- */
+/* --- GÜNCELLENMİŞ: editMyProfile (ÜLKE VE ŞEHİR DESTEKLİ) --- */
 function editMyProfile() {
   if (!selectedCompany) return;
 
+  // 1. Mevcut verileri kutulara doldur
   document.getElementById("edit-name").value = selectedCompany.name || "";
-  document.getElementById("edit-city").value = selectedCompany.city || "";
   document.getElementById("edit-tagline").value = selectedCompany.tagline || "";
   document.getElementById("edit-desc").value = selectedCompany.desc || "";
   
-// LOGO GÖSTERİMİ (Editörde)
+  // --- YENİ EKLENEN KISIM (Ülke ve Şehir) ---
+  document.getElementById("edit-city").value = selectedCompany.city || "";
+  
+  // ✅ İŞTE BURASI: Eğer veri yoksa otomatik 'Turkey' seçer
+  document.getElementById("edit-country").value = selectedCompany.country || "Turkey"; 
+
+  // Logo Gösterimi
   const logoUrl = selectedCompany.logo_url;
   if (logoUrl) {
       document.getElementById("edit-logo-img").src = logoUrl;
       document.getElementById("edit-logo-img").classList.remove("hidden");
       document.getElementById("edit-logo-icon").classList.add("hidden");
   } else {
-      // Logo yoksa sıfırla
       document.getElementById("edit-logo-img").src = "";
       document.getElementById("edit-logo-img").classList.add("hidden");
       document.getElementById("edit-logo-icon").classList.remove("hidden");
   }
-  selectedLogoFile = null; // Seçimi sıfırla
-  // İLETİŞİM BİLGİLERİ
+  selectedLogoFile = null; 
+
+  // İletişim Bilgileri
   document.getElementById("edit-website").value = selectedCompany.website || "";
   document.getElementById("edit-phone").value = selectedCompany.phone || "";
-  
-  // YENİ: Contact Email (Varsa onu getir, yoksa ana login mailini getir)
   document.getElementById("edit-email").value = selectedCompany.contact_email || selectedCompany.email || "";
 
+  // Sektör ve Tip Seçimi
   const sectorSelect = document.getElementById("edit-sector");
   if(sectorSelect) sectorSelect.value = selectedCompany.sector;
 
@@ -4204,14 +4289,18 @@ function editMyProfile() {
   const sizeEl = document.getElementById("edit-size");
   const yearEl = document.getElementById("edit-year");
 
-  if(typeEl) typeEl.value = selectedCompany.type_label || "Industrial Supplier";
+  if(typeEl) typeEl.value = selectedCompany.type_label || "Operator"; // Varsayılanı güncelledik
   if(sizeEl) sizeEl.value = selectedCompany.size_label || "1-10 employees";
   if(yearEl) yearEl.value = selectedCompany.year_label || "";
 
+  // Hizmetler
   const services = selectedCompany.services || []; 
   document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
 
+  // Editörü Aç
   showEditorView();
+  
+  // Profil doluluk oranını hesapla
   setTimeout(initEditorListeners, 100); 
 }
 /* =========================================
@@ -5774,9 +5863,10 @@ function renderSearchResults(query) {
         if (currentSector !== "all" && company.sector !== currentSector) return false;
         
         // 2. Ülke Filtresi (Eğer "All" değilse eşleşmeli)
+        // 2. Ülke Filtresi (GÜNCEL - Direkt Veriden)
         if (currentCountryFilter !== "all") {
-            const companyCountry = getCountryFromCity(company.city);
-            if (companyCountry !== currentCountryFilter) return false;
+            // Artık şehri parçalamıyoruz, direkt 'country' sütununa bakıyoruz
+            if (company.country !== currentCountryFilter) return false;
         }
 
         // 3. METİN ARAMASI (HAYSTACK MANTIĞI)
@@ -5894,31 +5984,27 @@ function renderSearchResults(query) {
     }
 
     // 2. Ülke Kutusunu Doldur
-    function populateCountryFilter() {
-        const countrySet = new Set();
-        
-        // Tüm şirketleri tara ve ülkeleri bul
-        database.forEach(c => {
-            const country = getCountryFromCity(c.city);
-            if(country && country.length < 20) { // Çok uzun hatalı verileri alma
-                countrySet.add(country);
-            }
-        });
+    /* --- GÜNCELLENMİŞ: populateCountryFilter (DİREKT VERİDEN) --- */
+function populateCountryFilter() {
+    const countrySet = new Set();
+    
+    // Veritabanındaki "country" alanlarını topla
+    database.forEach(c => {
+        if(c.country) countrySet.add(c.country);
+    });
 
-        const select = document.getElementById("country-filter");
-        if(select) {
-            // Önce temizle
-            select.innerHTML = '<option value="all">All Countries</option>';
-            
-            // Alfabetik sırayla ekle
-            Array.from(countrySet).sort().forEach(country => {
-                const option = document.createElement("option");
-                option.value = country;
-                option.textContent = country;
-                select.appendChild(option);
-            });
-        }
+    const select = document.getElementById("country-filter");
+    if(select) {
+        select.innerHTML = '<option value="all">All Countries</option>';
+        
+        Array.from(countrySet).sort().forEach(country => {
+            const option = document.createElement("option");
+            option.value = country;
+            option.textContent = country;
+            select.appendChild(option);
+        });
     }
+}
 
     // 3. Ülke Değişince Çalışır
     function handleCountryChange(countryVal) {
