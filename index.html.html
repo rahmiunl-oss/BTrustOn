@@ -752,6 +752,55 @@
                                     <input type="text" id="edit-services" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="EPC, Excavation, Maintenance..." />
                                 </div>
                             </div>
+<div class="mt-8 border border-blue-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
+    
+    <div id="verify-locked-view" class="bg-gradient-to-br from-slate-50 to-white p-6 text-center">
+        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="text-sm font-bold text-gray-800 mb-2">Get Verified Status</h3>
+        <p class="text-xs text-gray-500 mb-5 max-w-xs mx-auto leading-relaxed">
+            Gain trust instantly with a <i class="fa-solid fa-circle-check text-blue-500"></i> <strong>Blue Badge</strong>. 
+            Exclusive to Pro Plan members.
+        </p>
+        <button type="button" onclick="handleVerifyClick()" class="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-3 rounded-full text-xs font-bold hover:shadow-lg hover:scale-105 transition transform">
+            VERIFY MY BUSINESS
+        </button>
+    </div>
+
+    <div id="verify-form-view" class="hidden bg-blue-50/50 p-6">
+        <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-shield-check"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-sm font-bold text-gray-800 mb-1">Official Verification</h3>
+                <p class="text-xs text-gray-500 mb-4">
+                    Submit your official tax details. Our compliance team will verify within 24h.
+                </p>
+
+                <div id="verify-status-alert" class="hidden mb-4 p-3 rounded-lg text-[11px] font-bold border flex items-center gap-2"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tax ID / VKN</label>
+                        <input type="text" id="edit-tax-id" class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" placeholder="Official Tax Number">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">DUNS Number</label>
+                        <input type="text" id="edit-duns" class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" placeholder="Optional">
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <button type="button" id="btn-verify-submit" onclick="submitVerificationRequest()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-900 transition">
+                        SUBMIT DOCUMENTATION
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                             <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-3 sticky bottom-0 bg-white pb-2">
                                 <button type="button" onclick="openProfile(selectedCompany.id)" class="px-6 py-3 rounded-lg font-bold text-gray-500 hover:bg-gray-100 transition">
@@ -980,87 +1029,130 @@
 
       </div> <div class="lg:col-span-4 space-y-6">
         
-        <div class="sticky top-28">
-    <div id="profile-analytics-card" class="hidden bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
-  
-  <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
-  
-  <div class="relative z-10">
-    <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <i class="fa-solid fa-chart-line text-BTrustOn-accent"></i>
-          Profile Analytics
-        </h3>
-        <span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Last 90 Days</span>
-    </div>
+        <div class="sticky top-28 space-y-6">
 
-    <div class="grid grid-cols-2 gap-4">
-        
-        <div class="relative group/list">
-            <div class="bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 p-4 rounded-xl text-center cursor-default transition hover:border-cyan-300 hover:shadow-md">
-                <div class="text-3xl font-header font-bold text-BTrustOn-primary mb-1" id="stat-partner-count">-</div>
-                <div class="text-[10px] font-bold text-cyan-600 uppercase tracking-wide">Partners</div>
-                <div class="text-[9px] text-gray-400 mt-1">Registered Companies</div>
+            <div id="profile-verify-widget" class="hidden bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md relative group">
+                
+                <div id="widget-locked-view" class="bg-gradient-to-br from-slate-50 to-white p-5 text-center relative">
+                    <div class="absolute top-2 right-2 text-gray-300"><i class="fa-solid fa-crown"></i></div>
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                        <i class="fa-solid fa-lock text-sm"></i>
+                    </div>
+                    <h3 class="text-xs font-bold text-gray-800 mb-1">Get Verified Badge</h3>
+                    <p class="text-[10px] text-gray-500 mb-3 leading-relaxed px-2">
+                        Unlock the <i class="fa-solid fa-circle-check text-blue-500"></i> badge. Exclusive to Pro members.
+                    </p>
+                    <button onclick="handleVerifyClick()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-[10px] font-bold transition shadow-lg shadow-blue-600/20">
+                        VERIFY MY BUSINESS
+                    </button>
+                </div>
+
+                <div id="widget-form-view" class="hidden bg-white p-5">
+                    <div class="flex items-center gap-3 mb-3 border-b border-gray-100 pb-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-shield-check text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-gray-800">Official Verification</h3>
+                            <p class="text-[9px] text-gray-400">Submit tax details.</p>
+                        </div>
+                    </div>
+
+                    <div id="widget-status-alert" class="hidden mb-3 p-2 rounded-lg text-[10px] font-bold border flex items-center gap-2"></div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tax ID / VKN</label>
+                            <input type="text" id="widget-tax-id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" placeholder="Official Tax Number">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">DUNS Number</label>
+                            <input type="text" id="widget-duns" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" placeholder="Optional">
+                        </div>
+                        <button type="button" id="btn-widget-submit" onclick="submitVerificationRequest('widget')" class="w-full bg-slate-800 text-white py-2.5 rounded-lg text-[10px] font-bold hover:bg-slate-900 transition">
+                            SUBMIT
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div class="absolute left-0 bottom-full mb-3 w-64 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-xl shadow-2xl opacity-0 invisible group-hover/list:opacity-100 group-hover/list:visible transition-all duration-300 transform translate-y-2 group-hover/list:translate-y-0 z-50 overflow-hidden">
-                <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase">Recent Viewers</span>
-                    <i class="fa-solid fa-eye text-cyan-400 text-xs"></i>
+            <div id="profile-analytics-card" class="hidden bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-BTrustOn-accent"></i>
+                        Profile Analytics
+                        </h3>
+                        <span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Last 90 Days</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="relative group/list">
+                            <div class="bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 p-4 rounded-xl text-center cursor-default transition hover:border-cyan-300 hover:shadow-md">
+                                <div class="text-3xl font-header font-bold text-BTrustOn-primary mb-1" id="stat-partner-count">-</div>
+                                <div class="text-[10px] font-bold text-cyan-600 uppercase tracking-wide">Partners</div>
+                                <div class="text-[9px] text-gray-400 mt-1">Registered Companies</div>
+                            </div>
+                            <div class="absolute left-0 bottom-full mb-3 w-64 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-xl shadow-2xl opacity-0 invisible group-hover/list:opacity-100 group-hover/list:visible transition-all duration-300 transform translate-y-2 group-hover/list:translate-y-0 z-50 overflow-hidden">
+                                <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">Recent Viewers</span>
+                                    <i class="fa-solid fa-eye text-cyan-400 text-xs"></i>
+                                </div>
+                                <div id="stat-partner-list" class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                    <div class="p-3 text-center text-[10px] text-gray-400 italic">No views yet.</div>
+                                </div>
+                                <div class="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-gray-200 transform rotate-45"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border border-gray-100 p-4 rounded-xl text-center">
+                            <div class="text-3xl font-header font-bold text-gray-400 mb-1" id="stat-guest-count">-</div>
+                            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Guests</div>
+                            <div class="text-[9px] text-gray-400 mt-1">Unregistered Users</div>
+                        </div>
+                    </div>
+
+                    <p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
+                        See which companies are interested in your capabilities. <span class="text-BTrustOn-accent font-bold cursor-pointer hover:underline">Increase visibility</span> to get more views.
+                    </p>
                 </div>
-                <div id="stat-partner-list" class="max-h-48 overflow-y-auto custom-scrollbar p-1">
-                    <div class="p-3 text-center text-[10px] text-gray-400 italic">No views yet.</div>
-                </div>
-                <div class="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-gray-200 transform rotate-45"></div>
             </div>
-        </div>
 
-        <div class="bg-white border border-gray-100 p-4 rounded-xl text-center">
-            <div class="text-3xl font-header font-bold text-gray-400 mb-1" id="stat-guest-count">-</div>
-            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Guests</div>
-            <div class="text-[9px] text-gray-400 mt-1">Unregistered Users</div>
-        </div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h4>
+                <div class="space-y-4 text-sm text-gray-600">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                            <i class="fa-solid fa-globe"></i>
+                        </div>
+                        <a id="p-website-link" href="#" target="_blank" class="text-BTrustOn-accent font-semibold hover:underline truncate flex-1 min-w-0">-</a>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                        <span id="p-email-text" class="truncate flex-1 min-w-0">-</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <span id="p-phone-text" class="truncate flex-1 min-w-0">-</span>
+                    </div>
+                    <div class="flex items-start gap-3 pt-3 border-t border-gray-100 mt-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 mt-0.5">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </div>
+                        <span id="p-address-text" class="text-xs text-gray-500 leading-relaxed italic flex-1 break-words min-w-0">
+                            -
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-    </div>
-
-    <p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
-      See which companies are interested in your capabilities. <span class="text-BTrustOn-accent font-bold cursor-pointer hover:underline">Increase visibility</span> to get more views.
-    </p>
-  </div>
-</div>
-
-    <div class="mt-6 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h4>
-      <div class="space-y-4 text-sm text-gray-600">
-          <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                  <i class="fa-solid fa-globe"></i>
-              </div>
-              <a id="p-website-link" href="#" target="_blank" class="text-BTrustOn-accent font-semibold hover:underline truncate">-</a>
-          </div>
-          <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                  <i class="fa-solid fa-envelope"></i>
-              </div>
-              <span id="p-email-text" class="truncate">-</span>
-          </div>
-          <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                  <i class="fa-solid fa-phone"></i>
-              </div>
-              <span id="p-phone-text" class="truncate">-</span>
-          </div>
-<div class="flex items-start gap-3 pt-3 border-t border-gray-100 mt-3">
-              <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 mt-0.5">
-                  <i class="fa-solid fa-map-location-dot"></i>
-              </div>
-              <span id="p-address-text" class="text-xs text-gray-500 leading-relaxed italic flex-1 break-words min-w-0">
-                  -
-              </span>
-          </div>
-      </div>
-    </div>
-</div>
+        </div> </div> ```
         
       </main>
   
@@ -2065,6 +2157,36 @@ async function partnerLogout() {
     let currentLang = "en";
     let currentSector = "all";
     let selectedCompany = null;
+/* --- STEP 5: PLAN LİMİTLERİ VE KONTROLÜ --- */
+const PLAN_LIMITS = {
+    free: { projects: 2, assets: 3, certs: 2 },
+    pro: { projects: 9999, assets: 9999, certs: 9999 }
+};
+
+function checkPlanLimit(type) {
+    // Şirket verisi yoksa veya tier bilgisi yoksa 'free' varsay
+    const tier = (selectedCompany && selectedCompany.subscription_tier) ? selectedCompany.subscription_tier : 'free';
+    
+    // Pro ise sınır yok, geç
+    if (tier === 'pro') return true;
+
+    // Mevcut sayıları kontrol et
+    let currentCount = 0;
+    const limit = PLAN_LIMITS.free[type];
+
+    if (selectedCompany) {
+        if (type === 'projects') currentCount = (selectedCompany.projects || []).length;
+        if (type === 'assets') currentCount = (selectedCompany.assets || []).length;
+        if (type === 'certs') currentCount = (selectedCompany.certificates || []).length;
+    }
+
+    // Limit dolduysa uyarı ver ve false döndür
+    if (currentCount >= limit) {
+        showToast("Limit Reached", `Free plan limit: ${limit} items. Upgrade to add more.`, "error");
+        return false;
+    }
+    return true; // Limit dolmadıysa true döndür
+}
 /* --- GENİŞLETİLMİŞ ÜLKE LİSTESİ --- */
 const countryList = [
     // Asya & Pasifik
@@ -2553,33 +2675,26 @@ function populateCountrySelects() {
       return Math.round(sum / 5);
     }
 
-    function getTrustBadge(company) {
-      const trust = company.trust || "verified";
-      let label = "";
-      let classes =
-        "bg-gray-100 text-gray-700 border border-gray-200";
+    /* --- YENİ ROZET SİSTEMİ (SADECE MAVİ TİK) --- */
+function getTrustBadge(company) {
+  // Sadece 'verified' ise rozet göster, yoksa boş dön.
+  // Not: Supabase'den gelen veri 'verification_status' sütununda duruyor.
+  // Ancak biz frontend'de bunu 'trust' değişkenine map ediyor olabiliriz veya direkt bakabiliriz.
+  // Garanti olsun diye hem 'trust' alanına hem yeni statüye bakıyoruz.
+  
+  const isVerified = company.verification_status === 'verified' || company.trust === 'verified';
 
-      if (trust === "global") {
-        label = "Global Partner";
-        classes = "bg-blue-50 text-blue-800 border border-blue-200";
-      } else if (trust === "premium") {
-        label = "Premium Verified";
-        classes = "bg-purple-50 text-purple-800 border border-purple-200";
-      } else if (trust === "verified") {
-        label = "Verified Partner";
-        classes = "bg-emerald-50 text-emerald-800 border border-emerald-200";
-      } else if (trust === "emerging") {
-        label = "Emerging Partner";
-        classes = "bg-amber-50 text-amber-800 border border-amber-200";
-      }
-
-      return `
-        <span class="${classes} text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
-          <i class="fa-solid fa-shield-halved text-[10px]"></i>
-          <span>${label}</span>
-        </span>
-      `;
-    }
+  if (isVerified) {
+    return `
+      <span class="bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm" title="Officially Verified Company">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>VERIFIED</span>
+      </span>
+    `;
+  }
+  
+  return ""; // Onaylı değilse hiçbişi gösterme (Temiz görünüm)
+}
 
 // 👇 YENİ FONKSİYON: Şirket Tipine Göre Rozet Üretir 👇
     /* --- GÜNCELLENMİŞ: getCompanyTypeBadge (YENİ TİPLER) --- */
@@ -3657,6 +3772,27 @@ async function openProfile(companyId) {
           // B. Veri çekme işlemini yapma (Gereksiz yük olmasın)
       }
   }
+// 👇 YENİ: PROFİL WIDGET YÖNETİMİ (Buraya Ekleyin) 👇
+  const profileWidget = document.getElementById("profile-verify-widget");
+  const widgetTax = document.getElementById("widget-tax-id");
+  const widgetDuns = document.getElementById("widget-duns");
+
+  if (profileWidget) {
+      if (isMyProfile) {
+          // 1. Profil sahibi ise Widget'ı göster
+          profileWidget.classList.remove("hidden");
+          
+          // 2. Kutuları veritabanı verisiyle doldur
+          if(widgetTax) widgetTax.value = company.tax_id || "";
+          if(widgetDuns) widgetDuns.value = company.duns_number || "";
+          
+          // 3. Durumu (Kilitli/Açık/Sarı/Yeşil) güncelle
+          updateVerificationUI(company.verification_status);
+      } else {
+          // Başkası bakıyorsa Widget'ı gizle
+          profileWidget.classList.add("hidden");
+      }
+  }
     }
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
@@ -3910,6 +4046,9 @@ let currentEditingAssetId = null;
 // 1. MODALI AÇ (Ekleme veya Düzenleme)
 // MODALI AÇ (Ekleme veya Düzenleme)
 function openAssetModal(assetId = null) {
+if (!assetId) { 
+      if (!checkPlanLimit('assets')) return; 
+  }
   const modal = document.getElementById("asset-modal");
   const form = document.getElementById("asset-form");
   const title = document.getElementById("asset-modal-title");
@@ -4047,6 +4186,9 @@ let currentEditingProjectId = null;
 
 // 1. MODALI AÇ
 function openProjectModal(projectId = null) {
+if (!projectId) {
+      if (!checkPlanLimit('projects')) return;
+  }
   const modal = document.getElementById("project-modal");
   const form = document.getElementById("project-form");
   const title = document.getElementById("project-modal-title");
@@ -4364,7 +4506,11 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     
     // ✅ İŞTE EKSİK OLAN BU SATIRDI:
     country: profile.country || "Turkey",
-address: profile.address || "", // ✅ BU SATIRI EKLEYİN    
+address: profile.address || "", // ✅ BU SATIRI EKLEYİN  
+subscription_tier: profile.subscription_tier || 'free', 
+    verification_status: profile.verification_status || 'none',
+    tax_id: profile.tax_id || "",
+    duns_number: profile.duns_number || "",  
 
     tagline: profile.tagline || "",
     sector: profile.sector || "construction",
@@ -4514,6 +4660,10 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   // Hizmetler
   const services = selectedCompany.services || []; 
   document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
+  document.getElementById("edit-tax-id").value = selectedCompany.tax_id || "";
+  document.getElementById("edit-duns").value = selectedCompany.duns_number || "";
+  
+  updateVerificationUI(selectedCompany.verification_status);
 
   // Editörü Aç
   showEditorView();
@@ -5710,6 +5860,9 @@ let currentEditingCertId = null;
 
 // 1. MODALI AÇ
 function openCertModal(certId = null) {
+if (!certId || certId === -1) {
+      if (!checkPlanLimit('certs')) return;
+  }
   const modal = document.getElementById("cert-modal");
   const form = document.getElementById("cert-form");
   const title = document.getElementById("cert-modal-title");
@@ -6654,5 +6807,153 @@ function getStatusBadge(status) {
         </span>
     `;
 }
+/* --- DOĞRULAMA SİSTEMİ MANTIĞI --- */
+/* --- ÇİFT TARAFLI DOĞRULAMA YÖNETİMİ (EDİTÖR + PROFİL) --- */
+
+// 1. BUTONA TIKLANINCA (Upgrade Kontrolü)
+function handleVerifyClick() {
+    const tier = selectedCompany.subscription_tier || 'free';
+    if (tier === 'free') {
+        showToast("Upgrade Required", "Verification is for Pro members only.", "error");
+    } else {
+        // İki tarafta da kilitleri aç
+        toggleVerifyVisibility('unlocked');
+    }
+}
+
+// 2. GÖRÜNÜMÜ GÜNCELLE (Yardımcı Fonksiyon)
+function toggleVerifyVisibility(mode) {
+    // Editör Elementleri
+    const editLock = document.getElementById("verify-locked-view");
+    const editForm = document.getElementById("verify-form-view");
+    
+    // Profil Widget Elementleri
+    const widgetLock = document.getElementById("widget-locked-view");
+    const widgetForm = document.getElementById("widget-form-view");
+
+    if (mode === 'unlocked') {
+        if(editLock) editLock.classList.add("hidden");
+        if(editForm) editForm.classList.remove("hidden");
+        if(widgetLock) widgetLock.classList.add("hidden");
+        if(widgetForm) widgetForm.classList.remove("hidden");
+    } else {
+        if(editLock) editLock.classList.remove("hidden");
+        if(editForm) editForm.classList.add("hidden");
+        if(widgetLock) widgetLock.classList.remove("hidden");
+        if(widgetForm) widgetForm.classList.add("hidden");
+    }
+}
+
+// 3. FORM GÖNDERME (Kaynaktan Bağımsız)
+async function submitVerificationRequest(source = 'editor') {
+    // Hangi butona basıldıysa onu yükleniyor yap
+    const btnId = source === 'widget' ? "btn-widget-submit" : "btn-verify-submit";
+    const btn = document.getElementById(btnId);
+    
+    // Veriyi doğru inputtan al
+    let taxId, duns;
+    if (source === 'widget') {
+        taxId = document.getElementById("widget-tax-id").value.trim();
+        duns = document.getElementById("widget-duns").value.trim();
+    } else {
+        taxId = document.getElementById("edit-tax-id").value.trim();
+        duns = document.getElementById("edit-duns").value.trim();
+    }
+
+    if (!taxId) { showToast("Missing Info", "Enter Tax ID.", "error"); return; }
+
+    if(btn) { btn.textContent = "Wait..."; btn.disabled = true; }
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        const { error } = await supabaseClient.from('profiles')
+            .update({ tax_id: taxId, duns_number: duns, verification_status: 'pending' })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        // Hafızayı Güncelle
+        selectedCompany.verification_status = 'pending';
+        selectedCompany.tax_id = taxId;
+        selectedCompany.duns_number = duns;
+
+        // HER İKİ TARAFI DA GÜNCELLE (Sync)
+        updateVerificationUI('pending');
+        
+        // Inputları da eşitle (Diğer tarafa da yaz)
+        const eTax = document.getElementById("edit-tax-id");
+        const wTax = document.getElementById("widget-tax-id");
+        const eDuns = document.getElementById("edit-duns");
+        const wDuns = document.getElementById("widget-duns");
+        
+        if(eTax) eTax.value = taxId;
+        if(wTax) wTax.value = taxId;
+        if(eDuns) eDuns.value = duns;
+        if(wDuns) wDuns.value = duns;
+
+        showToast("Success", "Request sent for review.", "success");
+
+    } catch (err) {
+        showToast("Error", err.message, "error");
+        if(btn) { btn.disabled = false; btn.textContent = "SUBMIT"; }
+    }
+}
+
+// 4. UI DURUMUNU GÜNCELLE (Her İki Yeri De Boyar)
+function updateVerificationUI(status) {
+    const tier = selectedCompany.subscription_tier || 'free';
+    
+    // Pro ise veya işlem başladıysa formu aç
+    if (tier === 'pro' || status === 'pending' || status === 'verified') {
+        toggleVerifyVisibility('unlocked');
+    } else {
+        toggleVerifyVisibility('locked');
+        return; 
+    }
+
+    // --- EDİTÖR TARAFI ---
+    const editAlert = document.getElementById("verify-status-alert");
+    const editBtn = document.getElementById("btn-verify-submit");
+    const editInputs = document.querySelectorAll("#edit-tax-id, #edit-duns");
+
+    // --- WIDGET TARAFI ---
+    const widgetAlert = document.getElementById("widget-status-alert");
+    const widgetBtn = document.getElementById("btn-widget-submit");
+    const widgetInputs = document.querySelectorAll("#widget-tax-id, #widget-duns");
+
+    // Yardımcı Boyama Fonksiyonu
+    const setStatus = (alertBox, submitBtn, inputs, type) => {
+        if(!alertBox) return;
+        alertBox.className = "mb-3 p-2 rounded-lg text-[10px] font-bold border flex items-center gap-2";
+        
+        if (type === 'pending') {
+            alertBox.classList.add("bg-amber-50", "border-amber-200", "text-amber-700");
+            alertBox.innerHTML = '<i class="fa-solid fa-clock"></i> Review pending (24h).';
+            alertBox.classList.remove("hidden");
+            if(submitBtn) submitBtn.classList.add("hidden");
+            inputs.forEach(i => i.disabled = true);
+        } else if (type === 'verified') {
+            alertBox.classList.add("bg-emerald-50", "border-emerald-200", "text-emerald-700");
+            alertBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified. Badge active.';
+            alertBox.classList.remove("hidden");
+            if(submitBtn) submitBtn.classList.add("hidden");
+            inputs.forEach(i => i.disabled = true);
+        } else { // None
+            alertBox.classList.add("hidden");
+            if(submitBtn) {
+                submitBtn.classList.remove("hidden");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "SUBMIT";
+            }
+            inputs.forEach(i => i.disabled = false);
+        }
+    };
+
+    // İki tarafı da aynı duruma getir
+    setStatus(editAlert, editBtn, editInputs, status);
+    setStatus(widgetAlert, widgetBtn, widgetInputs, status);
+}
+
 </script>
 </html>
