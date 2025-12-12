@@ -3570,14 +3570,27 @@ if (nameEl) {
         `;
     } 
     else if (isVerified) {
-        // --- NORMAL ÜYE İÇİN: MAVİ TİK ---
-        nameEl.innerHTML += `
-            <i class="fa-solid fa-circle-check text-blue-500 ml-2 align-middle text-2xl" 
-               style="filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));" 
-               title="Verified Company">
-            </i>
-        `;
-    }
+            // 💎 ONAYLI ÜYE: LIQUID CRYSTAL MAVİ TİK (EN HAVALISI)
+            nameEl.innerHTML += `
+                <span class="group relative inline-flex items-center justify-center ml-2 align-middle cursor-help select-none" title="Officially Verified Partner">
+                    
+                    <span class="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20 animate-ping duration-[3s]"></span>
+                    
+                    <span class="absolute inline-flex h-[80%] w-[80%] rounded-full bg-blue-500 blur-md opacity-40"></span>
+                    
+                    <span class="relative z-10 bg-white rounded-full w-5 h-5 flex items-center justify-center"></span>
+
+                    <i class="fa-solid fa-circle-check text-2xl relative z-20 -ml-5" 
+                       style="
+                           background: linear-gradient(135deg, #1d4ed8 0%, #06b6d4 100%); /* Derin Mavi -> Parlak Cam Göbeği */
+                           -webkit-background-clip: text;
+                           -webkit-text-fill-color: transparent;
+                           filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3)); /* 3D Gölge */
+                       ">
+                    </i>
+                </span>
+            `;
+        }
 }
 // --- BİTİŞ ---
   
