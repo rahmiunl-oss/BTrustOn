@@ -6075,6 +6075,11 @@ async function initRealData() {
 
   // 2. Verileri formatla
   profiles.forEach(p => {
+// 👇👇👇 BURASI YENİ: EĞER BU PROFİL ADMİN İSE LİSTEYE EKLEME 👇👇👇
+    if (p.email === ADMIN_EMAIL) {
+        return; // Döngüyü burada kes, bu şirketi listeye alma
+    }
+    // 👆👆👆 ---------------------------------------------------- 👆👆👆
     const pId = p.id;
     const realData = {
       id: pId,
