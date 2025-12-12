@@ -981,52 +981,53 @@
       </div> <div class="lg:col-span-4 space-y-6">
         
         <div class="sticky top-28">
-    <div class="bg-white rounded-2xl p-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-hidden group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
-      
-      <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
-      
-      <div class="relative z-10 text-center">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-shield-halved text-BTrustOn-accent"></i>
-          BTrustOn Score™
+    <div class="bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
+  
+  <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+  
+  <div class="relative z-10">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-BTrustOn-accent"></i>
+          Profile Analytics
         </h3>
+        <span class="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Last 90 Days</span>
+    </div>
 
-        <div class="relative w-40 h-40 mx-auto mb-6">
-           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-             <circle
-               class="text-gray-100"
-               stroke-width="8"
-               stroke="currentColor"
-               fill="transparent"
-               r="42"
-               cx="50"
-               cy="50"
-             />
-             <circle
-               id="p-score-ring"
-               class="text-BTrustOn-accent transition-all duration-1500 ease-out"
-               stroke-width="8"
-               stroke-linecap="round"
-               stroke="currentColor"
-               fill="transparent"
-               r="42"
-               cx="50"
-               cy="50"
-               stroke-dasharray="263.89"
-               stroke-dashoffset="263.89" />
-           </svg>
-           
-           <div class="absolute inset-0 flex flex-col items-center justify-center">
-             <span id="p-score" class="text-5xl font-header font-bold text-BTrustOn-primary tracking-tighter leading-none">98</span>
-             <span id="p-score-label" class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-1 border border-emerald-100">EXCELLENT</span>
-           </div>
+    <div class="grid grid-cols-2 gap-4">
+        
+        <div class="relative group/list">
+            <div class="bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 p-4 rounded-xl text-center cursor-default transition hover:border-cyan-300 hover:shadow-md">
+                <div class="text-3xl font-header font-bold text-BTrustOn-primary mb-1" id="stat-partner-count">-</div>
+                <div class="text-[10px] font-bold text-cyan-600 uppercase tracking-wide">Partners</div>
+                <div class="text-[9px] text-gray-400 mt-1">Registered Companies</div>
+            </div>
+
+            <div class="absolute left-0 bottom-full mb-3 w-64 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-xl shadow-2xl opacity-0 invisible group-hover/list:opacity-100 group-hover/list:visible transition-all duration-300 transform translate-y-2 group-hover/list:translate-y-0 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">Recent Viewers</span>
+                    <i class="fa-solid fa-eye text-cyan-400 text-xs"></i>
+                </div>
+                <div id="stat-partner-list" class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                    <div class="p-3 text-center text-[10px] text-gray-400 italic">No views yet.</div>
+                </div>
+                <div class="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-gray-200 transform rotate-45"></div>
+            </div>
         </div>
 
-        <p data-i18n="score_info_main" class="text-xs text-gray-500 leading-relaxed max-w-[260px] mx-auto">
-          Calculated from verified references, delivery performance and digital signals.
-        </p>
-      </div>
+        <div class="bg-white border border-gray-100 p-4 rounded-xl text-center">
+            <div class="text-3xl font-header font-bold text-gray-400 mb-1" id="stat-guest-count">-</div>
+            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Guests</div>
+            <div class="text-[9px] text-gray-400 mt-1">Unregistered Users</div>
+        </div>
+
     </div>
+
+    <p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
+      See which companies are interested in your capabilities. <span class="text-BTrustOn-accent font-bold cursor-pointer hover:underline">Increase visibility</span> to get more views.
+    </p>
+  </div>
+</div>
 
     <div class="mt-6 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
       <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact Info</h4>
@@ -3143,6 +3144,148 @@ function filterSector(sector, btnEl) {
       });
     }
 
+/* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
+
+// 1. ZİYARETİ KAYDET (SPAM KORUMALI)
+async function trackProfileView(targetProfileId) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    // A. Kendi profilime bakıyorsam HİÇBİR ŞEY YAPMA
+    if (user && user.id === targetProfileId) return;
+
+    // B. SPAM KONTROLÜ (LOCAL STORAGE)
+    // Anahtar: "view_PROFILID_TARIH" (Örn: view_12345_2025-12-12)
+    const today = new Date().toISOString().split('T')[0]; 
+    const storageKey = `BTrustOn_view_${targetProfileId}_${today}`;
+
+    // Eğer tarayıcıda "Bugün baktı" işareti varsa dur (Veritabanına gitme)
+    if (localStorage.getItem(storageKey)) {
+        console.log("Bu profile bugün zaten bakıldı, sayaç artırılmadı.");
+        return;
+    }
+
+    // C. Veritabanına Kaydet
+    const viewerId = user ? user.id : null; // Üye ise ID, değilse NULL (Misafir)
+    
+    const { error } = await supabaseClient.from('profile_views').insert([{
+        profile_id: targetProfileId,
+        viewer_id: viewerId
+    }]);
+
+    // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
+    if (!error) {
+        localStorage.setItem(storageKey, "true");
+        console.log("Yeni ziyaret kaydedildi.");
+    }
+}
+
+// 2. İSTATİSTİKLERİ ÇEK VE GÖSTER
+async function loadProfileAnalytics(profileId) {
+    // A. UI Sıfırla (Yükleniyor...)
+    document.getElementById("stat-partner-count").textContent = "-";
+    document.getElementById("stat-guest-count").textContent = "-";
+    document.getElementById("stat-partner-list").innerHTML = '<div class="p-3 text-center"><i class="fa-solid fa-spinner fa-spin text-cyan-500"></i></div>';
+
+    // B. Tarih Hesabı (Son 90 Gün)
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    // C. Verileri Çek
+    const { data: views, error } = await supabaseClient
+        .from('profile_views')
+        .select('viewer_id, viewed_at')
+        .eq('profile_id', profileId)
+        .gte('viewed_at', ninetyDaysAgo.toISOString())
+        .order('viewed_at', { ascending: false });
+
+    if (error || !views) {
+        console.error("Analytics Error:", error);
+        document.getElementById("stat-partner-count").textContent = "0";
+        document.getElementById("stat-guest-count").textContent = "0";
+        document.getElementById("stat-partner-list").innerHTML = '<div class="p-3 text-center text-[10px] text-gray-400">No data.</div>';
+        return;
+    }
+
+    // D. Ayrıştır (Partner vs Guest)
+    let guestCount = 0;
+    let partnerMap = new Map(); // Aynı şirket birden fazla baktıysa son tarihini tut
+
+    views.forEach(v => {
+        if (v.viewer_id) {
+            // Partner (Üye)
+            if (!partnerMap.has(v.viewer_id)) {
+                partnerMap.set(v.viewer_id, v.viewed_at);
+            }
+        } else {
+            // Guest (Misafir)
+            guestCount++;
+        }
+    });
+
+    // E. Sayıları Animasyonla Bas
+    animateValue("stat-partner-count", 0, partnerMap.size, 800);
+    animateValue("stat-guest-count", 0, guestCount, 800);
+
+    // F. Partner Listesini Doldur (İsimleri Çekmek İçin)
+    const listContainer = document.getElementById("stat-partner-list");
+    listContainer.innerHTML = "";
+
+    if (partnerMap.size === 0) {
+        listContainer.innerHTML = '<div class="p-4 text-center text-[10px] text-gray-400 italic">No registered views yet.</div>';
+        return;
+    }
+
+    // ID'lere göre profil bilgilerini çek
+    const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('id, company_name, logo_url, city')
+        .in('id', Array.from(partnerMap.keys()));
+
+    if (profiles) {
+        profiles.forEach(p => {
+            const viewTime = partnerMap.get(p.id);
+            const dateStr = new Date(viewTime).toLocaleDateString();
+            const logoLetter = p.company_name.charAt(0).toUpperCase();
+
+            const item = document.createElement("div");
+            item.className = "flex items-center gap-3 p-2 hover:bg-cyan-50 rounded-lg transition cursor-pointer border-b border-gray-50 last:border-0";
+            item.onclick = () => openProfile(p.id); // Tıklayınca o şirkete git
+
+            item.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-BTrustOn-accent font-bold text-xs shadow-sm shrink-0 overflow-hidden">
+                    ${p.logo_url ? `<img src="${p.logo_url}" class="w-full h-full object-cover">` : logoLetter}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-[11px] font-bold text-gray-700 truncate">${p.company_name}</div>
+                    <div class="text-[9px] text-gray-400 flex justify-between">
+                        <span class="truncate max-w-[80px]">${p.city || 'Unknown'}</span>
+                        <span>${dateStr}</span>
+                    </div>
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+}
+
+// Yardımcı: Sayı Animasyonu
+function animateValue(id, start, end, duration) {
+    const obj = document.getElementById(id);
+    if (!obj) return;
+    if (start === end) { obj.textContent = end; return; }
+    
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.textContent = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
     /* --- GÜÇLENDİRİLMİŞ OPEN PROFILE (OTOMATİK VERİ ÇEKME + EKRAN YÖNETİMİ) --- */
 /* --- GÜNCELLENMİŞ: openProfile (RENKLİ STATUS + ŞIK BUTONLAR) --- */
 async function openProfile(companyId) {
@@ -3492,6 +3635,13 @@ async function openProfile(companyId) {
           });
       }
   }
+// 👇 ANALİTİK SİSTEMİNİ ÇALIŞTIR 👇
+  
+  // 1. Ziyaret Edildiğini Kaydet (Günde 1 Kez)
+  trackProfileView(company.id);
+
+  // 2. Geçmiş Ziyaretçileri Listele
+  loadProfileAnalytics(company.id);
 }
     // --- EDITOR FUNCTIONS ---
     function showEditorView() {
