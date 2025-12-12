@@ -648,7 +648,17 @@
                                         <input type="text" id="edit-city" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Berlin" required />
                                     </div>
                                 </div>
-
+<div class="mt-4">
+    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+        Official Address
+    </label>
+    <textarea 
+        id="edit-address" 
+        rows="2" 
+        class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition resize-none" 
+        placeholder="Headquarters full address (Street, No, District...)"
+    ></textarea>
+</div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector <span class="text-red-500">*</span></label>
                                     <select id="edit-sector" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
@@ -1038,6 +1048,14 @@
                   <i class="fa-solid fa-phone"></i>
               </div>
               <span id="p-phone-text" class="truncate">-</span>
+          </div>
+<div class="flex items-start gap-3 pt-3 border-t border-gray-100 mt-3">
+              <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 mt-0.5">
+                  <i class="fa-solid fa-map-location-dot"></i>
+              </div>
+              <span id="p-address-text" class="text-xs text-gray-500 leading-relaxed italic">
+                  -
+              </span>
           </div>
       </div>
     </div>
@@ -3315,6 +3333,19 @@ async function openProfile(companyId) {
       }
   }
   if (pPhone) pPhone.textContent = company.phone || "-";
+// ✅ YENİ: ADRES GÖSTERİMİ
+  const pAddress = document.getElementById("p-address-text");
+  if (pAddress) {
+      if (company.address && company.address.trim() !== "") {
+          pAddress.textContent = company.address;
+          // İkonun olduğu kapsayıcıyı göster (gizliyse)
+          pAddress.parentElement.classList.remove("hidden");
+      } else {
+          pAddress.textContent = "No official address listed.";
+          // İsterseniz boşsa gizleyebilirsiniz:
+          // pAddress.parentElement.classList.add("hidden");
+      }
+  }
 
   // Hizmetler
   const servicesGrid = document.getElementById("p-services-grid");
@@ -3527,6 +3558,7 @@ async function saveProfileData() {
       company_name: name,
       city: city,
       country: country, // YENİ
+address: address, // ✅ BU SATIRI EKLEYİN (Veritabanına gönder)
       tagline: tagline,
       sector: sector,
       description: desc,
@@ -3557,6 +3589,7 @@ async function saveProfileData() {
         Object.assign(localCompany, {
             name, city, sector, desc, tagline,
             website, phone, contact_email: contactEmail,
+address: address, // <-- Buraya
             type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
             services: servicesStr.split(',').map(s => s.trim()).filter(s => s)
@@ -4151,8 +4184,9 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     city: profile.city,
     
     // ✅ İŞTE EKSİK OLAN BU SATIRDI:
-    country: profile.country || "Turkey", 
-    
+    country: profile.country || "Turkey",
+address: profile.address || "", // ✅ BU SATIRI EKLEYİN    
+
     tagline: profile.tagline || "",
     sector: profile.sector || "construction",
     desc: profile.description || "",
@@ -4265,7 +4299,8 @@ function editMyProfile() {
   document.getElementById("edit-city").value = selectedCompany.city || "";
   
   // ✅ İŞTE BURASI: Eğer veri yoksa otomatik 'Turkey' seçer
-  document.getElementById("edit-country").value = selectedCompany.country || "Turkey"; 
+  document.getElementById("edit-country").value = selectedCompany.country || "Turkey";
+document.getElementById("edit-address").value = selectedCompany.address || ""; 
 
   // Logo Gösterimi
   const logoUrl = selectedCompany.logo_url;
@@ -5651,7 +5686,8 @@ async function initRealData() {
       city: p.city || "Konum Yok",
       
       // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
-      country: p.country || "Turkey", 
+      country: p.country || "Turkey",
+address: p.address || "", // ✅ BU SATIRI EKLEYİN 
       
       sector: p.sector || "construction",
       desc: p.description || "",
