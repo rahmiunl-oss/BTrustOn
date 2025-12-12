@@ -6232,6 +6232,9 @@ async function markAllInboxRead() {
         }
 
         companyList.forEach((company) => {
+if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
+                return; // Admin ise bu turu pas geç, ekrana çizme
+            }
             const score = computeScore(company.meta);
             const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
             const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
@@ -6295,12 +6298,19 @@ async function markAllInboxRead() {
     }
 
     // 2. VİTRİN MODU (Rastgele 12 Şirket)
+    // 2. VİTRİN MODU (Rastgele 12 Şirket)
     function renderShowcase() {
         // Eğer arama yapılıyorsa vitrin çalışmasın
         if (isSearchActive) return;
 
-        // Veritabanını karıştır
-        const shuffled = [...database].sort(() => Math.random() - 0.5);
+        // 👇👇👇 BURASI YENİ: ADMİNİ FİLTRELE 👇👇👇
+        const cleanList = database.filter(c => 
+            c.email !== ADMIN_EMAIL && c.contact_email !== ADMIN_EMAIL
+        );
+        // 👆👆👆 -------------------------------- 👆👆👆
+
+        // Veritabanını karıştır (Temizlenmiş liste üzerinden)
+        const shuffled = [...cleanList].sort(() => Math.random() - 0.5);
         
         // İlk 12 tanesini al
         const showcaseList = shuffled.slice(0, 12);
