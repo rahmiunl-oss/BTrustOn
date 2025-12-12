@@ -3549,23 +3549,37 @@ async function openProfile(companyId) {
   const pSize = document.getElementById("p-size-tag");
   const pYear = document.getElementById("p-year-tag");
 
-  if (nameEl) {
+  // --- YENİ EKLENEN KISIM: İSİM + AKILLI ROZET SİSTEMİ ---
+if (nameEl) {
     // 1. Önce sadece ismi yaz
     nameEl.innerHTML = company.name;
 
-    // 2. Doğrulama kontrolü yap
+    // 2. Kontrolleri Yap
+    const ADMIN_MAIL = "rahmiunl@gmail.com"; // Senin mailin
+    const isAdmin = (company.email === ADMIN_MAIL || company.contact_email === ADMIN_MAIL);
     const isVerified = company.verification_status === 'verified' || company.trust === 'verified';
 
-    // 3. Eğer onaylıysa yanına havalı tiki ekle
-    if (isVerified) {
+    // 3. Rozet Seçimi
+    if (isAdmin) {
+        // --- ADMIN İÇİN: ALTIN TAÇ VE ÖZEL ETİKET ---
+        nameEl.innerHTML += `
+            <span class="inline-flex items-center gap-1.5 ml-3 px-2 py-0.5 rounded bg-amber-100 border border-amber-200 align-middle">
+                <i class="fa-solid fa-crown text-amber-600 text-sm animate-pulse"></i>
+                <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wide">BTrustOn Official</span>
+            </span>
+        `;
+    } 
+    else if (isVerified) {
+        // --- NORMAL ÜYE İÇİN: MAVİ TİK ---
         nameEl.innerHTML += `
             <i class="fa-solid fa-circle-check text-blue-500 ml-2 align-middle text-2xl" 
-               style="filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));" 
-               title="Official Verified Account">
+               style="filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));" 
+               title="Verified Company">
             </i>
         `;
     }
 }
+// --- BİTİŞ ---
   
   // Sektör (Dil Desteği)
   if (sectorEl) {
