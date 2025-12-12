@@ -387,18 +387,18 @@
                         <i class="fa-solid fa-layer-group text-gray-400 text-xs"></i>
                     </div>
                     <select 
-                        id="sector-filter" 
-                        onchange="filterSector(this.value)"
-                        class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]"
-                    >
-                        <option value="all">All Sectors</option>
-                        <option value="construction">Construction</option>
-                        <option value="energy">Energy</option>
-                        <option value="mining">Mining</option>
-                        <option value="manufacturing">Manufacturing</option>
-                        <option value="technology">Technology</option>
-                        <option value="logistics">Logistics</option>
-                    </select>
+    id="sector-filter" 
+    onchange="filterSector(this.value)"
+    class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]"
+>
+    <option value="all">All Sectors</option>
+    <option value="construction">Construction & Infrastructure</option>
+    <option value="energy">Energy & Oil/Gas</option>
+    <option value="mining">Mining & Metals</option>
+    <option value="manufacturing">Manufacturing & Machinery</option>
+    <option value="technology">Technology & Automation</option>
+    <option value="logistics">Logistics & Trade</option>
+    <option value="engineering">Engineering & Services</option> </select>
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
                     </div>
@@ -645,14 +645,15 @@
                                     <div>
                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector <span class="text-red-500">*</span></label>
                                         <select id="edit-sector" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
-                                            <option value="">Select sector…</option>
-                                            <option value="construction">Construction</option>
-                                            <option value="mining">Mining</option>
-                                            <option value="energy">Energy</option>
-                                            <option value="manufacturing">Manufacturing</option>
-                                            <option value="technology">Technology</option>
-                                            <option value="logistics">Logistics</option>
-                                        </select>
+    <option value="">Select sector…</option>
+    <option value="construction">Construction & Infrastructure</option>
+    <option value="energy">Energy & Oil/Gas</option>
+    <option value="mining">Mining & Metals</option>
+    <option value="manufacturing">Manufacturing & Machinery</option>
+    <option value="technology">Technology & Automation</option>
+    <option value="logistics">Logistics & Trade</option>
+    <option value="engineering">Engineering & Services</option>
+</select>
                                     </div>
                                 </div>
 
@@ -697,13 +698,14 @@
                                     <div>
                                       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</label>
                                       <select id="edit-type" class="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none text-sm">
-                                          <option value="Operator">Operator / Asset Owner</option>
-
-                                          <option value="Manufacturer">Manufacturer</option>
-                                          <option value="Distributor">Distributor / Supplier</option>
-                                          <option value="Contractor">Contractor</option>
-                                          <option value="Service & Consultancy">Service & Consultancy</option>
-                                      </select>
+    <option value="Operator">Operator / Asset Owner</option>
+    <option value="EPC Contractor">EPC / General Contractor</option>
+    <option value="Subcontractor">Subcontractor / Specialist</option>
+    <option value="Manufacturer">Manufacturer / OEM</option>
+    <option value="Distributor">Distributor / Supplier</option>
+    <option value="Engineering">Engineering & Consultancy</option>
+    <option value="Technology">Technology & Software</option>
+</select>
                                     </div>
                                     <div>
                                       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Size</label>
@@ -1099,25 +1101,29 @@
     <div>
       <label class="block text-xs font-bold text-gray-600 mb-1.5">Primary Sector</label>
       <select id="join-sector" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700">
-        <option value="construction">Construction</option>
-        <option value="mining">Mining</option>
-        <option value="energy">Energy</option>
-        <option value="manufacturing">Manufacturing</option>
-        <option value="technology">Technology</option>
-        <option value="logistics">Logistics</option>
-      </select>
+    <option value="construction">Construction & Infrastructure</option>
+    <option value="energy">Energy & Oil/Gas</option>
+    <option value="mining">Mining & Metals</option>
+    <option value="manufacturing">Manufacturing & Machinery</option>
+    <option value="technology">Technology & Automation</option>
+    <option value="logistics">Logistics & Trade</option>
+    <option value="engineering">Engineering & Services</option>
+</select>
+
       <p class="text-[10px] text-gray-400 mt-1 leading-tight">Select your main field of activity.</p>
     </div>
     
     <div>
       <label class="block text-xs font-bold text-gray-600 mb-1.5">Business Type</label>
       <select id="join-type" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700">
-        <option value="Operator">Operator / Asset Owner</option>
-        <option value="Manufacturer">Manufacturer</option>
-        <option value="Distributor">Distributor / Supplier</option>
-        <option value="Contractor">Contractor</option>
-        <option value="Service & Consultancy">Service & Consultancy</option>
-      </select>
+    <option value="Operator">Operator / Asset Owner</option>
+    <option value="EPC Contractor">EPC / General Contractor</option>
+    <option value="Subcontractor">Subcontractor / Specialist</option>
+    <option value="Manufacturer">Manufacturer / OEM</option>
+    <option value="Distributor">Distributor / Supplier</option>
+    <option value="Engineering">Engineering & Consultancy</option>
+    <option value="Technology">Technology & Software</option>
+</select>
       <p class="text-[10px] text-gray-400 mt-1 leading-tight">Select your role in the supply chain.</p>
     </div>
   </div>
@@ -2481,50 +2487,63 @@ async function partnerLogout() {
     }
 
 // 👇 YENİ FONKSİYON: Şirket Tipine Göre Rozet Üretir 👇
-    function getCompanyTypeBadge(rawType) {
-      const type = (rawType || "company").toLowerCase();
-      let label = rawType;
-      let icon = "fa-building";
-      let colorClass = "bg-gray-50 text-gray-500 border-gray-200";
+    /* --- GÜNCELLENMİŞ: getCompanyTypeBadge (YENİ TİPLER) --- */
+function getCompanyTypeBadge(rawType) {
+  const type = (rawType || "company").toLowerCase();
+  let label = rawType;
+  let icon = "fa-building";
+  // Varsayılan Renk (Gri)
+  let colorClass = "bg-gray-50 text-gray-500 border-gray-200";
 
-      // Tiplere göre renk ve ikon ayarları
-      if (type.includes("manufacturer") || type.includes("üretici")) {
-        label = "Manufacturer";
-        icon = "fa-industry";
-        colorClass = "bg-purple-50 text-purple-700 border-purple-100";
-      } else if (type.includes("contractor") || type.includes("yüklenici")) {
-        label = "Contractor";
-        icon = "fa-helmet-safety";
-        colorClass = "bg-orange-50 text-orange-700 border-orange-100";
-      } else if (type.includes("distributor") || type.includes("supplier") || type.includes("tedarikçi")) {
-        label = "Distributor / Supplier";
-        icon = "fa-truck-ramp-box";
-        colorClass = "bg-indigo-50 text-indigo-700 border-indigo-100";
-      } else if (type.includes("tech") || type.includes("software")) {
-        label = "Tech & Service";
-        icon = "fa-microchip";
-        colorClass = "bg-blue-50 text-blue-700 border-blue-100";
-      } else if (type.includes("operator") || type.includes("mining")) {
-        label = "Operator";
-        icon = "fa-gem";
-        colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
-      }
+  // 1. Üreticiler (Mor)
+  if (type.includes("manufacturer") || type.includes("oem")) {
+    label = "Manufacturer / OEM";
+    icon = "fa-industry";
+    colorClass = "bg-purple-50 text-purple-700 border-purple-100";
+  } 
+  // 2. Ana Yükleniciler (Turuncu - Koyu)
+  else if (type.includes("epc") || type.includes("general contractor")) {
+    label = "EPC Contractor";
+    icon = "fa-helmet-safety";
+    colorClass = "bg-orange-100 text-orange-800 border-orange-200";
+  } 
+  // 3. Alt Yükleniciler (Turuncu - Açık)
+  else if (type.includes("subcontractor") || type.includes("specialist")) {
+    label = "Specialist / Sub";
+    icon = "fa-screwdriver-wrench";
+    colorClass = "bg-orange-50 text-orange-600 border-orange-100";
+  }
+  // 4. Tedarikçiler (İndigo)
+  else if (type.includes("distributor") || type.includes("supplier")) {
+    label = "Distributor / Supplier";
+    icon = "fa-truck-ramp-box";
+    colorClass = "bg-indigo-50 text-indigo-700 border-indigo-100";
+  } 
+  // 5. Teknoloji (Mavi)
+  else if (type.includes("tech") || type.includes("software")) {
+    label = "Tech & Software";
+    icon = "fa-microchip";
+    colorClass = "bg-blue-50 text-blue-700 border-blue-100";
+  } 
+  // 6. Mühendislik (Cam Göbeği / Teal)
+  else if (type.includes("engineering") || type.includes("consultancy")) {
+    label = "Engineering & Consult.";
+    icon = "fa-drafting-compass";
+    colorClass = "bg-teal-50 text-teal-700 border-teal-100";
+  }
+  // 7. İşletmeciler / Maden Sahipleri (Zümrüt Yeşili)
+  else if (type.includes("operator") || type.includes("asset") || type.includes("mining")) {
+    label = "Operator / Asset Owner";
+    icon = "fa-gem";
+    colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
+  }
 
-      // TR desteği (İsterseniz burayı genişletebiliriz)
-      if (currentLang === "tr") {
-          if(label === "Manufacturer") label = "Üretici";
-          if(label === "Contractor") label = "Yüklenici";
-          if(label === "Distributor / Supplier") label = "Tedarikçi / Distribütör";
-          if(label === "Tech & Service") label = "Teknoloji & Servis";
-          if(label === "Operator") label = "İşletmeci";
-      }
-
-      return `
-        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass} uppercase tracking-wide">
-           <i class="fa-solid ${icon}"></i> ${label}
-        </span>
-      `;
-    }
+  return `
+    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass} uppercase tracking-wide whitespace-nowrap">
+       <i class="fa-solid ${icon}"></i> ${label}
+    </span>
+  `;
+}
 
     function getScoreLabel(score) {
       if (currentLang === "tr") {
