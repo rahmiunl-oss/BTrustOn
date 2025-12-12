@@ -4618,6 +4618,7 @@ populateCountrySelects(); // 👈 İŞTE EKSİK OLAN SATIR BU!
 
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
+// Oturum durumu değişirse (Login/Logout) anında tepki ver
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
     // Giriş yapıldıysa
