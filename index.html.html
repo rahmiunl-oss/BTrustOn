@@ -2212,6 +2212,7 @@ async function partnerLogout() {
     let currentLang = "en";
     let currentSector = "all";
     let selectedCompany = null;
+    const ADMIN_EMAIL = "rahmiunl@gmail.com"; // BURAYI KENDİ MAİLİNİZLE DEĞİŞTİRİN
 /* --- STEP 5: PLAN LİMİTLERİ VE KONTROLÜ --- */
 const PLAN_LIMITS = {
     free: { projects: 2, assets: 3, certs: 2 },
@@ -3033,6 +3034,9 @@ function renderTopCompanies() {
       const query = (searchQuery || "").toLowerCase().trim();
 
       let filtered = database.filter((company) => {
+      if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
+        return false; 
+      }
         if (currentSector !== "all" && company.sector !== currentSector) {
           return false;
         }
@@ -7030,7 +7034,7 @@ function updateVerificationUI(status) {
 /* --- ADMIN PANEL SİSTEMİ --- */
 
 // 1. AYARLAR
-const ADMIN_EMAIL = "rahmiunl@gmail.com"; // BURAYI KENDİ MAİLİNİZLE DEĞİŞTİRİN
+
 
 // 2. ADMIN KONTROLÜ (Giriş yapıldığında çalışır)
 async function checkAdminAccess() {
