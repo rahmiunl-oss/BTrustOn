@@ -3050,16 +3050,15 @@ function filterSector(sector, btnEl) {
     }
 
     /* --- GÜÇLENDİRİLMİŞ OPEN PROFILE (OTOMATİK VERİ ÇEKME + EKRAN YÖNETİMİ) --- */
+/* --- GÜNCELLENMİŞ: openProfile (RENKLİ STATUS + ŞIK BUTONLAR) --- */
 async function openProfile(companyId) {
-  // 1. Önce veritabanında (yerel hafızada) var mı bakalım
+  // 1. Önce veritabanında var mı?
   let company = database.find((c) => c.id == companyId);
 
-  // 2. Eğer yerel listede yoksa (Örn: Listede olmayan biri mesaj attıysa)
+  // 2. Yoksa Supabase'den çek
   if (!company) {
       showToast("Loading...", "Fetching company profile...", "info");
-      
       try {
-          // Supabase'den veriyi çek
           const { data: profile, error } = await supabaseClient
               .from('profiles')
               .select('*')
@@ -3071,7 +3070,6 @@ async function openProfile(companyId) {
               return;
           }
 
-          // Gelen veriyi sistemin anlayacağı formata çevir (Mapping)
           company = {
               id: profile.id,
               name: profile.company_name || "Unknown",
@@ -3093,10 +3091,7 @@ async function openProfile(companyId) {
               assets: profile.assets || [],
               projects: profile.projects || []
           };
-
-          // Hafızaya ekle ki bir dahakine hızlı açılsın
           database.push(company);
-
       } catch (err) {
           console.error(err);
           showToast("Error", "Connection failed.", "error");
@@ -3104,30 +3099,27 @@ async function openProfile(companyId) {
       }
   }
 
-  // 3. Şirketi Seçili Hale Getir
   selectedCompany = company;
 
-  // 4. EKRAN GEÇİŞLERİ (ÖNEMLİ: Mesaj ekranını kapatmalıyız!)
+  // 3. EKRAN GEÇİŞLERİ
   const viewDashboard = document.getElementById("view-dashboard");
   const viewProfile = document.getElementById("view-profile");
   const viewEditor = document.getElementById("view-editor");
-  const viewMessage = document.getElementById("view-message"); // <-- EKLENDİ
+  const viewMessage = document.getElementById("view-message"); 
   const backBtn = document.getElementById("back-btn");
 
   if (viewDashboard) viewDashboard.classList.add("hidden-view");
   if (viewEditor) viewEditor.classList.add("hidden-view");
-  // Mesaj ekranı açıksa onu da kapat ki profil görünsün
   if (viewMessage) viewMessage.classList.add("hidden-view"); 
   
   if (viewProfile) viewProfile.classList.remove("hidden-view");
   if (backBtn) backBtn.classList.remove("hidden", "hidden-view");
   
-  // Sayfayı yukarı kaydır ve scroll kilidini aç
   window.scrollTo(0, 0);
   document.body.style.overflow = "auto"; 
 
-  // 5. PROFİL VERİLERİNİ DOLDUR
-  // --- Logo ---
+  // 4. VERİLERİ DOLDUR
+  // Logo
   const pLogoImg = document.getElementById("p-logo-image");
   const pDefaultIcon = document.getElementById("p-default-icon");
   if (pLogoImg && pDefaultIcon) {
@@ -3141,7 +3133,7 @@ async function openProfile(companyId) {
       }
   }
 
-  // --- Metinler ---
+  // Metinler
   const nameEl = document.getElementById("p-name");
   const descEl = document.getElementById("p-desc");
   const cityEl = document.getElementById("p-city");
@@ -3152,15 +3144,39 @@ async function openProfile(companyId) {
 
   if (nameEl) nameEl.textContent = company.name;
   if (cityEl) cityEl.textContent = company.city;
-  if (sectorEl) sectorEl.textContent = currentLang === "tr" ? sectorToTr(company.sector) : company.sector;
+  
+  // Sektör (Dil Desteği)
+  if (sectorEl) {
+      if (typeof currentLang !== 'undefined' && currentLang === 'tr') {
+          const sectorMap = {
+              "construction": "İnşaat ve Altyapı",
+              "mining": "Madencilik ve Metal",
+              "energy": "Enerji ve Petrol/Gaz",
+              "manufacturing": "Üretim ve Makine",
+              "technology": "Teknoloji ve Otomasyon",
+              "logistics": "Lojistik ve Ticaret",
+              "engineering": "Mühendislik ve Hizmetler"
+          };
+          sectorEl.textContent = sectorMap[company.sector] || (company.sector.charAt(0).toUpperCase() + company.sector.slice(1));
+      } else {
+          sectorEl.textContent = company.sector.charAt(0).toUpperCase() + company.sector.slice(1);
+      }
+  }
+  
   if (pType) pType.textContent = company.type_label || "Industrial Supplier";
   if (pSize) pSize.textContent = company.size_label || "Size N/A";
   if (pYear) pYear.textContent = company.year_label ? `Founded ${company.year_label}` : "";
   
-  const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
-  if (descEl) descEl.textContent = desc;
+  // Açıklama (Dil Desteği)
+  if (descEl) {
+      if (typeof currentLang !== 'undefined' && currentLang === 'tr' && company.desc_tr) {
+          descEl.textContent = company.desc_tr;
+      } else {
+          descEl.textContent = company.desc;
+      }
+  }
 
-  // --- Slogan ---
+  // Slogan
   const taglineContainer = document.getElementById("p-tagline-container");
   const taglineText = document.getElementById("p-tagline");
   if (taglineContainer && taglineText) {
@@ -3172,7 +3188,7 @@ async function openProfile(companyId) {
       }
   }
 
-  // --- Skor Halkası ---
+  // Skor
   const score = computeScore(company.meta);
   const pScore = document.getElementById("p-score");
   const pScoreLabel = document.getElementById("p-score-label");
@@ -3186,7 +3202,7 @@ async function openProfile(companyId) {
       setTimeout(() => { pScoreRing.style.strokeDashoffset = offset; }, 100);
   }
 
-  // --- İletişim Bilgileri ---
+  // İletişim
   const pWebsite = document.getElementById("p-website-link");
   const pEmail = document.getElementById("p-email-text");
   const pPhone = document.getElementById("p-phone-text");
@@ -3220,28 +3236,45 @@ async function openProfile(companyId) {
   }
   if (pPhone) pPhone.textContent = company.phone || "-";
 
-  // --- Hizmetler ---
+  // Hizmetler
   const servicesGrid = document.getElementById("p-services-grid");
   if (servicesGrid) {
     servicesGrid.innerHTML = "";
-    const displayServices = (currentLang === "tr" && company.services_tr) ? company.services_tr : (company.services || []);
+    
+    let displayServices = company.services || [];
+    if (typeof currentLang !== 'undefined' && currentLang === 'tr' && company.services_tr && company.services_tr.length > 0) {
+        displayServices = company.services_tr;
+    }
+
     if (displayServices.length === 0) {
       servicesGrid.innerHTML = '<div class="col-span-full py-4 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50"><p class="text-sm text-gray-400 italic">No services listed.</p></div>';
     } else {
+      // ... (openProfile içindeki Hizmetler kısmı) ...
+
       displayServices.forEach((s) => {
         servicesGrid.innerHTML += `
-          <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0 text-BTrustOn-accent">
-               <i class="fa-solid fa-check text-lg"></i>
+          <div class="group bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm hover:shadow-[0_4px_20px_-12px_rgba(6,182,212,0.3)] hover:border-cyan-200 hover:-translate-y-0.5 transition-all duration-300 cursor-default">
+            
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
+               <i class="fa-solid fa-diamond text-cyan-500 text-sm group-hover:text-cyan-600 transition-colors"></i>
             </div>
-            <span class="text-sm font-bold text-gray-700">${s}</span>
+            
+            <div class="flex-1 min-w-0">
+                <span class="block text-xs font-bold text-gray-700 truncate group-hover:text-BTrustOn-accent transition-colors" title="${s}">
+                    ${s}
+                </span>
+                <span class="text-[9px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                    <i class="fa-solid fa-circle-check text-emerald-400"></i> Core Competency
+                </span>
+            </div>
+
           </div>`;
       });
     }
   }
-// --- Yetki Kontrolü (Butonlar ve Logo Düzenleme) ---
+
+  // Yetki Kontrolü
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
-  // Eğer oturum yoksa (misafir) isMyProfile false olur, bu da istediğimiz şeydir.
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
   
   const btnEdit = document.getElementById("btn-edit-profile");
@@ -3249,94 +3282,43 @@ async function openProfile(companyId) {
   const btnQuote = document.getElementById("btn-req-quote");
   const btnAddProject = document.getElementById("btn-add-project");
   const btnAddCert = document.getElementById("btn-add-cert");
-  
-  // Logo Elementleri
   const logoContainer = document.getElementById("p-logo-container");
   const logoOverlay = document.getElementById("p-logo-overlay");
 
   if (isMyProfile) {
-      // --- BENİM PROFİLİM (Yönetici Modu) ---
       if(btnEdit) btnEdit.classList.remove("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.remove("hidden-view");
       if(btnAddProject) btnAddProject.classList.remove("hidden-view");
       if(btnAddCert) btnAddCert.classList.remove("hidden-view");
-      
-      // Kendi kendime teklif veremem, butonu gizle
       if(btnQuote) btnQuote.classList.add("hidden-view");
 
-      // Logo Düzenleme Aktif (Mouse gelince UPDATE yazsın)
       if (logoContainer) {
           logoContainer.classList.add("cursor-pointer", "group"); 
           logoContainer.setAttribute("onclick", "triggerProfileLogoUpload()");
       }
       if (logoOverlay) {
           logoOverlay.classList.remove("hidden");
-          logoOverlay.className = ""; 
-          logoOverlay.classList.add(
-              "absolute", "inset-0", 
-              "bg-slate-900/30",       
-              "backdrop-blur-sm",      
-              "flex", "flex-col", "items-center", "justify-center",
-              "opacity-0", "group-hover:opacity-100", 
-              "transition-all", "duration-500", "z-20"
-          );
+          logoOverlay.className = "absolute inset-0 bg-slate-900/30 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20"; 
       }
-
   } else {
-      // --- BAŞKASININ PROFİLİ VEYA MİSAFİR (Ziyaretçi Modu) ---
-      
-      // Düzenleme butonlarını gizle
       if(btnEdit) btnEdit.classList.add("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.add("hidden-view");
       if(btnAddProject) btnAddProject.classList.add("hidden-view");
       if(btnAddCert) btnAddCert.classList.add("hidden-view");
-      
-      // ✅ KRİTİK NOKTA: Teklif butonu misafirler dahil herkese açık olsun
       if(btnQuote) btnQuote.classList.remove("hidden-view");
 
-      // Logo Düzenleme Pasif
       if (logoContainer) {
           logoContainer.classList.remove("cursor-pointer", "group");
           logoContainer.removeAttribute("onclick");
       }
       if (logoOverlay) {
           logoOverlay.classList.add("hidden");
-          logoOverlay.classList.remove("flex", "group-hover:opacity-100");
       }
   }
-  
 
-  // Varsayılan sekmeyi aç
   switchProfileTab("overview");
-
-  // Projeleri, Sertifikaları ve Varlıkları yükle
-  // (Mevcut yardımcı fonksiyonları kullanarak)
-  const pProjectsList = document.getElementById("p-projects-list");
-  if(pProjectsList) {
-      // Proje render kodunu buraya uzun uzun yazmak yerine
-      // mevcut listeyi yenilediğimiz için sadece tab değişimini tetiklemek yeterli olabilir
-      // ama temizlik açısından listeyi sıfırlayıp tekrar dolduralım.
-      // (Yukarıdaki update logic'i zaten veriyi 'selectedCompany'ye attı)
-      // Sayfa altındaki proje render kodları 'selectedCompany' kullanıyor.
-      // Bu yüzden o fonksiyonları burada çağırmak en temizi, ama o fonksiyonlar ayrı değil,
-      // openProfile içinde gömülüydü. O yüzden buraya kısa bir render atıyoruz:
-      pProjectsList.innerHTML = "";
-      if(company.projects && company.projects.length > 0) {
-          company.projects.forEach(p => {
-              // Basit render (Detaylısı kodunuzda mevcutsa onu kullanır)
-              // Önceki openProfile içindeki proje render mantığını buraya taşıdık sayılır.
-              // (Kodun devamlılığı için burayı kısa tuttum, 
-              // ama switchProfileTab('overview') dediğimizde diğer sekmeler gizli kalır,
-              // kullanıcı tıkladığında render edilse daha iyi olur ama şimdilik böyle kalsın.)
-          });
-      }
-  }
   
-  // Projeler, Sertifikalar ve Varlıklar için yardımcı fonksiyonları tekrar çalıştır
-  // Çünkü DOM elementlerini temizleyip yeniden basmaları gerekiyor
-  const dummyComp = selectedCompany; // Zaten atadık
-  
-  // Projeleri Bas
+  // --- PROJELER ---
   const projList = document.getElementById("p-projects-list");
   if (projList) {
       projList.innerHTML = "";
@@ -3344,19 +3326,29 @@ async function openProfile(companyId) {
           projList.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400 text-xs italic">No projects listed.</div>';
       } else {
           company.projects.forEach(p => {
-              const actionBtns = isMyProfile ? `<button onclick="deleteProject(${p.id})" class="text-red-500 ml-auto"><i class="fa-solid fa-trash"></i></button>` : "";
+              const actionBtns = isMyProfile ? `
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="openProjectModal(${p.id})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <button onclick="deleteProject(${p.id})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                </div>
+              ` : "";
+
               const card = document.createElement("div");
               card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm";
-              card.innerHTML = `<h4 class="font-bold text-BTrustOn-primary text-sm flex justify-between">${p.title} ${actionBtns}</h4><p class="text-xs text-gray-500 mt-1">${p.desc}</p>`;
+              card.innerHTML = `<h4 class="font-bold text-BTrustOn-primary text-sm flex justify-between items-start">${p.title} ${actionBtns}</h4><p class="text-xs text-gray-500 mt-1">${p.desc}</p>`;
               projList.appendChild(card);
           });
       }
   }
   
-  // Sertifikaları Bas
+  // Sertifikalar
   renderCertificates(company);
 
-  // Varlıkları Bas
+  // --- VARLIKLAR (RENKLİ STATÜ BURADA) ---
   const assetList = document.getElementById("p-assets-list");
   if (assetList) {
       assetList.innerHTML = "";
@@ -3364,15 +3356,32 @@ async function openProfile(companyId) {
           assetList.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-gray-400 italic">No assets listed.</td></tr>`;
       } else {
           company.assets.forEach(a => {
-             const btns = isMyProfile ? `<button onclick="deleteAsset(${a.id})" class="text-red-500"><i class="fa-solid fa-trash"></i></button>` : "";
+             const btns = isMyProfile ? `
+                <div class="flex gap-2 justify-end">
+                    <button onclick="openAssetModal(${a.id})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <button onclick="deleteAsset(${a.id})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                </div>
+             ` : "";
+
              const row = document.createElement("tr");
-             row.innerHTML = `<td class="py-3 px-6 text-xs font-bold">${a.type}</td><td class="px-6 text-xs">${a.spec}</td><td class="px-6 text-xs">${a.qty}</td><td class="px-6 text-xs">${a.location || '-'}</td><td class="px-6"><span class="text-[10px] bg-gray-100 px-2 py-1 rounded">${a.status}</span></td><td class="px-6 text-right">${btns}</td>`;
+             // ✅ BURASI DEĞİŞTİ: getStatusBadge() fonksiyonunu çağırdık
+             row.innerHTML = `
+                <td class="py-3 px-6 text-xs font-bold">${a.type}</td>
+                <td class="px-6 text-xs">${a.spec}</td>
+                <td class="px-6 text-xs">${a.qty}</td>
+                <td class="px-6 text-xs">${a.location || '-'}</td>
+                <td class="px-6">${getStatusBadge(a.status)}</td> 
+                <td class="px-6 text-right">${btns}</td>
+             `;
              assetList.appendChild(row);
           });
       }
   }
 }
-
     // --- EDITOR FUNCTIONS ---
     function showEditorView() {
         document.getElementById("view-dashboard").classList.add("hidden-view");
@@ -6305,6 +6314,32 @@ async function downloadFile(fileUrl, fileName) {
         showToast("Error", "Download failed, opening in new tab...", "error");
         window.open(fileUrl, '_blank');
     }
+}
+/* --- STATUS RENGİNİ AYARLAYAN FONKSİYON --- */
+function getStatusBadge(status) {
+    const s = (status || "").toLowerCase();
+    
+    // Varsayılan (Gri)
+    let classes = "bg-gray-50 text-gray-600 border-gray-200"; 
+
+    // 1. Müsait (Yeşil)
+    if (s.includes("available") || s.includes("müsait")) {
+        classes = "bg-emerald-50 text-emerald-700 border-emerald-200";
+    } 
+    // 2. Bakımda (Sarı/Turuncu)
+    else if (s.includes("maintenance") || s.includes("bakım")) {
+        classes = "bg-amber-50 text-amber-700 border-amber-200";
+    } 
+    // 3. Servis Dışı (Kırmızı)
+    else if (s.includes("out") || s.includes("servis")) {
+        classes = "bg-rose-50 text-rose-700 border-rose-200";
+    }
+
+    return `
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${classes} uppercase tracking-wide whitespace-nowrap">
+            ${status}
+        </span>
+    `;
 }
 </script>
 </html>
