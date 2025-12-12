@@ -3219,7 +3219,11 @@ async function openProfile(companyId) {
   const pYear = document.getElementById("p-year-tag");
 
   if (nameEl) nameEl.textContent = company.name;
-  if (cityEl) cityEl.textContent = company.city;
+  if (cityEl) {
+      // Eğer ülke verisi varsa "Istanbul, Turkey" yap, yoksa sadece şehri yaz
+      const countryDisplay = company.country ? `, ${company.country}` : "";
+      cityEl.textContent = `${company.city}${countryDisplay}`;
+  }
   
   // Sektör (Dil Desteği)
   if (sectorEl) {
@@ -5627,6 +5631,7 @@ function deleteCert(certId, certName) {
     });
 }
 // --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
+/* --- GÜNCELLENMİŞ: initRealData (COUNTRY VERİSİ EKLENDİ) --- */
 async function initRealData() {
   console.log("Supabase'den veriler çekiliyor...");
   
@@ -5645,10 +5650,14 @@ async function initRealData() {
       id: pId,
       name: p.company_name || "New Company",
       city: p.city || "Konum Yok",
+      
+      // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
+      country: p.country || "Turkey", 
+      
       sector: p.sector || "construction",
       desc: p.description || "",
       tagline: p.tagline || "",
-      type_label: p.company_type, // Type verisi
+      type_label: p.company_type, 
       size_label: p.company_size,
       year_label: p.founded_year,
       services: p.services ? p.services.split(',').map(s=>s.trim()) : [],
@@ -5671,11 +5680,14 @@ async function initRealData() {
     }
   });
 
-  // 4. Ekranı Yenile (DÜZELTME: renderCards kaldırıldı)
-  populateCountryFilter();
+  // 3. Filtreleri ve Ekranı Yenile
+  populateCountryFilter(); // <-- Artık verilerde 'country' olduğu için burası çalışacak
   
   if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
-      renderShowcase(); // Rozetleri hemen gösterir
+      renderShowcase(); 
+  } else {
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value : "";
+      renderSearchResults(q);
   }
   
   renderTopCompanies();
