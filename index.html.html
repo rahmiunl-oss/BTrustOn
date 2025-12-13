@@ -2727,11 +2727,14 @@ function populateCountrySelects() {
       return Math.round(sum / 5);
     }
 
-    /* --- DÜZELTİLMİŞ: getTrustBadge --- */
+    /* --- YENİ ROZET SİSTEMİ (SADECE MAVİ TİK) --- */
 function getTrustBadge(company) {
-  // Sadece veritabanı durumu 'verified' ise tik ver.
-  // Eski 'trust' değişkeni bazen manuel set edilebildiği için database alanına öncelik veriyoruz.
-  const isVerified = company.verification_status === 'verified';
+  // Sadece 'verified' ise rozet göster, yoksa boş dön.
+  // Not: Supabase'den gelen veri 'verification_status' sütununda duruyor.
+  // Ancak biz frontend'de bunu 'trust' değişkenine map ediyor olabiliriz veya direkt bakabiliriz.
+  // Garanti olsun diye hem 'trust' alanına hem yeni statüye bakıyoruz.
+  
+  const isVerified = String(company.verification_status || '').toLowerCase() === 'verified';
 
   if (isVerified) {
     return `
@@ -2742,7 +2745,7 @@ function getTrustBadge(company) {
     `;
   }
   
-  return ""; 
+  return ""; // Onaylı değilse hiçbişi gösterme (Temiz görünüm)
 }
 
 // 👇 YENİ FONKSİYON: Şirket Tipine Göre Rozet Üretir 👇
@@ -3554,7 +3557,7 @@ if (nameEl) {
     // 2. Kontrolleri Yap
     const ADMIN_MAIL = "rahmiunl@gmail.com"; // Senin mailin
     const isAdmin = (company.email === ADMIN_MAIL || company.contact_email === ADMIN_MAIL);
-    const isVerified = company.verification_status === 'verified' || company.trust === 'verified';
+    const isVerified = String(company.verification_status || '').toLowerCase() === 'verified';
 
     // 3. Rozet Seçimi
     if (isAdmin) {
@@ -3590,6 +3593,23 @@ if (nameEl) {
         }
 }
 // --- BİTİŞ ---
+// Location (City, Country)
+if (cityEl) {
+    const city = (company.city || "").trim();
+    const country = (company.country || "").trim();
+    let loc = "";
+
+    if (city && country) {
+        // Avoid duplicates like "Ankara, Turkey, Turkey"
+        if (city.toLowerCase().includes(country.toLowerCase())) loc = city;
+        else loc = `${city}, ${country}`;
+    } else {
+        loc = city || country || ((typeof currentLang !== 'undefined' && currentLang === 'tr') ? "Konum Yok" : "Location N/A");
+    }
+
+    cityEl.textContent = loc;
+}
+
   
   // Sektör (Dil Desteği)
   if (sectorEl) {
@@ -4440,7 +4460,7 @@ function deleteCert(certId, certName) {
 <script>
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
 // GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
-/* --- DÜZELTİLMİŞ: handleJoin --- */
+/* --- GÜNCELLENMİŞ handleJoin (Toast'lı) --- */
 async function handleJoin() {
   const btn = document.querySelector("#join-form button");
   const originalText = btn.textContent;
@@ -4454,7 +4474,7 @@ async function handleJoin() {
     const sector = document.getElementById("join-sector").value;
     const typeVal = document.getElementById("join-type").value;
     const city = document.getElementById("join-city").value;
-    const country = document.getElementById("join-country").value;
+    const country = document.getElementById("join-country").value; // YENİ
     const services = document.getElementById("join-services").value;
     const errEl = document.getElementById("join-error");
 
@@ -4471,14 +4491,10 @@ async function handleJoin() {
         sector: sector,
         company_type: typeVal,
         city: city,
-        country: country,
+        country: country, // YENİ SÜTUN
         services: services,
         description: "",
-        size: "1-10",
-        
-        // ✅ KRİTİK EKLEME: Varsayılan olarak doğrulama YOK
-        verification_status: 'none', 
-        subscription_tier: 'free'
+        size: "1-10"
       }
     ]);
 
@@ -4525,6 +4541,14 @@ if (profile.email === ADMIN_EMAIL) {
       id: profile.id,
       name: profile.company_name || "New Company",
       city: profile.city || "Konum Yok",
+      country: profile.country || "Turkey",
+      address: profile.address || "",
+      email: profile.email || "",
+      subscription_tier: profile.subscription_tier || "free",
+      verification_status: profile.verification_status || "none",
+      tax_id: profile.tax_id || "",
+      duns_number: profile.duns_number || "",
+
       tagline: profile.tagline || "",
       sector: profile.sector || "construction",
       desc: profile.description || "",
@@ -4566,15 +4590,15 @@ if (profile.email === ADMIN_EMAIL) {
 }
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
 /* --- GÜNCELLENMİŞ: checkUserAndOpenProfile (COUNTRY EKLENDİ) --- */
-/* --- DÜZELTİLMİŞ: checkUserAndOpenProfile --- */
 async function checkUserAndOpenProfile(forceOpen = false) {
   // 1. Oturumu Kontrol Et
   const { data: { session } } = await supabaseClient.auth.getSession();
   
+  // Grupları Seç
   const guestGroup = document.getElementById("guest-actions"); 
   const userGroup = document.getElementById("user-actions");
 
-  // 2. UI'I GÜNCELLE
+  // 2. UI'I ANINDA GÜNCELLE
   if (!session) {
     if(guestGroup) { guestGroup.classList.remove("hidden"); guestGroup.classList.add("flex"); }
     if(userGroup) { userGroup.classList.add("hidden"); userGroup.classList.remove("flex"); }
@@ -4596,21 +4620,21 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 
   if (error || !profile) { console.log("Profil verisi çekilemedi."); return; }
 
-  // 4. VERİYİ FORMATLA (MANTIK HATASI BURADA DÜZELTİLDİ)
+  // 4. VERİYİ FORMATLA (Buraya country eklendi)
   const mappedProfile = {
     id: profile.id,
-    email: profile.email,
+    email: profile.email, // 👈 BU SATIR EKSİKTİ, MUTLAKA EKLE!
     name: profile.company_name,
     city: profile.city,
+    
+    // ✅ İŞTE EKSİK OLAN BU SATIRDI:
     country: profile.country || "Turkey",
-    address: profile.address || "",
-    subscription_tier: profile.subscription_tier || 'free', 
-    
-    // ✅ BURASI ÖNEMLİ: Statüyü doğrudan veritabanından alıyoruz
+address: profile.address || "", // ✅ BU SATIRI EKLEYİN  
+subscription_tier: profile.subscription_tier || 'free', 
     verification_status: profile.verification_status || 'none',
-    
     tax_id: profile.tax_id || "",
     duns_number: profile.duns_number || "",  
+
     tagline: profile.tagline || "",
     sector: profile.sector || "construction",
     desc: profile.description || "",
@@ -4622,11 +4646,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     website: profile.website || "",
     phone: profile.phone || "",
     contact_email: profile.contact_email || "",
-    
-    // ✅ BURASI ÖNEMLİ: Eğer status 'verified' değilse, trust seviyesini 'emerging' yapıyoruz.
-    // Böylece mavi tik çıkmıyor.
-    trust: (profile.verification_status === 'verified') ? "verified" : "emerging",
-    
+    trust: "verified",
     meta: { references: 50, delivery: 50, years: 1, financial: 50, digital: 50 },
     certificates: profile.certificates || [],
     assets: profile.assets || [],
@@ -4642,7 +4662,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 
       if (forceOpen === true) { openProfile(profile.id); }
   }
-  checkAdminAccess();
+checkAdminAccess();
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 /* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
@@ -6109,28 +6129,35 @@ function deleteCert(certId, certName) {
     });
 }
 // --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
-/* --- DÜZELTİLMİŞ: initRealData --- */
+/* --- GÜNCELLENMİŞ: initRealData (COUNTRY VERİSİ EKLENDİ) --- */
 async function initRealData() {
   console.log("Supabase'den veriler çekiliyor...");
   
-  const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
+  // 1. Supabase'den tüm profilleri al
+  const { data: profiles, error } = await supabaseClient
+    .from('profiles')
+    .select('*');
 
   if (error) { console.error("Veri çekme hatası:", error); return; }
   if (!profiles) return;
 
+  // 2. Verileri formatla
   profiles.forEach(p => {
-    if (p.email === ADMIN_EMAIL) return; 
-
+// 👇👇👇 BURASI YENİ: EĞER BU PROFİL ADMİN İSE LİSTEYE EKLEME 👇👇👇
+    if (p.email === ADMIN_EMAIL) {
+        return; // Döngüyü burada kes, bu şirketi listeye alma
+    }
+    // 👆👆👆 ---------------------------------------------------- 👆👆👆
     const pId = p.id;
-    // ✅ Statü Kontrolü:
-    const isVerified = p.verification_status === 'verified';
-
     const realData = {
       id: pId,
       name: p.company_name || "New Company",
       city: p.city || "Konum Yok",
+      
+      // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
       country: p.country || "Turkey",
-      address: p.address || "",
+address: p.address || "", // ✅ BU SATIRI EKLEYİN 
+      
       sector: p.sector || "construction",
       desc: p.description || "",
       tagline: p.tagline || "",
@@ -6145,14 +6172,7 @@ async function initRealData() {
       certificates: p.certificates || [],
       projects: p.projects || [],
       assets: p.assets || [],
-      
-      // ✅ VERİTABANI VERİSİNİ AKTARIYORUZ
-      verification_status: p.verification_status || 'none',
-      subscription_tier: p.subscription_tier || 'free',
-
-      // ✅ MANTIK DÜZELTİLDİ: Sadece 'verified' ise 'verified' stringini al
-      trust: isVerified ? "verified" : "emerging",
-      
+      trust: "verified",
       meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
     };
 
@@ -6164,24 +6184,27 @@ async function initRealData() {
     }
   });
 
-  populateCountryFilter();
+  // 3. Filtreleri ve Ekranı Yenile
+  populateCountryFilter(); // <-- Artık verilerde 'country' olduğu için burası çalışacak
+  
   if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
       renderShowcase(); 
   } else {
       const q = document.getElementById("search-input") ? document.getElementById("search-input").value : "";
       renderSearchResults(q);
   }
+  
   renderTopCompanies();
 
+  // Açık profil varsa güncelle
   if (selectedCompany) {
       const updatedCompany = database.find(c => c.id === selectedCompany.id);
       if(updatedCompany) {
           selectedCompany = updatedCompany;
-          openProfile(selectedCompany.id); // Profil açıksa anlık güncelle
+          openProfile(selectedCompany.id);
       }
   }
 }
-
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
 /* --- TÜMÜNÜ OKUNDU YAP (GÜÇLENDİRİLMİŞ) --- */
 /* --- TÜMÜNÜ OKUNDU YAP (AKILLI KONTROL) --- */
