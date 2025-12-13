@@ -2032,20 +2032,25 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
-/* --- DİKKAT ÇEKME ANİMASYONU (GÜÇLENDİRİLMİŞ) --- */
-@keyframes shake-glow {
-  0%, 100% { transform: translateX(0); border-color: #e2e8f0; }
-  25% { transform: translateX(-5px); border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
-  50% { transform: translateX(5px); border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
-  75% { transform: translateX(-5px); border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+/* --- GÜÇLENDİRİLMİŞ DİKKAT ÇEKME EFEKTİ --- */
+@keyframes strong-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
 }
 
 .attention-grabber {
-  animation: shake-glow 0.8s ease-in-out !important;
-  background-color: #fffbeb !important; /* Sarı zemin */
-  border: 2px solid #f59e0b !important; /* Turuncu kenarlık */
-  transition: all 0.3s;
+  /* Animation özelliği transition ile çakışmasın diye important */
+  animation: strong-shake 0.6s cubic-bezier(.36,.07,.19,.97) both !important;
+  
+  /* Görünüm değişimi */
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.6) !important; /* Mavi Parlama */
+  border: 2px solid #06b6d4 !important; /* Mavi Kenarlık */
+  background-color: #ecfeff !important; /* Açık Mavi Zemin */
+  
+  /* Diğer elementlerin üzerine çıksın */
+  position: relative;
+  z-index: 50;
 }
 
 </style>
@@ -7129,34 +7134,35 @@ function getStatusBadge(status) {
 /* --- ÇİFT TARAFLI DOĞRULAMA YÖNETİMİ (EDİTÖR + PROFİL) --- */
 
 // 1. BUTONA TIKLANINCA (Upgrade Kontrolü)
-/* --- GÜNCELLENMİŞ: handleVerifyClick (AKILLI ODAKLANMA v2) --- */
+/* --- GÜNCELLENMİŞ: handleVerifyClick (GARANTİLİ ÇÖZÜM) --- */
 function handleVerifyClick() {
+    // Veri yoksa hata vermesin diye kontrol
+    if (!selectedCompany) return;
+
     const tier = selectedCompany.subscription_tier || 'free';
     
     // 1. Kullanıcı PRO ise formu aç
     if (tier === 'pro') {
         toggleVerifyVisibility('unlocked');
         
-        // 2. Tarayıcının DOM'u çizmesi için minik bir nefes aldır (50ms)
+        // 2. Tarayıcının "hidden" sınıfını kaldırmasını bekle (100ms)
         setTimeout(() => {
-            // Editördeki ve Widget'taki (Profil) kapsayıcıları al
-            const editContainer = document.getElementById("verify-form-view"); // Editör kutusu
-            const widgetContainer = document.getElementById("widget-form-view"); // Widget kutusu
-            
-            const editInput = document.getElementById("edit-tax-id");
-            const widgetInput = document.getElementById("widget-tax-id");
+            // Hangi ekranın açık olduğunu sınıf kontrolüyle anla
+            const editorView = document.getElementById("view-editor");
+            // Eğer view-editor'de 'hidden-view' yoksa, editördeyiz demektir.
+            const isEditorActive = editorView && !editorView.classList.contains("hidden-view");
 
             let targetContainer = null;
             let targetInput = null;
 
-            // HANGİSİ GÖRÜNÜR? (offsetParent null değilse o element ekrandadır)
-            if (editContainer && editContainer.offsetParent !== null) {
-                targetContainer = editContainer;
-                targetInput = editInput;
-            } 
-            else if (widgetContainer && widgetContainer.offsetParent !== null) {
-                targetContainer = widgetContainer;
-                targetInput = widgetInput;
+            if (isEditorActive) {
+                // Editördeki kutuyu hedefle
+                targetContainer = document.getElementById("verify-form-view");
+                targetInput = document.getElementById("edit-tax-id");
+            } else {
+                // Profildeki (Widget) kutuyu hedefle
+                targetContainer = document.getElementById("widget-form-view");
+                targetInput = document.getElementById("widget-tax-id");
             }
 
             // Hedef bulunduysa işlemi yap
@@ -7165,14 +7171,17 @@ function handleVerifyClick() {
                 targetInput.scrollIntoView({ behavior: "smooth", block: "center" });
 
                 // B. İmleci içine koy
-                targetInput.focus();
+                targetInput.focus({ preventScroll: true });
 
-                // C. Animasyonu Sıfırla ve Yeniden Başlat (Hile: Reflow Trigger)
+                // C. Animasyonu Sıfırla ve Yeniden Başlat (Reflow Trigger)
                 targetContainer.classList.remove("attention-grabber");
-                void targetContainer.offsetWidth; // Tarayıcıyı yeniden çizmeye zorla
+                
+                // Bu satır sihirli: Tarayıcıyı değişikliği fark etmeye zorlar
+                void targetContainer.offsetWidth; 
+                
                 targetContainer.classList.add("attention-grabber");
 
-                // D. 1 saniye sonra efekti kaldır (Temiz dursun)
+                // D. 1 saniye sonra efekti kaldır (Tekrar basılırsa çalışsın diye)
                 setTimeout(() => {
                     targetContainer.classList.remove("attention-grabber");
                 }, 1000);
