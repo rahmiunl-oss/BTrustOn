@@ -203,7 +203,7 @@
 
     /* 👆👆👆 BURADA BİTİYOR 👆👆👆 */
 
-  </style> ```
+  </style> 
   </style>
 
   <!-- Supabase Auth client -->
@@ -2024,35 +2024,70 @@
 
 <style>
 /* Özel Animasyonlar */
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(-5%); }
-  50% { transform: translateY(5%); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-/* --- GÜÇLENDİRİLMİŞ DİKKAT ÇEKME EFEKTİ --- */
-@keyframes strong-shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
-  20%, 40%, 60%, 80% { transform: translateX(6px); }
-}
+/* --- 1. KUTLAMA ANİMASYONLARI (MODAL İÇİN) --- */
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(-5%); }
+      50% { transform: translateY(5%); }
+    }
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-bounce-slow { animation: bounce-slow 3s infinite ease-in-out; }
+    .animate-spin-slow { animation: spin-slow 8s linear infinite; }
 
-.attention-grabber {
-  /* Animation özelliği transition ile çakışmasın diye important */
-  animation: strong-shake 0.6s cubic-bezier(.36,.07,.19,.97) both !important;
-  
-  /* Görünüm değişimi */
-  box-shadow: 0 0 25px rgba(6, 182, 212, 0.6) !important; /* Mavi Parlama */
-  border: 2px solid #06b6d4 !important; /* Mavi Kenarlık */
-  background-color: #ecfeff !important; /* Açık Mavi Zemin */
-  
-  /* Diğer elementlerin üzerine çıksın */
-  position: relative;
-  z-index: 50;
-}
+    /* --- 2. HATA TİTREMESİ (KIRMIZI - SHAKE) --- */
+    @keyframes shake-error {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-6px) rotate(-1deg); }
+      30% { transform: translateX(6px) rotate(1deg); }
+      45% { transform: translateX(-4px); }
+      60% { transform: translateX(4px); }
+    }
+    .shake-input {
+      animation: shake-error 0.5s cubic-bezier(.36,.07,.19,.97) both !important;
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1) !important;
+      background-color: #fef2f2 !important;
+    }
 
+    /* --- 3. DİKKAT ÇEKME (MAVİ TİTREME - FOCUS) --- */
+    @keyframes strong-shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+      20%, 40%, 60%, 80% { transform: translateX(6px); }
+    }
+    .attention-grabber {
+      animation: strong-shake 0.8s cubic-bezier(.36,.07,.19,.97) both !important;
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.6) !important;
+      border: 2px solid #06b6d4 !important;
+      background-color: #ecfeff !important;
+      position: relative;
+      z-index: 50;
+    }
+
+    /* --- 4. ZİL SALLANMASI (FIX: GROUP HOVER) --- */
+    @keyframes swing {
+      20% { transform: rotate(15deg); }
+      40% { transform: rotate(-10deg); }
+      60% { transform: rotate(5deg); }
+      80% { transform: rotate(-5deg); }
+      100% { transform: rotate(0deg); }
+    }
+    /* DÜZELTME: Tailwind'in yapamadığını manuel CSS ile yapıyoruz */
+    .group:hover .fa-bell {
+      animation: swing 2s ease-in-out infinite;
+      transform-origin: top center;
+    }
+
+    /* --- 5. TAÇ İKONU (NEFES ALMA) --- */
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
 </style>
 
 <script>
@@ -7233,7 +7268,12 @@ async function submitVerificationRequest(source = 'editor') {
         duns = document.getElementById("edit-duns").value.trim();
     }
 
-    if (!taxId) { showToast("Missing Info", "Enter Tax ID.", "error"); return; }
+    if (!taxId) { 
+  showToast("Missing Info", "Enter Tax ID.", "error"); 
+  handleVerifyClick(source === 'widget');   // ✅ boşsa VKN alanını sallayıp fokuslar
+  return; 
+}
+
 
     if(btn) { btn.textContent = "Wait..."; btn.disabled = true; }
 
@@ -7573,7 +7613,7 @@ async function upgradeToPro() {
         
         // 7. Profili Yeniden Çiz (Rozetler vs. için)
         openProfile(user.id);
-
+	setTimeout(() => handleVerifyClick(true), 700);
     } catch (err) {
         console.error(err);
         showToast("Error", "Upgrade failed: " + err.message, "error");
