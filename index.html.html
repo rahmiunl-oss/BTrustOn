@@ -2033,19 +2033,21 @@
   to { transform: rotate(360deg); }
 }
 
-/* --- DİKKAT ÇEKME ANİMASYONU --- */
+/* --- DİKKAT ÇEKME ANİMASYONU (GÜÇLENDİRİLMİŞ) --- */
 @keyframes shake-glow {
-  0%, 100% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(6,182,212,0); border-color: #e2e8f0; }
-  25% { transform: translateX(-5px); border-color: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
-  50% { transform: translateX(5px); border-color: #06b6d4; }
-  75% { transform: translateX(-5px); border-color: #f59e0b; }
+  0%, 100% { transform: translateX(0); border-color: #e2e8f0; }
+  25% { transform: translateX(-5px); border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+  50% { transform: translateX(5px); border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+  75% { transform: translateX(-5px); border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
 }
 
 .attention-grabber {
-  animation: shake-glow 1s ease-in-out;
-  background-color: #fffbeb !important; /* Çok hafif sarı arka plan */
-  transition: background-color 1s;
+  animation: shake-glow 0.8s ease-in-out !important;
+  background-color: #fffbeb !important; /* Sarı zemin */
+  border: 2px solid #f59e0b !important; /* Turuncu kenarlık */
+  transition: all 0.3s;
 }
+
 </style>
 
 <script>
@@ -7127,48 +7129,55 @@ function getStatusBadge(status) {
 /* --- ÇİFT TARAFLI DOĞRULAMA YÖNETİMİ (EDİTÖR + PROFİL) --- */
 
 // 1. BUTONA TIKLANINCA (Upgrade Kontrolü)
-/* --- GÜNCELLENMİŞ: handleVerifyClick (ODAKLANMA VE ANİMASYONLU) --- */
+/* --- GÜNCELLENMİŞ: handleVerifyClick (AKILLI ODAKLANMA v2) --- */
 function handleVerifyClick() {
     const tier = selectedCompany.subscription_tier || 'free';
     
-    // 1. Duruma göre formu aç veya modalı göster
+    // 1. Kullanıcı PRO ise formu aç
     if (tier === 'pro') {
         toggleVerifyVisibility('unlocked');
         
-        // --- YENİ EKLENEN KISIM: DİKKAT ÇEKME EFEKTİ ---
+        // 2. Tarayıcının DOM'u çizmesi için minik bir nefes aldır (50ms)
         setTimeout(() => {
-            // Hangi ekrandayız? (Profil Widget mı yoksa Editör mü?)
-            const isEditorOpen = !document.getElementById("view-editor").classList.contains("hidden-view");
+            // Editördeki ve Widget'taki (Profil) kapsayıcıları al
+            const editContainer = document.getElementById("verify-form-view"); // Editör kutusu
+            const widgetContainer = document.getElementById("widget-form-view"); // Widget kutusu
             
-            let targetInput = null;
-            let targetContainer = null;
+            const editInput = document.getElementById("edit-tax-id");
+            const widgetInput = document.getElementById("widget-tax-id");
 
-            if (isEditorOpen) {
-                // Editördeysek
-                targetInput = document.getElementById("edit-tax-id");
-                targetContainer = document.getElementById("verify-form-view");
-            } else {
-                // Profildeysek (Widget)
-                targetInput = document.getElementById("widget-tax-id");
-                targetContainer = document.getElementById("widget-form-view");
+            let targetContainer = null;
+            let targetInput = null;
+
+            // HANGİSİ GÖRÜNÜR? (offsetParent null değilse o element ekrandadır)
+            if (editContainer && editContainer.offsetParent !== null) {
+                targetContainer = editContainer;
+                targetInput = editInput;
+            } 
+            else if (widgetContainer && widgetContainer.offsetParent !== null) {
+                targetContainer = widgetContainer;
+                targetInput = widgetInput;
             }
 
-            if (targetInput && targetContainer) {
-                // A. Oraya Kaydır (Smooth Scroll)
+            // Hedef bulunduysa işlemi yap
+            if (targetContainer && targetInput) {
+                // A. Sayfayı oraya kaydır (Ortalayarak)
                 targetInput.scrollIntoView({ behavior: "smooth", block: "center" });
 
-                // B. İmleci içine koy (Kullanıcı hemen yazabilsin)
+                // B. İmleci içine koy
                 targetInput.focus();
 
-                // C. Animasyonu Başlat (Sallama ve Parlama)
+                // C. Animasyonu Sıfırla ve Yeniden Başlat (Hile: Reflow Trigger)
+                targetContainer.classList.remove("attention-grabber");
+                void targetContainer.offsetWidth; // Tarayıcıyı yeniden çizmeye zorla
                 targetContainer.classList.add("attention-grabber");
 
-                // D. Animasyon bitince sınıfı kaldır (Tekrar tıklanırsa yine çalışsın diye)
+                // D. 1 saniye sonra efekti kaldır (Temiz dursun)
                 setTimeout(() => {
                     targetContainer.classList.remove("attention-grabber");
-                }, 1200);
+                }, 1000);
             }
-        }, 100); // UI açılması için minik gecikme
+        }, 100); 
 
     } 
     // Free ise Yükseltme Modalını Aç
