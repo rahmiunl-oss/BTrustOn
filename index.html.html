@@ -6317,8 +6317,8 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
                       <div class="flex flex-wrap items-center gap-2 mb-1">
                         ${getCompanyTypeBadge(compType)}
                         <span class="text-[10px] text-gray-400 flex items-center gap-1 shrink-0">
-                           <span class="w-1 h-1 rounded-full bg-gray-300"></span> 
-                           ${company.city}
+                        <span class="w-1 h-1 rounded-full bg-gray-300"></span> 
+                        ${company.city}, ${company.country || "TR"}
                         </span>
                       </div>
 
