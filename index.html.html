@@ -7510,7 +7510,7 @@ async function processVerification(userId, action) {
     }
 }
 
-/* --- YENİ: upgradeToPro (6 AYLIK DENEME SÜRESİ TANIMLAR) --- */
+/* --- GÜNCELLENMİŞ: upgradeToPro (ANINDA BUTON GİZLEME) --- */
 async function upgradeToPro() {
     const btn = document.querySelector("#modal-upgrade button:last-child");
     const originalText = btn.innerHTML;
@@ -7524,46 +7524,64 @@ async function upgradeToPro() {
         // --- TARİH HESAPLAMA ---
         const now = new Date();
         const endDate = new Date();
-        endDate.setMonth(now.getMonth() + 6); // Bugüne 6 AY ekle
+        endDate.setMonth(now.getMonth() + 6); // 6 AY EKLE
 
-        // 1. Veritabanında 'pro' yap ve tarihleri işle
-        // Not: Eğer veritabanında bu sütunlar yoksa kod hata verebilir. 
-        // Hata alırsan sütunları Supabase'den eklemen gerekir.
+        // 1. Veritabanı Güncellemesi
         const { error } = await supabaseClient
             .from('profiles')
             .update({ 
                 subscription_tier: 'pro',
-                subscription_status: 'active_trial', // Durum: Deneme
-                trial_start_date: now.toISOString(), // Başlangıç
-                trial_end_date: endDate.toISOString(), // Bitiş
+                subscription_status: 'active_trial',
+                trial_start_date: now.toISOString(),
+                trial_end_date: endDate.toISOString(),
                 updated_at: now
             })
             .eq('id', user.id);
 
         if (error) throw error;
 
-        // 2. Hafızayı Güncelle
-        selectedCompany.subscription_tier = 'pro';
-        
-        // 3. UI Güncelle
+        // 2. Yerel Hafızayı Güncelle
+        if (selectedCompany) {
+            selectedCompany.subscription_tier = 'pro';
+        }
+
+        // 3. Modalı Kapat
         toggleModal('modal-upgrade'); 
+
+        // 4. ⭐ SİHİRLİ DOKUNUŞ: UPGRADE BUTONLARINI ANINDA GİZLE ⭐
+        const navBtn = document.getElementById("btn-nav-upgrade");
+        const cardBtn = document.getElementById("btn-card-upgrade");
         
-        // Tarihi kullanıcı dostu formata çevir
+        // Header'daki Tacı Gizle
+        if (navBtn) {
+            navBtn.classList.add("hidden");
+            navBtn.classList.remove("flex");
+        }
+        // Profil Kartındaki "Go Pro"yu Gizle
+        if (cardBtn) {
+            cardBtn.classList.add("hidden");
+            cardBtn.classList.remove("flex");
+        }
+
+        // 5. Verify Kutularının Kilidini Aç (Artık Pro olduğu için)
+        // Eğer verification durumu yoksa 'none' gönderiyoruz
+        updateVerificationUI(selectedCompany.verification_status || 'none');
+        
+        // 6. Kullanıcıyı Bilgilendir
         const niceDate = endDate.toLocaleDateString(); 
         showToast("Welcome to Pro!", `Trial active until ${niceDate}`, "success");
         
-        // Kilitleri kaldır
-        updateVerificationUI(selectedCompany.verification_status);
-        
-        // Profili yenile (Rozetler vs. gelsin)
+        // 7. Profili Yeniden Çiz (Rozetler vs. için)
         openProfile(user.id);
 
     } catch (err) {
         console.error(err);
         showToast("Error", "Upgrade failed: " + err.message, "error");
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        if(btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 }
 
