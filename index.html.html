@@ -1117,9 +1117,12 @@
                         </div>
                     </div>
 
-                    <p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
-                        See which companies are interested in your capabilities. <span class="text-BTrustOn-accent font-bold cursor-pointer hover:underline">Increase visibility</span> to get more views.
-                    </p>
+<p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
+    Verified profiles rank higher in search results. 
+    <span class="text-BTrustOn-accent font-bold">Upgrade to Pro</span> 
+    to maximize your visibility and reach more partners.
+</p>                    
+
                 </div>
             </div>
 
@@ -7166,6 +7169,7 @@ async function submitVerificationRequest(source = 'editor') {
 }
 
 // 4. UI DURUMUNU GÜNCELLE (Her İki Yeri De Boyar)
+/* --- GÜNCELLENMİŞ: updateVerificationUI (ONAYLANINCA KUTULARI GİZLER) --- */
 function updateVerificationUI(status) {
     const tier = selectedCompany.subscription_tier || 'free';
     
@@ -7179,45 +7183,75 @@ function updateVerificationUI(status) {
 
     // --- EDİTÖR TARAFI ---
     const editAlert = document.getElementById("verify-status-alert");
-    const editBtn = document.getElementById("btn-verify-submit");
-    const editInputs = document.querySelectorAll("#edit-tax-id, #edit-duns");
+    // Editördeki inputların olduğu kapsayıcı (.grid)
+    const editInputBox = document.querySelector("#verify-form-view .grid"); 
+    // Editördeki butonun olduğu kapsayıcı (.mt-4)
+    const editBtnBox = document.querySelector("#verify-form-view .mt-4");
 
-    // --- WIDGET TARAFI ---
+    // --- WIDGET (PROFİL) TARAFI ---
     const widgetAlert = document.getElementById("widget-status-alert");
+    // Widget'taki inputlar ve butonun olduğu kapsayıcı (.space-y-3)
+    const widgetMainBox = document.querySelector("#widget-form-view .space-y-3");
+    // Widget butonu (Pending durumunda sadece butonu gizlemek için lazım)
     const widgetBtn = document.getElementById("btn-widget-submit");
-    const widgetInputs = document.querySelectorAll("#widget-tax-id, #widget-duns");
 
-    // Yardımcı Boyama Fonksiyonu
-    const setStatus = (alertBox, submitBtn, inputs, type) => {
-        if(!alertBox) return;
-        alertBox.className = "mb-3 p-2 rounded-lg text-[10px] font-bold border flex items-center gap-2";
+    // Yardımcı Fonksiyon: Duruma Göre Göster/Gizle
+    const setStatus = (alertEl, inputBox, btnBox, specificBtn, type) => {
+        if(!alertEl) return;
         
-        if (type === 'pending') {
-            alertBox.classList.add("bg-amber-50", "border-amber-200", "text-amber-700");
-            alertBox.innerHTML = '<i class="fa-solid fa-clock"></i> Review pending (24h).';
-            alertBox.classList.remove("hidden");
-            if(submitBtn) submitBtn.classList.add("hidden");
-            inputs.forEach(i => i.disabled = true);
-        } else if (type === 'verified') {
-            alertBox.classList.add("bg-emerald-50", "border-emerald-200", "text-emerald-700");
-            alertBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified. Badge active.';
-            alertBox.classList.remove("hidden");
-            if(submitBtn) submitBtn.classList.add("hidden");
-            inputs.forEach(i => i.disabled = true);
-        } else { // None
-            alertBox.classList.add("hidden");
-            if(submitBtn) {
-                submitBtn.classList.remove("hidden");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "SUBMIT";
+        // Alert Stili (Ortak)
+        alertEl.className = "mb-3 p-3 rounded-lg text-[10px] font-bold border flex items-center gap-2";
+
+        if (type === 'verified') {
+            // ✅ DURUM 1: ONAYLI (Sadece Mesaj Kalsın, Formlar Uçsun)
+            alertEl.classList.add("bg-emerald-50", "border-emerald-200", "text-emerald-700");
+            alertEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified. Badge active.';
+            alertEl.classList.remove("hidden");
+
+            // Form elemanlarını komple GİZLE
+            if(inputBox) inputBox.classList.add("hidden");
+            if(btnBox) btnBox.classList.add("hidden");
+            
+            // Widget için mainBox gizlenince içindeki buton da otomatik gizlenir
+            if(specificBtn) specificBtn.parentElement.classList.add("hidden"); 
+
+        } else if (type === 'pending') {
+            // ✅ DURUM 2: BEKLEMEDE (Mesaj Var, Inputlar Pasif, Buton Yok)
+            alertEl.classList.add("bg-amber-50", "border-amber-200", "text-amber-700");
+            alertEl.innerHTML = '<i class="fa-solid fa-clock"></i> Review pending (24h).';
+            alertEl.classList.remove("hidden");
+
+            // Inputları göster ama kilitle
+            if(inputBox) {
+                inputBox.classList.remove("hidden");
+                const inputs = inputBox.querySelectorAll("input");
+                inputs.forEach(i => i.disabled = true);
             }
-            inputs.forEach(i => i.disabled = false);
+
+            // Kaydet butonunu gizle (Zaten gönderildi)
+            if(btnBox) btnBox.classList.add("hidden");
+            if(specificBtn) specificBtn.classList.add("hidden");
+
+        } else {
+            // ✅ DURUM 3: HİÇBİRİ (Form Açık, Mesaj Yok)
+            alertEl.classList.add("hidden"); // Uyarı yok
+
+            if(inputBox) {
+                inputBox.classList.remove("hidden");
+                const inputs = inputBox.querySelectorAll("input");
+                inputs.forEach(i => i.disabled = false);
+            }
+
+            if(btnBox) btnBox.classList.remove("hidden");
+            if(specificBtn) specificBtn.classList.remove("hidden");
         }
     };
 
-    // İki tarafı da aynı duruma getir
-    setStatus(editAlert, editBtn, editInputs, status);
-    setStatus(widgetAlert, widgetBtn, widgetInputs, status);
+    // Editör UI Güncelle
+    setStatus(editAlert, editInputBox, editBtnBox, null, status);
+    
+    // Widget (Profil) UI Güncelle
+    setStatus(widgetAlert, widgetMainBox, null, widgetBtn, status);
 }
 /* --- ADMIN PANEL SİSTEMİ --- */
 
