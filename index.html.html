@@ -1906,6 +1906,76 @@
 
   </div>
 </div> 
+<div id="modal-upgrade" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[9999]">
+  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-upgrade')"></div>
+  
+  <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-in transform scale-100">
+    
+    <div class="bg-gradient-to-br from-slate-900 to-BTrustOn-primary p-5 text-center relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+        
+        <div class="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/20 shadow-lg">
+            <i class="fa-solid fa-crown text-2xl text-amber-400"></i>
+        </div>
+        
+        <h3 class="text-lg font-header font-bold text-white">Upgrade to Pro</h3>
+        <p class="text-cyan-100 text-[10px] uppercase tracking-wider font-bold">Unlock Full Potential</p>
+    </div>
+
+    <div class="p-6">
+        
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-5">
+            <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 pb-2">
+                What you get with Pro:
+            </h4>
+            <ul class="space-y-3">
+                <li class="flex items-start gap-3">
+                    <div class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-circle-check text-blue-600 text-[10px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-700">Official Verification Badge</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Build immediate trust with clients.</p>
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <div class="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-infinity text-emerald-600 text-[10px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-700">Unlimited Projects & Assets</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Remove limits. Showcase everything.</p>
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <div class="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-arrow-trend-up text-purple-600 text-[10px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-700">Higher Visibility</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Rank higher in search results.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-100 rounded-lg p-2.5 mb-5 flex items-center gap-2 justify-center text-[10px] text-amber-800 font-bold">
+            <i class="fa-solid fa-gift text-amber-500"></i> 
+            <span>6-Month Free Trial. No payment required.</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="toggleModal('modal-upgrade')" class="py-3 rounded-xl border border-gray-200 text-gray-500 font-bold text-xs hover:bg-gray-50 transition">
+                NO, THANKS
+            </button>
+            <button onclick="upgradeToPro()" class="py-3 rounded-xl bg-gradient-to-r from-BTrustOn-accent to-blue-600 text-white font-bold text-xs shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] transition transform flex items-center justify-center gap-2">
+                <span>START FREE TRIAL</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+  </div>
+</div>
 
 <script>
   // Login modalını aç/kapat
@@ -6958,16 +7028,19 @@ function getStatusBadge(status) {
 /* --- ÇİFT TARAFLI DOĞRULAMA YÖNETİMİ (EDİTÖR + PROFİL) --- */
 
 // 1. BUTONA TIKLANINCA (Upgrade Kontrolü)
+/* --- GÜNCELLENMİŞ: handleVerifyClick (MODAL AÇAR) --- */
 function handleVerifyClick() {
     const tier = selectedCompany.subscription_tier || 'free';
-    if (tier === 'free') {
-        showToast("Upgrade Required", "Verification is for Pro members only.", "error");
-    } else {
-        // İki tarafta da kilitleri aç
+    
+    // Zaten Pro ise kilitleri aç
+    if (tier === 'pro') {
         toggleVerifyVisibility('unlocked');
+    } 
+    // Free ise Yükseltme Modalını Aç
+    else {
+        toggleModal('modal-upgrade');
     }
 }
-
 // 2. GÖRÜNÜMÜ GÜNCELLE (Yardımcı Fonksiyon)
 function toggleVerifyVisibility(mode) {
     // Editör Elementleri
@@ -7250,6 +7323,63 @@ async function processVerification(userId, action) {
     } else {
         showToast("Success", `Company ${action}d successfully.`, "success");
         loadAdminData(); // Listeyi yenile
+    }
+}
+
+/* --- YENİ: upgradeToPro (6 AYLIK DENEME SÜRESİ TANIMLAR) --- */
+async function upgradeToPro() {
+    const btn = document.querySelector("#modal-upgrade button:last-child");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+    btn.disabled = true;
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Please login first.");
+
+        // --- TARİH HESAPLAMA ---
+        const now = new Date();
+        const endDate = new Date();
+        endDate.setMonth(now.getMonth() + 6); // Bugüne 6 AY ekle
+
+        // 1. Veritabanında 'pro' yap ve tarihleri işle
+        // Not: Eğer veritabanında bu sütunlar yoksa kod hata verebilir. 
+        // Hata alırsan sütunları Supabase'den eklemen gerekir.
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ 
+                subscription_tier: 'pro',
+                subscription_status: 'active_trial', // Durum: Deneme
+                trial_start_date: now.toISOString(), // Başlangıç
+                trial_end_date: endDate.toISOString(), // Bitiş
+                updated_at: now
+            })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        // 2. Hafızayı Güncelle
+        selectedCompany.subscription_tier = 'pro';
+        
+        // 3. UI Güncelle
+        toggleModal('modal-upgrade'); 
+        
+        // Tarihi kullanıcı dostu formata çevir
+        const niceDate = endDate.toLocaleDateString(); 
+        showToast("Welcome to Pro!", `Trial active until ${niceDate}`, "success");
+        
+        // Kilitleri kaldır
+        updateVerificationUI(selectedCompany.verification_status);
+        
+        // Profili yenile (Rozetler vs. gelsin)
+        openProfile(user.id);
+
+    } catch (err) {
+        console.error(err);
+        showToast("Error", "Upgrade failed: " + err.message, "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
