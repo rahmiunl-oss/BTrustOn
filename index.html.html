@@ -1549,6 +1549,39 @@
       </select>
     </div>
 
+<div class="pt-2">
+      <div class="flex justify-between items-center mb-1">
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+          Technical Document <span class="text-gray-300 font-normal lowercase">(pdf, img)</span>
+        </label>
+        
+        <span id="asset-file-pro-badge" class="hidden bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200">
+          <i class="fa-solid fa-crown"></i> PRO FEATURE
+        </span>
+      </div>
+
+      <div class="flex items-center gap-3">
+         <label id="asset-file-label" class="flex-1 cursor-pointer bg-gray-50 border border-dashed border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center gap-2 hover:bg-gray-100 hover:border-BTrustOn-accent transition group relative overflow-hidden">
+            <input type="file" id="asset-file-input" class="hidden" accept=".pdf, .jpg, .jpeg, .png" onchange="handleAssetFileSelect(this)">
+            
+            <i class="fa-solid fa-cloud-arrow-up text-gray-400 group-hover:text-BTrustOn-accent"></i>
+            <span id="asset-file-text" class="text-xs font-bold text-gray-500 group-hover:text-gray-700 truncate">Attach File (Max 5MB)</span>
+            
+            <div id="asset-file-lock" class="hidden absolute inset-0 bg-gray-100/80 flex items-center justify-center cursor-not-allowed">
+                <i class="fa-solid fa-lock text-gray-400"></i>
+            </div>
+         </label>
+
+         <button type="button" id="btn-remove-asset-file" onclick="removeAssetFile()" class="hidden w-10 h-10 rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition" title="Remove File">
+            <i class="fa-solid fa-trash text-xs"></i>
+         </button>
+      </div>
+      
+      <a id="current-asset-link" href="#" target="_blank" class="hidden text-[10px] text-BTrustOn-accent font-bold mt-1 hover:underline flex items-center gap-1">
+          <i class="fa-solid fa-paperclip"></i> <span>View Current File</span>
+      </a>
+    </div>
+
     <div class="pt-4 flex gap-3">
       <button type="button" onclick="closeAssetModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
         CANCEL
@@ -2400,6 +2433,52 @@ async function partnerLogout() {
     let currentSector = "all";
     let selectedCompany = null;
     const ADMIN_EMAIL = "rahmiunl@gmail.com"; // BURAYI KENDİ MAİLİNİZLE DEĞİŞTİRİN
+/* --- YENİ EKLENEN DEĞİŞKENLER (DOSYA İÇİN) --- */
+let currentAssetFile = null; // Yeni yüklenecek dosyayı tutar
+let existingAssetFileUrl = null; // Zaten yüklü olan dosyanın linkini tutar
+let existingAssetFileName = null; // Zaten yüklü olan dosyanın adını tutar
+
+// Dosya Seçilince Çalışır (Input Change)
+function handleAssetFileSelect(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        // Boyut Kontrolü (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("File too large", "Max file size is 5MB.", "error");
+            input.value = ""; // Sıfırla
+            return;
+        }
+        currentAssetFile = file;
+        
+        // Label'ı güncelle (Dosya ismini yaz)
+        const textEl = document.getElementById("asset-file-text");
+        const labelEl = document.getElementById("asset-file-label");
+        
+        if(textEl) textEl.textContent = file.name;
+        if(labelEl) labelEl.classList.add("border-BTrustOn-accent", "bg-cyan-50");
+    }
+}
+
+// Seçilen/Mevcut Dosyayı İptal Et (Çöp Kutusu Butonu)
+function removeAssetFile() {
+    currentAssetFile = null;
+    existingAssetFileUrl = null;
+    existingAssetFileName = null;
+    
+    // Inputu ve görseli sıfırla
+    const inputEl = document.getElementById("asset-file-input");
+    const textEl = document.getElementById("asset-file-text");
+    const labelEl = document.getElementById("asset-file-label");
+    const removeBtn = document.getElementById("btn-remove-asset-file");
+    const linkEl = document.getElementById("current-asset-link");
+
+    if(inputEl) inputEl.value = "";
+    if(textEl) textEl.textContent = "Attach File (Max 5MB)";
+    if(labelEl) labelEl.classList.remove("border-BTrustOn-accent", "bg-cyan-50");
+    if(removeBtn) removeBtn.classList.add("hidden");
+    if(linkEl) linkEl.classList.add("hidden");
+}
+
 /* --- STEP 5: PLAN LİMİTLERİ VE KONTROLÜ --- */
 const PLAN_LIMITS = {
     free: { projects: 2, assets: 3, certs: 2 },
@@ -4018,7 +4097,7 @@ if (cityEl) {
   // Sertifikalar
   renderCertificates(company);
 
-  // --- VARLIKLAR (RENKLİ STATÜ BURADA) ---
+  // --- VARLIKLAR (DOSYA İKONLU) ---
   const assetList = document.getElementById("p-assets-list");
   if (assetList) {
       assetList.innerHTML = "";
@@ -4036,14 +4115,32 @@ if (cityEl) {
                     </button>
                 </div>
              ` : "";
+             
+             // --- DOSYA İKONU MANTIĞI ---
+             let fileIcon = "";
+             if (a.file_url) {
+                 // İkon seçimi (PDF mi Resim mi?)
+                 let iconClass = "fa-file-lines";
+                 if(a.file_name && a.file_name.match(/\.(jpg|jpeg|png)$/i)) iconClass = "fa-image";
+                 if(a.file_name && a.file_name.match(/\.(pdf)$/i)) iconClass = "fa-file-pdf";
+                 
+                 fileIcon = `
+                    <a href="${a.file_url}" target="_blank" class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition" title="View Document: ${a.file_name || 'File'}">
+                        <i class="fa-solid ${iconClass} text-[10px]"></i>
+                    </a>
+                 `;
+             }
 
              const row = document.createElement("tr");
-             // ✅ BURASI DEĞİŞTİ: getStatusBadge() fonksiyonunu çağırdık
              row.innerHTML = `
-                <td class="py-3 px-6 text-xs font-bold">${a.type}</td>
-                <td class="px-6 text-xs">${a.spec}</td>
-                <td class="px-6 text-xs">${a.qty}</td>
-                <td class="px-6 text-xs">${a.location || '-'}</td>
+                <td class="py-3 px-6 text-xs font-bold text-gray-700">
+                    <div class="flex items-center">
+                        ${a.type} ${fileIcon}
+                    </div>
+                </td>
+                <td class="px-6 text-xs text-gray-500">${a.spec}</td>
+                <td class="px-6 text-xs text-gray-500 text-center">${a.qty}</td>
+                <td class="px-6 text-xs text-gray-500">${a.location || '-'}</td>
                 <td class="px-6">${getStatusBadge(a.status)}</td> 
                 <td class="px-6 text-right">${btns}</td>
              `;
@@ -4346,10 +4443,13 @@ let currentEditingAssetId = null;
 
 // 1. MODALI AÇ (Ekleme veya Düzenleme)
 // MODALI AÇ (Ekleme veya Düzenleme)
+/* --- GÜNCELLENMİŞ: openAssetModal (DOSYA YÖNETİMLİ) --- */
 function openAssetModal(assetId = null) {
-if (!assetId) { 
+  // Pro Plan Kontrolü (Sadece YENİ eklerken sınır kontrolü yapar, düzenlerken değil)
+  if (!assetId) { 
       if (!checkPlanLimit('assets')) return; 
   }
+
   const modal = document.getElementById("asset-modal");
   const form = document.getElementById("asset-form");
   const title = document.getElementById("asset-modal-title");
@@ -4357,26 +4457,64 @@ if (!assetId) {
   if (!modal) return;
   modal.classList.remove("pointer-events-none", "opacity-0");
   
-  // Formu temizle
   if(form) form.reset();
-  
+  removeAssetFile(); // Dosya seçimlerini sıfırla
+
+  // --- PRO KULLANICI KONTROLÜ ---
+  const isPro = (selectedCompany && selectedCompany.subscription_tier === 'pro');
+  const fileLabel = document.getElementById("asset-file-label");
+  const fileLock = document.getElementById("asset-file-lock");
+  const proBadge = document.getElementById("asset-file-pro-badge");
+  const fileInput = document.getElementById("asset-file-input");
+
+  if (isPro) {
+      // Pro ise kilidi aç
+      if(fileLabel) { fileLabel.classList.remove("opacity-60"); fileLabel.onclick = null; }
+      if(fileLock) fileLock.classList.add("hidden");
+      if(proBadge) proBadge.classList.add("hidden");
+      if(fileInput) fileInput.disabled = false;
+  } else {
+      // Free ise kilitle ve Upgrade'e yönlendir
+      if(fileLabel) { 
+          fileLabel.classList.add("opacity-60"); 
+          // Tıklayınca Upgrade açsın
+          fileLabel.onclick = (e) => { e.preventDefault(); toggleModal('modal-upgrade'); };
+      }
+      if(fileLock) fileLock.classList.remove("hidden");
+      if(proBadge) proBadge.classList.remove("hidden");
+      if(fileInput) fileInput.disabled = true;
+  }
+
+  // --- DÜZENLEME MANTIĞI ---
   if (assetId) {
-    // --- DÜZENLEME MODU ---
     currentEditingAssetId = assetId;
     if(title) title.textContent = "Edit Asset Details";
     
-    // Veriyi bul ve kutulara doldur
     const asset = selectedCompany.assets.find(a => a.id === assetId);
     if (asset) {
-        // ARTIK HTML'DE 'asset-item' VAR, SORUNSUZ ÇALIŞACAK:
-        document.getElementById("asset-item").value = asset.type || asset.type_tr || "";
-        document.getElementById("asset-specs").value = asset.spec || asset.spec_tr || "";
+        document.getElementById("asset-item").value = asset.type || "";
+        document.getElementById("asset-specs").value = asset.spec || "";
         document.getElementById("asset-qty").value = asset.qty || "1";
         document.getElementById("asset-location").value = asset.location || "";
         document.getElementById("asset-status").value = asset.status || "Available";
+
+        // Varsa Dosyayı Göster
+        if (asset.file_url) {
+            existingAssetFileUrl = asset.file_url;
+            existingAssetFileName = asset.file_name || "Attached Document";
+            
+            document.getElementById("current-asset-link").href = asset.file_url;
+            document.getElementById("current-asset-link").querySelector("span").textContent = existingAssetFileName;
+            document.getElementById("current-asset-link").classList.remove("hidden");
+            
+            // Silme butonunu aç
+            document.getElementById("btn-remove-asset-file").classList.remove("hidden");
+            
+            // Texti güncelle
+            document.getElementById("asset-file-text").textContent = "Change File";
+        }
     }
   } else {
-    // --- EKLEME MODU ---
     currentEditingAssetId = null;
     if(title) title.textContent = "Add New Asset";
   }
@@ -4389,11 +4527,11 @@ function closeAssetModal() {
 
 // 2. KAYDET (Hem Yeni Ekleme Hem Güncelleme)
 // 2. KAYDET (ASSET - ENGLISH)
-/* --- GÜNCELLENMİŞ saveAsset (Toast'lı) --- */
+/* --- GÜNCELLENMİŞ: saveAsset (DOSYA YÜKLEMELİ) --- */
 async function saveAsset() {
   const btn = document.querySelector("#asset-form button[type='submit']");
   const originalText = btn.textContent;
-  btn.textContent = "Processing...";
+  btn.textContent = "Uploading...";
   btn.disabled = true;
 
   try {
@@ -4405,29 +4543,62 @@ async function saveAsset() {
 
     if (!item) { showToast("Missing Info", "Please enter an item name.", "error"); return; }
 
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("No session.");
+
+    // --- DOSYA YÜKLEME İŞLEMİ ---
+    let finalFileUrl = existingAssetFileUrl; // Varsayılan: eski dosya kalsın
+    let finalFileName = existingAssetFileName;
+
+    // Eğer yeni dosya seçildiyse yükle
+    if (currentAssetFile) {
+        const fileExt = currentAssetFile.name.split('.').pop();
+        const cleanName = currentAssetFile.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const filePath = `${user.id}/${Date.now()}_${cleanName}.${fileExt}`;
+
+        // 'asset-docs' bucketına yükle (Adım 1'de oluşturduğumuz yer)
+        const { error: uploadError } = await supabaseClient.storage
+            .from('asset-docs')
+            .upload(filePath, currentAssetFile);
+
+        if (uploadError) throw uploadError;
+
+        // Public URL al
+        const { data } = supabaseClient.storage.from('asset-docs').getPublicUrl(filePath);
+        finalFileUrl = data.publicUrl;
+        finalFileName = currentAssetFile.name;
+    }
+    
+    // Eğer kullanıcı dosyayı sildiyse (removeAssetFile çalıştıysa)
+    if (!currentAssetFile && !existingAssetFileUrl) {
+        finalFileUrl = null;
+        finalFileName = null;
+    }
+
+    // --- VERİ HAZIRLAMA ---
     let currentAssets = [...(selectedCompany.assets || [])];
+
+    const assetObj = {
+        type: item, 
+        spec: specs, 
+        qty: qty, 
+        location: location, 
+        status: status,
+        file_url: finalFileUrl, // Yeni alan
+        file_name: finalFileName, // Yeni alan
+        updated_at: new Date().toISOString()
+    };
 
     if (currentEditingAssetId) {
         const index = currentAssets.findIndex(a => a.id === currentEditingAssetId);
         if (index > -1) {
-            currentAssets[index] = {
-                ...currentAssets[index],
-                type: item, spec: specs, qty: qty, location: location, status: status,
-                updated_at: new Date().toISOString()
-            };
+            currentAssets[index] = { ...currentAssets[index], ...assetObj };
         }
     } else {
-        const newAsset = {
-            id: Date.now(),
-            type: item, spec: specs, qty: qty, location: location, status: status,
-            date_added: new Date().toISOString()
-        };
-        currentAssets.push(newAsset);
+        currentAssets.push({ id: Date.now(), ...assetObj, date_added: new Date().toISOString() });
     }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("No session.");
-
+    // --- DB UPDATE ---
     const { error } = await supabaseClient
       .from('profiles')
       .update({ assets: currentAssets, updated_at: new Date() })
