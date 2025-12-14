@@ -14,6 +14,9 @@
     rel="stylesheet"
   />
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -40,6 +43,7 @@
         },
       },
     };
+
   </script>
   <style>
     .hidden-view {
@@ -2199,6 +2203,27 @@
   </div>
 </div>
 
+<div id="modal-cropper" class="modal opacity-0 pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-300">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <h3 class="font-bold text-gray-800">Adjust Image</h3>
+          <button onclick="closeCropper()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+
+      <div class="relative w-full h-[400px] bg-black flex items-center justify-center">
+          <img id="cropper-img" src="" class="max-w-full max-h-full block">
+      </div>
+
+      <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center gap-3">
+          <button onclick="closeCropper()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 font-bold hover:bg-gray-50 transition text-sm">Cancel</button>
+          <button onclick="cropImage()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white font-bold hover:brightness-110 transition shadow-md shadow-blue-500/30 flex items-center gap-2 text-sm">
+              <i class="fa-solid fa-crop-simple"></i> CROP & USE
+          </button>
+      </div>
+  </div>
+</div>
+
 <script>
   // Login modalını aç/kapat
   function openLoginModal() {
@@ -2552,26 +2577,97 @@ let currentProjCover = null;       // Yeni seçilen kapak dosyası
 let shouldRemoveCover = false;     // "Kapağı Sil"e basıldı mı?
 let currentProjGalleryFiles = [];  // Yeni seçilen galeri dosyaları (File objeleri)
 let tempExistingGalleryUrls = [];  // Düzenleme modunda: Veritabanındaki mevcut URL'ler
+let cropperInstance = null; // Kırpma aracını tutacak
 
 // 1. Kapak Seçimi
+/* --- GÜNCELLENMİŞ: handleProjectCover (CROPPER İLE) --- */
 function handleProjectCover(input) {
     if (input.files && input.files[0]) {
-        currentProjCover = input.files[0];
-        shouldRemoveCover = false; // Yeni seçtiysek silme iptal
+        const file = input.files[0];
         
+        // 1. Resmi oku ve Kırpma Modalını aç
         const reader = new FileReader();
         reader.onload = (e) => {
-            const div = document.getElementById("cover-preview");
-            // Resmi koy ve silme butonunu görünür yap (class logic)
-            div.innerHTML = `
-                <img src="${e.target.result}" class="w-full h-full object-cover">
-                <button type="button" onclick="removeProjectCover()" class="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 hover:opacity-100 transition cursor-pointer">
-                   <i class="fa-solid fa-trash text-xs"></i>
-                </button>
-            `;
+            openCropper(e.target.result);
         };
-        reader.readAsDataURL(currentProjCover);
+        reader.readAsDataURL(file);
+        
+        // Input'u sıfırla ki aynı resmi seçince tekrar tetiklensin
+        input.value = ""; 
     }
+}
+
+// --- CROPPER FONKSİYONLARI ---
+
+function openCropper(imageSrc) {
+    const modal = document.getElementById("modal-cropper");
+    const image = document.getElementById("cropper-img");
+    
+    // Resmi yükle
+    image.src = imageSrc;
+    
+    // Modalı göster
+    modal.classList.remove("opacity-0", "pointer-events-none");
+
+    // Eğer eski bir cropper varsa yok et (memory leak olmasın)
+    if (cropperInstance) {
+        cropperInstance.destroy();
+    }
+
+    // Yeni Cropper başlat
+    // aspectRatio: 16/9 -> Dikdörtgen kapak için ideal oran
+    cropperInstance = new Cropper(image, {
+        aspectRatio: 16 / 9, 
+        viewMode: 1, 
+        autoCropArea: 1,
+        dragMode: 'move',
+        guides: true,
+        center: true,
+        background: false
+    });
+}
+
+function closeCropper() {
+    const modal = document.getElementById("modal-cropper");
+    modal.classList.add("opacity-0", "pointer-events-none");
+    if (cropperInstance) {
+        cropperInstance.destroy();
+        cropperInstance = null;
+    }
+}
+
+function cropImage() {
+    if (!cropperInstance) return;
+
+    // 1. Kırpılmış hali Canvas olarak al
+    const canvas = cropperInstance.getCroppedCanvas({
+        width: 800,  // Resmi optimize et (çok büyük olmasın)
+        height: 450, // 16:9 oranında
+    });
+
+    // 2. Canvas'ı Blob'a (Dosyaya) çevir
+    canvas.toBlob((blob) => {
+        // Blob'u sanki bir File objesiymiş gibi paketle
+        // Supabase'e yüklerken 'name' lazım olacak
+        const file = new File([blob], "cropped_cover.jpg", { type: "image/jpeg" });
+
+        // 3. Bizim ana değişkene ata (saveProject bunu kullanacak)
+        currentProjCover = file;
+        shouldRemoveCover = false;
+
+        // 4. Önizleme kutusunu güncelle (Modal içindeki küçük kutu)
+        const previewDiv = document.getElementById("cover-preview");
+        previewDiv.innerHTML = `
+            <img src="${canvas.toDataURL()}" class="w-full h-full object-cover">
+            <button type="button" onclick="removeProjectCover()" class="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 hover:opacity-100 transition cursor-pointer">
+               <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+        `;
+
+        // 5. Kırpıcıyı kapat
+        closeCropper();
+        showToast("Image Cropped", "Cover image updated.", "success");
+    }, 'image/jpeg', 0.85); // %85 kalite ile sıkıştır
 }
 
 // 2. Kapağı Silme Fonksiyonu
