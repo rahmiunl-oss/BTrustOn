@@ -7398,6 +7398,54 @@ async function markAllInboxRead() {
     if(btn) btn.disabled = false;
   }
 }
+
+/* --- EKSİK OLAN FONKSİYON: TÜMÜNÜ SİL --- */
+function deleteAllInbox() {
+    // 1. Hangi kutuda olduğumuzu kontrol et
+    const isInbox = currentInboxView === 'inbox';
+    const label = isInbox ? "received messages" : "sent messages";
+
+    // 2. Onay Modalı Aç
+    openDeleteModal(`Are you sure you want to delete all ${label}?`, async () => {
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) throw new Error("Login required");
+
+            // 3. Veritabanı İşlemi (Soft Delete)
+            let query = supabaseClient.from('messages');
+            
+            if (isInbox) {
+                // Gelen Kutusunu Temizle (receiver_delete = true)
+                query = query.update({ receiver_delete: true }).eq('receiver_id', user.id);
+            } else {
+                // Gönderilenleri Temizle (sender_delete = true)
+                query = query.update({ sender_delete: true }).eq('sender_id', user.id);
+            }
+
+            const { error } = await query;
+            if (error) throw error;
+
+            // 4. Yerel Listeyi Güncelle
+            // Sildiğimiz kutuya ait olmayanları tut, diğerlerini at
+            inboxData = inboxData.filter(item => {
+                if (isInbox) {
+                    return item.isSentByMe === true; // Inbox siliyorsak, Sent'ler kalsın
+                } else {
+                    return item.isSentByMe === false; // Sent siliyorsak, Inbox'lar kalsın
+                }
+            });
+
+            // 5. Ekranı Yenile
+            renderInboxItems();
+            showToast("Cleared", `All ${label} deleted successfully.`, "success");
+
+        } catch (error) {
+            console.error("Delete All Error:", error);
+            showToast("Error", "Failed to delete: " + error.message, "error");
+        }
+    });
+}
+
 /* --- AKILLI VİTRİN VE ARAMA SİSTEMİ --- */
 
     let showcaseInterval = null; // 5 saniyelik zamanlayıcı
