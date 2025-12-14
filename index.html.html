@@ -617,32 +617,41 @@
 
                   <div class="col-span-2 p-8">
                       <form id="editor-form" onsubmit="event.preventDefault(); saveProfileData();">
+
 <div class="flex items-center gap-6 mb-8 border-b border-gray-100 pb-6">
     <div id="edit-logo-preview-container" 
-         class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group cursor-pointer"
-         onclick="document.getElementById('edit-logo-input').click()">
+         class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group">
         
-        <i id="edit-logo-icon" class="fa-solid fa-building text-3xl text-gray-300 group-hover:scale-110 transition-transform duration-300"></i>
+        <i id="edit-logo-icon" class="fa-solid fa-building text-3xl text-gray-300"></i>
         
         <img id="edit-logo-img" class="hidden w-full h-full object-cover" />
         
-        <div class="absolute inset-0 bg-slate-900/60 hidden group-hover:flex flex-col items-center justify-center text-white transition-all backdrop-blur-[1px]">
+        <div onclick="document.getElementById('edit-logo-input').click()" class="absolute inset-0 bg-slate-900/60 hidden group-hover:flex flex-col items-center justify-center text-white transition-all backdrop-blur-[1px] cursor-pointer z-10">
             <i class="fa-solid fa-pen-to-square text-xl mb-1"></i>
             <span class="text-[9px] font-bold uppercase tracking-widest">CHANGE</span>
         </div>
     </div>
 
-    <div>
-        <h4 class="text-sm font-bold text-gray-700">Company Logo</h4>
-        <p class="text-xs text-gray-400 mb-3">Recommended: 400x400px, PNG or JPG.</p>
+    <div class="flex flex-col gap-2">
+        <div>
+            <h4 class="text-sm font-bold text-gray-700">Company Logo</h4>
+            <p class="text-xs text-gray-400">Recommended: 400x400px, PNG or JPG.</p>
+        </div>
         
         <input type="file" id="edit-logo-input" class="hidden" accept="image/*" onchange="handleLogoSelect(this)">
         
-        <button type="button" onclick="document.getElementById('edit-logo-input').click()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 hover:border-gray-400 transition">
-            <i class="fa-solid fa-upload mr-1"></i> Upload Logo
-        </button>
+        <div class="flex gap-2">
+            <button type="button" onclick="document.getElementById('edit-logo-input').click()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 hover:border-gray-400 transition">
+                <i class="fa-solid fa-upload mr-1"></i> Upload
+            </button>
+            
+            <button type="button" onclick="deleteLogo()" class="bg-red-50 border border-red-100 text-red-500 px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition" title="Remove Logo">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
     </div>
 </div>
+
                         <div class="space-y-12"> 
                             
                             <div id="section-general" class="space-y-6 scroll-mt-6">
@@ -782,6 +791,76 @@
     </div>
 </div>                      
 
+<div class="mt-5 pt-5 border-t border-gray-200 mb-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                <i class="fa-solid fa-user-tie text-BTrustOn-accent"></i> 
+                Key Contact / Owner
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Optional: Introduce the person behind the business.</p>
+        </div>
+        
+        <label class="relative inline-flex items-center cursor-pointer group">
+            <input type="checkbox" id="edit-owner-toggle" class="sr-only peer" onchange="toggleOwnerSection()">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-BTrustOn-accent shadow-inner"></div>
+            <span class="ml-3 text-xs font-bold text-gray-400 group-hover:text-gray-600 transition">Show</span>
+        </label>
+    </div>
+
+    <div id="owner-inputs" class="hidden space-y-5 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-bl-full -mr-10 -mt-10 z-0 pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row items-start gap-6 relative z-10">
+            <div class="shrink-0 flex flex-col items-center gap-2">
+                 <div class="w-20 h-20 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden relative group cursor-pointer hover:border-BTrustOn-accent transition-colors" onclick="document.getElementById('edit-owner-photo').click()">
+                     <img id="preview-owner-img" class="hidden w-full h-full object-cover">
+                     <i id="icon-owner-img" class="fa-solid fa-camera text-gray-300 text-2xl group-hover:text-BTrustOn-accent transition-colors"></i>
+                 </div>
+                 
+                 <input type="file" id="edit-owner-photo" class="hidden" accept="image/*" onchange="handleOwnerPhoto(this)">
+                 
+                 <button type="button" onclick="deleteOwnerPhoto()" class="text-[10px] font-bold text-red-400 hover:text-red-600 hover:underline transition">
+                    Remove Photo
+                 </button>
+            </div>
+
+            <div class="flex-1 w-full space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Full Name</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-signature absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" id="edit-owner-name" class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm font-semibold text-gray-700 focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. John Doe">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Role / Title</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-briefcase absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" id="edit-owner-role" class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Founder & CEO">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">LinkedIn Profile</label>
+                    <div class="relative group/link">
+                        <div class="absolute left-3 top-2.5 bg-white rounded-full z-10">
+                            <i class="fa-brands fa-linkedin text-blue-600 text-lg"></i>
+                        </div>
+                        <input type="text" id="edit-owner-linkedin" class="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2.5 text-sm text-blue-700 font-medium placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" placeholder="https://linkedin.com/in/username">
+                        
+                        <div class="absolute right-3 top-3 opacity-0 group-hover/link:opacity-100 transition text-[10px] text-gray-400 font-bold pointer-events-none">
+                            <i class="fa-solid fa-link"></i> Public URL
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div class="mt-8 border border-blue-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
     
     <div id="verify-locked-view" class="bg-gradient-to-br from-slate-50 to-white p-6 text-center">
@@ -797,6 +876,7 @@
             VERIFY MY BUSINESS
         </button>
     </div>
+
 
     <div id="verify-form-view" class="hidden bg-blue-50/50 p-6">
         <div class="flex items-start gap-4">
@@ -4365,6 +4445,35 @@ if (servicesGrid) {
   }
 }
 
+// --- BÖLÜM 3: OWNER / YETKİLİ KARTI (YENİ) ---
+  if (company.owner_name) {
+      const ownerDiv = document.createElement("div");
+      ownerDiv.className = "mt-6 pt-6 border-t border-gray-100 flex items-center gap-4 animate-fade-in";
+      
+      const photoSrc = company.owner_photo_url 
+        ? `<img src="${company.owner_photo_url}" class="w-full h-full object-cover">`
+        : `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user"></i></div>`;
+      
+      const linkedinBtn = company.owner_linkedin 
+        ? `<a href="${company.owner_linkedin}" target="_blank" class="text-blue-600 hover:text-blue-800 transition"><i class="fa-brands fa-linkedin text-xl"></i></a>`
+        : ``;
+
+      ownerDiv.innerHTML = `
+          <div class="w-12 h-12 rounded-full overflow-hidden border border-gray-200 shadow-sm shrink-0">
+              ${photoSrc}
+          </div>
+          <div class="flex-1">
+              <h5 class="text-xs font-bold text-gray-800">${company.owner_name}</h5>
+              <p class="text-[10px] text-gray-500 font-medium">${company.owner_role || 'Company Representative'}</p>
+          </div>
+          <div>
+              ${linkedinBtn}
+          </div>
+      `;
+      // Bunu da servicesGrid'in içine ekle (Capability Statement'ın altına düşer)
+      servicesGrid.appendChild(ownerDiv);
+  }
+
   // Yetki Kontrolü
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
@@ -4617,6 +4726,33 @@ const address = document.getElementById("edit-address").value.trim();
     const sizeVal = document.getElementById("edit-size").value;
     const yearVal = document.getElementById("edit-year").value;
     const tagline = document.getElementById("edit-tagline").value.trim();
+    
+    // --- OWNER FOTOĞRAF YÜKLEME ---
+    let finalOwnerPhotoUrl = selectedCompany.owner_photo_url || null;
+
+    // Eğer yeni dosya seçildiyse yükle
+    if (selectedOwnerFile) {
+        const fileExt = selectedOwnerFile.name.split('.').pop();
+        const filePath = `owner-${user.id}-${Date.now()}.${fileExt}`;
+        const { error: upErr } = await supabaseClient.storage.from('logos').upload(filePath, selectedOwnerFile); // Logos bucket'ını kullandım
+        
+        if (!upErr) {
+            const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
+            finalOwnerPhotoUrl = data.publicUrl;
+        }
+    }
+    
+    // Eğer kullanıcı görseli sildiyse (UI'da gizli ve yeni dosya yoksa)
+    const isOwnerImgVisible = !document.getElementById("preview-owner-img").classList.contains("hidden");
+    if (!isOwnerImgVisible && !selectedOwnerFile) {
+        finalOwnerPhotoUrl = null;
+    }
+
+    // Input Değerleri
+    const ownerName = document.getElementById("edit-owner-name").value.trim();
+    const ownerRole = document.getElementById("edit-owner-role").value.trim();
+    const ownerLink = document.getElementById("edit-owner-linkedin").value.trim();   
+  
     const updates = {
       company_name: name,
       city: city,
@@ -4635,6 +4771,10 @@ address: address, // ✅ BU SATIRI EKLEYİN (Veritabanına gönder)
       founded_year: yearVal,
       logo_url: finalLogoUrl, // Logo URL'ini kaydet
       updated_at: new Date(),
+      owner_name: ownerName,
+      owner_role: ownerRole,
+      owner_linkedin: ownerLink,
+      owner_photo_url: finalOwnerPhotoUrl,
     };
 
     // 3. VERİTABANINI GÜNCELLE
@@ -5641,7 +5781,31 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
   document.getElementById("edit-tax-id").value = selectedCompany.tax_id || "";
   document.getElementById("edit-duns").value = selectedCompany.duns_number || "";
-  document.getElementById("edit-service-details").value = selectedCompany.service_details || ""; // <-- BU SATIRI EKLE  
+  document.getElementById("edit-service-details").value = selectedCompany.service_details || ""; // <-- BU SATIRI EKLE 
+
+  // 👇👇👇 D ADIMI: OWNER VERİLERİNİ KUTULARA DOLDUR 👇👇👇
+  
+  // 1. Önce "Bu şirketin bir yetkili kaydı var mı?" diye bakıyoruz
+  const hasOwner = selectedCompany.owner_name || selectedCompany.owner_role;
+  
+  // 2. Varsa anahtarı (toggle) açıyoruz
+  document.getElementById("edit-owner-toggle").checked = !!hasOwner;
+  toggleOwnerSection(); // Kutuyu aç veya kapa
+  
+  // 3. İsim, Rol ve LinkedIn linkini dolduruyoruz
+  document.getElementById("edit-owner-name").value = selectedCompany.owner_name || "";
+  document.getElementById("edit-owner-role").value = selectedCompany.owner_role || "";
+  document.getElementById("edit-owner-linkedin").value = selectedCompany.owner_linkedin || "";
+  
+  // 4. Fotoğraf varsa gösteriyoruz, yoksa temizliyoruz
+  if (selectedCompany.owner_photo_url) {
+      document.getElementById("preview-owner-img").src = selectedCompany.owner_photo_url;
+      document.getElementById("preview-owner-img").classList.remove("hidden");
+      document.getElementById("icon-owner-img").classList.add("hidden");
+  } else {
+      // Eğer fotoğraf yoksa, temizleme fonksiyonunu çağırıp ikon haline döndürüyoruz
+      if(typeof deleteOwnerPhoto === "function") deleteOwnerPhoto(); 
+  } 
 
   updateVerificationUI(selectedCompany.verification_status);
 
@@ -7057,7 +7221,10 @@ async function initRealData() {
       id: pId,
       name: p.company_name || "New Company",
       city: p.city || "Konum Yok",
-      
+      owner_name: p.owner_name,
+      owner_role: p.owner_role,
+      owner_linkedin: p.owner_linkedin,
+      owner_photo_url: p.owner_photo_url,
       // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
       country: p.country || "Turkey",
 address: p.address || "", // ✅ BU SATIRI EKLEYİN 
@@ -8425,6 +8592,67 @@ function removeCertFile() {
     document.getElementById("cert-file-label").classList.remove("border-BTrustOn-accent", "bg-cyan-50");
     document.getElementById("btn-remove-cert-file").classList.add("hidden");
     document.getElementById("current-cert-link").classList.add("hidden");
+}
+async function deleteLogo() {
+    if(!confirm("Remove company logo?")) return;
+
+    // UI Temizle
+    document.getElementById("edit-logo-img").src = "";
+    document.getElementById("edit-logo-img").classList.add("hidden");
+    document.getElementById("edit-logo-icon").classList.remove("hidden");
+    selectedLogoFile = null; // Seçili dosyayı iptal et
+
+    // Veritabanından Sil
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ logo_url: null, updated_at: new Date() })
+            .eq('id', user.id);
+
+        if(error) throw error;
+        
+        // Local hafızayı güncelle
+        if(selectedCompany) selectedCompany.logo_url = null;
+        const localC = database.find(c => c.id == user.id);
+        if(localC) localC.logo_url = null;
+        
+        showToast("Removed", "Logo removed successfully.", "success");
+
+    } catch(e) {
+        console.error(e);
+        showToast("Error", "Could not remove logo.", "error");
+    }
+}
+let selectedOwnerFile = null;
+
+function toggleOwnerSection() {
+    const isChecked = document.getElementById("edit-owner-toggle").checked;
+    const box = document.getElementById("owner-inputs");
+    if(isChecked) box.classList.remove("hidden");
+    else box.classList.add("hidden");
+}
+
+function handleOwnerPhoto(input) {
+    if (input.files && input.files[0]) {
+        selectedOwnerFile = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById("preview-owner-img").src = e.target.result;
+            document.getElementById("preview-owner-img").classList.remove("hidden");
+            document.getElementById("icon-owner-img").classList.add("hidden");
+        }
+        reader.readAsDataURL(selectedOwnerFile);
+    }
+}
+
+function deleteOwnerPhoto() {
+    selectedOwnerFile = null;
+    document.getElementById("edit-owner-photo").value = "";
+    document.getElementById("preview-owner-img").src = "";
+    document.getElementById("preview-owner-img").classList.add("hidden");
+    document.getElementById("icon-owner-img").classList.remove("hidden");
+    // Not: DB'den silme işlemi "Save" butonuna basınca yapılacak
 }
 
 </script>
