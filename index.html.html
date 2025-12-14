@@ -222,11 +222,202 @@
   );
 
 </script>
-</head>
+
+  <!-- Boot overlay: prevents dashboard flash on refresh -->
+  <style>
+    html.booting body { overflow: hidden; }
+
+    /* During boot we always prevent Dashboard flash */
+    html.booting #view-dashboard,
+    html.booting #view-editor,
+    html.booting #view-message,
+    html.booting #view-admin { display: none !important; }
+
+    /* Only hide profile view on "home boot". On company-route boot we want skeleton to be visible. */
+    html.booting:not(.route-company) #view-profile { display: none !important; }
+
+    #boot-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(ellipse at top, rgba(6,182,212,0.10), transparent 55%),
+                  linear-gradient(to bottom, rgba(248,250,252,0.92), rgba(255,255,255,0.98));
+      backdrop-filter: blur(10px);
+    }
+    html.booting #boot-overlay { display: flex; }
+
+    .boot-card {
+      width: min(520px, 92vw);
+      border: 1px solid rgba(226,232,240,0.9);
+      background: rgba(255,255,255,0.9);
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.12);
+      padding: 20px 18px;
+    }
+    .boot-title {
+      font-family: Oswald, sans-serif;
+      font-weight: 700;
+      letter-spacing: .03em;
+      color: #0F172A;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .boot-sub {
+      color: #64748B;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .boot-bar {
+      width: 100%;
+      height: 8px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .boot-bar::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      transform: translateX(-55%);
+      background: linear-gradient(90deg, transparent, rgba(6,182,212,0.55), transparent);
+      animation: boot-sweep 1.05s ease-in-out infinite;
+    }
+    @keyframes boot-sweep { to { transform: translateX(55%); } }
+  
+/* ===== PROFILE SKELETON (BTrustOn O loader) ===== */
+#profile-skeleton.hidden { display: none !important; }
+
+#profile-skeleton .skel {
+  border-radius: 18px;
+  background: linear-gradient(90deg, rgba(15,23,42,.06), rgba(15,23,42,.12), rgba(15,23,42,.06));
+  background-size: 200% 100%;
+  animation: btonShimmer 1.1s linear infinite;
+  border: 1px solid rgba(148,163,184,.25);
+  box-shadow: 0 12px 30px rgba(2,6,23,.06);
+}
+#profile-skeleton .skel-card { background-clip: padding-box; }
+
+@keyframes btonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* "O" = DOLAN + DÖNEN HALKA */
+.bton-o { display:inline-flex; width: 1.05em; height: 1.05em; align-items:center; justify-content:center; }
+.bton-o-svg { width: 1.05em; height: 1.05em; }
+.bton-o-track {
+  fill: none;
+  stroke: rgba(0, 198, 255, .18);
+  stroke-width: 4;
+}
+.bton-o-prog {
+  fill: none;
+  stroke: url(#btonGradProfile);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 88;
+  stroke-dashoffset: 88;
+  transform-origin: 50% 50%;
+  animation: btonDash 1.2s ease-in-out infinite, btonSpin .9s linear infinite;
+}
+
+.bton-on-only{
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:0;
+  line-height:1;
+}
+/* ===== BTrustOn LOADER ALIGNMENT (baseline fix) ===== */
+.bton-loader-logo{
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:0;
+  line-height:1;
+}
+.bton-onwrap{
+  display:flex;
+  align-items:baseline;
+}
+.bton-o{
+  display:inline-flex;
+  width:1.05em;
+  height:1.05em;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  top:0.06em; /* tiny baseline correction */
+}
+.bton-o-svg{
+  width:1.05em;
+  height:1.05em;
+  display:block;
+}
+.bton-n{ line-height:1; }
+.bton-o-prog-boot{ stroke: url(#btonGradBoot) !important; }
+
+@keyframes btonSpin { to { transform: rotate(360deg); } }
+@keyframes btonDash {
+  0%   { stroke-dashoffset: 88; opacity: .6; }
+  50%  { stroke-dashoffset: 22; opacity: 1; }
+  100% { stroke-dashoffset: 88; opacity: .6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #profile-skeleton .skel { animation: none; }
+  .bton-o-prog { animation: none; stroke-dashoffset: 40; }
+}
+
+</style>
+  <script>
+    (function(){
+      try{
+        const h = (window.location.hash || "").trim();
+        const root = document.documentElement;
+        if (h.startsWith("#company=")) root.classList.add('booting','route-company');
+        else root.classList.add('booting');
+      }catch(e){}
+    })();
+  </script>
 
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <div id="toast-container"></div>
+
+<div id="boot-overlay" aria-live="polite" aria-busy="true">
+  <span class="sr-only">Loading…</span>
+  <div class="bton-on-only text-6xl md:text-7xl font-sans font-bold tracking-tight leading-none select-none" aria-hidden="true">
+    <span class="bton-o" aria-hidden="true">
+      <svg viewBox="0 0 40 40" class="bton-o-svg">
+        <defs>
+          <linearGradient id="btonGradBoot" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#00C6FF"/>
+            <stop offset="1" stop-color="#0078FF"/>
+          </linearGradient>
+          <filter id="btonGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.6" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <circle class="bton-o-track" cx="20" cy="20" r="14"></circle>
+        <circle class="bton-o-prog bton-o-prog-boot" cx="20" cy="20" r="14" filter="url(#btonGlow)"></circle>
+      </svg>
+    </span>
+    <span class="bton-n bg-clip-text text-transparent bg-gradient-to-r from-[#00C6FF] to-[#0078FF]">n</span>
+  </div>
+</div>
+
+
   <div
     class="fixed inset-0 z-[-1] dot-map-bg opacity-[0.4] pointer-events-none"
   ></div>
@@ -933,6 +1124,26 @@
     id="view-profile"
     class="hidden-view fade-in min-h-screen bg-white/50 backdrop-blur-sm"
   >
+    <!-- ✅ PROFILE SKELETON OVERLAY (BTrustOn 'O' animasyonlu) -->
+        <div id="profile-skeleton" class="hidden fixed inset-0 z-[9998] bg-white/90 backdrop-blur-md flex items-center justify-center">
+  <span class="sr-only">Loading…</span>
+  <div class="bton-on-only text-6xl md:text-7xl font-sans font-bold tracking-tight leading-none select-none" aria-hidden="true">
+    <span class="bton-o" aria-hidden="true">
+      <svg viewBox="0 0 40 40" class="bton-o-svg">
+        <defs>
+          <linearGradient id="btonGradProfile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#00C6FF"/>
+            <stop offset="1" stop-color="#0078FF"/>
+          </linearGradient>
+        </defs>
+        <circle class="bton-o-track" cx="20" cy="20" r="14"></circle>
+        <circle class="bton-o-prog bton-o-prog-profile" cx="20" cy="20" r="14"></circle>
+      </svg>
+    </span>
+    <span class="bton-n bg-clip-text text-transparent bg-gradient-to-r from-[#00C6FF] to-[#0078FF]">n</span>
+  </div>
+</div>
+
  <div
     class="bg-gradient-to-r from-slate-50 via-white to-cyan-50/60 border-b border-BTrustOn-border pb-12 pt-12 relative overflow-hidden backdrop-blur-xl"
   >
@@ -4131,12 +4342,48 @@ function animateValue(id, start, end, duration) {
     /* --- GÜÇLENDİRİLMİŞ OPEN PROFILE (OTOMATİK VERİ ÇEKME + EKRAN YÖNETİMİ) --- */
 /* --- GÜNCELLENMİŞ: openProfile (RENKLİ STATUS + ŞIK BUTONLAR) --- */
 async function openProfile(companyId) {
+
+  // --- ROUTE + FAST UI SWITCH (prevents 1-2s dashboard flash on refresh) ---
+  try { localStorage.setItem("BTrustOn_last_route", `company:${companyId}`); } catch(e) {}
+
+  // Keep URL in sync (so refresh stays on the same company)
+  try {
+    const newHash = `#company=${encodeURIComponent(companyId)}`;
+    if (window.location.hash !== newHash) {
+      if (history && history.replaceState) history.replaceState(null, "", newHash);
+      else window.location.hash = newHash;
+    }
+  } catch(e) {}
+
+  // Immediately switch to Profile view shell (even if data must load)
+  const _vd = document.getElementById("view-dashboard");
+  const _vp = document.getElementById("view-profile");
+  const _ve = document.getElementById("view-editor");
+  const _vm = document.getElementById("view-message");
+  const _bb = document.getElementById("back-btn");
+
+  if (_vd) _vd.classList.add("hidden-view");
+  if (_ve) _ve.classList.add("hidden-view");
+  if (_vm) _vm.classList.add("hidden-view");
+  if (_vp) _vp.classList.remove("hidden-view");
+  if (_bb) _bb.classList.remove("hidden", "hidden-view");
+
+  // ✅ Always start profile at top (prevents "1 page down" offset)
+  try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
+
+
+  // ✅ Show skeleton while profile data loads
+  try { showProfileSkeleton(); } catch(e) {}
+
+
   // 1. Önce veritabanında var mı?
   let company = database.find((c) => c.id == companyId);
 
   // 2. Yoksa Supabase'den çek
   if (!company) {
-      showToast("Loading...", "Fetching company profile...", "info");
+      if (!(window.__routeRestoring === true)) {
+        showToast("Loading...", "Fetching company profile...", "info");
+      }
       try {
           const { data: profile, error } = await supabaseClient
               .from('profiles')
@@ -4146,6 +4393,7 @@ async function openProfile(companyId) {
 
           if (error || !profile) {
               showToast("Error", "Profile not found or deleted.", "error");
+              try { hideProfileSkeleton(); } catch(e) {}
               return;
           }
 
@@ -4174,6 +4422,7 @@ async function openProfile(companyId) {
       } catch (err) {
           console.error(err);
           showToast("Error", "Connection failed.", "error");
+          try { hideProfileSkeleton(); } catch(e) {}
           return;
       }
   }
@@ -4728,7 +4977,10 @@ if (servicesGrid) {
           profileWidget.classList.add("hidden");
       }
   }
-    }
+    
+  // ✅ Hide skeleton once profile UI is ready
+  try { hideProfileSkeleton(); } catch(e) {}
+}
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
 // ✅ 1. GÜNCELLENMİŞ KAYDETME FONKSİYONU
@@ -4884,7 +5136,37 @@ async function saveProfileData() {
   }
 }
 
-    function showMainView() {
+    
+function showProfileSkeleton() {
+  const el = document.getElementById("profile-skeleton");
+  if (!el) return;
+  el.classList.remove("hidden");
+  // toast yerine skeleton kullan
+  window.__suppressProfileLoadingToasts = true;
+}
+function hideProfileSkeleton() {
+  const el = document.getElementById("profile-skeleton");
+  if (!el) return;
+  el.classList.add("hidden");
+  window.__suppressProfileLoadingToasts = false;
+}
+
+function showMainView() {
+
+      // Ensure profile loader is off on Home
+      try { hideProfileSkeleton(); } catch(e) {}
+      // Remember last view (prevents "random" landing on refresh)
+      try { localStorage.setItem("BTrustOn_last_route", "home"); } catch(e) {}
+
+      // Clear any company route from the URL (clean + professional)
+      try {
+        if (history && history.replaceState) {
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+        } else {
+          window.location.hash = "";
+        }
+      } catch(e) {}
+
       const viewDashboard = document.getElementById("view-dashboard");
       const viewProfile = document.getElementById("view-profile");
       const viewEditor = document.getElementById("view-editor");
@@ -4894,6 +5176,10 @@ async function saveProfileData() {
       if (viewProfile) viewProfile.classList.add("hidden-view");
       if (viewEditor) viewEditor.classList.add("hidden-view");
       if (backBtn) backBtn.classList.add("hidden", "hidden-view");
+
+      // ✅ Always start Home at top
+      try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
+
     }
 /* --- EKSİK OLAN FONKSİYON: Editör Ekranını Göster --- */
 function showEditorView() {
@@ -5726,24 +6012,72 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 /* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
+
+/* --- ROUTE RESTORE (NO FLASH) --- */
+function _getCompanyIdFromHash() {
+  try {
+    const h = window.location.hash || "";
+    const m = h.match(/^#company=([^&]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch(e) { return null; }
+}
+
+function _getCompanyIdFromLastRoute() {
+  try {
+    const last = localStorage.getItem("BTrustOn_last_route") || "";
+    if (last.startsWith("company:")) return last.slice("company:".length);
+  } catch(e) {}
+  return null;
+}
+
+// Runs first: decides which view should be visible before the homepage renders.
+async function restoreInitialRoute() {
+  const companyId = _getCompanyIdFromHash() || _getCompanyIdFromLastRoute();
+  if (companyId) {
+    // Don't wait: openProfile will load data; we just avoid homepage flash
+    window.__routeRestoring = true;
+    try {
+      await openProfile(companyId);
+    } finally {
+      window.__routeRestoring = false;
+    }
+return;
+  }
+  // Default: dashboard (home)
+  showMainView();
+}
+
+// Runs last: reveals the UI (removes boot overlay)
+function finishBoot() {
+  try { document.documentElement.classList.remove("booting","route-company"); } catch(e) {}
+  try {
+    const overlay = document.getElementById("boot-overlay");
+    if (overlay) overlay.remove();
+  } catch(e) {}
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
-populateCountrySelects(); // 👈 İŞTE EKSİK OLAN SATIR BU!    
-// 1. Önce Statik Sistemleri Başlat
-    applyTranslations();
-    initTopCompaniesOrder();
-    renderTopCompanies();
-    startTopAnimations();
-    switchLanguage("en");
-    initRealData();
-    initShowcaseSystem();
+  populateCountrySelects(); // Country dropdowns
 
-    // 2. Verileri Çek (Gecikmesiz)
-    fetchAllPublicProfiles(); 
-    
-    // 3. Kullanıcı Kontrolünü HEMEN Yap (Timeout yok!)
-    await checkUserAndOpenProfile();
+  // 0) Restore last view FIRST (prevents dashboard flash)
+  await restoreInitialRoute();
+  finishBoot();
+
+  // 1) Start static systems
+  applyTranslations();
+  initTopCompaniesOrder();
+  renderTopCompanies();
+  startTopAnimations();
+  switchLanguage("en");
+  initRealData();
+  initShowcaseSystem();
+
+  // 2) Fetch public profiles (can run after correct view is already visible)
+  fetchAllPublicProfiles(); 
+
+  // 3) User session check (refresh user UI / My Company button etc.)
+  checkUserAndOpenProfile();
 });
-
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
@@ -5971,6 +6305,15 @@ function initEditorListeners() {
 /* --- TOAST BİLDİRİM SİSTEMİ (GÜNCELLENMİŞ HALİ) --- */
 /* --- TOAST BİLDİRİM SİSTEMİ (TIKLANABİLİR VERSİYON) --- */
 function showToast(title, message, type = 'success', onClick = null) {
+  // ✅ Skeleton açıkken profil yükleme toast'larını bastır (refresh + normal geçiş)
+  if (window.__suppressProfileLoadingToasts) {
+    const t = String(title || "").toLowerCase();
+    const m = String(message || "").toLowerCase();
+    if (t.includes("loading") || m.includes("loading") || m.includes("fetching") || m.includes("profile")) {
+      return;
+    }
+  }
+
   const container = document.getElementById('toast-container');
   if (!container) return;
 
