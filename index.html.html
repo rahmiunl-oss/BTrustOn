@@ -1064,6 +1064,7 @@
             Core Services
           </h3>
           <div id="p-services-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"></div>
+	  <div id="p-owner-view"></div>
         </div>
 
         <div id="content-projects" class="hidden-view">
@@ -4445,33 +4446,45 @@ if (servicesGrid) {
   }
 }
 
-// --- BÖLÜM 3: OWNER / YETKİLİ KARTI (YENİ) ---
-  if (company.owner_name) {
-      const ownerDiv = document.createElement("div");
-      ownerDiv.className = "mt-6 pt-6 border-t border-gray-100 flex items-center gap-4 animate-fade-in";
+// --- BÖLÜM 3: OWNER / YETKİLİ KARTI (DÜZELTİLMİŞ - AYRI KUTU) ---
+  
+  // 1. Önce Owner yuvasını bul ve temizle
+  const ownerContainer = document.getElementById("p-owner-view");
+  if (ownerContainer) {
+      ownerContainer.innerHTML = ""; // Önceki veriyi temizle
       
-      const photoSrc = company.owner_photo_url 
-        ? `<img src="${company.owner_photo_url}" class="w-full h-full object-cover">`
-        : `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user"></i></div>`;
-      
-      const linkedinBtn = company.owner_linkedin 
-        ? `<a href="${company.owner_linkedin}" target="_blank" class="text-blue-600 hover:text-blue-800 transition"><i class="fa-brands fa-linkedin text-xl"></i></a>`
-        : ``;
+      // 2. Eğer Owner verisi varsa kartı oluştur
+      if (company.owner_name) {
+          const photoSrc = company.owner_photo_url 
+            ? `<img src="${company.owner_photo_url}" class="w-full h-full object-cover">`
+            : `<div class="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300"><i class="fa-solid fa-user"></i></div>`;
+          
+          const linkedinBtn = company.owner_linkedin 
+            ? `<a href="${company.owner_linkedin}" target="_blank" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition shadow-sm"><i class="fa-brands fa-linkedin text-sm"></i></a>`
+            : ``;
 
-      ownerDiv.innerHTML = `
-          <div class="w-12 h-12 rounded-full overflow-hidden border border-gray-200 shadow-sm shrink-0">
-              ${photoSrc}
-          </div>
-          <div class="flex-1">
-              <h5 class="text-xs font-bold text-gray-800">${company.owner_name}</h5>
-              <p class="text-[10px] text-gray-500 font-medium">${company.owner_role || 'Company Representative'}</p>
-          </div>
-          <div>
-              ${linkedinBtn}
-          </div>
-      `;
-      // Bunu da servicesGrid'in içine ekle (Capability Statement'ın altına düşer)
-      servicesGrid.appendChild(ownerDiv);
+          // Kart HTML'i
+          ownerContainer.innerHTML = `
+              <div class="mt-8 animate-fade-in">
+                  <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2 border-b border-gray-100 pb-2">
+                      <i class="fa-solid fa-user-tie text-BTrustOn-accent"></i> Key Contact / Owner
+                  </h4>
+
+                  <div class="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow max-w-md">
+                      <div class="w-14 h-14 rounded-full overflow-hidden border border-gray-200 shadow-inner shrink-0">
+                          ${photoSrc}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                          <h5 class="text-sm font-bold text-gray-800 truncate">${company.owner_name}</h5>
+                          <p class="text-[11px] text-gray-500 font-medium truncate">${company.owner_role || 'Company Representative'}</p>
+                      </div>
+                      <div class="shrink-0">
+                          ${linkedinBtn}
+                      </div>
+                  </div>
+              </div>
+          `;
+      }
   }
 
   // Yetki Kontrolü
@@ -4674,9 +4687,7 @@ if (servicesGrid) {
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
 // ✅ 1. GÜNCELLENMİŞ KAYDETME FONKSİYONU
-/* --- B. KAYDETME (GÜNCEL - CONTACT INFO DAHİL) --- */
-/* --- GÜNCELLENMİŞ saveProfileData (Toast'lı) --- */
-/* --- B. KAYDETME (GÜNCEL - EMAIL DAHİL) --- */
+/* --- GÜNCELLENMİŞ KAYDETME FONKSİYONU (HER ŞEY DAHİL) --- */
 async function saveProfileData() {
   const btn = document.querySelector("#editor-form button[type='submit']");
   const originalText = btn.textContent;
@@ -4687,38 +4698,49 @@ async function saveProfileData() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("No active session found!");
 
+    // --- 1. ŞİRKET LOGOSU ---
     let finalLogoUrl = selectedCompany.logo_url || null;
-
-    // 1. LOGO VARSA ÖNCE ONU YÜKLE
     if (selectedLogoFile) {
         const fileExt = selectedLogoFile.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        // Supabase Storage'a yükle
-        const { error: uploadError } = await supabaseClient.storage
-            .from('logos') // 1. Adımda açtığımız bucket ismi
-            .upload(filePath, selectedLogoFile);
-
+        const filePath = `${user.id}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabaseClient.storage.from('logos').upload(filePath, selectedLogoFile);
         if (uploadError) throw uploadError;
-
-        // Public URL al
-        const { data: { publicUrl } } = supabaseClient.storage
-            .from('logos')
-            .getPublicUrl(filePath);
-            
-        finalLogoUrl = publicUrl;
+        const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
+        finalLogoUrl = data.publicUrl;
+    } else {
+        // Eğer resim görünmüyorsa silinmiştir
+        if (document.getElementById("edit-logo-img").classList.contains("hidden")) {
+            finalLogoUrl = null;
+        }
     }
 
-    // 2. DİĞER VERİLERİ HAZIRLA
+    // --- 2. OWNER FOTOĞRAFI ---
+    let finalOwnerPhotoUrl = selectedCompany.owner_photo_url || null;
+    // (selectedOwnerFile değişkeninin global tanımlı olduğundan emin ol: let selectedOwnerFile = null;)
+    if (typeof selectedOwnerFile !== 'undefined' && selectedOwnerFile) {
+        const fileExt = selectedOwnerFile.name.split('.').pop();
+        const filePath = `owner-${user.id}-${Date.now()}.${fileExt}`;
+        const { error: upErr } = await supabaseClient.storage.from('logos').upload(filePath, selectedOwnerFile);
+        if (!upErr) {
+            const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
+            finalOwnerPhotoUrl = data.publicUrl;
+        }
+    }
+    // Silinmiş mi kontrolü
+    const isOwnerImgVisible = !document.getElementById("preview-owner-img").classList.contains("hidden");
+    if (!isOwnerImgVisible && (typeof selectedOwnerFile === 'undefined' || !selectedOwnerFile)) {
+        finalOwnerPhotoUrl = null;
+    }
+
+    // --- 3. INPUT VERİLERİNİ AL ---
     const name = document.getElementById("edit-name").value.trim();
     const city = document.getElementById("edit-city").value.trim();
-    const country = document.getElementById("edit-country").value; // YENİ
-const address = document.getElementById("edit-address").value.trim();
+    const country = document.getElementById("edit-country").value;
+    const address = document.getElementById("edit-address").value.trim();
     const sector = document.getElementById("edit-sector").value;
     const desc = document.getElementById("edit-desc").value.trim();
     const servicesStr = document.getElementById("edit-services").value.trim();
-    const serviceDetails = document.getElementById("edit-service-details").value.trim(); // <-- BU SATIRI EKLE
+    const serviceDetails = document.getElementById("edit-service-details").value.trim();
     const website = document.getElementById("edit-website").value.trim();
     const phone = document.getElementById("edit-phone").value.trim();
     const contactEmail = document.getElementById("edit-email").value.trim();
@@ -4727,57 +4749,40 @@ const address = document.getElementById("edit-address").value.trim();
     const yearVal = document.getElementById("edit-year").value;
     const tagline = document.getElementById("edit-tagline").value.trim();
     
-    // --- OWNER FOTOĞRAF YÜKLEME ---
-    let finalOwnerPhotoUrl = selectedCompany.owner_photo_url || null;
-
-    // Eğer yeni dosya seçildiyse yükle
-    if (selectedOwnerFile) {
-        const fileExt = selectedOwnerFile.name.split('.').pop();
-        const filePath = `owner-${user.id}-${Date.now()}.${fileExt}`;
-        const { error: upErr } = await supabaseClient.storage.from('logos').upload(filePath, selectedOwnerFile); // Logos bucket'ını kullandım
-        
-        if (!upErr) {
-            const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
-            finalOwnerPhotoUrl = data.publicUrl;
-        }
-    }
-    
-    // Eğer kullanıcı görseli sildiyse (UI'da gizli ve yeni dosya yoksa)
-    const isOwnerImgVisible = !document.getElementById("preview-owner-img").classList.contains("hidden");
-    if (!isOwnerImgVisible && !selectedOwnerFile) {
-        finalOwnerPhotoUrl = null;
-    }
-
-    // Input Değerleri
+    // Owner Inputları
     const ownerName = document.getElementById("edit-owner-name").value.trim();
     const ownerRole = document.getElementById("edit-owner-role").value.trim();
-    const ownerLink = document.getElementById("edit-owner-linkedin").value.trim();   
-  
+    const ownerLink = document.getElementById("edit-owner-linkedin").value.trim();
+
+    // --- 4. GÜNCELLEME PAKETİ ---
     const updates = {
       company_name: name,
       city: city,
-      country: country, // YENİ
-address: address, // ✅ BU SATIRI EKLEYİN (Veritabanına gönder)
+      country: country,
+      address: address,
       tagline: tagline,
       sector: sector,
       description: desc,
       services: servicesStr,
-      service_details: serviceDetails, // <-- BU SATIRI DATABASE'E GÖNDERİYORUZ	
+      service_details: serviceDetails, // Capability Statement
       website: website,
       phone: phone,
       contact_email: contactEmail,
       company_type: typeVal,
       company_size: sizeVal,
       founded_year: yearVal,
-      logo_url: finalLogoUrl, // Logo URL'ini kaydet
-      updated_at: new Date(),
+      logo_url: finalLogoUrl,
+      
+      // YENİ EKLENENLER:
       owner_name: ownerName,
       owner_role: ownerRole,
       owner_linkedin: ownerLink,
       owner_photo_url: finalOwnerPhotoUrl,
+
+      updated_at: new Date(),
     };
 
-    // 3. VERİTABANINI GÜNCELLE
+    // --- 5. DB GÖNDER ---
     const { error } = await supabaseClient
       .from('profiles')
       .update(updates)
@@ -4785,21 +4790,25 @@ address: address, // ✅ BU SATIRI EKLEYİN (Veritabanına gönder)
 
     if (error) throw error;
 
-    showToast("Success", "Profile and logo updated successfully!", "success");
+    showToast("Success", "Profile updated successfully!", "success");
 
-    // Local veriyi güncelle (Ekran yenilenmeden görünsün diye)
+    // --- 6. LOCAL HAFIZAYI GÜNCELLE (Ekran Yenilenmeden Görünsün) ---
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
             name, city, sector, desc, tagline,
             website, phone, contact_email: contactEmail,
-address: address, // <-- Buraya
-            type_label: typeVal, size_label: sizeVal, year_label: yearVal,
+            address, type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
             services: servicesStr.split(',').map(s => s.trim()).filter(s => s),
-            service_details: serviceDetails
+            service_details: serviceDetails,
+            
+            // Local Update
+            owner_name: ownerName,
+            owner_role: ownerRole,
+            owner_linkedin: ownerLink,
+            owner_photo_url: finalOwnerPhotoUrl
         });
-	
     }
 
     openProfile(user.id);
@@ -4816,6 +4825,7 @@ address: address, // <-- Buraya
     btn.disabled = false;
   }
 }
+
     function showMainView() {
       const viewDashboard = document.getElementById("view-dashboard");
       const viewProfile = document.getElementById("view-profile");
@@ -7221,14 +7231,15 @@ async function initRealData() {
       id: pId,
       name: p.company_name || "New Company",
       city: p.city || "Konum Yok",
-      owner_name: p.owner_name,
-      owner_role: p.owner_role,
-      owner_linkedin: p.owner_linkedin,
-      owner_photo_url: p.owner_photo_url,
+      
       // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
       country: p.country || "Turkey",
 address: p.address || "", // ✅ BU SATIRI EKLEYİN 
 service_details: p.service_details || "",
+owner_name: p.owner_name,
+      owner_role: p.owner_role,
+      owner_linkedin: p.owner_linkedin,
+      owner_photo_url: p.owner_photo_url,
       
       sector: p.sector || "construction",
       desc: p.description || "",
