@@ -1265,7 +1265,7 @@
                 </div>
             </div>
 
-        </div> </div> ```
+        </div> </div> 
         
       </main>
   
@@ -4532,59 +4532,89 @@ if (servicesGrid) {
 
   switchProfileTab("overview");
   
-  // --- PROJELER (GÖRSEL KART TASARIMI) ---
+  // --- PROJELER (TIKLANABİLİR KART + GİZLİ BUTONLAR) ---
   const projList = document.getElementById("p-projects-list");
   if (projList) {
       projList.innerHTML = "";
+      
       if (!company.projects || company.projects.length === 0) {
-          projList.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400 text-xs italic">No projects listed.</div>';
+          projList.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center py-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-3">
+                    <i class="fa-solid fa-diagram-project text-2xl"></i>
+                </div>
+                <p class="text-sm text-gray-500 font-medium">No projects listed yet.</p>
+            </div>`;
       } else {
           company.projects.forEach(p => {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
-              const cover = p.cover_url || "https://placehold.co/600x400/e2e8f0/94a3b8?text=Project"; // Placeholder
+              const cover = p.cover_url || "https://placehold.co/800x450/f1f5f9/94a3b8?text=Project+Image"; 
 
-              // Galeri butonu (Varsa)
-              let galleryBtn = "";
+              // Galeri verisini hazırla
+              let cardClickAction = "";
+              let cursorClass = "cursor-default";
+              let galleryBadge = "";
+
               if (hasGallery) {
-                  // JSON.stringify ile array'i string'e çevirip fonksiyona yolluyoruz
                   const safeUrls = JSON.stringify(p.gallery_urls).replace(/"/g, '&quot;');
-                  galleryBtn = `
-                    <button onclick="openGallery('${p.title}', ${safeUrls})" class="mt-2 text-[10px] font-bold text-BTrustOn-accent flex items-center gap-1 hover:underline">
-                        <i class="fa-solid fa-images"></i> View Gallery (${p.gallery_urls.length})
-                    </button>
+                  // Tıklama olayını buraya tanımlıyoruz
+                  cardClickAction = `onclick="openGallery('${p.title}', ${safeUrls})"`;
+                  cursorClass = "cursor-pointer";
+                  
+                  // Buton yerine sol üste minik bir fotoğraf sayısı etiketi koyuyoruz
+                  galleryBadge = `
+                    <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
+                         <i class="fa-solid fa-camera"></i> ${p.gallery_urls.length}
+                    </div>
                   `;
               }
 
-              // Yönetim Butonları
+              // Yönetim Butonları (stopPropagation EKLENDİ)
+              // event.stopPropagation() -> Tıklamayı durdur, arkadaki galeri açılmasın.
               const actionBtns = isMyProfile ? `
-                <div class="absolute top-2 right-2 flex gap-1">
-                    <button onclick="openProjectModal(${p.id})" class="w-6 h-6 rounded bg-white/90 text-BTrustOn-accent hover:text-white hover:bg-BTrustOn-accent flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                    <button onclick="deleteProject(${p.id})" class="w-6 h-6 rounded bg-white/90 text-red-400 hover:text-white hover:bg-red-500 flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+                    <button onclick="event.stopPropagation(); openProjectModal(${p.id})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="Edit Project">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); deleteProject(${p.id})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="Delete Project">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
                 </div>
               ` : "";
 
               const card = document.createElement("div");
-              card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition group relative";
+              card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative flex flex-col h-full";
               
               card.innerHTML = `
-                <div class="h-24 bg-gray-100 relative overflow-hidden">
-                    <img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                    <div class="absolute bottom-2 left-3 text-white">
-                        <h4 class="font-bold text-sm shadow-black drop-shadow-md">${p.title}</h4>
-                        <p class="text-[10px] opacity-90"><i class="fa-solid fa-location-dot mr-1"></i>${p.loc || 'Unknown'}</p>
+                <div class="relative h-48 overflow-hidden bg-gray-100 shrink-0 ${cursorClass} group/img" ${cardClickAction}>
+                    <img src="${cover}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-90"></div>
+                    
+                    ${galleryBadge}
+                    
+                    <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
+                        <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
+                        <div class="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                            <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+                            <span class="truncate">${p.loc || 'Unknown Location'}</span>
+                        </div>
                     </div>
+                    
                     ${actionBtns}
                 </div>
-                <div class="p-4">
-                    <p class="text-xs text-gray-500 line-clamp-3 leading-relaxed mb-1">${p.desc}</p>
-                    ${galleryBtn}
+
+                <div class="p-5 flex flex-col flex-1">
+                    <p class="text-sm text-gray-600 leading-relaxed line-clamp-4">
+                        ${p.desc || 'No description provided.'}
+                    </p>
                 </div>
               `;
               projList.appendChild(card);
           });
       }
   }
+
   
   // Sertifikalar
   renderCertificates(company);
