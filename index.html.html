@@ -1624,6 +1624,50 @@
       <textarea id="proj-desc" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. EPC delivery of 50 turbines (12MW) and subsea cabling works..."></textarea>
     </div>
 
+<div class="space-y-3 pt-2">
+      
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cover Image</label>
+        <div class="flex items-center gap-3">
+            <div id="cover-preview" class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+                <i class="fa-solid fa-image text-gray-400"></i>
+            </div>
+            <label class="cursor-pointer bg-white border border-gray-300 text-gray-600 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 transition">
+                <i class="fa-solid fa-upload mr-1"></i> Choose Cover
+                <input type="file" id="proj-cover-input" class="hidden" accept="image/*" onchange="handleProjectCover(this)">
+            </label>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group">
+         
+         <div class="flex justify-between items-center mb-2">
+            <label class="text-xs font-bold text-gray-600 flex items-center gap-2">
+                <i class="fa-solid fa-images text-BTrustOn-accent"></i> Project Gallery
+            </label>
+            <span id="proj-gallery-badge" class="bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200">
+              <i class="fa-solid fa-crown"></i> PRO
+            </span>
+         </div>
+
+         <div class="flex items-center gap-2">
+            <label id="proj-gallery-label" class="flex-1 cursor-pointer bg-white border border-dashed border-gray-300 rounded-lg px-3 py-2 text-center hover:border-BTrustOn-accent transition">
+                <span class="text-[10px] text-gray-500 font-bold block">Select Multiple Photos</span>
+                <input type="file" id="proj-gallery-input" class="hidden" accept="image/*" multiple onchange="handleProjectGallery(this)">
+            </label>
+            <span id="gallery-count-text" class="text-[10px] text-gray-400 font-bold">0 files</span>
+         </div>
+
+         <div id="proj-gallery-lock" class="absolute inset-0 bg-slate-100/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 cursor-pointer" onclick="toggleModal('modal-upgrade')">
+             <div class="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center mb-1">
+                 <i class="fa-solid fa-lock text-gray-400 text-xs"></i>
+             </div>
+             <span class="text-[9px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded-full shadow-sm">Upgrade to Add Gallery</span>
+         </div>
+
+      </div>
+    </div>
+
     <div class="pt-4 flex gap-3">
       <button type="button" onclick="closeProjectModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
         CANCEL
@@ -2131,6 +2175,23 @@
     }
 </style>
 
+<div id="modal-gallery" class="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300">
+  
+  <button onclick="closeGallery()" class="absolute top-5 right-5 text-white/70 hover:text-white text-3xl z-50">
+      <i class="fa-solid fa-xmark"></i>
+  </button>
+
+  <div class="w-full h-full flex flex-col items-center justify-center p-4">
+      
+      <img id="gallery-main-img" src="" class="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl mb-4 animate-fade-in">
+      
+      <div id="gallery-thumbs" class="flex gap-2 overflow-x-auto max-w-2xl pb-2 custom-scrollbar">
+          </div>
+      
+      <p id="gallery-caption" class="text-white/80 text-sm font-bold mt-2"></p>
+  </div>
+</div>
+
 <script>
   // Login modalını aç/kapat
   function openLoginModal() {
@@ -2477,6 +2538,39 @@ function removeAssetFile() {
     if(labelEl) labelEl.classList.remove("border-BTrustOn-accent", "bg-cyan-50");
     if(removeBtn) removeBtn.classList.add("hidden");
     if(linkEl) linkEl.classList.add("hidden");
+}
+
+/* --- PROJE RESİM DEĞİŞKENLERİ --- */
+let currentProjCover = null;
+let currentProjGallery = [];
+
+// Kapak Fotoğrafı Seçimi (Input Change)
+function handleProjectCover(input) {
+    if (input.files && input.files[0]) {
+        currentProjCover = input.files[0];
+        // Önizleme yap
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const div = document.getElementById("cover-preview");
+            // Mevcut ikonu silip resmi koyuyoruz
+            div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(currentProjCover);
+    }
+}
+
+// Galeri Çoklu Seçimi (Input Change)
+function handleProjectGallery(input) {
+    if (input.files) {
+        // FileList'i Array'e çevir
+        currentProjGallery = Array.from(input.files);
+        
+        // Kaç dosya seçildiğini yaz
+        document.getElementById("gallery-count-text").textContent = `${currentProjGallery.length} files selected`;
+        
+        // Görsel efekt (Border rengi değişsin)
+        document.getElementById("proj-gallery-label").classList.add("border-BTrustOn-accent", "bg-cyan-50");
+    }
 }
 
 /* --- STEP 5: PLAN LİMİTLERİ VE KONTROLÜ --- */
@@ -4067,7 +4161,7 @@ if (cityEl) {
 
   switchProfileTab("overview");
   
-  // --- PROJELER ---
+  // --- PROJELER (GÖRSEL KART TASARIMI) ---
   const projList = document.getElementById("p-projects-list");
   if (projList) {
       projList.innerHTML = "";
@@ -4075,20 +4169,47 @@ if (cityEl) {
           projList.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400 text-xs italic">No projects listed.</div>';
       } else {
           company.projects.forEach(p => {
+              const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
+              const cover = p.cover_url || "https://placehold.co/600x400/e2e8f0/94a3b8?text=Project"; // Placeholder
+
+              // Galeri butonu (Varsa)
+              let galleryBtn = "";
+              if (hasGallery) {
+                  // JSON.stringify ile array'i string'e çevirip fonksiyona yolluyoruz
+                  const safeUrls = JSON.stringify(p.gallery_urls).replace(/"/g, '&quot;');
+                  galleryBtn = `
+                    <button onclick="openGallery('${p.title}', ${safeUrls})" class="mt-2 text-[10px] font-bold text-BTrustOn-accent flex items-center gap-1 hover:underline">
+                        <i class="fa-solid fa-images"></i> View Gallery (${p.gallery_urls.length})
+                    </button>
+                  `;
+              }
+
+              // Yönetim Butonları
               const actionBtns = isMyProfile ? `
-                <div class="flex gap-2 ml-auto">
-                    <button onclick="openProjectModal(${p.id})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
-                        <i class="fa-solid fa-pen text-[10px]"></i>
-                    </button>
-                    <button onclick="deleteProject(${p.id})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
-                        <i class="fa-solid fa-trash text-[10px]"></i>
-                    </button>
+                <div class="absolute top-2 right-2 flex gap-1">
+                    <button onclick="openProjectModal(${p.id})" class="w-6 h-6 rounded bg-white/90 text-BTrustOn-accent hover:text-white hover:bg-BTrustOn-accent flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                    <button onclick="deleteProject(${p.id})" class="w-6 h-6 rounded bg-white/90 text-red-400 hover:text-white hover:bg-red-500 flex items-center justify-center shadow-sm transition"><i class="fa-solid fa-trash text-[10px]"></i></button>
                 </div>
               ` : "";
 
               const card = document.createElement("div");
-              card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm";
-              card.innerHTML = `<h4 class="font-bold text-BTrustOn-primary text-sm flex justify-between items-start">${p.title} ${actionBtns}</h4><p class="text-xs text-gray-500 mt-1">${p.desc}</p>`;
+              card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition group relative";
+              
+              card.innerHTML = `
+                <div class="h-32 bg-gray-100 relative overflow-hidden">
+                    <img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <div class="absolute bottom-2 left-3 text-white">
+                        <h4 class="font-bold text-sm shadow-black drop-shadow-md">${p.title}</h4>
+                        <p class="text-[10px] opacity-90"><i class="fa-solid fa-location-dot mr-1"></i>${p.loc || 'Unknown'}</p>
+                    </div>
+                    ${actionBtns}
+                </div>
+                <div class="p-4">
+                    <p class="text-xs text-gray-500 line-clamp-3 leading-relaxed mb-1">${p.desc}</p>
+                    ${galleryBtn}
+                </div>
+              `;
               projList.appendChild(card);
           });
       }
@@ -4657,37 +4778,53 @@ function deleteAsset(assetId) {
 let currentEditingProjectId = null;
 
 // 1. MODALI AÇ
+/* --- GÜNCELLENMİŞ: openProjectModal (GÖRSEL DESTEKLİ) --- */
 function openProjectModal(projectId = null) {
-if (!projectId) {
-      if (!checkPlanLimit('projects')) return;
-  }
+  if (!projectId) { if (!checkPlanLimit('projects')) return; }
+
   const modal = document.getElementById("project-modal");
   const form = document.getElementById("project-form");
   const title = document.getElementById("project-modal-title");
   
   if (!modal) return;
   modal.classList.remove("pointer-events-none", "opacity-0");
-  
-  // Formu temizle
   if(form) form.reset();
+
+  // Sıfırla
+  currentProjCover = null;
+  currentProjGallery = [];
+  document.getElementById("cover-preview").innerHTML = '<i class="fa-solid fa-image text-gray-400"></i>';
+  document.getElementById("gallery-count-text").textContent = "0 files";
+
+  // --- PRO KONTROLÜ ---
+  const isPro = (selectedCompany && selectedCompany.subscription_tier === 'pro');
+  const galleryLock = document.getElementById("proj-gallery-lock");
+  const galleryInput = document.getElementById("proj-gallery-input");
   
+  if (isPro) {
+      if(galleryLock) galleryLock.classList.add("hidden");
+      if(galleryInput) galleryInput.disabled = false;
+  } else {
+      if(galleryLock) galleryLock.classList.remove("hidden");
+      if(galleryInput) galleryInput.disabled = true;
+  }
+
   if (projectId) {
-    // --- DÜZENLEME MODU ---
     currentEditingProjectId = projectId;
     if(title) title.textContent = "Edit Project";
     
-    // Veriyi bul ve doldur
-    // Not: selectedCompany global değişkeni açık olan profili tutar
-    if (selectedCompany && selectedCompany.projects) {
-        const proj = selectedCompany.projects.find(p => p.id === projectId);
-        if (proj) {
-            document.getElementById("proj-title").value = proj.title || proj.title_tr || "";
-            document.getElementById("proj-loc").value = proj.loc || proj.loc_tr || "";
-            document.getElementById("proj-desc").value = proj.desc || proj.desc_tr || "";
+    const proj = selectedCompany.projects.find(p => p.id === projectId);
+    if (proj) {
+        document.getElementById("proj-title").value = proj.title || "";
+        document.getElementById("proj-loc").value = proj.loc || "";
+        document.getElementById("proj-desc").value = proj.desc || "";
+        
+        // Kapak Resmi Varsa Göster
+        if (proj.cover_url) {
+            document.getElementById("cover-preview").innerHTML = `<img src="${proj.cover_url}" class="w-full h-full object-cover">`;
         }
     }
   } else {
-    // --- EKLEME MODU ---
     currentEditingProjectId = null;
     if(title) title.textContent = "Add New Project";
   }
@@ -4701,11 +4838,11 @@ function closeProjectModal() {
 
 // 2. KAYDET (Supabase)
 // 2. KAYDET (PROJECT - ENGLISH)
-/* --- GÜNCELLENMİŞ saveProject (Toast'lı) --- */
+/* --- GÜNCELLENMİŞ: saveProject (RESİM YÜKLEMELİ) --- */
 async function saveProject() {
   const btn = document.querySelector("#project-form button[type='submit']");
   const originalText = btn.textContent;
-  btn.textContent = "Saving...";
+  btn.textContent = "Uploading...";
   btn.disabled = true;
 
   try {
@@ -4713,22 +4850,60 @@ async function saveProject() {
     const loc = document.getElementById("proj-loc").value.trim();
     const desc = document.getElementById("proj-desc").value.trim();
 
-    if (!title) { showToast("Missing Info", "Please enter a project title.", "error"); return; }
+    if (!title) { showToast("Missing Info", "Title required.", "error"); return; }
 
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    // 1. MEVCUT VERİLERİ AL
     let currentProjects = [...(selectedCompany.projects || [])];
+    let existingData = {};
+    if (currentEditingProjectId) {
+        existingData = currentProjects.find(p => p.id === currentEditingProjectId) || {};
+    }
+
+    // 2. KAPAK RESMİ YÜKLEME
+    let finalCoverUrl = existingData.cover_url || null;
+    if (currentProjCover) {
+        const path = `${user.id}/cover_${Date.now()}_${currentProjCover.name}`;
+        await supabaseClient.storage.from('project-gallery').upload(path, currentProjCover);
+        const { data } = supabaseClient.storage.from('project-gallery').getPublicUrl(path);
+        finalCoverUrl = data.publicUrl;
+    }
+
+    // 3. GALERİ YÜKLEME (ÇOKLU - SADECE PRO)
+    let finalGallery = existingData.gallery_urls || [];
+    if (currentProjGallery.length > 0) {
+        // Paralel Yükleme
+        const uploadPromises = currentProjGallery.map(async (file) => {
+            const path = `${user.id}/gallery_${Date.now()}_${file.name}`;
+            await supabaseClient.storage.from('project-gallery').upload(path, file);
+            const { data } = supabaseClient.storage.from('project-gallery').getPublicUrl(path);
+            return data.publicUrl;
+        });
+        
+        const newUrls = await Promise.all(uploadPromises);
+        finalGallery = [...finalGallery, ...newUrls]; // Eskilerin üzerine ekle
+    }
+
+    // 4. VERİYİ BİRLEŞTİR
+    const projObj = {
+        id: currentEditingProjectId || Date.now(),
+        title: title,
+        loc: loc,
+        desc: desc,
+        cover_url: finalCoverUrl,
+        gallery_urls: finalGallery,
+        updated_at: new Date().toISOString()
+    };
 
     if (currentEditingProjectId) {
         const index = currentProjects.findIndex(p => p.id === currentEditingProjectId);
-        if (index > -1) {
-            currentProjects[index] = { ...currentProjects[index], title: title, loc: loc, desc: desc };
-        }
+        if (index > -1) currentProjects[index] = projObj;
     } else {
-        currentProjects.push({ id: Date.now(), title: title, loc: loc, desc: desc });
+        currentProjects.push(projObj);
     }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Session expired.");
-
+    // 5. DB KAYIT
     const { error } = await supabaseClient
       .from('profiles')
       .update({ projects: currentProjects, updated_at: new Date() })
@@ -4736,6 +4911,7 @@ async function saveProject() {
 
     if (error) throw error;
 
+    // 6. GÜNCELLEME
     selectedCompany.projects = currentProjects;
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.projects = currentProjects;
@@ -4743,15 +4919,17 @@ async function saveProject() {
     openProfile(user.id);
     switchProfileTab('projects');
     closeProjectModal();
-    showToast("Success", "Project saved successfully.", "success");
+    showToast("Success", "Project saved!", "success");
 
   } catch (error) {
+    console.error(error);
     showToast("Error", error.message, "error");
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
   }
 }
+
 // 3. SİLME (PROJECT - ENGLISH)
 // 3. SİLME (PROJECT) - YENİ MODAL İLE
 function deleteProject(projectId) {
@@ -7847,6 +8025,42 @@ function closeCelebration() {
     if(selectedCompany) {
         localStorage.setItem(`celebrated_${selectedCompany.id}`, "true");
     }
+}
+
+// --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
+function openGallery(title, urls) {
+    const modal = document.getElementById("modal-gallery");
+    const mainImg = document.getElementById("gallery-main-img");
+    const thumbs = document.getElementById("gallery-thumbs");
+    const caption = document.getElementById("gallery-caption");
+
+    if(!modal) return;
+    
+    // İlk resmi aç
+    mainImg.src = urls[0];
+    caption.textContent = `${title} (1/${urls.length})`;
+
+    // Küçük resimleri oluştur
+    thumbs.innerHTML = "";
+    urls.forEach((url, index) => {
+        const thumb = document.createElement("img");
+        thumb.src = url;
+        thumb.className = "h-16 w-24 object-cover rounded cursor-pointer border-2 border-transparent hover:border-white transition opacity-70 hover:opacity-100";
+        
+        // Tıklayınca ana resmi değiştir
+        thumb.onclick = () => {
+            mainImg.src = url;
+            caption.textContent = `${title} (${index + 1}/${urls.length})`;
+        };
+        thumbs.appendChild(thumb);
+    });
+
+    modal.classList.remove("opacity-0", "pointer-events-none");
+}
+
+function closeGallery() {
+    const modal = document.getElementById("modal-gallery");
+    if(modal) modal.classList.add("opacity-0", "pointer-events-none");
 }
 
 </script>
