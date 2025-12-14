@@ -1064,7 +1064,7 @@
             Core Services
           </h3>
           <div id="p-services-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"></div>
-	  <div id="p-owner-view"></div>
+	  
         </div>
 
         <div id="content-projects" class="hidden-view">
@@ -1139,7 +1139,6 @@
         <div class="sticky top-28 space-y-6">
 
             <div id="profile-verify-widget" class="hidden bg-white border border-blue-100 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md relative group">
-                
                 <div id="widget-locked-view" class="bg-gradient-to-br from-slate-50 to-white p-5 text-center relative">
                     <div class="absolute top-2 right-2 text-gray-300"><i class="fa-solid fa-crown"></i></div>
                     <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
@@ -1185,19 +1184,16 @@
 
             <div id="profile-analytics-card" class="hidden bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
-                
                 <div class="relative z-10">
                     <div class="flex items-center justify-between mb-6">
-    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-      <i class="fa-solid fa-chart-line text-BTrustOn-accent"></i>
-      Profile Analytics
-    </h3>
-    
-    <button id="btn-card-upgrade" onclick="toggleModal('modal-upgrade')" class="hidden bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-1 rounded border border-amber-200 transition shadow-sm items-center gap-1">
-        <i class="fa-solid fa-bolt"></i> GO PRO
-    </button>
-</div>
-
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                          <i class="fa-solid fa-chart-line text-BTrustOn-accent"></i>
+                          Profile Analytics
+                        </h3>
+                        <button id="btn-card-upgrade" onclick="toggleModal('modal-upgrade')" class="hidden bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-1 rounded border border-amber-200 transition shadow-sm items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> GO PRO
+                        </button>
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="relative group/list">
                             <div class="bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 p-4 rounded-xl text-center cursor-default transition hover:border-cyan-300 hover:shadow-md">
@@ -1223,13 +1219,11 @@
                             <div class="text-[9px] text-gray-400 mt-1">Unregistered Users</div>
                         </div>
                     </div>
-
-<p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
-    Verified profiles rank higher in search results. 
-    <span class="text-BTrustOn-accent font-bold">Upgrade to Pro</span> 
-    to maximize your visibility and reach more partners.
-</p>                    
-
+                    <p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center">
+                        Verified profiles rank higher in search results. 
+                        <span class="text-BTrustOn-accent font-bold">Upgrade to Pro</span> 
+                        to maximize your visibility and reach more partners.
+                    </p>                    
                 </div>
             </div>
 
@@ -1254,7 +1248,7 @@
                         </div>
                         <span id="p-phone-text" class="truncate flex-1 min-w-0">-</span>
                     </div>
-                    <div class="flex items-start gap-3 pt-3 border-t border-gray-100 mt-3">
+                    <div class="flex items-start gap-3 pt-3 border-t border-gray-100 mt-3 hidden">
                         <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 mt-0.5">
                             <i class="fa-solid fa-map-location-dot"></i>
                         </div>
@@ -1265,7 +1259,11 @@
                 </div>
             </div>
 
-        </div> </div> 
+            <div id="sidebar-owner-view" class="hidden animate-fade-in">
+                </div>
+
+        </div> 
+      </div>
         
       </main>
   
@@ -4446,44 +4444,61 @@ if (servicesGrid) {
   }
 }
 
-// --- BÖLÜM 3: OWNER / YETKİLİ KARTI (DÜZELTİLMİŞ - AYRI KUTU) ---
+// --- BÖLÜM 3: OWNER / YETKİLİ KARTI (SIDEBAR İÇİN YENİ VERSİYON) ---
   
-  // 1. Önce Owner yuvasını bul ve temizle
-  const ownerContainer = document.getElementById("p-owner-view");
-  if (ownerContainer) {
-      ownerContainer.innerHTML = ""; // Önceki veriyi temizle
+  // 1. Yeni hedef kutuyu bul (sidebar'daki)
+  const sidebarOwnerContainer = document.getElementById("sidebar-owner-view");
+
+  // 2. Eğer eski kutu kaldıysa onu temizle (Çakışma olmasın)
+  const oldOwnerContainer = document.getElementById("p-owner-view");
+  if (oldOwnerContainer) oldOwnerContainer.innerHTML = "";
+
+  if (sidebarOwnerContainer) {
+      sidebarOwnerContainer.innerHTML = ""; // Temizle
       
-      // 2. Eğer Owner verisi varsa kartı oluştur
-      if (company.owner_name) {
+      // Veri kontrolü: İsim veya Rol varsa göster
+      if (company.owner_name || company.owner_role) {
+          
           const photoSrc = company.owner_photo_url 
-            ? `<img src="${company.owner_photo_url}" class="w-full h-full object-cover">`
-            : `<div class="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300"><i class="fa-solid fa-user"></i></div>`;
+            ? `<img src="${company.owner_photo_url}" class="w-full h-full object-cover hover:scale-110 transition duration-500">`
+            : `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300"><i class="fa-solid fa-user text-lg"></i></div>`;
           
           const linkedinBtn = company.owner_linkedin 
-            ? `<a href="${company.owner_linkedin}" target="_blank" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition shadow-sm"><i class="fa-brands fa-linkedin text-sm"></i></a>`
+            ? `<a href="${company.owner_linkedin}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 mt-4 rounded-xl bg-[#0077b5]/10 text-[#0077b5] text-xs font-bold hover:bg-[#0077b5] hover:text-white transition-all group/btn">
+                 <i class="fa-brands fa-linkedin text-sm"></i> <span>Connect on LinkedIn</span>
+               </a>`
             : ``;
 
-          // Kart HTML'i
-          ownerContainer.innerHTML = `
-              <div class="mt-8 animate-fade-in">
-                  <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2 border-b border-gray-100 pb-2">
-                      <i class="fa-solid fa-user-tie text-BTrustOn-accent"></i> Key Contact / Owner
-                  </h4>
+          sidebarOwnerContainer.innerHTML = `
+              <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                  <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-BTrustOn-accent/10 to-transparent rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
 
-                  <div class="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-shadow max-w-md">
-                      <div class="w-14 h-14 rounded-full overflow-hidden border border-gray-200 shadow-inner shrink-0">
-                          ${photoSrc}
+                  <div class="relative z-10">
+                      <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <i class="fa-solid fa-certificate text-BTrustOn-accent"></i> Key Contact
+                      </h4>
+
+                      <div class="flex items-center gap-4">
+                          <div class="w-14 h-14 rounded-full border-[3px] border-white shadow-md overflow-hidden shrink-0 bg-gray-50">
+                              ${photoSrc}
+                          </div>
+                          <div class="min-w-0 flex-1">
+                              <h5 class="text-sm font-bold text-gray-800 truncate leading-tight mb-0.5">
+                                  ${company.owner_name || 'Company Rep.'}
+                              </h5>
+                              <p class="text-[11px] text-gray-500 font-medium truncate">
+                                  ${company.owner_role || 'Authorized Person'}
+                              </p>
+                          </div>
                       </div>
-                      <div class="flex-1 min-w-0">
-                          <h5 class="text-sm font-bold text-gray-800 truncate">${company.owner_name}</h5>
-                          <p class="text-[11px] text-gray-500 font-medium truncate">${company.owner_role || 'Company Representative'}</p>
-                      </div>
-                      <div class="shrink-0">
-                          ${linkedinBtn}
-                      </div>
+                      ${linkedinBtn}
                   </div>
               </div>
           `;
+          
+          sidebarOwnerContainer.classList.remove("hidden");
+      } else {
+          sidebarOwnerContainer.classList.add("hidden");
       }
   }
 
