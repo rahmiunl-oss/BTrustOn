@@ -4687,7 +4687,7 @@ if (servicesGrid) {
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
 // ✅ 1. GÜNCELLENMİŞ KAYDETME FONKSİYONU
-/* --- GÜNCELLENMİŞ KAYDETME FONKSİYONU (HER ŞEY DAHİL) --- */
+/* --- %100 GARANTİLİ KAYDETME FONKSİYONU (SİLME SORUNU ÇÖZÜLDÜ) --- */
 async function saveProfileData() {
   const btn = document.querySelector("#editor-form button[type='submit']");
   const originalText = btn.textContent;
@@ -4700,7 +4700,7 @@ async function saveProfileData() {
 
     // --- 1. ŞİRKET LOGOSU ---
     let finalLogoUrl = selectedCompany.logo_url || null;
-    if (selectedLogoFile) {
+    if (typeof selectedLogoFile !== 'undefined' && selectedLogoFile) {
         const fileExt = selectedLogoFile.name.split('.').pop();
         const filePath = `${user.id}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabaseClient.storage.from('logos').upload(filePath, selectedLogoFile);
@@ -4708,31 +4708,12 @@ async function saveProfileData() {
         const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
         finalLogoUrl = data.publicUrl;
     } else {
-        // Eğer resim görünmüyorsa silinmiştir
         if (document.getElementById("edit-logo-img").classList.contains("hidden")) {
             finalLogoUrl = null;
         }
     }
 
-    // --- 2. OWNER FOTOĞRAFI ---
-    let finalOwnerPhotoUrl = selectedCompany.owner_photo_url || null;
-    // (selectedOwnerFile değişkeninin global tanımlı olduğundan emin ol: let selectedOwnerFile = null;)
-    if (typeof selectedOwnerFile !== 'undefined' && selectedOwnerFile) {
-        const fileExt = selectedOwnerFile.name.split('.').pop();
-        const filePath = `owner-${user.id}-${Date.now()}.${fileExt}`;
-        const { error: upErr } = await supabaseClient.storage.from('logos').upload(filePath, selectedOwnerFile);
-        if (!upErr) {
-            const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
-            finalOwnerPhotoUrl = data.publicUrl;
-        }
-    }
-    // Silinmiş mi kontrolü
-    const isOwnerImgVisible = !document.getElementById("preview-owner-img").classList.contains("hidden");
-    if (!isOwnerImgVisible && (typeof selectedOwnerFile === 'undefined' || !selectedOwnerFile)) {
-        finalOwnerPhotoUrl = null;
-    }
-
-    // --- 3. INPUT VERİLERİNİ AL ---
+    // --- 2. DİĞER STANDART VERİLER ---
     const name = document.getElementById("edit-name").value.trim();
     const city = document.getElementById("edit-city").value.trim();
     const country = document.getElementById("edit-country").value;
@@ -4748,11 +4729,43 @@ async function saveProfileData() {
     const sizeVal = document.getElementById("edit-size").value;
     const yearVal = document.getElementById("edit-year").value;
     const tagline = document.getElementById("edit-tagline").value.trim();
-    
-    // Owner Inputları
-    const ownerName = document.getElementById("edit-owner-name").value.trim();
-    const ownerRole = document.getElementById("edit-owner-role").value.trim();
-    const ownerLink = document.getElementById("edit-owner-linkedin").value.trim();
+
+    // --- 3. OWNER VERİLERİ (KRİTİK DÜZELTME BURADA) ---
+    // Toggle (Anahtar) açık mı?
+    const isOwnerActive = document.getElementById("edit-owner-toggle").checked;
+
+    // Değişkenleri varsayılan olarak NULL (BOŞ) yapıyoruz
+    let ownerName = null;
+    let ownerRole = null;
+    let ownerLink = null;
+    let finalOwnerPhotoUrl = null;
+
+    // SADECE Anahtar AÇIKSA verileri dolduruyoruz
+    if (isOwnerActive) {
+        ownerName = document.getElementById("edit-owner-name").value.trim();
+        ownerRole = document.getElementById("edit-owner-role").value.trim();
+        ownerLink = document.getElementById("edit-owner-linkedin").value.trim();
+        
+        // Fotoğraf Mantığı
+        finalOwnerPhotoUrl = selectedCompany.owner_photo_url || null;
+        
+        if (typeof selectedOwnerFile !== 'undefined' && selectedOwnerFile) {
+            const fileExt = selectedOwnerFile.name.split('.').pop();
+            const filePath = `owner-${user.id}-${Date.now()}.${fileExt}`;
+            const { error: upErr } = await supabaseClient.storage.from('logos').upload(filePath, selectedOwnerFile);
+            if (!upErr) {
+                const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
+                finalOwnerPhotoUrl = data.publicUrl;
+            }
+        }
+        
+        const isOwnerImgVisible = !document.getElementById("preview-owner-img").classList.contains("hidden");
+        if (!isOwnerImgVisible && (typeof selectedOwnerFile === 'undefined' || !selectedOwnerFile)) {
+            finalOwnerPhotoUrl = null;
+        }
+    } 
+    // EĞER KAPALIYSA HİÇBİR ŞEY YAPMIYORUZ, YUKARIDA ZATEN NULL TANIMLADIK.
+    // Böylece input içinde yazı kalsa bile biz onu 'null' olarak kaydediyoruz.
 
     // --- 4. GÜNCELLEME PAKETİ ---
     const updates = {
@@ -4764,7 +4777,7 @@ async function saveProfileData() {
       sector: sector,
       description: desc,
       services: servicesStr,
-      service_details: serviceDetails, // Capability Statement
+      service_details: serviceDetails,
       website: website,
       phone: phone,
       contact_email: contactEmail,
@@ -4773,7 +4786,7 @@ async function saveProfileData() {
       founded_year: yearVal,
       logo_url: finalLogoUrl,
       
-      // YENİ EKLENENLER:
+      // Owner verileri (Ya dolu gelir ya da NULL gelir)
       owner_name: ownerName,
       owner_role: ownerRole,
       owner_linkedin: ownerLink,
@@ -4792,7 +4805,7 @@ async function saveProfileData() {
 
     showToast("Success", "Profile updated successfully!", "success");
 
-    // --- 6. LOCAL HAFIZAYI GÜNCELLE (Ekran Yenilenmeden Görünsün) ---
+    // --- 6. LOCAL HAFIZAYI GÜNCELLE ---
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
@@ -4803,7 +4816,7 @@ async function saveProfileData() {
             services: servicesStr.split(',').map(s => s.trim()).filter(s => s),
             service_details: serviceDetails,
             
-            // Local Update
+            // BURASI ÇOK ÖNEMLİ: Hesaplanan (veya null olan) değerleri basıyoruz
             owner_name: ownerName,
             owner_role: ownerRole,
             owner_linkedin: ownerLink,
