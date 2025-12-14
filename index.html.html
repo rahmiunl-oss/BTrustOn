@@ -4340,30 +4340,29 @@ if (servicesGrid) {
     });
   }
 
-  // --- BÖLÜM 2: DETAY AÇIKLAMASI (ALTINA EKLENİYOR) ---
-  // Eğer detay yazısı varsa göster
+  // --- BÖLÜM 2: DETAY AÇIKLAMASI (DÜZELTİLMİŞ) ---
   if (company.service_details && company.service_details.trim() !== "") {
       const detailsDiv = document.createElement("div");
-      detailsDiv.className = "w-full mt-2 animate-fade-in";
+      // w-full: Genişliği doldur
+      // max-w-full: Taşmayı engelle
+      detailsDiv.className = "w-full max-w-full mt-2 animate-fade-in";
       
-      // Satır başlarını <br> yapar ve şık bir kutu içine alır
-      const formattedDesc = company.service_details.replace(/\n/g, '<br>');
-      
+      // NOT: .replace(/\n/g, '<br>') kodunu kaldırdık. 
+      // Aşağıdaki 'whitespace-pre-wrap' sınıfı bunu otomatik yapar.
+
       detailsDiv.innerHTML = `
-        <div class="relative bg-slate-50 rounded-2xl p-6 border border-slate-100">
+        <div class="relative bg-slate-50 rounded-2xl p-6 border border-slate-100 overflow-hidden">
            <i class="fa-solid fa-quote-left absolute top-4 left-4 text-slate-200 text-2xl"></i>
            
            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pl-6">Technical Capability Statement</h4>
            
-           <div class="text-sm text-gray-600 leading-relaxed pl-6 font-light">
-              ${formattedDesc}
+           <div class="text-sm text-gray-600 leading-relaxed pl-6 font-light break-words whitespace-pre-wrap font-sans">
+              ${company.service_details}
            </div>
         </div>
       `;
-      // Grid div'inin (artık flex oldu) hemen sonrasına eklemiyoruz, içine ekliyoruz çünkü container o.
       servicesGrid.appendChild(detailsDiv);
   }
-}
 
   // Yetki Kontrolü
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
