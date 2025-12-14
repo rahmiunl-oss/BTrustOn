@@ -760,18 +760,28 @@
                                 </div>
                             </div>
 
-                            <div id="section-services" class="space-y-6 scroll-mt-6">
-                                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
-                                  Services
-                                </h3>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                      Core Services
-                                    </label>
-                                    <p class="text-[11px] text-gray-400 mb-2">Comma separated list. Example: EPC, Excavation, Maintenance.</p>
-                                    <input type="text" id="edit-services" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="EPC, Excavation, Maintenance..." />
-                                </div>
-                            </div>
+<div id="section-services" class="space-y-6 scroll-mt-6">
+    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+      Services & Capabilities
+    </h3>
+    
+    <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+          Core Competencies (Tags)
+        </label>
+        <p class="text-[11px] text-gray-400 mb-2">Comma separated keywords. e.g. EPC, Excavation, Maintenance</p>
+        <input type="text" id="edit-services" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="EPC, Excavation, Maintenance..." />
+    </div>
+
+    <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+          Detailed Service Description
+        </label>
+        <p class="text-[11px] text-gray-400 mb-2">Explain your capabilities, capacity, and technical approach.</p>
+        <textarea id="edit-service-details" rows="5" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Our excavation team operates with a capacity of 5000m3/day..."></textarea>
+    </div>
+</div>                      
+
 <div class="mt-8 border border-blue-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
     
     <div id="verify-locked-view" class="bg-gradient-to-br from-slate-50 to-white p-6 text-center">
@@ -4299,41 +4309,61 @@ if (cityEl) {
   }
 
   // Hizmetler
-  const servicesGrid = document.getElementById("p-services-grid");
-  if (servicesGrid) {
-    servicesGrid.innerHTML = "";
-    
-    let displayServices = company.services || [];
-    if (typeof currentLang !== 'undefined' && currentLang === 'tr' && company.services_tr && company.services_tr.length > 0) {
-        displayServices = company.services_tr;
-    }
-
-    if (displayServices.length === 0) {
-      servicesGrid.innerHTML = '<div class="col-span-full py-4 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50"><p class="text-sm text-gray-400 italic">No services listed.</p></div>';
-    } else {
-      // ... (openProfile içindeki Hizmetler kısmı) ...
-
-      displayServices.forEach((s) => {
-        servicesGrid.innerHTML += `
-          <div class="group bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm hover:shadow-[0_4px_20px_-12px_rgba(6,182,212,0.3)] hover:border-cyan-200 hover:-translate-y-0.5 transition-all duration-300 cursor-default">
-            
-            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
-               <i class="fa-solid fa-diamond text-cyan-500 text-sm group-hover:text-cyan-600 transition-colors"></i>
-            </div>
-            
-            <div class="flex-1 min-w-0">
-                <span class="block text-xs font-bold text-gray-700 truncate group-hover:text-BTrustOn-accent transition-colors" title="${s}">
-                    ${s}
-                </span>
-                <span class="text-[9px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
-                    <i class="fa-solid fa-circle-check text-emerald-400"></i> Core Competency
-                </span>
-            </div>
-
-          </div>`;
-      });
-    }
+  /* --- GÜNCELLENMİŞ HİZMET GÖRÜNÜMÜ (Modern Tags + Açıklama) --- */
+const servicesGrid = document.getElementById("p-services-grid");
+if (servicesGrid) {
+  // Önce içeriği temizle
+  servicesGrid.innerHTML = "";
+  
+  // 1. Dil kontrolü ve servis listesi
+  let displayServices = company.services || [];
+  if (typeof currentLang !== 'undefined' && currentLang === 'tr' && company.services_tr && company.services_tr.length > 0) {
+      displayServices = company.services_tr;
   }
+
+  // --- BÖLÜM 1: ETİKETLER (GRID YERİNE FLEX WRAP) ---
+  // Grid yapısını kaldırıp 'flex-wrap' yapıyoruz ki yan yana şık dursunlar
+  servicesGrid.className = "flex flex-wrap gap-3 mb-6"; 
+
+  if (displayServices.length === 0) {
+    servicesGrid.innerHTML = '<div class="w-full py-4 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50"><p class="text-sm text-gray-400 italic">No services listed.</p></div>';
+  } else {
+    displayServices.forEach((s) => {
+      // Tasarım: Mavi/Cam Göbeği tonlarında, hap şeklinde (Pill), Check ikonlu
+      servicesGrid.innerHTML += `
+        <div class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 rounded-lg shadow-sm hover:shadow-md hover:border-cyan-300 transition-all cursor-default group">
+          <div class="w-5 h-5 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0 group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
+             <i class="fa-solid fa-check text-[10px]"></i>
+          </div>
+          <span class="text-xs font-bold text-gray-700 group-hover:text-cyan-800 transition-colors">${s}</span>
+        </div>`;
+    });
+  }
+
+  // --- BÖLÜM 2: DETAY AÇIKLAMASI (ALTINA EKLENİYOR) ---
+  // Eğer detay yazısı varsa göster
+  if (company.service_details && company.service_details.trim() !== "") {
+      const detailsDiv = document.createElement("div");
+      detailsDiv.className = "w-full mt-2 animate-fade-in";
+      
+      // Satır başlarını <br> yapar ve şık bir kutu içine alır
+      const formattedDesc = company.service_details.replace(/\n/g, '<br>');
+      
+      detailsDiv.innerHTML = `
+        <div class="relative bg-slate-50 rounded-2xl p-6 border border-slate-100">
+           <i class="fa-solid fa-quote-left absolute top-4 left-4 text-slate-200 text-2xl"></i>
+           
+           <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pl-6">Technical Capability Statement</h4>
+           
+           <div class="text-sm text-gray-600 leading-relaxed pl-6 font-light">
+              ${formattedDesc}
+           </div>
+        </div>
+      `;
+      // Grid div'inin (artık flex oldu) hemen sonrasına eklemiyoruz, içine ekliyoruz çünkü container o.
+      servicesGrid.appendChild(detailsDiv);
+  }
+}
 
   // Yetki Kontrolü
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
@@ -4579,6 +4609,7 @@ const address = document.getElementById("edit-address").value.trim();
     const sector = document.getElementById("edit-sector").value;
     const desc = document.getElementById("edit-desc").value.trim();
     const servicesStr = document.getElementById("edit-services").value.trim();
+    const serviceDetails = document.getElementById("edit-service-details").value.trim(); // <-- BU SATIRI EKLE
     const website = document.getElementById("edit-website").value.trim();
     const phone = document.getElementById("edit-phone").value.trim();
     const contactEmail = document.getElementById("edit-email").value.trim();
@@ -4595,6 +4626,7 @@ address: address, // ✅ BU SATIRI EKLEYİN (Veritabanına gönder)
       sector: sector,
       description: desc,
       services: servicesStr,
+      service_details: serviceDetails, // <-- BU SATIRI DATABASE'E GÖNDERİYORUZ	
       website: website,
       phone: phone,
       contact_email: contactEmail,
@@ -4624,8 +4656,10 @@ address: address, // ✅ BU SATIRI EKLEYİN (Veritabanına gönder)
 address: address, // <-- Buraya
             type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
-            services: servicesStr.split(',').map(s => s.trim()).filter(s => s)
+            services: servicesStr.split(',').map(s => s.trim()).filter(s => s),
+            service_details: serviceDetails
         });
+	
     }
 
     openProfile(user.id);
@@ -5607,7 +5641,8 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
   document.getElementById("edit-tax-id").value = selectedCompany.tax_id || "";
   document.getElementById("edit-duns").value = selectedCompany.duns_number || "";
-  
+  document.getElementById("edit-service-details").value = selectedCompany.service_details || ""; // <-- BU SATIRI EKLE  
+
   updateVerificationUI(selectedCompany.verification_status);
 
   // Editörü Aç
