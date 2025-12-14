@@ -1629,40 +1629,47 @@
       <div>
         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cover Image</label>
         <div class="flex items-center gap-3">
-            <div id="cover-preview" class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
+            <div id="cover-preview" class="relative w-16 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden group">
                 <i class="fa-solid fa-image text-gray-400"></i>
+                <button type="button" onclick="removeProjectCover()" class="hidden absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer" title="Remove Cover">
+                   <i class="fa-solid fa-trash text-xs"></i>
+                </button>
             </div>
-            <label class="cursor-pointer bg-white border border-gray-300 text-gray-600 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 transition">
-                <i class="fa-solid fa-upload mr-1"></i> Choose Cover
-                <input type="file" id="proj-cover-input" class="hidden" accept="image/*" onchange="handleProjectCover(this)">
-            </label>
+            
+            <div class="flex flex-col gap-1">
+                <label class="cursor-pointer bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-50 transition inline-flex items-center">
+                    <i class="fa-solid fa-upload mr-1"></i> Change Cover
+                    <input type="file" id="proj-cover-input" class="hidden" accept="image/*" onchange="handleProjectCover(this)">
+                </label>
+            </div>
         </div>
       </div>
 
-      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group">
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden">
          
          <div class="flex justify-between items-center mb-2">
             <label class="text-xs font-bold text-gray-600 flex items-center gap-2">
                 <i class="fa-solid fa-images text-BTrustOn-accent"></i> Project Gallery
             </label>
-            <span id="proj-gallery-badge" class="bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200">
-              <i class="fa-solid fa-crown"></i> PRO
-            </span>
+            <span id="proj-gallery-badge" class="bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200">PRO</span>
          </div>
+
+         <div id="existing-gallery-preview" class="flex gap-2 mb-2 overflow-x-auto pb-1 custom-scrollbar min-h-[0px] transition-all">
+             </div>
 
          <div class="flex items-center gap-2">
             <label id="proj-gallery-label" class="flex-1 cursor-pointer bg-white border border-dashed border-gray-300 rounded-lg px-3 py-2 text-center hover:border-BTrustOn-accent transition">
-                <span class="text-[10px] text-gray-500 font-bold block">Select Multiple Photos</span>
+                <span class="text-[10px] text-gray-500 font-bold block">+ Add More Photos</span>
                 <input type="file" id="proj-gallery-input" class="hidden" accept="image/*" multiple onchange="handleProjectGallery(this)">
             </label>
-            <span id="gallery-count-text" class="text-[10px] text-gray-400 font-bold">0 files</span>
+            <span id="gallery-count-text" class="text-[10px] text-gray-400 font-bold"></span>
          </div>
 
-         <div id="proj-gallery-lock" class="absolute inset-0 bg-slate-100/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 cursor-pointer" onclick="toggleModal('modal-upgrade')">
+         <div id="proj-gallery-lock" class="absolute inset-0 bg-slate-100/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 cursor-pointer hidden" onclick="toggleModal('modal-upgrade')">
              <div class="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center mb-1">
                  <i class="fa-solid fa-lock text-gray-400 text-xs"></i>
              </div>
-             <span class="text-[9px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded-full shadow-sm">Upgrade to Add Gallery</span>
+             <span class="text-[9px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded-full shadow-sm">Upgrade</span>
          </div>
 
       </div>
@@ -2540,37 +2547,94 @@ function removeAssetFile() {
     if(linkEl) linkEl.classList.add("hidden");
 }
 
-/* --- PROJE RESİM DEĞİŞKENLERİ --- */
-let currentProjCover = null;
-let currentProjGallery = [];
+/* --- PROJE RESİM YÖNETİMİ --- */
+let currentProjCover = null;       // Yeni seçilen kapak dosyası
+let shouldRemoveCover = false;     // "Kapağı Sil"e basıldı mı?
+let currentProjGalleryFiles = [];  // Yeni seçilen galeri dosyaları (File objeleri)
+let tempExistingGalleryUrls = [];  // Düzenleme modunda: Veritabanındaki mevcut URL'ler
 
-// Kapak Fotoğrafı Seçimi (Input Change)
+// 1. Kapak Seçimi
 function handleProjectCover(input) {
     if (input.files && input.files[0]) {
         currentProjCover = input.files[0];
-        // Önizleme yap
+        shouldRemoveCover = false; // Yeni seçtiysek silme iptal
+        
         const reader = new FileReader();
         reader.onload = (e) => {
             const div = document.getElementById("cover-preview");
-            // Mevcut ikonu silip resmi koyuyoruz
-            div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+            // Resmi koy ve silme butonunu görünür yap (class logic)
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-full object-cover">
+                <button type="button" onclick="removeProjectCover()" class="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 hover:opacity-100 transition cursor-pointer">
+                   <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+            `;
         };
         reader.readAsDataURL(currentProjCover);
     }
 }
 
-// Galeri Çoklu Seçimi (Input Change)
+// 2. Kapağı Silme Fonksiyonu
+function removeProjectCover() {
+    currentProjCover = null;
+    shouldRemoveCover = true; // Kaydederken 'null' göndereceğiz
+    
+    // UI'ı sıfırla
+    const div = document.getElementById("cover-preview");
+    div.innerHTML = `<i class="fa-solid fa-image text-gray-400"></i>`;
+}
+
+// 3. Galeriye YENİ Dosya Ekleme
 function handleProjectGallery(input) {
     if (input.files) {
-        // FileList'i Array'e çevir
-        currentProjGallery = Array.from(input.files);
+        // Yeni dosyaları mevcutların üzerine ekle (Append)
+        const newFiles = Array.from(input.files);
+        currentProjGalleryFiles = [...currentProjGalleryFiles, ...newFiles];
         
-        // Kaç dosya seçildiğini yaz
-        document.getElementById("gallery-count-text").textContent = `${currentProjGallery.length} files selected`;
-        
-        // Görsel efekt (Border rengi değişsin)
-        document.getElementById("proj-gallery-label").classList.add("border-BTrustOn-accent", "bg-cyan-50");
+        // Metni güncelle
+        updateGalleryCountText();
     }
+}
+
+// 4. Galeri Metni Güncelleme Helper
+function updateGalleryCountText() {
+    const total = tempExistingGalleryUrls.length + currentProjGalleryFiles.length;
+    const txt = document.getElementById("gallery-count-text");
+    if(total > 0) txt.textContent = `${currentProjGalleryFiles.length} new, ${tempExistingGalleryUrls.length} existing`;
+    else txt.textContent = "";
+}
+
+// 5. Mevcut Galeri Resmini Listeden Çıkarma (UI'dan silme)
+function removeExistingGalleryImage(url) {
+    // Listeden çıkar
+    tempExistingGalleryUrls = tempExistingGalleryUrls.filter(u => u !== url);
+    // UI'ı güncelle (Yeniden çiz)
+    renderExistingGalleryPreviews();
+    updateGalleryCountText();
+}
+
+// 6. Galeri Önizlemelerini Çizme (Modal Açılınca)
+function renderExistingGalleryPreviews() {
+    const container = document.getElementById("existing-gallery-preview");
+    container.innerHTML = "";
+    
+    if (tempExistingGalleryUrls.length === 0) {
+        container.style.display = "none"; // Boşsa gizle
+        return;
+    }
+    container.style.display = "flex";
+
+    tempExistingGalleryUrls.forEach(url => {
+        const div = document.createElement("div");
+        div.className = "relative flex-shrink-0 w-12 h-12 rounded border border-gray-200 overflow-hidden group";
+        div.innerHTML = `
+            <img src="${url}" class="w-full h-full object-cover">
+            <button type="button" onclick="removeExistingGalleryImage('${url}')" class="absolute top-0 right-0 bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-bl text-[8px] hover:bg-red-600 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        `;
+        container.appendChild(div);
+    });
 }
 
 /* --- STEP 5: PLAN LİMİTLERİ VE KONTROLÜ --- */
@@ -4196,7 +4260,7 @@ if (cityEl) {
               card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition group relative";
               
               card.innerHTML = `
-                <div class="h-32 bg-gray-100 relative overflow-hidden">
+                <div class="h-24 bg-gray-100 relative overflow-hidden">
                     <img src="${cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 text-white">
@@ -4778,7 +4842,7 @@ function deleteAsset(assetId) {
 let currentEditingProjectId = null;
 
 // 1. MODALI AÇ
-/* --- GÜNCELLENMİŞ: openProjectModal (GÖRSEL DESTEKLİ) --- */
+/* --- GÜNCELLENMİŞ: openProjectModal (RESİM YÖNETİMLİ) --- */
 function openProjectModal(projectId = null) {
   if (!projectId) { if (!checkPlanLimit('projects')) return; }
 
@@ -4790,11 +4854,16 @@ function openProjectModal(projectId = null) {
   modal.classList.remove("pointer-events-none", "opacity-0");
   if(form) form.reset();
 
-  // Sıfırla
+  // --- SIFIRLAMA ---
   currentProjCover = null;
-  currentProjGallery = [];
+  shouldRemoveCover = false;
+  currentProjGalleryFiles = [];
+  tempExistingGalleryUrls = [];
+  
+  // UI Sıfırlama
   document.getElementById("cover-preview").innerHTML = '<i class="fa-solid fa-image text-gray-400"></i>';
-  document.getElementById("gallery-count-text").textContent = "0 files";
+  document.getElementById("existing-gallery-preview").innerHTML = ""; 
+  document.getElementById("gallery-count-text").textContent = "";
 
   // --- PRO KONTROLÜ ---
   const isPro = (selectedCompany && selectedCompany.subscription_tier === 'pro');
@@ -4809,6 +4878,7 @@ function openProjectModal(projectId = null) {
       if(galleryInput) galleryInput.disabled = true;
   }
 
+  // --- DÜZENLEME MODU ---
   if (projectId) {
     currentEditingProjectId = projectId;
     if(title) title.textContent = "Edit Project";
@@ -4819,12 +4889,24 @@ function openProjectModal(projectId = null) {
         document.getElementById("proj-loc").value = proj.loc || "";
         document.getElementById("proj-desc").value = proj.desc || "";
         
-        // Kapak Resmi Varsa Göster
+        // 1. Kapak Resmi Varsa Göster (Ve silme butonu koy)
         if (proj.cover_url) {
-            document.getElementById("cover-preview").innerHTML = `<img src="${proj.cover_url}" class="w-full h-full object-cover">`;
+            document.getElementById("cover-preview").innerHTML = `
+                <img src="${proj.cover_url}" class="w-full h-full object-cover">
+                <button type="button" onclick="removeProjectCover()" class="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 hover:opacity-100 transition cursor-pointer">
+                   <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+            `;
+        }
+
+        // 2. Galeri Resimlerini Yükle
+        if (proj.gallery_urls && Array.isArray(proj.gallery_urls)) {
+            tempExistingGalleryUrls = [...proj.gallery_urls]; // Kopyasını al
+            renderExistingGalleryPreviews();
         }
     }
   } else {
+    // --- YENİ EKLEME MODU ---
     currentEditingProjectId = null;
     if(title) title.textContent = "Add New Project";
   }
@@ -4838,11 +4920,11 @@ function closeProjectModal() {
 
 // 2. KAYDET (Supabase)
 // 2. KAYDET (PROJECT - ENGLISH)
-/* --- GÜNCELLENMİŞ: saveProject (RESİM YÜKLEMELİ) --- */
+/* --- GÜNCELLENMİŞ: saveProject (SİLME MANTIKLI) --- */
 async function saveProject() {
   const btn = document.querySelector("#project-form button[type='submit']");
   const originalText = btn.textContent;
-  btn.textContent = "Uploading...";
+  btn.textContent = "Saving...";
   btn.disabled = true;
 
   try {
@@ -4854,38 +4936,46 @@ async function saveProject() {
 
     const { data: { user } } = await supabaseClient.auth.getUser();
 
-    // 1. MEVCUT VERİLERİ AL
+    // Mevcut verileri bul
     let currentProjects = [...(selectedCompany.projects || [])];
     let existingData = {};
     if (currentEditingProjectId) {
         existingData = currentProjects.find(p => p.id === currentEditingProjectId) || {};
     }
 
-    // 2. KAPAK RESMİ YÜKLEME
-    let finalCoverUrl = existingData.cover_url || null;
+    // --- KAPAK FOTOĞRAFI MANTIĞI ---
+    let finalCoverUrl = existingData.cover_url; // Varsayılan: eskisi kalsın
+
+    if (shouldRemoveCover) {
+        finalCoverUrl = null; // Kullanıcı sildi
+    }
+    
     if (currentProjCover) {
-        const path = `${user.id}/cover_${Date.now()}_${currentProjCover.name}`;
+        // Yeni resim yükleniyor
+        const path = `${user.id}/cover_${Date.now()}_${currentProjCover.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
         await supabaseClient.storage.from('project-gallery').upload(path, currentProjCover);
         const { data } = supabaseClient.storage.from('project-gallery').getPublicUrl(path);
         finalCoverUrl = data.publicUrl;
     }
 
-    // 3. GALERİ YÜKLEME (ÇOKLU - SADECE PRO)
-    let finalGallery = existingData.gallery_urls || [];
-    if (currentProjGallery.length > 0) {
-        // Paralel Yükleme
-        const uploadPromises = currentProjGallery.map(async (file) => {
-            const path = `${user.id}/gallery_${Date.now()}_${file.name}`;
+    // --- GALERİ MANTIĞI ---
+    // Başlangıç: Düzenleme ekranında "Silmediğimiz" eski resimler
+    let finalGallery = [...tempExistingGalleryUrls];
+
+    // Üzerine: Yeni seçilen dosyaları yükle ve ekle
+    if (currentProjGalleryFiles.length > 0) {
+        const uploadPromises = currentProjGalleryFiles.map(async (file) => {
+            const path = `${user.id}/gallery_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
             await supabaseClient.storage.from('project-gallery').upload(path, file);
             const { data } = supabaseClient.storage.from('project-gallery').getPublicUrl(path);
             return data.publicUrl;
         });
         
         const newUrls = await Promise.all(uploadPromises);
-        finalGallery = [...finalGallery, ...newUrls]; // Eskilerin üzerine ekle
+        finalGallery = [...finalGallery, ...newUrls];
     }
 
-    // 4. VERİYİ BİRLEŞTİR
+    // --- VERİ HAZIRLAMA ---
     const projObj = {
         id: currentEditingProjectId || Date.now(),
         title: title,
@@ -4903,7 +4993,7 @@ async function saveProject() {
         currentProjects.push(projObj);
     }
 
-    // 5. DB KAYIT
+    // --- DB KAYIT ---
     const { error } = await supabaseClient
       .from('profiles')
       .update({ projects: currentProjects, updated_at: new Date() })
@@ -4911,7 +5001,7 @@ async function saveProject() {
 
     if (error) throw error;
 
-    // 6. GÜNCELLEME
+    // Local State Güncelle
     selectedCompany.projects = currentProjects;
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.projects = currentProjects;
