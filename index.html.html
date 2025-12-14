@@ -1692,10 +1692,11 @@
 </div>
   </div>
 </div>
+
 <div id="cert-modal" class="fixed inset-0 z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
   <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCertModal()"></div>
   
-  <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
+  <div class="bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
     <div class="bg-BTrustOn-primary text-white px-6 py-4 flex justify-between items-center">
       <h3 id="cert-modal-title" class="font-bold font-header tracking-wide">Add Certificate</h3>
       <button onclick="closeCertModal()" class="text-white/70 hover:text-white transition">
@@ -1707,21 +1708,61 @@
       <form id="cert-form" onsubmit="event.preventDefault(); saveCert();" class="space-y-4">
         
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Certificate Name</label>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Certificate Name <span class="text-red-500">*</span></label>
           <input type="text" id="cert-name" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. ISO 9001:2015" required>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Issuer / Organization</label>
-          <input type="text" id="cert-issuer" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. TUV NORD">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Issuer / Org.</label>
+              <input type="text" id="cert-issuer" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. TUV NORD">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Expiry Date</label>
+              <input type="date" id="cert-date" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition text-gray-600">
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Proof Document <span class="text-gray-300 font-normal lowercase">(pdf, img)</span>
+                </label>
+                <span id="cert-file-pro-badge" class="hidden bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200 animate-pulse">
+                  <i class="fa-solid fa-crown"></i> PRO ONLY
+                </span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <label id="cert-file-label" class="flex-1 cursor-pointer bg-gray-50 border border-dashed border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center gap-2 hover:bg-gray-100 hover:border-BTrustOn-accent transition group relative overflow-hidden">
+                    <input type="file" id="cert-file-input" class="hidden" accept=".pdf, .jpg, .jpeg, .png" onchange="handleCertFileSelect(this)">
+                    
+                    <i class="fa-solid fa-cloud-arrow-up text-gray-400 group-hover:text-BTrustOn-accent"></i>
+                    <span id="cert-file-text" class="text-xs font-bold text-gray-500 group-hover:text-gray-700 truncate">Attach Proof (Max 5MB)</span>
+                    
+                    <div id="cert-file-lock" class="hidden absolute inset-0 bg-gray-100/90 flex items-center justify-center cursor-not-allowed z-10">
+                        <div class="flex items-center gap-1 text-gray-400 text-xs font-bold">
+                            <i class="fa-solid fa-lock"></i> <span>Upgrade to Upload</span>
+                        </div>
+                    </div>
+                </label>
+
+                <button type="button" id="btn-remove-cert-file" onclick="removeCertFile()" class="hidden w-10 h-10 rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition" title="Remove File">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+            </div>
+            
+            <a id="current-cert-link" href="#" target="_blank" class="hidden text-[10px] text-BTrustOn-accent font-bold mt-1.5 hover:underline flex items-center gap-1 inline-block">
+                <i class="fa-solid fa-paperclip"></i> <span>View Current File</span>
+            </a>
         </div>
 
         <div class="pt-4 flex gap-3">
-          <button type="button" onclick="closeCertModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
+          <button type="button" onclick="closeCertModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 transition">
             CANCEL
           </button>
           <button type="submit" class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20">
-            SAVE
+            SAVE CERTIFICATE
           </button>
         </div>
 
@@ -1729,6 +1770,7 @@
     </div>
   </div>
 </div>
+
 <div id="delete-modal" class="fixed inset-0 z-[20000] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
   <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
   
@@ -3763,80 +3805,97 @@ function filterSector(sector, btnEl) {
       `;
     }
 
-    // --- CERTIFICATES (Dynamic) ---
-    // --- CERTIFICATES (Dynamic with Edit/Delete) ---
-    // --- CERTIFICATES (GÜNCELLENMİŞ TASARIM - KUTULU BUTONLAR) ---
-    function renderCertificates(company) {
-      const certList = document.getElementById("p-certs-list");
-      const btnAddCert = document.getElementById("btn-add-cert");
-      const myId = localStorage.getItem("BTrustOn_my_company_id");
-      const isOwner = (myId && String(company.id) === String(myId));
+/* --- GÜNCELLENMİŞ: renderCertificates (RENKLİ BUTONLAR) --- */
+function renderCertificates(company) {
+  const certList = document.getElementById("p-certs-list");
+  const btnAddCert = document.getElementById("btn-add-cert");
+  const myId = localStorage.getItem("BTrustOn_my_company_id");
+  const isOwner = (myId && String(company.id) === String(myId));
 
-      // Ekle butonu kontrolü
-      if (btnAddCert) {
-         if (isOwner) btnAddCert.classList.remove("hidden-view");
-         else btnAddCert.classList.add("hidden-view");
-      }
+  if (btnAddCert) {
+     if (isOwner) btnAddCert.classList.remove("hidden-view");
+     else btnAddCert.classList.add("hidden-view");
+  }
 
-      if (!certList) return;
-      certList.innerHTML = "";
+  if (!certList) return;
+  certList.innerHTML = "";
 
-      const certs = company.certificates || [];
+  const certs = company.certificates || [];
 
-      if (certs.length === 0) {
-        certList.innerHTML = `
-          <div class="col-span-2 bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 text-xs italic">
-            ${t("no_certs")}
-          </div>`;
-        return;
-      }
+  if (certs.length === 0) {
+    certList.innerHTML = `<div class="col-span-2 py-8 text-center text-gray-400 text-xs italic bg-gray-50 rounded-xl border border-dashed border-gray-200">No certificates listed.</div>`;
+    return;
+  }
 
-      certs.forEach((cert, index) => {
-        // Veri yapısı kontrolü
-        let name = "";
-        let issuer = "";
-        let id = null;
+  certs.forEach((cert, index) => {
+    let name = typeof cert === 'string' ? cert : cert.name;
+    let issuer = typeof cert === 'object' ? cert.issuer : "";
+    let date = typeof cert === 'object' ? cert.expiry_date : null;
+    let fileUrl = typeof cert === 'object' ? cert.file_url : null;
+    let id = typeof cert === 'object' ? cert.id : -1;
 
-        if (typeof cert === 'string') {
-            name = cert;
-            id = index;
+    // Durum Rozeti
+    let statusBadge = "";
+    if (date) {
+        const expiry = new Date(date);
+        const now = new Date();
+        const isExpired = expiry < now;
+        
+        if (isExpired) {
+            statusBadge = `<span class="ml-2 inline-flex items-center gap-1 bg-red-50 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-100 uppercase"><i class="fa-solid fa-circle-exclamation"></i> Expired</span>`;
         } else {
-            name = cert.name;
-            issuer = cert.issuer || "";
-            id = cert.id;
+            statusBadge = `<span class="ml-2 inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-100 uppercase"><i class="fa-solid fa-circle-check"></i> Valid</span>`;
         }
-
-        // Düzenleme Butonları (GÜNCELLENEN KISIM BURASI)
-        let actionBtns = "";
-        if(isOwner) {
-            actionBtns = `
-              <div class="flex gap-2 ml-auto pl-3 border-l border-gray-100 items-center">
-                <button onclick="openCertModal(${typeof cert === 'object' ? id : -1})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition" title="Edit">
-                    <i class="fa-solid fa-pen text-[10px]"></i>
-                </button>
-                
-                <button onclick="deleteCert(${typeof cert === 'object' ? id : -1}, '${name}')" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition" title="Delete">
-                    <i class="fa-solid fa-trash text-[10px]"></i>
-                </button>
-              </div>
-            `;
-        }
-
-        certList.innerHTML += `
-          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition group">
-            <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center shrink-0 border border-cyan-100">
-               <i class="fa-solid fa-award text-cyan-600 text-lg"></i>
-            </div>
-            <div class="flex-grow">
-              <div class="text-BTrustOn-primary font-bold text-sm leading-tight">
-                ${name}
-              </div>
-              ${issuer ? `<div class="text-[10px] text-gray-400 mt-0.5">${issuer}</div>` : ''}
-            </div>
-            ${actionBtns}
-          </div>`;
-      });
     }
+
+    // Dosya Butonu
+    let fileBtn = "";
+    if (fileUrl) {
+        fileBtn = `
+            <a href="${fileUrl}" target="_blank" class="ml-auto flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-600 hover:text-white transition" title="View Document">
+                <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">View Doc</span>
+            </a>
+        `;
+    }
+
+    // --- YÖNETİM BUTONLARI (RENKLENDİRİLDİ) ---
+    let ownerActions = "";
+    if(isOwner) {
+        ownerActions = `
+          <div class="flex gap-2 ml-2 pl-2 border-l border-gray-100">
+            <button onclick="openCertModal(${id})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent border border-cyan-100 hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
+                <i class="fa-solid fa-pen text-[10px]"></i>
+            </button>
+            
+            <button onclick="deleteCert(${id}, '${name}')" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
+                <i class="fa-solid fa-trash text-[10px]"></i>
+            </button>
+          </div>
+        `;
+    }
+
+    certList.innerHTML += `
+      <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition group">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-50 to-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm text-slate-400">
+           <i class="fa-solid fa-certificate text-lg"></i>
+        </div>
+        
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center flex-wrap gap-1">
+              <span class="font-bold text-gray-800 text-sm truncate">${name}</span>
+              ${statusBadge}
+          </div>
+          <div class="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
+            <span>${issuer || 'Unknown Issuer'}</span>
+            ${date ? `<span class="text-gray-300">•</span> <span>Exp: ${date}</span>` : ''}
+          </div>
+        </div>
+
+        ${fileBtn}
+        ${ownerActions}
+      </div>`;
+  });
+}
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
@@ -6745,33 +6804,64 @@ async function uploadLogoDirectly(input) {
 let currentEditingCertId = null;
 
 // 1. MODALI AÇ
+/* --- GÜNCELLENMİŞ: openCertModal (PRO LOCK + DATE) --- */
 function openCertModal(certId = null) {
-if (!certId || certId === -1) {
+  // Pro değilse ve limiti dolduysa engelle (Sadece yeni eklemede)
+  if ((!certId || certId === -1)) {
       if (!checkPlanLimit('certs')) return;
   }
+
   const modal = document.getElementById("cert-modal");
   const form = document.getElementById("cert-form");
   const title = document.getElementById("cert-modal-title");
   
   if (!modal) return;
   modal.classList.remove("pointer-events-none", "opacity-0");
-  
   if(form) form.reset();
-  
-  // Eğer certId -1 ise (string veri düzenlenmeye çalışılıyorsa) veya yeni ekleme ise
+  removeCertFile(); // Dosyayı temizle
+
+  // --- PRO KONTROLÜ (KİLİT MEKANİZMASI) ---
+  const isPro = (selectedCompany && selectedCompany.subscription_tier === 'pro');
+  const fileLock = document.getElementById("cert-file-lock");
+  const fileInput = document.getElementById("cert-file-input");
+  const proBadge = document.getElementById("cert-file-pro-badge");
+  const fileLabel = document.getElementById("cert-file-label");
+
+  if (isPro) {
+      if(fileLock) fileLock.classList.add("hidden"); // Kilidi aç
+      if(proBadge) proBadge.classList.add("hidden"); 
+      if(fileInput) fileInput.disabled = false;
+      if(fileLabel) fileLabel.onclick = null;
+  } else {
+      if(fileLock) fileLock.classList.remove("hidden"); // Kilitle
+      if(proBadge) proBadge.classList.remove("hidden");
+      if(fileInput) fileInput.disabled = true;
+      // Kilitli alana tıklayınca Upgrade'i aç
+      if(fileLabel) fileLabel.onclick = (e) => { e.preventDefault(); toggleModal('modal-upgrade'); };
+  }
+
+  // --- DÜZENLEME MODU ---
   if (certId && certId !== -1) {
-    // --- DÜZENLEME MODU (Sadece Obje veriler için) ---
     currentEditingCertId = certId;
     if(title) title.textContent = "Edit Certificate";
     
-    // Veriyi bul
     const cert = selectedCompany.certificates.find(c => c.id === certId);
     if (cert) {
         document.getElementById("cert-name").value = cert.name || "";
         document.getElementById("cert-issuer").value = cert.issuer || "";
+        document.getElementById("cert-date").value = cert.expiry_date || ""; // Tarihi doldur
+
+        // Varsa Dosyayı Göster
+        if (cert.file_url) {
+            existingCertFileUrl = cert.file_url;
+            const linkEl = document.getElementById("current-cert-link");
+            linkEl.href = cert.file_url;
+            linkEl.classList.remove("hidden");
+            document.getElementById("btn-remove-cert-file").classList.remove("hidden");
+            document.getElementById("cert-file-text").textContent = "Change File";
+        }
     }
   } else {
-    // --- EKLEME MODU ---
     currentEditingCertId = null;
     if(title) title.textContent = "Add New Certificate";
   }
@@ -6784,6 +6874,7 @@ function closeCertModal() {
 }
 
 // 2. KAYDET (Supabase)
+/* --- GÜNCELLENMİŞ: saveCert (SEKME SORUNU ÇÖZÜLDÜ) --- */
 async function saveCert() {
   const btn = document.querySelector("#cert-form button[type='submit']");
   const originalText = btn.textContent;
@@ -6793,33 +6884,55 @@ async function saveCert() {
   try {
     const name = document.getElementById("cert-name").value.trim();
     const issuer = document.getElementById("cert-issuer").value.trim();
+    const date = document.getElementById("cert-date").value;
 
-    if (!name) { showToast("Missing Info", "Certificate name is required.", "error"); return; }
-
-    // Mevcut sertifikaları al (Eğer string array ise objeye çevirmemiz gerekebilir ama şimdilik karışık destekleyelim)
-    let currentCerts = [...(selectedCompany.certificates || [])];
-
-    if (currentEditingCertId) {
-        // Düzenleme
-        const index = currentCerts.findIndex(c => c.id === currentEditingCertId);
-        if (index > -1) {
-            currentCerts[index] = { ...currentCerts[index], name: name, issuer: issuer };
-        }
-    } else {
-        // Yeni Ekleme
-        // Eski string verileri bozmamak için yeni veriyi obje olarak ekliyoruz
-        const newCert = { 
-            id: Date.now(), 
-            name: name, 
-            issuer: issuer 
-        };
-        currentCerts.push(newCert);
-    }
+    if (!name) { showToast("Missing Info", "Certificate name required.", "error"); return; }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Session expired.");
 
-    // Supabase Update
+    // --- DOSYA YÜKLEME ---
+    let finalUrl = existingCertFileUrl;
+    
+    if (currentCertFile) {
+        if (selectedCompany.subscription_tier === 'pro') {
+            const fileExt = currentCertFile.name.split('.').pop();
+            const filePath = `${user.id}/cert_${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabaseClient.storage
+                .from('certificate-docs')
+                .upload(filePath, currentCertFile);
+
+            if (uploadError) throw uploadError;
+            
+            const { data } = supabaseClient.storage.from('certificate-docs').getPublicUrl(filePath);
+            finalUrl = data.publicUrl;
+        }
+    }
+    
+    if (!currentCertFile && !existingCertFileUrl) finalUrl = null;
+
+    // --- VERİ HAZIRLAMA ---
+    const certObj = {
+        name: name,
+        issuer: issuer,
+        expiry_date: date,
+        file_url: finalUrl,
+        updated_at: new Date().toISOString()
+    };
+
+    let currentCerts = [...(selectedCompany.certificates || [])];
+
+    if (currentEditingCertId) {
+        const index = currentCerts.findIndex(c => c.id === currentEditingCertId);
+        if (index > -1) {
+            currentCerts[index] = { ...currentCerts[index], ...certObj };
+        }
+    } else {
+        currentCerts.push({ id: Date.now(), ...certObj });
+    }
+
+    // --- DB GÜNCELLEME ---
     const { error } = await supabaseClient
       .from('profiles')
       .update({ certificates: currentCerts, updated_at: new Date() })
@@ -6827,17 +6940,19 @@ async function saveCert() {
 
     if (error) throw error;
 
-    // Local Update
     selectedCompany.certificates = currentCerts;
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.certificates = currentCerts;
 
-    openProfile(user.id);
-    switchProfileTab('certs');
+    // --- KRİTİK DÜZELTME BURADA ---
+    openProfile(user.id);      // Profili yükle
+    switchProfileTab('certs'); // HIZLICA SERTİFİKA SEKMESİNE DÖN
+    
+    showToast("Success", "Certificate saved!", "success");
     closeCertModal();
-    showToast("Success", "Certificate saved successfully.", "success");
 
   } catch (error) {
+    console.error(error);
     showToast("Error", error.message, "error");
   } finally {
     btn.textContent = originalText;
@@ -8247,6 +8362,33 @@ function openGallery(title, urls) {
 function closeGallery() {
     const modal = document.getElementById("modal-gallery");
     if(modal) modal.classList.add("opacity-0", "pointer-events-none");
+}
+
+/* --- SERTİFİKA DOSYA YÖNETİMİ --- */
+let currentCertFile = null;
+let existingCertFileUrl = null;
+
+function handleCertFileSelect(input) {
+    if (input.files && input.files[0]) {
+        if (input.files[0].size > 5 * 1024 * 1024) {
+            showToast("Too Large", "Max file size is 5MB.", "error");
+            input.value = "";
+            return;
+        }
+        currentCertFile = input.files[0];
+        document.getElementById("cert-file-text").textContent = currentCertFile.name;
+        document.getElementById("cert-file-label").classList.add("border-BTrustOn-accent", "bg-cyan-50");
+    }
+}
+
+function removeCertFile() {
+    currentCertFile = null;
+    existingCertFileUrl = null;
+    document.getElementById("cert-file-input").value = "";
+    document.getElementById("cert-file-text").textContent = "Attach Proof (Max 5MB)";
+    document.getElementById("cert-file-label").classList.remove("border-BTrustOn-accent", "bg-cyan-50");
+    document.getElementById("btn-remove-cert-file").classList.add("hidden");
+    document.getElementById("current-cert-link").classList.add("hidden");
 }
 
 </script>
