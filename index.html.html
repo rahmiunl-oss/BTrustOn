@@ -1298,19 +1298,44 @@
 	  
         </div>
 
-        <div id="content-projects" class="hidden-view">
-          
-          <div class="flex flex-wrap items-center justify-between mb-6 border-b border-gray-100 pb-4">
-            <div>
-               <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="proj_key_ref">Key Reference Projects</h3>
-                           </div>
-            
-            <button id="btn-add-project" type="button" onclick="openProjectModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
-                <i class="fa-solid fa-plus"></i> <span>ADD NEW PROJECT</span>
-            </button>
-          </div>
+        
+<div id="content-projects" class="hidden-view">
+  <div class="flex flex-col gap-3 mb-6 border-b border-gray-100 pb-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider" data-i18n="proj_key_ref">Key Reference Projects</h3>
 
-         <div id="p-projects-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2 pb-2"></div>
+      <button id="btn-add-project" type="button" onclick="openProjectModal()"
+        class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+        <i class="fa-solid fa-plus"></i> <span>ADD NEW PROJECT</span>
+      </button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <input id="proj-search" type="text" placeholder="Search projects…"
+          class="pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-semibold w-64
+                 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent"
+          oninput="filterProjectsUI(this.value)">
+      </div>
+
+      <div class="relative">
+        <i class="fa-solid fa-arrow-down-short-wide absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <select id="proj-sort"
+          class="pl-9 pr-8 py-2 rounded-lg border border-gray-200 bg-white text-xs font-bold text-gray-700
+                 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer"
+          onchange="sortProjectsUI(this.value)">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="az">Title A → Z</option>
+        </select>
+        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+      </div>
+    </div>
+  </div>
+
+  <div id="p-projects-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
         </div>
 
         <div id="content-certs" class="hidden-view">
@@ -3915,7 +3940,7 @@ function renderTopCompanies() {
 
       const query = (searchQuery || "").toLowerCase().trim();
 
-      let filtered = database.filter((company) => {
+      let filtered = getSearchableCompanies().filter((company) => {
       if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
         return false; 
       }
@@ -4822,6 +4847,7 @@ if (servicesGrid) {
   
   // --- PROJELER (TIKLANABİLİR KART + GİZLİ BUTONLAR) ---
   const projList = document.getElementById("p-projects-list");
+  window.__projectsCache = (company.projects || []);
   if (projList) {
       projList.innerHTML = "";
       
@@ -4836,29 +4862,21 @@ if (servicesGrid) {
       } else {
           company.projects.forEach(p => {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
-              const cover = p.cover_url || "https://placehold.co/800x450/f1f5f9/94a3b8?text=Project+Image"; 
-
-              // Galeri verisini hazırla
-              let cardClickAction = "";
-              let cursorClass = "cursor-default";
+              const cover = p.cover_url || "https://placehold.co/800x450/f1f5f9/94a3b8?text=Project+Image";
+              // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
+              let cardClickAction = `onclick="openProjectViewer(${p.id})"`;
+              let cursorClass = "cursor-pointer";
               let galleryBadge = "";
 
               if (hasGallery) {
-                  const safeUrls = JSON.stringify(p.gallery_urls).replace(/"/g, '&quot;');
-                  // Tıklama olayını buraya tanımlıyoruz
-                  cardClickAction = `onclick="openGallery('${p.title}', ${safeUrls})"`;
-                  cursorClass = "cursor-pointer";
-                  
-                  // Buton yerine sol üste minik bir fotoğraf sayısı etiketi koyuyoruz
+                  // Sol üstte küçük "foto sayısı" etiketi
                   galleryBadge = `
-                    <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
+                    <div class="absolute top-3 left-3 bg-black/45 text-white text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
                          <i class="fa-solid fa-camera"></i> ${p.gallery_urls.length}
                     </div>
                   `;
               }
 
-              // Yönetim Butonları (stopPropagation EKLENDİ)
-              // event.stopPropagation() -> Tıklamayı durdur, arkadaki galeri açılmasın.
               const actionBtns = isMyProfile ? `
                 <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
                     <button onclick="event.stopPropagation(); openProjectModal(${p.id})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="Edit Project">
@@ -4873,6 +4891,12 @@ if (servicesGrid) {
               const card = document.createElement("div");
               card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative flex flex-col h-full";
               
+              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
+              card.dataset.hay = hay;
+              card.dataset.pid = String(p.id || "");
+              card.dataset.title = p.title || "";
+              card.dataset.created = String(p.id || "");
+
               card.innerHTML = `
                 <div class="relative h-48 overflow-hidden bg-gray-100 shrink-0 ${cursorClass} group/img" ${cardClickAction}>
                     <img src="${cover}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700">
@@ -5333,7 +5357,8 @@ function showEditorView() {
       
 
       switchLanguage("en");
-      initRealData();
+      // initRealData(); // disabled to prevent double-loading
+
       initShowcaseSystem();
     });
 /* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
@@ -5801,6 +5826,44 @@ function deleteCert(certId, certName) {
     });
 }
   </script>
+
+<!-- ✅ PROJECT VIEWER MODAL (click any project card) -->
+<div id="project-viewer" class="hidden fixed inset-0 z-[99990]">
+  <div class="absolute inset-0 bg-slate-900/60" onclick="closeProjectViewer()"></div>
+
+  <div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div>
+        <div id="pv-title" class="text-sm font-extrabold text-BTrustOn-primary"></div>
+        <div id="pv-meta" class="text-[11px] text-gray-400 mt-0.5"></div>
+      </div>
+      <button class="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-500" onclick="closeProjectViewer()" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="p-5">
+      <button id="pv-cover-btn" class="w-full rounded-xl overflow-hidden border border-gray-200 bg-slate-50 focus:outline-none">
+        <img id="pv-cover" class="w-full h-[320px] object-cover" alt="Project cover">
+      </button>
+
+      <div id="pv-desc" class="text-sm text-gray-600 mt-4 whitespace-pre-wrap"></div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <div id="pv-gallery-info" class="text-[11px] text-gray-400"></div>
+        <button id="pv-open-gallery"
+          class="hidden px-4 py-2 rounded-lg bg-BTrustOn-primary text-white text-xs font-bold hover:bg-BTrustOn-accent transition"
+          onclick="openProjectViewerGallery()">
+          <i class="fa-solid fa-images mr-2"></i> VIEW GALLERY
+        </button>
+      </div>
+
+      <div id="pv-thumbs" class="mt-4 grid grid-cols-3 md:grid-cols-6 gap-2"></div>
+    </div>
+  </div>
+</div>
+
+
 <script>
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
 // GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
@@ -5879,22 +5942,6 @@ if (profile.email === ADMIN_EMAIL) {
     }
     // 👆👆👆 --------------------------- 👆👆👆
     // Listede zaten var mı? Varsa üstüne yazmayalım, sadece eksikleri güncelleyelim.
-    // ✅ Dedupe: aynı email (farklı id) varsa tek kayda düşür
-    const _emailKey = (profile.email || "").trim().toLowerCase();
-    if (_emailKey) {
-        const dupIdx = database.findIndex(c => (c.email || "").trim().toLowerCase() === _emailKey && c.id != profile.id);
-        if (dupIdx > -1) {
-            // Hangisini tutalım? Verified / Pro olanı tercih et.
-            const incomingIsBetter = (profile.verification_status === 'verified') ||
-                                     (profile.subscription_tier === 'pro' && database[dupIdx].subscription_tier !== 'pro');
-            if (incomingIsBetter) {
-                database.splice(dupIdx, 1);
-            } else {
-                return; // mevcut kayıt daha iyi, bu kaydı listeye alma
-            }
-        }
-    }
-
     const exists = database.find(c => c.id == profile.id);
     
     const formattedProfile = {
@@ -5936,6 +5983,9 @@ if (profile.email === ADMIN_EMAIL) {
     }
   });
 
+
+  // Deduplicate demo/real collisions
+  dedupeDatabasePreferReal();
   // 3. EKRANI YENİLE (DÜZELTME BURADA YAPILDI)
   // Eski renderCards("") yerine akıllı vitrini çağırıyoruz.
   if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
@@ -6016,17 +6066,6 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   };
 
   if (typeof database !== 'undefined') {
-            // ✅ Dedupe: aynı email farklı id ise (arama sonuçlarında iki tane görünmesin)
-      const _emailKey = (mappedProfile.email || "").trim().toLowerCase();
-      if (_emailKey) {
-          for (let i = database.length - 1; i >= 0; i--) {
-              const e = (database[i].email || "").trim().toLowerCase();
-              if (e === _emailKey && database[i].id !== mappedProfile.id) {
-                  database.splice(i, 1);
-              }
-          }
-      }
-
       const idx = database.findIndex(c => c.id == profile.id);
       if (idx > -1) { database[idx] = mappedProfile; } 
       else { database.unshift(mappedProfile); }
@@ -6156,7 +6195,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   initShowcaseSystem();
 
   // 2) Fetch public profiles (can run after correct view is already visible)
-  fetchAllPublicProfiles(); 
+  // fetchAllPublicProfiles(); // disabled (initRealData handles public profiles)
+ 
 
   // 3) User session check (refresh user UI / My Company button etc.)
   checkUserAndOpenProfile();
@@ -7723,7 +7763,8 @@ async function initRealData() {
       
       // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
       country: p.country || "Turkey",
-address: p.address || "", // ✅ BU SATIRI EKLEYİN 
+address: p.address || "", // ✅ BU SATIRI EKLEYİN
+      email: p.email || "", 
 service_details: p.service_details || "",
 owner_name: p.owner_name,
       owner_role: p.owner_role,
@@ -7757,6 +7798,7 @@ owner_name: p.owner_name,
   });
 
   // 3. Filtreleri ve Ekranı Yenile
+  dedupeDatabasePreferReal();
   populateCountryFilter(); // <-- Artık verilerde 'country' olduğu için burası çalışacak
   
   if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
@@ -7888,20 +7930,6 @@ function deleteAllInbox() {
         if (!container) return;
         container.innerHTML = "";
 
-        // ✅ UI-level DEDUPE: aynı email/id ekranda 2 kez görünmesin
-        const _seenKeys = new Set();
-        const _uniqList = [];
-        (companyList || []).forEach(c => {
-            const emailKey = (c && c.email ? String(c.email) : "").trim().toLowerCase();
-            const idKey = (c && c.id ? String(c.id) : "");
-            const key = emailKey || idKey;
-            if (!key) return;
-            if (_seenKeys.has(key)) return;
-            _seenKeys.add(key);
-            _uniqList.push(c);
-        });
-        companyList = _uniqList;
-
         // Başlık ve Sayı Güncelleme
         if (resultCount) {
             if (mode === "search") {
@@ -8015,8 +8043,68 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
     // 3. ARAMA MODU (Filtreli Liste)
     // 3. ARAMA VE LİSTELEME MODU (GÜNCELLENMİŞ)
    /* --- GÜNCELLENMİŞ: renderSearchResults (DERİN ARAMA) --- */
+
+/* ===== LIVE DATA HYGIENE: prevent duplicates between demo + real profiles ===== */
+function isRealCompany(c){
+  // Supabase UUID ids are long strings; demo cards are usually numbers
+  return (typeof c?.id === "string" && c.id.length > 20) || !!c?.email;
+}
+
+function dedupeDatabasePreferReal(){
+  const seen = new Map();
+  const out = [];
+
+  const norm = (v) => String(v || "").trim().toLowerCase();
+
+  const score = (c) => {
+    let s = 0;
+    if (isRealCompany(c)) s += 1000;
+    if (c?.verification_status === "verified") s += 100;
+    if (c?.subscription_tier && c.subscription_tier !== "free") s += 10;
+    if (c?.trust_score) s += Number(c.trust_score) || 0;
+    return s;
+  };
+
+  for (const c of database){
+    const taxKey = c?.tax_id ? ("t:" + norm(c.tax_id)) : "";
+    const emailKey = c?.email ? ("e:" + norm(c.email)) : "";
+    const cityKey = norm((String(c.city || "").split(",")[0] || "").trim());
+    const baseKey = ("n:" + norm(c.name) + "|c:" + cityKey);
+    const key = taxKey || emailKey || baseKey;
+    if (!key.trim()) { out.push(c); continue; }
+
+    if (!seen.has(key)){
+      seen.set(key, c);
+      out.push(c);
+      continue;
+    }
+
+    const prev = seen.get(key);
+    if (score(c) > score(prev)){
+      const idx = out.indexOf(prev);
+      if (idx > -1) out[idx] = c;
+      seen.set(key, c);
+    }
+    // else ignore c
+  }
+
+  // mutate const array in-place
+  database.length = 0;
+  database.push(...out);
+}
+
+function getSearchableCompanies(){
+  const clean = database.filter(c => c.email !== ADMIN_EMAIL && c.contact_email !== ADMIN_EMAIL);
+  const real = clean.filter(isRealCompany);
+  // If there are no real profiles yet, fall back to demo cards so UI doesn't look empty
+  return real.length ? real : clean;
+}
+
 function renderSearchResults(query) {
     const q = (query || "").toLowerCase().trim();
+
+    // ✅ Always keep the list de-duplicated (prevents double cards)
+    try { dedupeDatabasePreferReal(); } catch(e) {}
 
     // A. FİLTRELEME
     let filtered = database.filter((company) => {
@@ -9053,26 +9141,15 @@ async function upgradeToPro() {
 // 1. Durumu Kontrol Et ve Kutla
 function checkAndTriggerCelebration(company) {
     // Sadece 'verified' statüsündekiler için
-    if (company.verification_status !== 'verified') {
-        // Son statüyü hatırla (gelecekte karşılaştırmak için)
-        try { localStorage.setItem(`verif_${company.id}`, String(company.verification_status || 'none')); } catch(e) {}
-        return;
-    }
-
-    // ✅ Mantık: Kutlama sadece "statü değişimi" olduğunda çıksın.
-    // Yeni cihazda kullanıcı zaten verified ise (prev yoksa) tekrar kutlama göstermeyelim.
-    const prev = (() => { try { return localStorage.getItem(`verif_${company.id}`); } catch(e) { return null; } })();
-
-    // Önce mevcut durumu yaz (ileride değişimi yakalamak için)
-    try { localStorage.setItem(`verif_${company.id}`, 'verified'); } catch(e) {}
-
-    // Prev yoksa: yeni cihaz => gösterme
-    if (!prev) return;
-
-    // Prev verified değilse ve daha önce kutlanmadıysa: göster
-    const hasSeen = (() => { try { return localStorage.getItem(`celebrated_${company.id}`); } catch(e) { return null; } })();
-    if (prev !== 'verified' && !hasSeen) {
-        openCelebrationModal();
+    if (company.verification_status === 'verified') {
+        
+        // Daha önce kutladık mı? (Tarayıcı hafızasına bak)
+        const hasSeen = localStorage.getItem(`celebrated_${company.id}`);
+        
+        // Eğer daha önce görmediyse KUTLA!
+        if (!hasSeen) {
+            openCelebrationModal();
+        }
     }
 }
 
@@ -9227,6 +9304,116 @@ function deleteOwnerPhoto() {
     document.getElementById("icon-owner-img").classList.remove("hidden");
     // Not: DB'den silme işlemi "Save" butonuna basınca yapılacak
 }
+
+
+
+
+/* =========================
+   PROJECTS UX IMPROVEMENTS
+   - Click any project -> viewer modal
+   - Search + Sort (client-side, DOM reorder)
+========================= */
+let __pvProject = null;
+
+function openProjectViewer(projectId){
+  const arr = window.__projectsCache || (selectedCompany ? selectedCompany.projects : []) || [];
+  const p = arr.find(x => String(x.id) === String(projectId));
+  if(!p) return;
+
+  __pvProject = p;
+
+  const title = p.title || "Project";
+  const loc = p.loc || "";
+  const desc = (p.desc && String(p.desc).trim()) ? p.desc : "No description provided.";
+  const cover = p.cover_url || "https://placehold.co/1200x675/f1f5f9/94a3b8?text=Project+Image";
+  const urls = Array.isArray(p.gallery_urls) ? p.gallery_urls : [];
+
+  const tEl = document.getElementById("pv-title");
+  const mEl = document.getElementById("pv-meta");
+  const dEl = document.getElementById("pv-desc");
+  const cEl = document.getElementById("pv-cover");
+  const btnCover = document.getElementById("pv-cover-btn");
+  const infoEl = document.getElementById("pv-gallery-info");
+  const btnGal = document.getElementById("pv-open-gallery");
+  const thumbs = document.getElementById("pv-thumbs");
+
+  if(tEl) tEl.textContent = title;
+  if(mEl) mEl.textContent = loc ? `📍 ${loc}` : "";
+  if(dEl) dEl.textContent = desc;
+  if(cEl) cEl.src = cover;
+
+  if(infoEl) infoEl.textContent = urls.length ? `${urls.length} images` : "No gallery images.";
+  if(btnGal){
+    if(urls.length) btnGal.classList.remove("hidden");
+    else btnGal.classList.add("hidden");
+  }
+
+  // Cover click opens gallery only if exists
+  if(btnCover){
+    if(urls.length){
+      btnCover.classList.add("cursor-pointer");
+      btnCover.onclick = () => openGallery(title, urls);
+      btnCover.title = "Click to view gallery";
+    }else{
+      btnCover.classList.remove("cursor-pointer");
+      btnCover.onclick = null;
+      btnCover.title = "";
+    }
+  }
+
+  if(thumbs){
+    thumbs.innerHTML = "";
+    if(urls.length){
+      urls.slice(0, 12).forEach(u => {
+        const b = document.createElement("button");
+        b.className = "rounded-lg overflow-hidden border border-gray-200 hover:border-BTrustOn-accent transition";
+        b.innerHTML = `<img src="${u}" class="w-full h-16 object-cover">`;
+        b.onclick = () => openGallery(title, urls);
+        thumbs.appendChild(b);
+      });
+    }
+  }
+
+  const modal = document.getElementById("project-viewer");
+  if(modal) modal.classList.remove("hidden");
+}
+
+function openProjectViewerGallery(){
+  if(!__pvProject) return;
+  const urls = Array.isArray(__pvProject.gallery_urls) ? __pvProject.gallery_urls : [];
+  if(urls.length) openGallery(__pvProject.title || "Gallery", urls);
+}
+
+function closeProjectViewer(){
+  const modal = document.getElementById("project-viewer");
+  if(modal) modal.classList.add("hidden");
+  __pvProject = null;
+}
+
+function filterProjectsUI(q){
+  q = (q||"").toLowerCase().trim();
+  const list = document.getElementById("p-projects-list");
+  if(!list) return;
+  [...list.children].forEach(card => {
+    const hay = (card.dataset && card.dataset.hay ? card.dataset.hay : "").toLowerCase();
+    card.style.display = (!q || hay.includes(q)) ? "" : "none";
+  });
+}
+
+function sortProjectsUI(mode){
+  const list = document.getElementById("p-projects-list");
+  if(!list) return;
+  const cards = [...list.children].filter(el => el.dataset && el.dataset.pid);
+  const getTitle = (el) => (el.dataset.title || "").toLowerCase();
+  const getCreated = (el) => parseFloat(el.dataset.created || "0") || 0;
+
+  if(mode === "az") cards.sort((a,b)=> getTitle(a).localeCompare(getTitle(b)));
+  else if(mode === "oldest") cards.sort((a,b)=> getCreated(a) - getCreated(b));
+  else cards.sort((a,b)=> getCreated(b) - getCreated(a)); // newest default
+
+  cards.forEach(c => list.appendChild(c));
+}
+
 
 </script>
 </html>
