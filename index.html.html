@@ -324,7 +324,12 @@
   stroke-dasharray: 88;
   stroke-dashoffset: 88;
   transform-origin: 50% 50%;
-  animation: btonDash 1.2s ease-in-out infinite, btonSpin .9s linear infinite;
+  will-change: transform, opacity, filter;
+  filter: drop-shadow(0 0 6px rgba(0, 198, 255, .22)) drop-shadow(0 0 12px rgba(0, 120, 255, .14));
+  animation:
+    btonDash 1.35s cubic-bezier(.4,0,.2,1) infinite,
+    btonSpin 1.15s cubic-bezier(.4,0,.2,1) infinite,
+    btonGlowPulse 1.6s ease-in-out infinite;
 }
 
 .bton-on-only{
@@ -363,16 +368,31 @@
 .bton-n{ line-height:1; }
 .bton-o-prog-boot{ stroke: url(#btonGradBoot) !important; }
 
-@keyframes btonSpin { to { transform: rotate(360deg); } }
+@keyframes btonSpin { 
+  to { transform: rotate(360deg); } 
+}
+
 @keyframes btonDash {
-  0%   { stroke-dashoffset: 88; opacity: .6; }
-  50%  { stroke-dashoffset: 22; opacity: 1; }
-  100% { stroke-dashoffset: 88; opacity: .6; }
+  0%   { stroke-dashoffset: 88; opacity: .55; }
+  35%  { stroke-dashoffset: 28; opacity: 1; }
+  60%  { stroke-dashoffset: 18; opacity: .95; }
+  100% { stroke-dashoffset: 88; opacity: .55; }
+}
+
+@keyframes btonGlowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(0, 198, 255, .18)) drop-shadow(0 0 12px rgba(0, 120, 255, .10));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(0, 198, 255, .32)) drop-shadow(0 0 18px rgba(0, 120, 255, .20));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #profile-skeleton .skel { animation: none; }
-  .bton-o-prog { animation: none; stroke-dashoffset: 40; }
+  .bton-o-prog { 
+    animation: none !important; 
+    stroke-dashoffset: 40;
+  }
 }
 
 </style>
@@ -4347,13 +4367,17 @@ async function openProfile(companyId) {
   try { localStorage.setItem("BTrustOn_last_route", `company:${companyId}`); } catch(e) {}
 
   // Keep URL in sync (so refresh stays on the same company)
-  try {
-    const newHash = `#company=${encodeURIComponent(companyId)}`;
-    if (window.location.hash !== newHash) {
-      if (history && history.replaceState) history.replaceState(null, "", newHash);
-      else window.location.hash = newHash;
-    }
-  } catch(e) {}
+// - Restore (refresh) sırasında replaceState (history şişmesin)
+// - Kullanıcı tıklayınca pushState (browser Back ile listeye dönebilsin)
+try {
+  const newHash = `#company=${encodeURIComponent(companyId)}`;
+  if (window.location.hash !== newHash) {
+    const st = { view: "profile", id: String(companyId), t: Date.now() };
+    if (history && history.pushState && !window.__routeRestoring) history.pushState(st, "", newHash);
+    else if (history && history.replaceState) history.replaceState(st, "", newHash);
+    else window.location.hash = newHash;
+  }
+} catch(e) {}
 
   // Immediately switch to Profile view shell (even if data must load)
   const _vd = document.getElementById("view-dashboard");
@@ -5159,13 +5183,20 @@ function showMainView() {
       try { localStorage.setItem("BTrustOn_last_route", "home"); } catch(e) {}
 
       // Clear any company route from the URL (clean + professional)
-      try {
-        if (history && history.replaceState) {
-          history.replaceState(null, "", window.location.pathname + window.location.search);
-        } else {
-          window.location.hash = "";
-        }
-      } catch(e) {}
+// - Kullanıcı UI ile listeye dönüyorsa pushState (browser Back/Forward tutarlı)
+// - Restore sırasında replaceState
+try {
+  const base = window.location.pathname + window.location.search;
+  const hadHash = !!window.location.hash;
+  const st = { view: "home", t: Date.now() };
+  if (history && history.pushState && hadHash && !window.__routeRestoring) {
+    history.pushState(st, "", base);
+  } else if (history && history.replaceState) {
+    history.replaceState(st, "", base);
+  } else {
+    window.location.hash = "";
+  }
+} catch(e) {}
 
       const viewDashboard = document.getElementById("view-dashboard");
       const viewProfile = document.getElementById("view-profile");
@@ -6046,6 +6077,31 @@ return;
   // Default: dashboard (home)
   showMainView();
 }
+
+
+// Keep browser Back/Forward (popstate) and hash changes perfectly in sync with the UI
+(function () {
+  let syncing = false;
+
+  async function syncRoute() {
+    if (syncing) return;
+    syncing = true;
+    try {
+      const hasCompany = /^#company=/.test(window.location.hash || "");
+      try {
+        if (hasCompany) showProfileSkeleton();
+        else hideProfileSkeleton();
+      } catch(e) {}
+      await restoreInitialRoute();
+    } finally {
+      syncing = false;
+    }
+  }
+
+  window.addEventListener("popstate", syncRoute);
+  window.addEventListener("hashchange", syncRoute);
+})();
+
 
 // Runs last: reveals the UI (removes boot overlay)
 function finishBoot() {
