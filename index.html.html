@@ -5879,6 +5879,22 @@ if (profile.email === ADMIN_EMAIL) {
     }
     // 👆👆👆 --------------------------- 👆👆👆
     // Listede zaten var mı? Varsa üstüne yazmayalım, sadece eksikleri güncelleyelim.
+    // ✅ Dedupe: aynı email (farklı id) varsa tek kayda düşür
+    const _emailKey = (profile.email || "").trim().toLowerCase();
+    if (_emailKey) {
+        const dupIdx = database.findIndex(c => (c.email || "").trim().toLowerCase() === _emailKey && c.id != profile.id);
+        if (dupIdx > -1) {
+            // Hangisini tutalım? Verified / Pro olanı tercih et.
+            const incomingIsBetter = (profile.verification_status === 'verified') ||
+                                     (profile.subscription_tier === 'pro' && database[dupIdx].subscription_tier !== 'pro');
+            if (incomingIsBetter) {
+                database.splice(dupIdx, 1);
+            } else {
+                return; // mevcut kayıt daha iyi, bu kaydı listeye alma
+            }
+        }
+    }
+
     const exists = database.find(c => c.id == profile.id);
     
     const formattedProfile = {
@@ -6000,6 +6016,17 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   };
 
   if (typeof database !== 'undefined') {
+            // ✅ Dedupe: aynı email farklı id ise (arama sonuçlarında iki tane görünmesin)
+      const _emailKey = (mappedProfile.email || "").trim().toLowerCase();
+      if (_emailKey) {
+          for (let i = database.length - 1; i >= 0; i--) {
+              const e = (database[i].email || "").trim().toLowerCase();
+              if (e === _emailKey && database[i].id !== mappedProfile.id) {
+                  database.splice(i, 1);
+              }
+          }
+      }
+
       const idx = database.findIndex(c => c.id == profile.id);
       if (idx > -1) { database[idx] = mappedProfile; } 
       else { database.unshift(mappedProfile); }
@@ -7861,6 +7888,20 @@ function deleteAllInbox() {
         if (!container) return;
         container.innerHTML = "";
 
+        // ✅ UI-level DEDUPE: aynı email/id ekranda 2 kez görünmesin
+        const _seenKeys = new Set();
+        const _uniqList = [];
+        (companyList || []).forEach(c => {
+            const emailKey = (c && c.email ? String(c.email) : "").trim().toLowerCase();
+            const idKey = (c && c.id ? String(c.id) : "");
+            const key = emailKey || idKey;
+            if (!key) return;
+            if (_seenKeys.has(key)) return;
+            _seenKeys.add(key);
+            _uniqList.push(c);
+        });
+        companyList = _uniqList;
+
         // Başlık ve Sayı Güncelleme
         if (resultCount) {
             if (mode === "search") {
@@ -9012,15 +9053,26 @@ async function upgradeToPro() {
 // 1. Durumu Kontrol Et ve Kutla
 function checkAndTriggerCelebration(company) {
     // Sadece 'verified' statüsündekiler için
-    if (company.verification_status === 'verified') {
-        
-        // Daha önce kutladık mı? (Tarayıcı hafızasına bak)
-        const hasSeen = localStorage.getItem(`celebrated_${company.id}`);
-        
-        // Eğer daha önce görmediyse KUTLA!
-        if (!hasSeen) {
-            openCelebrationModal();
-        }
+    if (company.verification_status !== 'verified') {
+        // Son statüyü hatırla (gelecekte karşılaştırmak için)
+        try { localStorage.setItem(`verif_${company.id}`, String(company.verification_status || 'none')); } catch(e) {}
+        return;
+    }
+
+    // ✅ Mantık: Kutlama sadece "statü değişimi" olduğunda çıksın.
+    // Yeni cihazda kullanıcı zaten verified ise (prev yoksa) tekrar kutlama göstermeyelim.
+    const prev = (() => { try { return localStorage.getItem(`verif_${company.id}`); } catch(e) { return null; } })();
+
+    // Önce mevcut durumu yaz (ileride değişimi yakalamak için)
+    try { localStorage.setItem(`verif_${company.id}`, 'verified'); } catch(e) {}
+
+    // Prev yoksa: yeni cihaz => gösterme
+    if (!prev) return;
+
+    // Prev verified değilse ve daha önce kutlanmadıysa: göster
+    const hasSeen = (() => { try { return localStorage.getItem(`celebrated_${company.id}`); } catch(e) { return null; } })();
+    if (prev !== 'verified' && !hasSeen) {
+        openCelebrationModal();
     }
 }
 
