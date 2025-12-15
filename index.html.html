@@ -1354,41 +1354,76 @@
 </div>
 
         <div id="content-assets" class="hidden-view">
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            
-            <div class="flex flex-wrap items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50/30">
-              <div class="flex flex-col gap-2">
-                <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider">Equipment & Assets</h3>
-               <div class="flex flex-wrap items-center gap-2 text-[10px]">
-                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">Available</span>
-                   
-                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">Under Maintenance</span>
-                   
-                   <span class="inline-flex items-center px-2 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-100">Out of Service</span>
-                </div>
-              </div>
-              <button id="btn-add-asset" type="button" onclick="openAssetModal()" class="hidden-view items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
-                <i class="fa-solid fa-plus"></i> <span>ADD NEW ASSET</span>
-              </button>
-            </div>
-
-            <div class="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar relative">
-              <table class="min-w-full text-sm text-left border-collapse">
-                <thead class="bg-gray-50 text-gray-400 uppercase font-bold text-[10px] tracking-wider sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th class="py-3 px-6 bg-gray-50">Item Name</th>
-                    <th class="py-3 px-6 bg-gray-50">Specs</th>
-                    <th class="py-3 px-6 bg-gray-50 text-center">Qty</th>
-                    <th class="py-3 px-6 bg-gray-50">Location</th>
-                    <th class="py-3 px-6 bg-gray-50">Status</th>
-                    <th class="py-3 px-6 bg-gray-50 text-right w-24">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="p-assets-list" class="divide-y divide-gray-100 bg-white"></tbody>
-              </table>
-            </div>
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <div class="flex flex-col gap-3 px-6 py-5 border-b border-gray-100 bg-gray-50/30">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-col gap-2">
+          <h3 class="font-bold text-BTrustOn-primary font-header uppercase text-sm tracking-wider">Equipment & Assets</h3>
+          <div class="flex flex-wrap items-center gap-2 text-[10px]">
+            <span class="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">Available</span>
+            <span class="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-100">Under Maintenance</span>
+            <span class="inline-flex items-center px-2 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-100">Out of Service</span>
           </div>
         </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btn-add-asset" type="button" onclick="openAssetModal()"
+            class="hidden-view flex items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
+            <i class="fa-solid fa-plus"></i> <span>ADD NEW ASSET</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+          <input id="asset-search" type="text" placeholder="Search assets…"
+            class="pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-semibold w-64
+                   focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent"
+            oninput="filterAssetsUI()">
+        </div>
+
+        <div class="relative">
+          <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+          <select id="asset-filter-status"
+            class="pl-9 pr-8 py-2 rounded-lg border border-gray-200 bg-white text-xs font-bold text-gray-700
+                   focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer"
+            onchange="filterAssetsUI()">
+            <option value="all">All Status</option>
+            <option value="available">Available</option>
+            <option value="maintenance">Under Maintenance</option>
+            <option value="out">Out of Service</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+        </div>
+
+        <div class="relative">
+          <i class="fa-solid fa-arrow-down-short-wide absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+          <select id="asset-sort"
+            class="pl-9 pr-8 py-2 rounded-lg border border-gray-200 bg-white text-xs font-bold text-gray-700
+                   focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer"
+            onchange="sortAssetsUI(this.value)">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="az">Name A → Z</option>
+            <option value="status">Status (Available first)</option>
+            <option value="qtydesc">Qty: High → Low</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div id="p-assets-empty" class="hidden py-8 text-center text-xs text-gray-400 italic">
+        No assets listed.
+      </div>
+
+      <div id="p-assets-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+  </div>
+</div>
 
       </div> <div class="lg:col-span-4 space-y-6">
         
@@ -1961,13 +1996,6 @@
     <div>
       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Title</label>
       <input type="text" id="proj-title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Offshore Wind Farm Installation" required>
-    </div>
-
-    
-
-    <div>
-      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Date</label>
-      <input type="date" id="proj-date" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none input-field transition" required>
     </div>
 
     <div>
@@ -4157,6 +4185,220 @@ function filterSector(sector, btnEl) {
       `;
     }
 
+
+/* =========================
+   ASSETS UI (Cards + Filters)
+   ========================= */
+window.__assetUI = window.__assetUI || { query: "", status: "all", sort: "newest" };
+
+function _assetTime(a){
+  const t = Date.parse(a?.updated_at || a?.created_at || "");
+  return Number.isFinite(t) ? t : 0;
+}
+function _assetName(a){
+  return (a?.type || a?.item || a?.name || "").toString();
+}
+function _assetSpec(a){
+  return (a?.spec || a?.specs || "").toString();
+}
+function _assetLoc(a){
+  return (a?.location || "").toString();
+}
+function _assetQty(a){
+  const n = parseFloat((a?.qty ?? "").toString().replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+function _assetNormStatus(s){
+  const v = (s || "").toString().toLowerCase();
+  if (v.includes("avail") || v.includes("ready") || v.includes("active") || v.includes("solid")) return "available";
+  if (v.includes("maint") || v.includes("bak") || v.includes("servis") || v.includes("service")) return "maintenance";
+  if (v.includes("out") || v.includes("offline") || v.includes("off") || v.includes("kapalı") || v.includes("service dışı") || v.includes("deaktif")) return "out";
+  return "other";
+}
+function _assetStatusRank(s){
+  const ns = _assetNormStatus(s);
+  if (ns === "available") return 0;
+  if (ns === "maintenance") return 1;
+  if (ns === "out") return 2;
+  return 3;
+}
+
+function renderAssetsCards(company, isMyProfile){
+  window.__lastAssetsIsMyProfile = !!isMyProfile;
+  const grid = document.getElementById("p-assets-grid");
+  const empty = document.getElementById("p-assets-empty");
+  if (!grid) return;
+
+  const all = Array.isArray(company?.assets) ? [...company.assets] : [];
+  const q = (window.__assetUI?.query || "").toLowerCase().trim();
+  const st = (window.__assetUI?.status || "all").toLowerCase();
+  const sort = (window.__assetUI?.sort || "newest").toLowerCase();
+
+  let arr = all;
+
+  if (q){
+    arr = arr.filter(a => {
+      const hay = `${_assetName(a)} ${_assetSpec(a)} ${_assetLoc(a)} ${(a?.status||"")}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  if (st && st !== "all"){
+    arr = arr.filter(a => _assetNormStatus(a?.status) === st);
+  }
+
+  // Sort
+  if (sort === "az") arr.sort((a,b)=> _assetName(a).localeCompare(_assetName(b)));
+  else if (sort === "oldest") arr.sort((a,b)=> _assetTime(a) - _assetTime(b));
+  else if (sort === "status") arr.sort((a,b)=> _assetStatusRank(a?.status) - _assetStatusRank(b?.status) || _assetName(a).localeCompare(_assetName(b)));
+  else if (sort === "qtydesc") arr.sort((a,b)=> _assetQty(b) - _assetQty(a));
+  else arr.sort((a,b)=> _assetTime(b) - _assetTime(a)); // newest default
+
+  grid.innerHTML = "";
+
+  if (!arr.length){
+    if (empty) empty.classList.remove("hidden");
+    return;
+  } else {
+    if (empty) empty.classList.add("hidden");
+  }
+
+  arr.forEach(a => {
+    // File icon (reuse existing logic style)
+    let fileIcon = "";
+    if (a.file_url) {
+      const fn = (a.file_name || "").toLowerCase();
+      let iconClass = "fa-file";
+      if (fn.endsWith(".pdf")) iconClass = "fa-file-pdf";
+      else if (fn.endsWith(".doc") || fn.endsWith(".docx")) iconClass = "fa-file-word";
+      else if (fn.endsWith(".xls") || fn.endsWith(".xlsx") || fn.endsWith(".csv")) iconClass = "fa-file-excel";
+      else if (fn.endsWith(".ppt") || fn.endsWith(".pptx")) iconClass = "fa-file-powerpoint";
+      fileIcon = `<a href="${a.file_url}" target="_blank" class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-600 hover:bg-BTrustOn-primary hover:text-white transition" title="View Document${a.file_name ? (': '+a.file_name) : ''}" onclick="event.stopPropagation();">
+                    <i class="fa-solid ${iconClass} text-[10px]"></i>
+                  </a>`;
+    }
+
+    const actions = isMyProfile ? `
+      <div class="flex gap-2">
+        <button onclick="event.stopPropagation(); openAssetModal(${a.id})" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-BTrustOn-primary text-slate-700 hover:text-white border border-slate-200 flex items-center justify-center transition shadow-sm" title="Edit">
+          <i class="fa-solid fa-pen text-[10px]"></i>
+        </button>
+        <button onclick="event.stopPropagation(); deleteAsset(${a.id})" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-100 flex items-center justify-center transition shadow-sm" title="Delete">
+          <i class="fa-solid fa-trash text-[10px]"></i>
+        </button>
+      </div>
+    ` : ``;
+
+    const card = document.createElement("div");
+    card.className = "group rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer";
+    card.setAttribute("role","button");
+    card.setAttribute("tabindex","0");
+    card.onclick = () => openAssetViewer(a.id);
+    card.onkeydown = (e) => { if(e.key === "Enter") openAssetViewer(a.id); };
+
+    card.innerHTML = `
+      <div class="p-4 flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center">
+            <div class="text-sm font-extrabold text-gray-800 truncate">${_assetName(a) || "Asset"}</div>
+            ${fileIcon}
+          </div>
+          <div class="mt-1 text-[11px] text-gray-400 truncate">${_assetLoc(a) || "-"}</div>
+        </div>
+        <div class="flex flex-col items-end gap-2">
+          <div>${getStatusBadge(a.status)}</div>
+          ${actions}
+        </div>
+      </div>
+
+      <div class="px-4 pb-4">
+        <div class="text-xs text-gray-600 leading-relaxed line-clamp-2">${_assetSpec(a) || "No specs provided."}</div>
+        <div class="mt-3 flex items-center justify-between text-[11px] text-gray-400">
+          <span class="inline-flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-[10px]"></i>
+            Qty: <span class="font-bold text-gray-600">${(a.qty ?? "-")}</span>
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <i class="fa-regular fa-clock text-[10px]"></i>
+            ${(a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "")}
+          </span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function filterAssetsUI(){
+  const s = document.getElementById("asset-search");
+  const f = document.getElementById("asset-filter-status");
+  window.__assetUI = window.__assetUI || {};
+  window.__assetUI.query = (s?.value || "");
+  window.__assetUI.status = (f?.value || "all");
+  // re-render using currently selected company
+  try {
+    if (selectedCompany) {
+      renderAssetsCards(selectedCompany, window.__lastAssetsIsMyProfile);
+    }
+  } catch(e) {}
+}
+
+function sortAssetsUI(mode){
+  window.__assetUI = window.__assetUI || {};
+  window.__assetUI.sort = mode || "newest";
+  try {
+    if (selectedCompany) {
+      renderAssetsCards(selectedCompany, window.__lastAssetsIsMyProfile);
+    }
+  } catch(e) {}
+}
+
+/* =========================
+   ASSET VIEWER MODAL
+   ========================= */
+let __assetViewerItem = null;
+
+function openAssetViewer(assetId){
+  const company = selectedCompany;
+  const a = (company?.assets || []).find(x => String(x.id) === String(assetId));
+  if (!a) return;
+
+  __assetViewerItem = a;
+
+  const m = document.getElementById("asset-viewer");
+  if (!m) return;
+
+  document.getElementById("av-title").textContent = _assetName(a) || "Asset";
+  document.getElementById("av-meta").textContent = _assetLoc(a) || "";
+  document.getElementById("av-status").innerHTML = getStatusBadge(a.status);
+  document.getElementById("av-spec").textContent = _assetSpec(a) || "No specs provided.";
+  document.getElementById("av-qty").textContent = (a.qty ?? "-");
+  document.getElementById("av-updated").textContent = a.updated_at ? new Date(a.updated_at).toLocaleString() : "-";
+
+  const fileWrap = document.getElementById("av-file");
+  if (fileWrap) {
+    if (a.file_url) {
+      const label = a.file_name ? a.file_name : "Open document";
+      fileWrap.innerHTML = `<a href="${a.file_url}" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-BTrustOn-primary hover:text-white transition">
+        <i class="fa-solid fa-file-arrow-up"></i> <span class="text-xs font-bold">${label}</span>
+      </a>`;
+    } else {
+      fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">No document attached.</div>`;
+    }
+  }
+
+  m.classList.remove("hidden");
+}
+
+function closeAssetViewer(){
+  const m = document.getElementById("asset-viewer");
+  if (m) m.classList.add("hidden");
+  __assetViewerItem = null;
+}
+
+
+
+
 /* --- GÜNCELLENMİŞ: renderCertificates (RENKLİ BUTONLAR) --- */
 function renderCertificates(company) {
   const certList = document.getElementById("p-certs-list");
@@ -4898,14 +5140,10 @@ if (servicesGrid) {
               const card = document.createElement("div");
               card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative flex flex-col h-full";
               
-              const dateText = (p.project_date || p.date || p.projectDate || "");
-              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""} ${dateText}`.trim();
+              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
               card.dataset.hay = hay;
               card.dataset.pid = String(p.id || "");
               card.dataset.title = p.title || "";
-              // sorting uses the entered project date (fallback to id if missing)
-              const pdateTs = (typeof p.project_ts === "number" && !isNaN(p.project_ts)) ? p.project_ts : (dateText ? Date.parse(dateText) : 0);
-              card.dataset.pdate = String(pdateTs || p.id || 0);
               card.dataset.created = String(p.id || "");
 
               card.innerHTML = `
@@ -4918,17 +5156,9 @@ if (servicesGrid) {
                     
                     <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
                         <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
-                        <div class="flex flex-col gap-1 text-xs text-slate-300 font-medium">
-                            <div class="flex items-center gap-1.5">
-                              <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
-                              <span class="truncate">${p.loc || 'Unknown Location'}</span>
-                            </div>
-                            ${dateText ? `
-                              <div class="flex items-center gap-1.5 text-[11px] text-slate-200/90">
-                                <i class="fa-solid fa-calendar-days text-slate-200/80"></i>
-                                <span class="truncate">${dateText}</span>
-                              </div>
-                            ` : ``}
+                        <div class="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                            <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+                            <span class="truncate">${p.loc || 'Unknown Location'}</span>
                         </div>
                     </div>
                     
@@ -4950,58 +5180,21 @@ if (servicesGrid) {
   // Sertifikalar
   renderCertificates(company);
 
-  // --- VARLIKLAR (DOSYA İKONLU) ---
-  const assetList = document.getElementById("p-assets-list");
-  if (assetList) {
-      assetList.innerHTML = "";
-      if (!company.assets || company.assets.length === 0) {
-          assetList.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-gray-400 italic">No assets listed.</td></tr>`;
-      } else {
-          company.assets.forEach(a => {
-             const btns = isMyProfile ? `
-                <div class="flex gap-2 justify-end">
-                    <button onclick="openAssetModal(${a.id})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
-                        <i class="fa-solid fa-pen text-[10px]"></i>
-                    </button>
-                    <button onclick="deleteAsset(${a.id})" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
-                        <i class="fa-solid fa-trash text-[10px]"></i>
-                    </button>
-                </div>
-             ` : "";
-             
-             // --- DOSYA İKONU MANTIĞI ---
-             let fileIcon = "";
-             if (a.file_url) {
-                 // İkon seçimi (PDF mi Resim mi?)
-                 let iconClass = "fa-file-lines";
-                 if(a.file_name && a.file_name.match(/\.(jpg|jpeg|png)$/i)) iconClass = "fa-image";
-                 if(a.file_name && a.file_name.match(/\.(pdf)$/i)) iconClass = "fa-file-pdf";
-                 
-                 fileIcon = `
-                    <a href="${a.file_url}" target="_blank" class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition" title="View Document: ${a.file_name || 'File'}">
-                        <i class="fa-solid ${iconClass} text-[10px]"></i>
-                    </a>
-                 `;
-             }
+  // --- ASSETS (Cards + Viewer) ---
+  try {
+    // Reset UI controls each time we open a profile
+    const s = document.getElementById("asset-search");
+    const f = document.getElementById("asset-filter-status");
+    const so = document.getElementById("asset-sort");
+    if (s) s.value = "";
+    if (f) f.value = "all";
+    if (so) so.value = "newest";
+    window.__assetUI = { query: "", status: "all", sort: "newest" };
+  } catch(e) {}
 
-             const row = document.createElement("tr");
-             row.innerHTML = `
-                <td class="py-3 px-6 text-xs font-bold text-gray-700">
-                    <div class="flex items-center">
-                        ${a.type} ${fileIcon}
-                    </div>
-                </td>
-                <td class="px-6 text-xs text-gray-500">${a.spec}</td>
-                <td class="px-6 text-xs text-gray-500 text-center">${a.qty}</td>
-                <td class="px-6 text-xs text-gray-500">${a.location || '-'}</td>
-                <td class="px-6">${getStatusBadge(a.status)}</td> 
-                <td class="px-6 text-right">${btns}</td>
-             `;
-             assetList.appendChild(row);
-          });
-      }
-  }
-// 👇 GÜNCELLENMİŞ ANALİTİK YÖNETİMİ (GİZLİLİK AYARLI) 👇
+  renderAssetsCards(company, isMyProfile);
+
+  // 👇 GÜNCELLENMİŞ ANALİTİK YÖNETİMİ (GİZLİLİK AYARLI) 👇
   
   // 1. Ziyaret Sayacı: Herkes için çalışır (Arka planda kaydeder)
   trackProfileView(company.id);
@@ -5646,9 +5839,6 @@ function openProjectModal(projectId = null) {
         document.getElementById("proj-title").value = proj.title || "";
         document.getElementById("proj-loc").value = proj.loc || "";
         document.getElementById("proj-desc").value = proj.desc || "";
-        // Project date (used for sorting)
-        const _pd = (proj.project_date || proj.date || proj.projectDate || "");
-        document.getElementById("proj-date").value = _pd ? String(_pd).slice(0,10) : new Date().toISOString().slice(0,10);
         
         // 1. Kapak Resmi Varsa Göster (Ve silme butonu koy)
         if (proj.cover_url) {
@@ -5670,7 +5860,6 @@ function openProjectModal(projectId = null) {
     // --- YENİ EKLEME MODU ---
     currentEditingProjectId = null;
     if(title) title.textContent = "Add New Project";
-    try { document.getElementById("proj-date").value = new Date().toISOString().slice(0,10); } catch(e) {}
   }
 }
 
@@ -5693,11 +5882,6 @@ async function saveProject() {
     const title = document.getElementById("proj-title").value.trim();
     const loc = document.getElementById("proj-loc").value.trim();
     const desc = document.getElementById("proj-desc").value.trim();
-
-    const projectDate = (document.getElementById("proj-date")?.value || "").trim();
-    if (!projectDate) { showToast("Missing Info", "Project date required.", "error"); return; }
-    const projectTs = Date.parse(projectDate);
-
 
     if (!title) { showToast("Missing Info", "Title required.", "error"); return; }
 
@@ -5748,8 +5932,6 @@ async function saveProject() {
         title: title,
         loc: loc,
         desc: desc,
-        project_date: projectDate,
-        project_ts: (isNaN(projectTs) ? 0 : projectTs),
         cover_url: finalCoverUrl,
         gallery_urls: finalGallery,
         updated_at: new Date().toISOString()
@@ -9435,15 +9617,63 @@ function sortProjectsUI(mode){
   if(!list) return;
   const cards = [...list.children].filter(el => el.dataset && el.dataset.pid);
   const getTitle = (el) => (el.dataset.title || "").toLowerCase();
-  const getPDate = (el) => parseFloat((el.dataset.pdate || el.dataset.created || "0")) || 0;
+  const getCreated = (el) => parseFloat(el.dataset.created || "0") || 0;
 
   if(mode === "az") cards.sort((a,b)=> getTitle(a).localeCompare(getTitle(b)));
-  else if(mode === "oldest") cards.sort((a,b)=> getPDate(a) - getPDate(b));
-  else cards.sort((a,b)=> getPDate(b) - getPDate(a)); // newest default
+  else if(mode === "oldest") cards.sort((a,b)=> getCreated(a) - getCreated(b));
+  else cards.sort((a,b)=> getCreated(b) - getCreated(a)); // newest default
 
   cards.forEach(c => list.appendChild(c));
 }
 
 
 </script>
-</html>
+</html
+
+<!-- ✅ ASSET VIEWER MODAL -->
+<div id="asset-viewer" class="hidden fixed inset-0 z-[99990]">
+  <div class="absolute inset-0 bg-slate-900/60" onclick="closeAssetViewer()"></div>
+
+  <div class="relative max-w-3xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div class="min-w-0">
+        <div id="av-title" class="text-sm font-extrabold text-BTrustOn-primary truncate"></div>
+        <div id="av-meta" class="text-[11px] text-gray-400 mt-0.5 truncate"></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="av-status"></div>
+        <button class="w-9 h-9 rounded-full hover:bg-gray-100 text-gray-500" onclick="closeAssetViewer()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-5">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div class="md:col-span-8">
+          <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Specs</div>
+          <div id="av-spec" class="mt-1 text-sm text-gray-700 whitespace-pre-wrap"></div>
+
+          <div class="mt-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Document</div>
+          <div id="av-file" class="mt-2"></div>
+        </div>
+
+        <div class="md:col-span-4">
+          <div class="rounded-xl border border-gray-200 bg-slate-50 p-4">
+            <div class="text-[11px] text-gray-400">Quantity</div>
+            <div id="av-qty" class="text-xl font-extrabold text-gray-800 mt-1"></div>
+
+            <div class="mt-4 text-[11px] text-gray-400">Last updated</div>
+            <div id="av-updated" class="text-xs font-bold text-gray-700 mt-1"></div>
+          </div>
+
+          <div class="mt-3 text-[11px] text-gray-400">
+            Tip: Click the document button to open the attached file (PDF, Excel, etc.).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+>
