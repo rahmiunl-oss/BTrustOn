@@ -1918,7 +1918,6 @@
         <input type="number" id="asset-qty" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" value="1">
       </div>
     </div>
-
     <div>
       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
       <input type="text" id="asset-location" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. Rotterdam Logistics Hub, NL">
@@ -2002,6 +2001,12 @@
       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
       <input type="text" id="proj-loc" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. North Sea, Netherlands" required>
     </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Date <span class="text-red-500">*</span></label>
+      <input type="date" id="proj-date" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition text-gray-600" required>
+    </div>
+
 
     <div>
       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
@@ -4697,6 +4702,13 @@ try {
 
           company = {
               id: profile.id,
+              email: profile.email || "",
+              subscription_tier: profile.subscription_tier || "free",
+              verification_status: profile.verification_status || "none",
+              tax_id: profile.tax_id || "",
+              duns_number: profile.duns_number || "",
+              country: profile.country || "Turkey",
+              address: profile.address || "",
               name: profile.company_name || "Unknown",
               city: profile.city || "No Location",
               tagline: profile.tagline || "",
@@ -5099,7 +5111,23 @@ if (servicesGrid) {
   window.__projectsCache = (company.projects || []);
   if (projList) {
       projList.innerHTML = "";
-      
+
+      // Sort render order by Project Date (fallback: created id)
+      const sortMode = (document.getElementById("proj-sort")?.value) || "newest";
+      const projectsArr = Array.isArray(company.projects) ? [...company.projects] : [];
+      const getDateTS = (p) => {
+        const ts = Date.parse((p && p.project_date) ? p.project_date : "");
+        if (Number.isFinite(ts)) return ts;
+        const fallback = Number(p && p.id) || 0;
+        return fallback;
+      };
+      if (sortMode === "oldest") projectsArr.sort((a,b)=> getDateTS(a) - getDateTS(b));
+      else if (sortMode === "az") projectsArr.sort((a,b)=> String(a?.title||"").toLowerCase().localeCompare(String(b?.title||"").toLowerCase()));
+      else projectsArr.sort((a,b)=> getDateTS(b) - getDateTS(a));
+
+
+      // Keep a sorted cache for the Project Viewer
+      window.__projectsCache = projectsArr;
       if (!company.projects || company.projects.length === 0) {
           projList.innerHTML = `
             <div class="col-span-full flex flex-col items-center justify-center py-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
@@ -5109,7 +5137,7 @@ if (servicesGrid) {
                 <p class="text-sm text-gray-500 font-medium">No projects listed yet.</p>
             </div>`;
       } else {
-          company.projects.forEach(p => {
+          projectsArr.forEach(p => {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
               const cover = p.cover_url || "https://placehold.co/800x450/f1f5f9/94a3b8?text=Project+Image";
               // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
@@ -5146,6 +5174,8 @@ if (servicesGrid) {
               card.dataset.title = p.title || "";
               card.dataset.created = String(p.id || "");
 
+              card.dataset.pdate = String(p.project_date || "");
+
               card.innerHTML = `
                 <div class="relative h-48 overflow-hidden bg-gray-100 shrink-0 ${cursorClass} group/img" ${cardClickAction}>
                     <img src="${cover}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700">
@@ -5156,9 +5186,15 @@ if (servicesGrid) {
                     
                     <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
                         <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
-                        <div class="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
-                            <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
-                            <span class="truncate">${p.loc || 'Unknown Location'}</span>
+                        <div class="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300 font-medium">
+                            <span class="inline-flex items-center gap-1.5 min-w-0">
+                              <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+                              <span class="truncate min-w-0">${p.loc || 'Unknown Location'}</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1.5">
+                              <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
+                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
+                            </span>
                         </div>
                     </div>
                     
@@ -5839,6 +5875,7 @@ function openProjectModal(projectId = null) {
         document.getElementById("proj-title").value = proj.title || "";
         document.getElementById("proj-loc").value = proj.loc || "";
         document.getElementById("proj-desc").value = proj.desc || "";
+        document.getElementById("proj-date").value = proj.project_date || "";
         
         // 1. Kapak Resmi Varsa Göster (Ve silme butonu koy)
         if (proj.cover_url) {
@@ -5883,7 +5920,10 @@ async function saveProject() {
     const loc = document.getElementById("proj-loc").value.trim();
     const desc = document.getElementById("proj-desc").value.trim();
 
+    const projDate = (document.getElementById("proj-date")?.value || "").trim();
+
     if (!title) { showToast("Missing Info", "Title required.", "error"); return; }
+    if (!projDate) { showToast("Missing Info", "Project date required.", "error"); return; }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
 
@@ -5932,6 +5972,7 @@ async function saveProject() {
         title: title,
         loc: loc,
         desc: desc,
+        project_date: projDate,
         cover_url: finalCoverUrl,
         gallery_urls: finalGallery,
         updated_at: new Date().toISOString()
@@ -6285,6 +6326,18 @@ async function checkUserAndOpenProfile(forceOpen = false) {
       localStorage.setItem("BTrustOn_my_company_id", profile.id);
 
       if (forceOpen === true) { openProfile(profile.id); }
+
+      // ✅ If user's company profile is currently open, refresh it so verification badge updates without a manual refresh
+      try {
+        const vp = document.getElementById("view-profile");
+        const isProfileOpen = vp && !vp.classList.contains("hidden-view");
+        if (forceOpen !== true && isProfileOpen && typeof selectedCompany !== 'undefined' && selectedCompany && String(selectedCompany.id) === String(profile.id)) {
+          const fresh = (typeof database !== 'undefined' && database) ? database.find(c => String(c.id) === String(profile.id)) : null;
+          selectedCompany = fresh || mappedProfile;
+          await openProfile(profile.id);
+        }
+      } catch(e) {}
+
   }
 
   // Kutlama kontrolü yap
@@ -7977,6 +8030,11 @@ async function initRealData() {
       country: p.country || "Turkey",
 address: p.address || "", // ✅ BU SATIRI EKLEYİN
       email: p.email || "", 
+      subscription_tier: p.subscription_tier || "free",
+      verification_status: p.verification_status || "none",
+      tax_id: p.tax_id || "",
+      duns_number: p.duns_number || "",
+
 service_details: p.service_details || "",
 owner_name: p.owner_name,
       owner_role: p.owner_role,
@@ -9550,7 +9608,13 @@ function openProjectViewer(projectId){
   const thumbs = document.getElementById("pv-thumbs");
 
   if(tEl) tEl.textContent = title;
-  if(mEl) mEl.textContent = loc ? `📍 ${loc}` : "";
+  if(mEl) {
+    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : "");
+    if (loc && nice) mEl.textContent = `📍 ${loc}  •  📅 ${nice}`;
+    else if (loc) mEl.textContent = `📍 ${loc}`;
+    else if (nice) mEl.textContent = `📅 ${nice}`;
+    else mEl.textContent = "";
+  }
   if(dEl) dEl.textContent = desc;
   if(cEl) cEl.src = cover;
 
@@ -9615,13 +9679,20 @@ function filterProjectsUI(q){
 function sortProjectsUI(mode){
   const list = document.getElementById("p-projects-list");
   if(!list) return;
+
   const cards = [...list.children].filter(el => el.dataset && el.dataset.pid);
+
   const getTitle = (el) => (el.dataset.title || "").toLowerCase();
   const getCreated = (el) => parseFloat(el.dataset.created || "0") || 0;
+  const getPDate = (el) => {
+    const d = (el.dataset.pdate || "").trim();
+    const ts = Date.parse(d);
+    return Number.isFinite(ts) ? ts : getCreated(el);
+  };
 
   if(mode === "az") cards.sort((a,b)=> getTitle(a).localeCompare(getTitle(b)));
-  else if(mode === "oldest") cards.sort((a,b)=> getCreated(a) - getCreated(b));
-  else cards.sort((a,b)=> getCreated(b) - getCreated(a)); // newest default
+  else if(mode === "oldest") cards.sort((a,b)=> getPDate(a) - getPDate(b));
+  else cards.sort((a,b)=> getPDate(b) - getPDate(a)); // newest default
 
   cards.forEach(c => list.appendChild(c));
 }
