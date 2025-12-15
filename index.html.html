@@ -1963,6 +1963,13 @@
       <input type="text" id="proj-title" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition" placeholder="e.g. Offshore Wind Farm Installation" required>
     </div>
 
+    
+
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Project Date</label>
+      <input type="date" id="proj-date" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none input-field transition" required>
+    </div>
+
     <div>
       <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location</label>
       <input type="text" id="proj-loc" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none transition" placeholder="e.g. North Sea, Netherlands" required>
@@ -4891,10 +4898,14 @@ if (servicesGrid) {
               const card = document.createElement("div");
               card.className = "bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative flex flex-col h-full";
               
-              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
+              const dateText = (p.project_date || p.date || p.projectDate || "");
+              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""} ${dateText}`.trim();
               card.dataset.hay = hay;
               card.dataset.pid = String(p.id || "");
               card.dataset.title = p.title || "";
+              // sorting uses the entered project date (fallback to id if missing)
+              const pdateTs = (typeof p.project_ts === "number" && !isNaN(p.project_ts)) ? p.project_ts : (dateText ? Date.parse(dateText) : 0);
+              card.dataset.pdate = String(pdateTs || p.id || 0);
               card.dataset.created = String(p.id || "");
 
               card.innerHTML = `
@@ -4907,9 +4918,17 @@ if (servicesGrid) {
                     
                     <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
                         <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
-                        <div class="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
-                            <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
-                            <span class="truncate">${p.loc || 'Unknown Location'}</span>
+                        <div class="flex flex-col gap-1 text-xs text-slate-300 font-medium">
+                            <div class="flex items-center gap-1.5">
+                              <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+                              <span class="truncate">${p.loc || 'Unknown Location'}</span>
+                            </div>
+                            ${dateText ? `
+                              <div class="flex items-center gap-1.5 text-[11px] text-slate-200/90">
+                                <i class="fa-solid fa-calendar-days text-slate-200/80"></i>
+                                <span class="truncate">${dateText}</span>
+                              </div>
+                            ` : ``}
                         </div>
                     </div>
                     
@@ -5627,6 +5646,9 @@ function openProjectModal(projectId = null) {
         document.getElementById("proj-title").value = proj.title || "";
         document.getElementById("proj-loc").value = proj.loc || "";
         document.getElementById("proj-desc").value = proj.desc || "";
+        // Project date (used for sorting)
+        const _pd = (proj.project_date || proj.date || proj.projectDate || "");
+        document.getElementById("proj-date").value = _pd ? String(_pd).slice(0,10) : new Date().toISOString().slice(0,10);
         
         // 1. Kapak Resmi Varsa Göster (Ve silme butonu koy)
         if (proj.cover_url) {
@@ -5648,6 +5670,7 @@ function openProjectModal(projectId = null) {
     // --- YENİ EKLEME MODU ---
     currentEditingProjectId = null;
     if(title) title.textContent = "Add New Project";
+    try { document.getElementById("proj-date").value = new Date().toISOString().slice(0,10); } catch(e) {}
   }
 }
 
@@ -5670,6 +5693,11 @@ async function saveProject() {
     const title = document.getElementById("proj-title").value.trim();
     const loc = document.getElementById("proj-loc").value.trim();
     const desc = document.getElementById("proj-desc").value.trim();
+
+    const projectDate = (document.getElementById("proj-date")?.value || "").trim();
+    if (!projectDate) { showToast("Missing Info", "Project date required.", "error"); return; }
+    const projectTs = Date.parse(projectDate);
+
 
     if (!title) { showToast("Missing Info", "Title required.", "error"); return; }
 
@@ -5720,6 +5748,8 @@ async function saveProject() {
         title: title,
         loc: loc,
         desc: desc,
+        project_date: projectDate,
+        project_ts: (isNaN(projectTs) ? 0 : projectTs),
         cover_url: finalCoverUrl,
         gallery_urls: finalGallery,
         updated_at: new Date().toISOString()
@@ -9405,11 +9435,11 @@ function sortProjectsUI(mode){
   if(!list) return;
   const cards = [...list.children].filter(el => el.dataset && el.dataset.pid);
   const getTitle = (el) => (el.dataset.title || "").toLowerCase();
-  const getCreated = (el) => parseFloat(el.dataset.created || "0") || 0;
+  const getPDate = (el) => parseFloat((el.dataset.pdate || el.dataset.created || "0")) || 0;
 
   if(mode === "az") cards.sort((a,b)=> getTitle(a).localeCompare(getTitle(b)));
-  else if(mode === "oldest") cards.sort((a,b)=> getCreated(a) - getCreated(b));
-  else cards.sort((a,b)=> getCreated(b) - getCreated(a)); // newest default
+  else if(mode === "oldest") cards.sort((a,b)=> getPDate(a) - getPDate(b));
+  else cards.sort((a,b)=> getPDate(b) - getPDate(a)); // newest default
 
   cards.forEach(c => list.appendChild(c));
 }
