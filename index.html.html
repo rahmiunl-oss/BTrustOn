@@ -4,49 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BtrustOn</title>
+  <!-- UX STABILITY FIXES (prevents horizontal jump on refresh / scroll lock) -->
+  <style id="ux-stability-fixes">
+    html { scrollbar-gutter: stable; }
+    html, body { overflow-x: hidden; }
+  </style>
+
   
-<!-- SAVED COMPANIES OVERLAY + PANEL -->
-<div id="saved-overlay" onclick="toggleSavedPanel()" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9988] hidden transition-opacity opacity-0"></div>
 
-<div id="saved-panel" class="flex flex-col">
-  <div class="bg-gradient-to-r from-BTrustOn-primary to-slate-900 text-white pt-6 px-6 shadow-lg relative overflow-hidden shrink-0 z-20">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 
-    <div class="relative z-10 flex items-center justify-between">
-      <div>
-        <div class="text-[11px] uppercase tracking-wider text-white/70 font-bold">Saved</div>
-        <div class="text-lg font-extrabold flex items-center gap-2">
-          Saved Companies
-          <span class="text-[11px] font-black px-2 py-0.5 rounded-full bg-white/15 border border-white/20" id="saved-panel-count">0</span>
-        </div>
-      </div>
-
-      <button onclick="toggleSavedPanel()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition flex items-center justify-center" title="Close">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <div class="relative z-10 mt-4 pb-5">
-      <div class="bg-white/10 border border-white/15 rounded-2xl px-3 py-2 flex items-center gap-2">
-        <i class="fa-solid fa-magnifying-glass text-white/70 text-sm"></i>
-        <input
-          id="saved-search"
-          oninput="renderSavedCompanies()"
-          placeholder="Search saved companies..."
-          class="w-full bg-transparent outline-none text-sm placeholder:text-white/60"
-        />
-      </div>
-    </div>
-  </div>
-
-  <div class="flex-1 overflow-y-auto p-4 space-y-3">
-    <div id="saved-empty" class="hidden text-sm text-gray-500 bg-white/70 border border-gray-200 rounded-2xl p-4">
-      No saved companies yet. Use the bookmark icon on company cards to save.
-    </div>
-    <div id="saved-list" class="space-y-3"></div>
-  </div>
-</div>
-<!-- /SAVED COMPANIES PANEL -->
 
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -124,6 +90,10 @@
       overflow-x: hidden;
       overflow-y: visible !important;
     }
+    /* Cropper: allow pan/zoom without the page stealing the gesture */
+    #modal-cropper .cropper-container { touch-action: none; }
+    #modal-cropper .cropper-face, #modal-cropper .cropper-view-box { cursor: grab; }
+    #modal-cropper .cropper-face:active { cursor: grabbing; }
     .dot-map-bg {
       background-image: radial-gradient(#94a3b8 1px, transparent 1px);
       background-size: 30px 30px;
@@ -308,7 +278,7 @@
 
   <!-- Boot overlay: prevents dashboard flash on refresh -->
   <style>
-    html.booting body { overflow: hidden; }
+    html.booting body { overflow-y: scroll; }
 
     /* During boot we always prevent Dashboard flash */
     html.booting #view-dashboard,
@@ -492,6 +462,49 @@
 
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
+<!-- SAVED COMPANIES OVERLAY + PANEL -->
+<div id="saved-overlay" onclick="toggleSavedPanel()" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9988] hidden transition-opacity opacity-0"></div>
+
+<div id="saved-panel" class="flex flex-col">
+  <div class="bg-gradient-to-r from-BTrustOn-primary to-slate-900 text-white pt-6 px-6 shadow-lg relative overflow-hidden shrink-0 z-20">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+
+    <div class="relative z-10 flex items-center justify-between">
+      <div>
+        <div class="text-[11px] uppercase tracking-wider text-white/70 font-bold">Saved</div>
+        <div class="text-lg font-extrabold flex items-center gap-2">
+          Saved Companies
+          <span class="text-[11px] font-black px-2 py-0.5 rounded-full bg-white/15 border border-white/20" id="saved-panel-count">0</span>
+        </div>
+      </div>
+
+      <button onclick="toggleSavedPanel()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition flex items-center justify-center" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="relative z-10 mt-4 pb-5">
+      <div class="bg-white/10 border border-white/15 rounded-2xl px-3 py-2 flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-white/70 text-sm"></i>
+        <input
+          id="saved-search"
+          oninput="renderSavedCompanies()"
+          placeholder="Search saved companies..."
+          class="w-full bg-transparent outline-none text-sm placeholder:text-white/60"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-4 space-y-3">
+    <div id="saved-empty" class="hidden text-sm text-gray-500 bg-white/70 border border-gray-200 rounded-2xl p-4">
+      No saved companies yet. Use the bookmark icon on company cards to save.
+    </div>
+    <div id="saved-list" class="space-y-3"></div>
+  </div>
+</div>
+<!-- /SAVED COMPANIES PANEL -->
+
 <div id="toast-container"></div>
 
 <div id="boot-overlay" aria-live="polite" aria-busy="true">
@@ -1514,7 +1527,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <button id="btn-add-asset" type="button" onclick="openAssetModal()"
             class="hidden-view flex items-center gap-2 px-4 py-2 rounded-lg bg-BTrustOn-primary text-white font-bold text-xs hover:bg-BTrustOn-accent transition shadow-lg shadow-blue-900/10">
             <i class="fa-solid fa-plus"></i> <span>ADD NEW ASSET</span>
@@ -1717,7 +1730,7 @@
   >
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCropperModal()"></div>
 
-    <div class="relative bg-white w-[95%] max-w-4xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+    <div class="relative bg-white w-[95%] max-w-4xl rounded-2xl shadow-2xl border border-white/50 max-h-[90vh] overflow-hidden flex flex-col">
       <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white">
         <div class="min-w-0">
           <h3 id="cropper-title" class="text-sm md:text-base font-bold text-gray-900 truncate">Adjust Photo</h3>
@@ -1728,10 +1741,10 @@
         </button>
       </div>
 
-      <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 overflow-y-auto">
         <div class="md:col-span-8">
-          <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
-            <img id="cropper-image" alt="Crop" class="max-w-full block" />
+          <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden h-[60vh] md:h-[65vh] flex items-center justify-center">
+            <img id="cropper-image" alt="Crop" class="max-w-full max-h-full block" />
           </div>
         </div>
 
@@ -2029,7 +2042,7 @@
   <footer class="border-t border-gray-200 bg-white/80 mt-4">
     <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
       
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <span class="font-header font-bold text-BTrustOn-primary text-sm">BTrustOn</span>
         <span class="text-gray-300">|</span>
         <span>© <span id="year-span"></span> · <span data-i18n="footer_rights">All rights reserved.</span></span>
@@ -2260,7 +2273,7 @@
          <div id="existing-gallery-preview" class="flex gap-2 mb-2 overflow-x-auto pb-1 custom-scrollbar min-h-[0px] transition-all">
              </div>
 
-         <div class="flex items-center gap-2">
+         <div class="flex items-center gap-2 shrink-0">
             <label id="proj-gallery-label" class="flex-1 cursor-pointer bg-white border border-dashed border-gray-300 rounded-lg px-3 py-2 text-center hover:border-BTrustOn-accent transition">
                 <span class="text-[10px] text-gray-500 font-bold block">+ Add More Photos</span>
                 <input type="file" id="proj-gallery-input" class="hidden" accept="image/*" multiple onchange="handleProjectGallery(this)">
@@ -2830,6 +2843,14 @@
     .animate-pulse-slow {
       animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
+
+/* === Attachment image viewer (Assets/Certificates) - Pan + stable zoom === */
+#attachment-stage.attachment-pan-stage{ overscroll-behavior: contain; }
+#attachment-stage.attachment-pan-enabled{ cursor: grab; touch-action: none; }
+#attachment-stage.attachment-pan-enabled.is-panning{ cursor: grabbing; }
+#attachment-canvas{ background: transparent; }
+#attachment-img{ -webkit-user-drag: none; user-select: none; max-width: none; max-height: none; }
+
 </style>
 
 <div id="modal-gallery" class="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300">
@@ -4299,7 +4320,7 @@ function renderTopCompanies() {
               .join("")}
           </div>
           <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               ${getTrustBadge(company)}
             </div>
             <button
@@ -5526,7 +5547,7 @@ if (servicesGrid) {
     featuredWrap.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm";
     featuredWrap.innerHTML = `
       <div class="flex items-center justify-between gap-3 mb-4">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <span class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 text-BTrustOn-accent flex items-center justify-center">
             <i class="fa-solid fa-bolt"></i>
           </span>
@@ -5561,7 +5582,7 @@ if (servicesGrid) {
 
     allWrap.innerHTML = `
       <div class="flex items-center justify-between gap-3 mb-4">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <span class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center">
             <i class="fa-solid fa-tags"></i>
           </span>
@@ -9114,7 +9135,7 @@ async function openMessage(itemId) {
     // Ekranı Aç
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.remove("hidden-view");
-    document.body.style.overflow = "hidden";
+    __lockScrollForModal();
     toggleInbox(); 
     
     // Sohbeti Yükle
@@ -9300,7 +9321,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
 function closeMessageView() {
     const viewer = document.getElementById("view-message");
     if(viewer) viewer.classList.add("hidden-view");
-    document.body.style.overflow = "auto";
+    __unlockScrollForModal();
 }
 /* --- GÜNCELLENMİŞ: sendReply (ROKET HIZI - SIFIR GECİKME) --- */
 async function sendReply() {
@@ -9499,7 +9520,32 @@ let selectedLogoFile = null; // Seçilen logo dosyasını tutar
 ========================= */
 let __btonCropper = null;
 let __btonCropCtx = null; // { kind: 'logo'|'owner', mode: 'direct'|'edit' }
-let __btonCropBaseRatio = null;
+let __btonCropMinRatio = null; // initial zoom ratio when the cropper is ready
+let __btonCropZoomSpan = 2.5;    // slider 0..100 => minRatio .. minRatio*(1+ZoomSpan)
+let __btonCropBaseline = null; // { minRatio, canvas, cropBox } baseline for "100%" view
+
+function __btonCaptureCropBaseline() {
+  if (!__btonCropper) return;
+  try {
+    const minR = __btonCropMinRatio || (__btonCropper.getImageData()?.ratio) || 1;
+    __btonCropBaseline = {
+      minRatio: minR,
+      canvas: __btonCropper.getCanvasData(),
+      cropBox: __btonCropper.getCropBoxData()
+    };
+  } catch (_) {}
+}
+
+function __btonRestoreCropBaseline() {
+  if (!__btonCropper || !__btonCropBaseline) return;
+  try {
+    if (__btonCropBaseline.minRatio) __btonCropper.zoomTo(__btonCropBaseline.minRatio);
+    if (__btonCropBaseline.canvas) __btonCropper.setCanvasData(__btonCropBaseline.canvas);
+    if (__btonCropBaseline.cropBox) __btonCropper.setCropBoxData(__btonCropBaseline.cropBox);
+    try { __btonCropper.setDragMode("move"); } catch (_) {}
+  } catch (_) {}
+}
+
 
 function openCropperForFile(file, ctx) {
   if (!file) return;
@@ -9543,15 +9589,14 @@ function openCropperForFile(file, ctx) {
     }
   }
 
-// Reset zoom slider
-  if (zoomEl) zoomEl.value = 0;
-  __btonCropBaseRatio = null;
+// Reset zoom slider (disable until cropper is ready)
+  if (zoomEl) { zoomEl.value = 0; zoomEl.disabled = true; }
+  __btonCropMinRatio = null;
 
   // Load image
   const reader = new FileReader();
   reader.onload = function (e) {
     if (!imgEl) return;
-    imgEl.src = e.target.result;
 
     // Open modal (without toggling other modals)
     if (modal) {
@@ -9565,31 +9610,74 @@ function openCropperForFile(file, ctx) {
       __btonCropper = null;
     }
 
-    // Init cropper
-    __btonCropper = new Cropper(imgEl, {
-      aspectRatio: (__btonCropCtx.kind === "project_cover" ? (16/9) : 1),
-      viewMode: 1,
-      dragMode: "move",
-      autoCropArea: 1,
-      responsive: true,
-      background: false,
-      guides: false,
-      center: true,
-      highlight: false,
-      movable: true,
-      zoomable: true,
-      scalable: false,
-      rotatable: true,
-      cropBoxMovable: false,
-      cropBoxResizable: false,
-      preview: ".cropper-preview",
-      ready() {
-        try {
-          const d = __btonCropper.getImageData();
-          __btonCropBaseRatio = d && d.ratio ? d.ratio : null;
-        } catch(_) {}
+    // Reset zoom baseline and lock slider until Cropper is ready
+    __btonCropMinRatio = null;
+    __btonCropBaseline = null;
+    if (zoomEl) { zoomEl.value = 0; zoomEl.disabled = true; }
+
+    // IMPORTANT: wait for the image to fully load before initializing Cropper
+    imgEl.onload = () => {
+      try { imgEl.onload = null; } catch(_) {}
+
+      // (Re)destroy just in case
+      if (__btonCropper) {
+        try { __btonCropper.destroy(); } catch(_) {}
+        __btonCropper = null;
       }
-    });
+
+      __btonCropper = new Cropper(imgEl, {
+        aspectRatio: (__btonCropCtx.kind === "project_cover" ? (16/9) : 1),
+        viewMode: 1,
+        dragMode: "move",
+        autoCropArea: 1,
+        responsive: true,
+        background: false,
+        guides: false,
+        center: true,
+        highlight: false,
+        movable: true,
+        zoomable: true,
+        zoomOnWheel: true,
+        zoomOnTouch: true,
+        wheelZoomRatio: 0.08,
+        scalable: false,
+        rotatable: true,
+        cropBoxMovable: false,
+        cropBoxResizable: false,
+        toggleDragModeOnDblclick: false,
+        preview: ".cropper-preview",
+        ready() {
+          // Force "move" so mouse-drag always pans the photo (not the frame)
+          try { __btonCropper.setDragMode("move"); } catch(_) {}
+
+          // Capture the "minimum" zoom ratio once the cropper is fully laid out.
+          try {
+            const d = __btonCropper.getImageData();
+            __btonCropMinRatio = (d && d.ratio) ? d.ratio : null;
+            if (zoomEl) zoomEl.disabled = false;
+          } catch(_) {
+            __btonCropMinRatio = null;
+            if (zoomEl) zoomEl.disabled = false;
+          }
+
+          // Snapshot baseline (centered) so 100% zoom always returns to the original view
+          requestAnimationFrame(() => { __btonCaptureCropBaseline(); });
+
+        },
+        zoom(event) {
+          // Keep slider in sync even if user zooms with mouse wheel / touch
+          try {
+            const ratio = event && event.detail ? event.detail.ratio : (__btonCropper.getImageData()?.ratio);
+            const minR = __btonCropMinRatio || (__btonCropper.getImageData()?.ratio) || 1;
+            const t = Math.max(0, Math.min(1, (ratio / minR - 1) / (__btonCropZoomSpan)));
+            if (zoomEl && !zoomEl.matches(":active")) zoomEl.value = String(Math.round(t * 100));
+          } catch(_) {}
+        }
+      });
+    };
+
+    // Set src AFTER binding onload (prevents zero-dimension init bugs)
+    imgEl.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -9603,7 +9691,8 @@ function closeCropperModal() {
     __btonCropper = null;
   }
   __btonCropCtx = null;
-  __btonCropBaseRatio = null;
+  __btonCropMinRatio = null;
+  __btonCropBaseline = null;
 
   // Keep modal-active only if another modal is open
   syncBodyModalState();
@@ -9619,13 +9708,28 @@ function syncBodyModalState() {
   else document.body.classList.remove("modal-active");
 }
 
+
+
+
 function onCropperZoom(val) {
   if (!__btonCropper) return;
   const v = Math.max(0, Math.min(100, parseInt(val || "0", 10))) / 100;
   try {
-    const base = __btonCropBaseRatio || (__btonCropper.getImageData()?.ratio) || 1;
-    // Map 0..1 -> base..(base*2.2)
-    __btonCropper.zoomTo(base * (1 + (v * 1.2)));
+    const minR = __btonCropMinRatio || (__btonCropper.getImageData()?.ratio) || 1;
+
+    // When user comes back to 100% (slider = 0), also restore the original centered position.
+    if (v <= 0.000001) {
+      if (__btonCropBaseline) {
+        __btonRestoreCropBaseline();
+      } else {
+        __btonCropper.zoomTo(minR);
+        requestAnimationFrame(() => { __btonCaptureCropBaseline(); });
+      }
+      return;
+    }
+
+    const target = minR * (1 + (v * __btonCropZoomSpan));
+    __btonCropper.zoomTo(target);
   } catch (e) {
     console.warn("Zoom error", e);
   }
@@ -9634,13 +9738,31 @@ function onCropperZoom(val) {
 function cropperRotate(deg) {
   if (!__btonCropper) return;
   try { __btonCropper.rotate(deg); } catch(_) {}
+  // After rotation, recompute min zoom baseline on next frame
+  const zoomEl = document.getElementById("cropper-zoom");
+  if (zoomEl) zoomEl.value = 0;
+  requestAnimationFrame(() => {
+    try {
+      __btonCropMinRatio = __btonCropper.getImageData()?.ratio || __btonCropMinRatio;
+      if (__btonCropMinRatio) __btonCropper.zoomTo(__btonCropMinRatio);
+      requestAnimationFrame(() => { __btonCaptureCropBaseline(); });
+    } catch(_) {}
+  });
 }
 
 function cropperReset() {
   if (!__btonCropper) return;
+  __btonCropBaseline = null;
   try { __btonCropper.reset(); } catch(_) {}
   const zoomEl = document.getElementById("cropper-zoom");
   if (zoomEl) zoomEl.value = 0;
+  requestAnimationFrame(() => {
+    try {
+      __btonCropMinRatio = __btonCropper.getImageData()?.ratio || __btonCropMinRatio;
+      if (__btonCropMinRatio) __btonCropper.zoomTo(__btonCropMinRatio);
+      requestAnimationFrame(() => { __btonCaptureCropBaseline(); });
+    } catch(_) {}
+  });
 }
 
 async function confirmCropper() {
@@ -10401,7 +10523,7 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
               </div>
 
               <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                   ${getTrustBadge(company)}
                 </div>
                 <button class="text-[11px] font-bold text-BTrustOn-accent flex items-center gap-1 group">
@@ -11596,14 +11718,17 @@ function __lockScrollForModal(){
       left: document.body.style.left || "",
       right: document.body.style.right || "",
       width: document.body.style.width || "",
+      paddingRight: document.body.style.paddingRight || "",
       overflow: document.body.style.overflow || ""
     };
     // Sabitle
+    const sbw = Math.max(0, (window.innerWidth || 0) - (document.documentElement ? document.documentElement.clientWidth : 0));
     document.body.style.position = "fixed";
     document.body.style.top = `-${st.y}px`;
     document.body.style.left = "0";
     document.body.style.right = "0";
     document.body.style.width = "100%";
+    document.body.style.paddingRight = sbw ? `${sbw}px` : "";
     document.body.style.overflow = "hidden";
   }
   st.count += 1;
@@ -11621,6 +11746,7 @@ function __unlockScrollForModal(){
     document.body.style.left     = prev.left ?? "";
     document.body.style.right    = prev.right ?? "";
     document.body.style.width    = prev.width ?? "";
+    document.body.style.paddingRight = prev.paddingRight ?? "";
     document.body.style.overflow = prev.overflow ?? "";
     // Bir sonraki frame'de scroll'u geri al (layout otursun)
     requestAnimationFrame(() => window.scrollTo(0, y));
@@ -11632,6 +11758,7 @@ function __unlockScrollForModal(){
    - Opens image/PDF in an in-page modal (no new tab)
    - Preserves scroll position on close (uses __lockScrollForModal)
 ========================= */
+
 function __attachmentKind(url){
   try{
     const clean = String(url || "").split("#")[0].split("?")[0].toLowerCase();
@@ -11641,101 +11768,225 @@ function __attachmentKind(url){
   }catch(e){ return "other"; }
 }
 
-// Image viewer state (attachment modal)
-let __attachmentZoom = 1;
-let __attachmentMode = "fit"; // "fit" | "actual"
+
+// --- Robust attachment kind probing (handles URLs without extensions) ---
+const __attachmentKindCache = new Map();
+async function __probeAttachmentKind(url){
+  try{
+    const u = String(url || "");
+    if(!u) return "other";
+    if(__attachmentKindCache.has(u)) return __attachmentKindCache.get(u);
+
+    let kind = "other";
+
+    // 1) Try HEAD (fastest) to read Content-Type
+    try{
+      const head = await fetch(u, { method: "HEAD" });
+      const ct = (head.headers.get("content-type") || "").toLowerCase();
+      if(ct.includes("pdf")) kind = "pdf";
+      else if(ct.startsWith("image/")) kind = "image";
+    }catch(e){ /* ignore */ }
+
+    // 2) If still unknown, try GET headers + tiny signature sniff (no full download)
+    if(kind === "other"){
+      try{
+        const res = await fetch(u, { method: "GET" });
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+        if(ct.includes("pdf")) kind = "pdf";
+        else if(ct.startsWith("image/")) kind = "image";
+        else if(res.body && res.body.getReader){
+          const reader = res.body.getReader();
+          const { value } = await reader.read(); // first chunk
+          try{ await reader.cancel(); }catch(e){}
+          if(value && value.length){
+            // %PDF- => 25 50 44 46 2D
+            if(value.length >= 5 && value[0]===0x25 && value[1]===0x50 && value[2]===0x44 && value[3]===0x46 && value[4]===0x2D){
+              kind = "pdf";
+            }
+            // PNG => 89 50 4E 47 0D 0A 1A 0A
+            else if(value.length >= 8 && value[0]===0x89 && value[1]===0x50 && value[2]===0x4E && value[3]===0x47 && value[4]===0x0D && value[5]===0x0A && value[6]===0x1A && value[7]===0x0A){
+              kind = "image";
+            }
+            // JPEG => FF D8 FF
+            else if(value.length >= 3 && value[0]===0xFF && value[1]===0xD8 && value[2]===0xFF){
+              kind = "image";
+            }
+          }
+        }
+      }catch(e){ /* ignore */ }
+    }
+
+    __attachmentKindCache.set(u, kind);
+    return kind;
+  }catch(e){
+    return "other";
+  }
+}
+
+/* Attachment image viewer state
+   - Zoom is expressed as percentage relative to "fit" scale (100% = fit-to-stage)
+   - Panning is done by scrolling the stage (so you can reach every corner)
+*/
+const __att = {
+  kind: "other",
+  imgW: 0,
+  imgH: 0,
+  baseScale: 1,
+  zoomPct: 100,
+  isReady: false
+};
+
+function __clamp(n, min, max){
+  n = Number(n);
+  if(!Number.isFinite(n)) n = min;
+  return Math.max(min, Math.min(max, n));
+}
 
 function __showAttachmentImgControls(show){
-  const ctr = document.getElementById("attachment-img-controls");
-  if(!ctr) return;
-  if(show){
-    ctr.classList.remove("hidden");
-    ctr.classList.add("flex");
-  }else{
-    ctr.classList.add("hidden");
-    ctr.classList.remove("flex");
+  const wrap = document.getElementById("attachment-img-controls");
+  if(wrap) wrap.classList.toggle("hidden", !show);
+
+  const stage = document.getElementById("attachment-stage");
+  if(stage){
+    stage.classList.toggle("attachment-pan-enabled", !!show && __att.kind === "image");
+    stage.classList.remove("is-panning");
   }
 }
 
 function __updateAttachmentZoomLabel(){
   const lbl = document.getElementById("attachment-zoom-label");
   if(!lbl) return;
-  const pct = Math.round((__attachmentZoom || 1) * 100);
-  lbl.textContent = `${pct}%`;
+  lbl.textContent = `${Math.round(__att.zoomPct)}%`;
+}
+
+function __syncAttachmentModeButtons(){
+  const fitBtn = document.getElementById("attachment-fit-btn");
+  const actBtn = document.getElementById("attachment-actual-btn");
+  if(fitBtn){
+    const on = Math.round(__att.zoomPct) === 100;
+    fitBtn.classList.toggle("bg-slate-900", on);
+    fitBtn.classList.toggle("text-white", on);
+    fitBtn.classList.toggle("bg-slate-50", !on);
+    fitBtn.classList.toggle("text-slate-700", !on);
+  }
+  if(actBtn){
+    const actualPct = Math.round((1 / Math.max(__att.baseScale, 0.0001)) * 100);
+    const on = Math.round(__att.zoomPct) === actualPct;
+    actBtn.classList.toggle("bg-slate-900", on);
+    actBtn.classList.toggle("text-white", on);
+    actBtn.classList.toggle("bg-white", !on);
+    actBtn.classList.toggle("text-slate-600", !on);
+  }
+}
+
+function __attApplyZoom(nextPct, opts){
+  opts = opts || {};
+  const stage = document.getElementById("attachment-stage");
+  const canvas = document.getElementById("attachment-canvas");
+  const img = document.getElementById("attachment-img");
+  if(!stage || !canvas || !img || !__att.isReady) return;
+
+  const keepCenter = opts.keepCenter !== false; // default true
+
+  const stageW = stage.clientWidth || 1;
+  const stageH = stage.clientHeight || 1;
+
+  const oldW = canvas.offsetWidth || 1;
+  const oldH = canvas.offsetHeight || 1;
+  const relCx = (stage.scrollLeft + stageW/2) / oldW;
+  const relCy = (stage.scrollTop + stageH/2) / oldH;
+
+  const pct = __clamp(Math.round(nextPct), 25, 400);
+  const scale = __att.baseScale * (pct / 100);
+
+  const newW = Math.max(1, Math.round(__att.imgW * scale));
+  const newH = Math.max(1, Math.round(__att.imgH * scale));
+
+  canvas.style.width = newW + "px";
+  canvas.style.height = newH + "px";
+  canvas.classList.remove("hidden");
+
+  __att.zoomPct = pct;
+  __updateAttachmentZoomLabel();
+  __syncAttachmentModeButtons();
+
+  requestAnimationFrame(() => {
+    // Always re-center on 100% (fit)
+    if(pct === 100){
+      stage.scrollLeft = Math.max(0, (newW - stageW) / 2);
+      stage.scrollTop  = Math.max(0, (newH - stageH) / 2);
+      return;
+    }
+
+    if(!keepCenter) return;
+
+    const maxL = Math.max(0, newW - stageW);
+    const maxT = Math.max(0, newH - stageH);
+    stage.scrollLeft = __clamp(relCx * newW - stageW/2, 0, maxL);
+    stage.scrollTop  = __clamp(relCy * newH - stageH/2, 0, maxT);
+  });
 }
 
 function __setAttachmentMode(mode){
-  const stage = document.getElementById("attachment-stage");
-  const img = document.getElementById("attachment-img");
-  const fitBtn = document.getElementById("attachment-fit-btn");
-  const actBtn = document.getElementById("attachment-actual-btn");
-  if(!stage || !img) return;
-
-  __attachmentMode = mode === "actual" ? "actual" : "fit";
-
-  if(__attachmentMode === "fit"){
-    __attachmentZoom = 1;
-    stage.classList.add("overflow-hidden");
-    stage.classList.remove("overflow-auto");
-    img.style.transform = "none";
-    img.style.transformOrigin = "center center";
-    img.style.maxWidth = "100%";
-    img.style.maxHeight = "100%";
+  if(!__att.isReady) return;
+  if(mode === "actual"){
+    const actualPct = Math.round((1 / Math.max(__att.baseScale, 0.0001)) * 100);
+    __attApplyZoom(actualPct);
   }else{
-    stage.classList.remove("overflow-hidden");
-    stage.classList.add("overflow-auto");
-    img.style.maxWidth = "none";
-    img.style.maxHeight = "none";
-    img.style.transformOrigin = "top left";
-    img.style.transform = `scale(${__attachmentZoom})`;
+    __attApplyZoom(100, { keepCenter: false });
   }
-
-  // Active button styling
-  if(fitBtn){
-    fitBtn.classList.toggle("bg-slate-900", __attachmentMode === "fit");
-    fitBtn.classList.toggle("text-white", __attachmentMode === "fit");
-    fitBtn.classList.toggle("bg-slate-50", __attachmentMode !== "fit");
-    fitBtn.classList.toggle("text-slate-700", __attachmentMode !== "fit");
-  }
-  if(actBtn){
-    actBtn.classList.toggle("bg-slate-900", __attachmentMode === "actual");
-    actBtn.classList.toggle("text-white", __attachmentMode === "actual");
-    actBtn.classList.toggle("bg-white", __attachmentMode !== "actual");
-    actBtn.classList.toggle("text-slate-600", __attachmentMode !== "actual");
-  }
-
-  __updateAttachmentZoomLabel();
 }
 
-function __setAttachmentZoom(delta){
+function __setAttachmentZoom(deltaPct){
+  if(!__att.isReady) return;
+  __attApplyZoom(__att.zoomPct + deltaPct);
+}
+
+function __resetAttachmentViewer(){
+  __att.kind = "other";
+  __att.imgW = 0;
+  __att.imgH = 0;
+  __att.baseScale = 1;
+  __att.zoomPct = 100;
+  __att.isReady = false;
+
+  const stage = document.getElementById("attachment-stage");
+  const canvas = document.getElementById("attachment-canvas");
   const img = document.getElementById("attachment-img");
-  if(!img) return;
+  const frame = document.getElementById("attachment-frame");
+  const fb = document.getElementById("attachment-fallback");
+  const sub = document.getElementById("attachment-sub");
 
-  // If user starts zooming while in fit mode, switch to actual mode
-  if(__attachmentMode !== "actual"){
-    __setAttachmentMode("actual");
-  }
-
-  __attachmentZoom = Math.max(0.25, Math.min(4, (__attachmentZoom || 1) + delta));
-  img.style.transformOrigin = "top left";
-  img.style.transform = `scale(${__attachmentZoom})`;
+  if(sub) sub.textContent = "";
+  __showAttachmentImgControls(false);
   __updateAttachmentZoomLabel();
+
+  if(stage){
+    stage.scrollLeft = 0;
+    stage.scrollTop = 0;
+    stage.classList.remove("is-panning");
+    stage.classList.remove("attachment-pan-enabled");
+    stage.style.overflow = "";
+  }
+  if(canvas){
+    canvas.classList.add("hidden");
+    canvas.style.width = "";
+    canvas.style.height = "";
+  }
+  if(img){
+    img.classList.add("hidden");
+    img.src = "";
+  }
+  if(frame){
+    frame.classList.add("hidden");
+    frame.src = "about:blank";
+  }
+  if(fb){
+    fb.classList.add("hidden");
+  }
 }
 
-// Wire controls once
-document.addEventListener("DOMContentLoaded", () => {
-  const fitBtn = document.getElementById("attachment-fit-btn");
-  const actBtn = document.getElementById("attachment-actual-btn");
-  const zin = document.getElementById("attachment-zoom-in");
-  const zout = document.getElementById("attachment-zoom-out");
-
-  if(fitBtn) fitBtn.onclick = () => __setAttachmentMode("fit");
-  if(actBtn) actBtn.onclick = () => __setAttachmentMode("actual");
-  if(zin) zin.onclick = () => __setAttachmentZoom(0.25);
-  if(zout) zout.onclick = () => __setAttachmentZoom(-0.25);
-});
-
-function openAttachmentViewer(url, title){
+async function openAttachmentViewer(url, title){
   try{
     if(!url) return;
     const modal = document.getElementById("modal-attachment-viewer");
@@ -11743,72 +11994,95 @@ function openAttachmentViewer(url, title){
 
     __lockScrollForModal();
 
-    const kind = __attachmentKind(url);
+    // show modal first so stage has measurable size (important for fit scale)
+    modal.classList.remove("hidden");
+
+    __resetAttachmentViewer();
+
+    let kind = __attachmentKind(url);
+    if(kind === "other"){
+      // Many Supabase object URLs don't carry .pdf/.jpg extensions
+      kind = await __probeAttachmentKind(url);
+    }
+    __att.kind = kind;
 
     const t = document.getElementById("attachment-title");
     const sub = document.getElementById("attachment-sub");
     const openBtn = document.getElementById("attachment-open-newtab");
+    const stage = document.getElementById("attachment-stage");
+    const canvas = document.getElementById("attachment-canvas");
     const img = document.getElementById("attachment-img");
     const frame = document.getElementById("attachment-frame");
     const fb = document.getElementById("attachment-fallback");
-    const stage = document.getElementById("attachment-stage");
 
     if(t) t.textContent = title || "Attachment";
-    if(sub) sub.textContent = kind === "pdf" ? "PDF preview" : (kind === "image" ? "Image preview" : "Preview");
+    if(sub){ sub.textContent = ""; sub.classList.add("hidden"); }
+
     if(openBtn){
       openBtn.href = url;
       openBtn.classList.remove("hidden");
     }
 
-    // reset
-    __showAttachmentImgControls(false);
-    if(stage){
-      stage.classList.add("overflow-hidden");
-      stage.classList.remove("overflow-auto");
+    if(kind === "pdf"){
+      __showAttachmentImgControls(false);
+      if(stage) stage.style.overflow = "hidden";
+      if(frame){
+        frame.classList.remove("hidden");
+        frame.src = url;
+      }else{
+        window.open(url, "_blank", "noopener");
+      }
+      return;
     }
-    if(img){
-      img.classList.add("hidden");
-      img.src = "";
-      img.style.transform = "none";
-      img.style.transformOrigin = "center center";
-      img.style.maxWidth = "100%";
-      img.style.maxHeight = "100%";
-    }
-    if(frame){ frame.classList.add("hidden"); frame.src = "about:blank"; }
-    if(fb){ fb.classList.add("hidden"); }
 
     if(kind === "image"){
+      __showAttachmentImgControls(true);
+      if(stage) stage.style.overflow = "auto";
+
+      if(canvas) canvas.classList.remove("hidden");
       if(img){
-        __showAttachmentImgControls(true);
-        __attachmentZoom = 1;
-        img.src = url;
         img.classList.remove("hidden");
 
-        // Default behavior: show the FULL image (no crop) by fitting into the stage.
-        __setAttachmentMode("fit");
-      } else {
-        window.open(url, "_blank", "noopener");
+        // Critical: compute fit scale AFTER image loads
+        img.onload = () => {
+          try{
+            if(!stage) return;
+            __att.imgW = img.naturalWidth || img.width || 1;
+            __att.imgH = img.naturalHeight || img.height || 1;
+
+            const stageW = stage.clientWidth || 1;
+            const stageH = stage.clientHeight || 1;
+
+            // 100% = fit-to-stage (no upscaling by default)
+            const fit = Math.min(stageW / __att.imgW, stageH / __att.imgH);
+            __att.baseScale = Math.min(1, fit);
+
+            __att.isReady = true;
+            __att.zoomPct = 100;
+            __updateAttachmentZoomLabel();
+            __syncAttachmentModeButtons();
+
+            __attApplyZoom(100, { keepCenter: false });
+          }catch(e){ console.error(e); }
+        };
+
+        img.onerror = () => {
+          __showAttachmentImgControls(false);
+          if(fb) fb.classList.remove("hidden");
+        };
+
+        img.src = url;
       }
-    } else if(kind === "pdf"){
-      __showAttachmentImgControls(false);
-      if(frame){
-        // Fit view for many pdf viewers
-        frame.src = url + (String(url).includes("#") ? "" : "#view=FitH");
-        frame.classList.remove("hidden");
-      } else {
-        window.open(url, "_blank", "noopener");
-      }
-    } else {
-      // fallback: no preview
-      __showAttachmentImgControls(false);
-      if(fb){
-        fb.classList.remove("hidden");
-      } else {
-        window.open(url, "_blank", "noopener");
-      }
+      return;
     }
 
-    modal.classList.remove("hidden");
+    // fallback: no preview
+    __showAttachmentImgControls(false);
+    if(fb){
+      fb.classList.remove("hidden");
+    } else {
+      window.open(url, "_blank", "noopener");
+    }
   }catch(e){
     console.error("openAttachmentViewer error:", e);
     try{ window.open(url, "_blank", "noopener"); }catch(_){}
@@ -11818,41 +12092,64 @@ function openAttachmentViewer(url, title){
 function closeAttachmentViewer(){
   const modal = document.getElementById("modal-attachment-viewer");
   if(modal) modal.classList.add("hidden");
-
-  __showAttachmentImgControls(false);
-  __attachmentZoom = 1;
-  __attachmentMode = "fit";
-  __updateAttachmentZoomLabel();
-
-  try{
-    const stage = document.getElementById("attachment-stage");
-    const img = document.getElementById("attachment-img");
-    const frame = document.getElementById("attachment-frame");
-    const fb = document.getElementById("attachment-fallback");
-
-    if(stage){
-      stage.classList.add("overflow-hidden");
-      stage.classList.remove("overflow-auto");
-    }
-    if(img){
-      img.src = "";
-      img.style.transform = "none";
-      img.style.transformOrigin = "center center";
-      img.style.maxWidth = "100%";
-      img.style.maxHeight = "100%";
-      img.classList.add("hidden");
-    }
-    if(frame){
-      frame.src = "about:blank";
-      frame.classList.add("hidden");
-    }
-    if(fb) fb.classList.add("hidden");
-  }catch(e){}
-
+  __resetAttachmentViewer();
   __unlockScrollForModal();
 }
 
-// ESC to close
+document.addEventListener("DOMContentLoaded", () => {
+  const fitBtn = document.getElementById("attachment-fit-btn");
+  const actBtn = document.getElementById("attachment-actual-btn");
+  const zin = document.getElementById("attachment-zoom-in");
+  const zout = document.getElementById("attachment-zoom-out");
+
+  if(fitBtn) fitBtn.onclick = () => __setAttachmentMode("fit");
+  if(actBtn) actBtn.onclick = () => __setAttachmentMode("actual");
+
+  // Step = 25% => 100 -> 125 -> 150 ...
+  if(zin) zin.onclick = () => __setAttachmentZoom(25);
+  if(zout) zout.onclick = () => __setAttachmentZoom(-25);
+
+  // Drag-to-pan (by scrolling the stage)
+  const stage = document.getElementById("attachment-stage");
+  if(stage){
+    let isDown = false, pid = null, sx = 0, sy = 0, sl = 0, st = 0;
+
+    stage.addEventListener("pointerdown", (e) => {
+      if(__att.kind !== "image") return;
+      // left mouse / touch / pen
+      if(e.pointerType === "mouse" && e.button !== 0) return;
+
+      isDown = true;
+      pid = e.pointerId;
+      sx = e.clientX;
+      sy = e.clientY;
+      sl = stage.scrollLeft;
+      st = stage.scrollTop;
+
+      try{ stage.setPointerCapture(pid); }catch(_){}
+      stage.classList.add("is-panning");
+      e.preventDefault();
+    });
+
+    stage.addEventListener("pointermove", (e) => {
+      if(!isDown || pid !== e.pointerId) return;
+      stage.scrollLeft = sl - (e.clientX - sx);
+      stage.scrollTop  = st - (e.clientY - sy);
+      e.preventDefault();
+    });
+
+    const endPan = () => {
+      isDown = false;
+      pid = null;
+      stage.classList.remove("is-panning");
+    };
+
+    stage.addEventListener("pointerup", endPan);
+    stage.addEventListener("pointercancel", endPan);
+    stage.addEventListener("pointerleave", endPan);
+  }
+});
+
 document.addEventListener("keydown", (e) => {
   if(e.key === "Escape"){
     const modal = document.getElementById("modal-attachment-viewer");
@@ -12170,12 +12467,12 @@ function sortProjectsUI(mode){
       <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-white/90">
         <div class="min-w-0">
           <div id="attachment-title" class="text-sm font-extrabold text-slate-800 truncate">Attachment</div>
-          <div id="attachment-sub" class="text-[11px] text-slate-500 truncate"></div>
+          <div id="attachment-sub" class="hidden text-[11px] text-slate-500 truncate"></div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <!-- Image controls (only shown for images) -->
-          <div id="attachment-img-controls" class="hidden items-center gap-1 sm:gap-2 mr-1">
+          <div id="attachment-img-controls" class="hidden flex items-center gap-1 sm:gap-2 mr-1 flex-nowrap whitespace-nowrap">
             <button type="button" id="attachment-fit-btn"
               class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition text-xs font-bold">
               Fit
@@ -12214,8 +12511,10 @@ function sortProjectsUI(mode){
       </div>
 
       <div class="flex-1 bg-slate-50/60 relative">
-        <div id="attachment-stage" class="absolute inset-0 p-3 flex items-center justify-center overflow-hidden">
-          <img id="attachment-img" class="hidden max-w-full max-h-full object-contain select-none" alt="Attachment preview" />
+        <div id="attachment-stage" class="absolute inset-0 p-3 overflow-auto attachment-pan-stage">
+          <div id="attachment-canvas" class="hidden relative mx-auto my-auto">
+            <img id="attachment-img" class="block w-full h-full object-contain select-none" alt="Attachment preview" draggable="false" />
+          </div>
           <iframe id="attachment-frame" class="hidden w-full h-full" title="Attachment preview"></iframe>
 
           <div id="attachment-fallback" class="hidden absolute inset-0 flex items-center justify-center p-6">
