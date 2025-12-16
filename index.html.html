@@ -6995,6 +6995,8 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     
     fetchInboxMessages();
     subscribeToMessages();
+    fetchNotificationsUnread();
+    subscribeNotifications();
   }
 
   // 3. PROFİL VERİSİNİ ÇEK
@@ -7571,7 +7573,13 @@ function switchInboxView(view) {
 // 👇 YENİ EKLENECEK KISIM 👇
 
 // Inbox verisini artık canlı tutacağız, demo veriyi sildik, boş başlattık.
-let inboxData = []; 
+let inboxData = [];
+
+// --- Notifications (for admin reject/approve updates) ---
+let notificationsUnreadCount = 0;
+let messagesUnreadCount = 0;
+let _notifSubscribed = false;
+ 
 
 // Tarih formatlayıcı (Örn: "2 hours ago" yazar)
 function timeAgo(dateString) {
@@ -7806,6 +7814,76 @@ function subscribeToMessages() {
     )
     .subscribe();
 }
+
+// --- Notifications: fetch + realtime subscribe ---
+async function fetchNotificationsUnread() {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabaseClient
+      .from('notifications')
+      .select('id')
+      .eq('recipient_user_id', user.id)
+      .eq('is_read', false);
+
+    if (error) {
+      console.warn('Notifications fetch error:', error.message);
+      return;
+    }
+
+    notificationsUnreadCount = (data || []).length;
+
+    // Refresh badges (renderInboxItems will call updateBadges with combined count)
+    if (typeof renderInboxItems === "function") {
+      renderInboxItems();
+    } else if (typeof updateBadges === "function") {
+      updateBadges(messagesUnreadCount + notificationsUnreadCount);
+    }
+  } catch (e) {
+    console.warn('Notifications fetch exception:', e);
+  }
+}
+
+function subscribeNotifications() {
+  if (_notifSubscribed) return;
+  _notifSubscribed = true;
+
+  supabaseClient.auth.getUser().then(({ data: { user } }) => {
+    if (!user) { _notifSubscribed = false; return; }
+
+    supabaseClient
+      .channel('realtime-notifications-' + user.id)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const n = payload.new || {};
+
+          if (n.is_read === false || n.is_read === 0 || n.is_read === null) {
+            notificationsUnreadCount += 1;
+          }
+          if (typeof updateBadges === "function") {
+            updateBadges(messagesUnreadCount + notificationsUnreadCount);
+          }
+
+          const title = n.title || "Notification";
+          const body  = n.message || "";
+
+          if (typeof showToast === "function") {
+            showToast(title, body, "brand");
+          }
+        }
+      )
+      .subscribe();
+  });
+}
+
 function toggleInbox() {
   const panel = document.getElementById("inbox-panel");
   const overlay = document.getElementById("inbox-overlay");
@@ -7843,7 +7921,10 @@ function renderInboxItems() {
 
   // 1. TOPLAM OKUNMAMIŞ SAYISI
   let totalUnreadCount = 0;
+  // messagesUnreadCount will be set after counting
+
   inboxData.forEach(item => { if(item.unread) totalUnreadCount++; });
+  messagesUnreadCount = totalUnreadCount;
 
   // 2. FİLTRELEME
   const filteredData = inboxData.filter(item => {
@@ -7863,7 +7944,7 @@ function renderInboxItems() {
             <p class="text-xs">${msg}</p>
         </div>`;
       
-      updateBadges(totalUnreadCount);
+      updateBadges(totalUnreadCount + notificationsUnreadCount);
       return;
   }
 
@@ -7955,7 +8036,7 @@ function renderInboxItems() {
     container.appendChild(card);
   });
 
-  updateBadges(totalUnreadCount);
+  updateBadges(totalUnreadCount + notificationsUnreadCount);
 }
 // Yardımcı Badge Fonksiyonu (Eğer yoksa bunu da ekle, varsa gerek yok)
 function updateBadges(count) {
@@ -10355,13 +10436,19 @@ async function processVerification(userId, action) {
             verification_status: 'verified',
             subscription_tier: 'pro',
             subscription_status: 'active_trial',
-            trial_end_date: endDate.toISOString()
+            trial_end_date: endDate.toISOString(),
+            verification_reject_reason: null,
+            verification_rejected_at: null
         };
     } else {
+        const reason = prompt(
+            "Reject reason (optional):\nTell the company what to fix (e.g., Tax ID/VKN mismatch, missing docs).",
+            "Your verification request was rejected. Please review your information and try again."
+        );
         updates = {
             verification_status: 'rejected',
-            // Reddedilince Pro'yu almıyoruz, sadece doğrulamayı reddediyoruz.
-            // Ama isterseniz subscription_tier: 'free' de yapabilirsiniz.
+            verification_reject_reason: reason ? reason.trim() : null,
+            verification_rejected_at: new Date().toISOString()
         };
     }
 
