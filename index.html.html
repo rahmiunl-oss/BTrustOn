@@ -849,7 +849,7 @@
             <p class="text-xs text-gray-400">Recommended: 400x400px, PNG or JPG.</p>
         </div>
         
-        <input type="file" id="edit-logo-input" class="hidden" accept="image/*" onchange="handleLogoSelect(this)">
+        <input type="file" id="edit-logo-input" class="hidden" accept="image/*" onchange="handleLogoFromEdit(this)">
         
         <div class="flex gap-2">
             <button type="button" onclick="document.getElementById('edit-logo-input').click()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 hover:border-gray-400 transition">
@@ -990,7 +990,34 @@
           Core Competencies (Tags)
         </label>
         <p class="text-[11px] text-gray-400 mb-2">Comma separated keywords. e.g. EPC, Excavation, Maintenance</p>
-        <input type="text" id="edit-services" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="EPC, Excavation, Maintenance..." />
+        <input type="hidden" id="edit-services" />
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[11px] text-gray-400">
+              Tip: Add services as tags. <span class="font-bold">Drag</span> to reorder. The <span class="font-bold">top 3</span> will be featured on your profile.
+            </div>
+            <button type="button" onclick="clearServiceTags()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition">
+              Clear
+            </button>
+          </div>
+
+          <div id="svc-tags" class="flex flex-wrap gap-2"></div>
+
+          <div class="relative mt-3">
+            <i class="fa-solid fa-plus absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input id="svc-add-input" type="text"
+              class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 font-semibold focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition bg-white"
+              placeholder="Add a service (type and press Enter)…"
+              autocomplete="off"
+              oninput="serviceSuggest(this.value)"
+              onkeydown="serviceAddKeydown(event)">
+            <div id="svc-suggest" class="absolute z-30 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden hidden"></div>
+          </div>
+
+          <p class="text-[10px] text-gray-400 mt-2">
+            Examples: EPC, Drilling, Crushing &amp; Screening, Equipment Rental, Maintenance, Engineering Design.
+          </p>
+        </div>
     </div>
 
     <div>
@@ -1024,12 +1051,12 @@
 
         <div class="flex flex-col md:flex-row items-start gap-6 relative z-10">
             <div class="shrink-0 flex flex-col items-center gap-2">
-                 <div class="w-20 h-20 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden relative group cursor-pointer hover:border-BTrustOn-accent transition-colors" onclick="document.getElementById('edit-owner-photo').click()">
+                 <div class="w-20 h-20 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden relative group cursor-pointer hover:border-BTrustOn-accent transition-colors" onclick="triggerOwnerPhotoUpload('edit')">
                      <img id="preview-owner-img" class="hidden w-full h-full object-cover">
                      <i id="icon-owner-img" class="fa-solid fa-camera text-gray-300 text-2xl group-hover:text-BTrustOn-accent transition-colors"></i>
                  </div>
                  
-                 <input type="file" id="edit-owner-photo" class="hidden" accept="image/*" onchange="handleOwnerPhoto(this)">
+                 <input type="file" id="edit-owner-photo" class="hidden" accept="image/*" onchange="handleOwnerPhotoPicked(this)">
                  
                  <button type="button" onclick="deleteOwnerPhoto()" class="text-[10px] font-bold text-red-400 hover:text-red-600 hover:underline transition">
                     Remove Photo
@@ -1182,7 +1209,7 @@
         <span class="text-[9px] font-bold uppercase tracking-widest">UPDATE</span>
     </div>
 
-    <input type="file" id="profile-logo-input" class="hidden" accept="image/*" onchange="uploadLogoDirectly(this)" onclick="event.stopPropagation()">
+    <input type="file" id="profile-logo-input" class="hidden" accept="image/*" onchange="handleLogoFromProfile(this)" onclick="event.stopPropagation()">
 </div>
 
       <div class="flex-grow">
@@ -1349,7 +1376,23 @@
         <i class="fa-solid fa-plus"></i> <span>ADD CERTIFICATE</span>
     </button>
   </div>
-  
+
+  <div id="cert-controls" class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="cert-filter-btn px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" data-filter="all">All</button>
+      <button type="button" class="cert-filter-btn px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" data-filter="valid">Valid</button>
+      <button type="button" class="cert-filter-btn px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" data-filter="expired">Expired</button>
+      <button type="button" class="cert-filter-btn px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" data-filter="docs">With Document</button>
+    </div>
+
+    <div class="flex-1"></div>
+
+    <div class="relative w-full md:w-80">
+      <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+      <input id="cert-search" type="text" class="w-full border border-gray-200 bg-white rounded-xl pl-9 pr-3 py-2.5 text-sm text-gray-700 font-semibold outline-none focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition" placeholder="Search certificates (name or issuer)…">
+    </div>
+  </div>
+
   <div id="p-certs-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 </div>
 
@@ -1559,6 +1602,72 @@
       </main>
   
   </div>
+
+  <!-- =========================
+       CROPPER MODAL (Logo & Owner Photo)
+       ========================= -->
+  <div
+    id="modal-cropper"
+    class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[99998]"
+  >
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCropperModal()"></div>
+
+    <div class="relative bg-white w-[95%] max-w-4xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white">
+        <div class="min-w-0">
+          <h3 id="cropper-title" class="text-sm md:text-base font-bold text-gray-900 truncate">Adjust Photo</h3>
+          <p class="text-[11px] text-gray-500">Drag to reposition, use the handles to zoom.</p>
+        </div>
+        <button type="button" onclick="closeCropperModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div class="md:col-span-8">
+          <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
+            <img id="cropper-image" alt="Crop" class="max-w-full block" />
+          </div>
+        </div>
+
+        <div class="md:col-span-4 space-y-4">
+          <div class="bg-white border border-gray-200 rounded-2xl p-4">
+            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Preview</div>
+
+            <div id="cropper-preview-square" class="cropper-preview w-36 h-36 rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden"></div>
+            <div id="cropper-preview-rect" class="cropper-preview w-full rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden hidden" style="aspect-ratio: 16 / 9;"></div>
+            <div id="cropper-preview-circle" class="cropper-preview w-36 h-36 rounded-full border border-gray-200 bg-gray-50 overflow-hidden hidden"></div>
+
+            <div class="mt-4">
+              <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Zoom</label>
+              <input id="cropper-zoom" type="range" min="0" max="100" value="0" class="w-full mt-2" oninput="onCropperZoom(this.value)">
+            </div>
+
+            <div class="mt-4 flex items-center gap-2">
+              <button type="button" onclick="cropperRotate(-90)" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
+                <i class="fa-solid fa-rotate-left mr-1"></i> Rotate
+              </button>
+              <button type="button" onclick="cropperReset()" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
+                <i class="fa-solid fa-arrow-rotate-left mr-1"></i> Reset
+              </button>
+            </div>
+
+            <p id="cropper-tip" class="mt-4 text-[10px] text-gray-500 leading-relaxed">Tip: Choose a clear image. We'll crop it to fit.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
+        <button type="button" onclick="closeCropperModal()" class="px-5 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition">
+          Cancel
+        </button>
+        <button type="button" onclick="confirmCropper()" class="px-6 py-2.5 rounded-xl bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white text-xs font-bold shadow-lg shadow-cyan-500/25 transition">
+          Crop &amp; Save
+        </button>
+      </div>
+    </div>
+  </div>
+
 
   <div
     id="modal-join"
@@ -2630,26 +2739,9 @@
   </div>
 </div>
 
-<div id="modal-cropper" class="modal opacity-0 pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-300">
-  <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      
-      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 class="font-bold text-gray-800">Adjust Image</h3>
-          <button onclick="closeCropper()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-      </div>
 
-      <div class="relative w-full h-[400px] bg-black flex items-center justify-center">
-          <img id="cropper-img" src="" class="max-w-full max-h-full block">
-      </div>
+<!-- (removed duplicate project cropper modal; using main cropper modal) -->
 
-      <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center gap-3">
-          <button onclick="closeCropper()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 font-bold hover:bg-gray-50 transition text-sm">Cancel</button>
-          <button onclick="cropImage()" class="px-6 py-2 rounded-lg bg-BTrustOn-accent text-white font-bold hover:brightness-110 transition shadow-md shadow-blue-500/30 flex items-center gap-2 text-sm">
-              <i class="fa-solid fa-crop-simple"></i> CROP & USE
-          </button>
-      </div>
-  </div>
-</div>
 
 <script>
   // Login modalını aç/kapat
@@ -3011,16 +3103,12 @@ let cropperInstance = null; // Kırpma aracını tutacak
 function handleProjectCover(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        
-        // 1. Resmi oku ve Kırpma Modalını aç
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            openCropper(e.target.result);
-        };
-        reader.readAsDataURL(file);
-        
-        // Input'u sıfırla ki aynı resmi seçince tekrar tetiklensin
-        input.value = ""; 
+
+        // Use the same cropper as profile logo/contact photo (16:9 for project cover)
+        openCropperForFile(file, { kind: "project_cover", mode: "edit" });
+
+        // Reset input so selecting same file triggers again
+        input.value = "";
     }
 }
 
@@ -4196,6 +4284,60 @@ function filterSector(sector, btnEl) {
    ========================= */
 window.__assetUI = window.__assetUI || { query: "", status: "all", sort: "newest" };
 
+
+function _safeText(s){
+  return (s ?? "").toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+function _isImageFileName(fn){
+  return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test((fn || "").toString());
+}
+function _assetFileIconClass(fn){
+  const f = (fn || "").toString().toLowerCase();
+  if (f.endsWith(".pdf")) return "fa-file-pdf";
+  if (f.endsWith(".doc") || f.endsWith(".docx")) return "fa-file-word";
+  if (f.endsWith(".xls") || f.endsWith(".xlsx") || f.endsWith(".csv")) return "fa-file-excel";
+  if (f.endsWith(".ppt") || f.endsWith(".pptx")) return "fa-file-powerpoint";
+  if (_isImageFileName(f)) return "fa-image";
+  return "fa-file";
+}
+function buildAssetAttachmentPreview(a){
+  // Compact overlay preview (does NOT change card size)
+  if (!a || !a.file_url) return "";
+  const fnRaw = (a.file_name || a.file_url || "").toString();
+  const fn = fnRaw.toLowerCase();
+  const isImg = _isImageFileName(fn);
+  const isPdf = fn.endsWith(".pdf") || fn.includes(".pdf?");
+  const iconClass = isPdf ? "fa-file-pdf" : _assetFileIconClass(fnRaw);
+
+  const safeUrl = JSON.stringify(a.file_url || "");
+  const safeTitle = JSON.stringify(a.file_name || _assetName(a) || "Attachment");
+
+  if (isImg){
+    return `
+      <button type="button"
+         onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle});"
+         class="absolute bottom-3 right-3 w-16 h-12 rounded-xl overflow-hidden border border-gray-200 bg-white/70 backdrop-blur shadow-md hover:shadow-lg hover:scale-[1.02] transition"
+         title="View image">
+        <img src="${a.file_url}" alt="Attachment" class="w-full h-full object-cover" loading="lazy" />
+      </button>
+    `;
+  }
+
+  return `
+    <button type="button"
+       onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle});"
+       class="absolute bottom-3 right-3 w-12 h-12 rounded-xl border border-gray-200 bg-white/70 backdrop-blur shadow-md hover:shadow-lg hover:scale-[1.02] transition flex items-center justify-center"
+       title="Open document">
+      <i class="fa-solid ${iconClass} text-[20px] ${isPdf ? "text-red-500" : "text-slate-700"}"></i>
+    </button>
+  `;
+}
+
 function _assetTime(a){
   const t = Date.parse(a?.updated_at || a?.created_at || "");
   return Number.isFinite(t) ? t : 0;
@@ -4269,19 +4411,11 @@ function renderAssetsCards(company, isMyProfile){
   }
 
   arr.forEach(a => {
-    // File icon (reuse existing logic style)
-    let fileIcon = "";
-    if (a.file_url) {
-      const fn = (a.file_name || "").toLowerCase();
-      let iconClass = "fa-file";
-      if (fn.endsWith(".pdf")) iconClass = "fa-file-pdf";
-      else if (fn.endsWith(".doc") || fn.endsWith(".docx")) iconClass = "fa-file-word";
-      else if (fn.endsWith(".xls") || fn.endsWith(".xlsx") || fn.endsWith(".csv")) iconClass = "fa-file-excel";
-      else if (fn.endsWith(".ppt") || fn.endsWith(".pptx")) iconClass = "fa-file-powerpoint";
-      fileIcon = `<a href="${a.file_url}" target="_blank" class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-600 hover:bg-BTrustOn-primary hover:text-white transition" title="View Document${a.file_name ? (': '+a.file_name) : ''}" onclick="event.stopPropagation();">
-                    <i class="fa-solid ${iconClass} text-[10px]"></i>
-                  </a>`;
-    }
+
+    const attachmentPreview = buildAssetAttachmentPreview(a);
+    const locText = (_assetLoc(a) || "").toString().trim();
+    const specRaw = (_assetSpec(a) || "").toString().trim();
+    const specText = specRaw ? specRaw : "No specs provided.";
 
     const actions = isMyProfile ? `
       <div class="flex gap-2">
@@ -4295,20 +4429,19 @@ function renderAssetsCards(company, isMyProfile){
     ` : ``;
 
     const card = document.createElement("div");
-    card.className = "group rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer";
+    card.className = "group rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer relative";
     card.setAttribute("role","button");
     card.setAttribute("tabindex","0");
     card.onclick = () => openAssetViewer(a.id);
     card.onkeydown = (e) => { if(e.key === "Enter") openAssetViewer(a.id); };
 
-    card.innerHTML = `
+	    card.innerHTML = `
       <div class="p-4 flex items-start justify-between gap-3">
         <div class="min-w-0">
           <div class="flex items-center">
-            <div class="text-sm font-extrabold text-gray-800 truncate">${_assetName(a) || "Asset"}</div>
-            ${fileIcon}
+	            <div class="text-sm font-extrabold text-gray-800 leading-snug break-words line-clamp-2 min-h-[2.4rem]">${_assetName(a) || "Asset"}</div>
           </div>
-          <div class="mt-1 text-[11px] text-gray-400 truncate">${_assetLoc(a) || "-"}</div>
+	          ${locText ? '<div class="mt-1 text-[11px] text-gray-500 break-words">' + locText + '</div>' : ''}
         </div>
         <div class="flex flex-col items-end gap-2">
           <div>${getStatusBadge(a.status)}</div>
@@ -4317,19 +4450,24 @@ function renderAssetsCards(company, isMyProfile){
       </div>
 
       <div class="px-4 pb-4">
-        <div class="text-xs text-gray-600 leading-relaxed line-clamp-2">${_assetSpec(a) || "No specs provided."}</div>
-        <div class="mt-3 flex items-center justify-between text-[11px] text-gray-400">
+        <div class="mt-2 pr-20 text-[12px] text-gray-700 leading-snug line-clamp-2">
+          <span class="font-semibold text-gray-800">Spec:</span>
+          <span class="font-medium"> ${specText}</span>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-[12px] text-gray-600 pr-20">
           <span class="inline-flex items-center gap-2">
-            <i class="fa-solid fa-layer-group text-[10px]"></i>
-            Qty: <span class="font-bold text-gray-600">${(a.qty ?? "-")}</span>
+            <i class="fa-solid fa-layer-group text-[11px]"></i>
+            <span class="font-semibold text-gray-700">Quantity:</span>
+            <span class="font-extrabold text-gray-800">${(a.qty ?? "-")}</span>
           </span>
           <span class="inline-flex items-center gap-2">
-            <i class="fa-regular fa-clock text-[10px]"></i>
+            <i class="fa-regular fa-clock text-[11px]"></i>
             ${(a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "")}
           </span>
         </div>
       </div>
-    `;
+        ${attachmentPreview}
+`;
     grid.appendChild(card);
   });
 }
@@ -4384,9 +4522,16 @@ function openAssetViewer(assetId){
   if (fileWrap) {
     if (a.file_url) {
       const label = a.file_name ? a.file_name : "Open document";
-      fileWrap.innerHTML = `<a href="${a.file_url}" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-BTrustOn-primary hover:text-white transition">
-        <i class="fa-solid fa-file-arrow-up"></i> <span class="text-xs font-bold">${label}</span>
-      </a>`;
+      fileWrap.innerHTML = `
+        <button type="button" id="av-open-file" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-BTrustOn-primary hover:text-white transition">
+          <i class="fa-solid fa-file-arrow-up"></i>
+          <span class="text-xs font-bold">${label}</span>
+        </button>
+      `;
+      const __btn = document.getElementById("av-open-file");
+      if(__btn){
+        __btn.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} openAttachmentViewer(a.file_url, label); };
+      }
     } else {
       fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">No document attached.</div>`;
     }
@@ -4405,96 +4550,288 @@ function closeAssetViewer(){
 
 
 /* --- GÜNCELLENMİŞ: renderCertificates (RENKLİ BUTONLAR) --- */
+
+/* --- CERTIFICATE UI STATE (filter + search) --- */
+window.__certUI = window.__certUI || { filter: "all", q: "", bound: false };
+
+function _certParseDate(d) {
+  try {
+    if (!d) return null;
+    // Support YYYY-MM-DD
+    const s = String(d).trim();
+    if (!s) return null;
+    const dt = new Date(s.length <= 10 ? (s + "T00:00:00") : s);
+    return isNaN(dt.getTime()) ? null : dt;
+  } catch(e) { return null; }
+}
+
+function _certStatus(expiryDate) {
+  const dt = _certParseDate(expiryDate);
+  if (!dt) return "unknown";
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  dt.setHours(0,0,0,0);
+  return (dt < today) ? "expired" : "valid";
+}
+
+function _certDaysLeft(expiryDate) {
+  const dt = _certParseDate(expiryDate);
+  if (!dt) return null;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  dt.setHours(0,0,0,0);
+  const diff = Math.round((dt.getTime() - today.getTime()) / (1000*60*60*24));
+  return diff;
+}
+
+function _bindCertControlsOnce() {
+  if (window.__certUI.bound) return;
+  const controls = document.getElementById("cert-controls");
+  if (!controls) return;
+
+  // Filter buttons
+  controls.querySelectorAll(".cert-filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      window.__certUI.filter = btn.getAttribute("data-filter") || "all";
+      // Visual active state
+      controls.querySelectorAll(".cert-filter-btn").forEach(b => {
+        b.classList.remove("bg-cyan-50", "border-cyan-200", "text-BTrustOn-primary");
+        b.classList.add("bg-white", "border-gray-200", "text-gray-600");
+      });
+      btn.classList.add("bg-cyan-50", "border-cyan-200", "text-BTrustOn-primary");
+      btn.classList.remove("bg-white", "border-gray-200", "text-gray-600");
+      try { if (selectedCompany) renderCertificates(selectedCompany); } catch(e) {}
+    });
+  });
+
+  // Search
+  const search = document.getElementById("cert-search");
+  if (search) {
+    search.addEventListener("input", () => {
+      window.__certUI.q = (search.value || "").toLowerCase();
+      try { if (selectedCompany) renderCertificates(selectedCompany); } catch(e) {}
+    });
+  }
+
+  // Mark bound BEFORE triggering default click (prevents recursion)
+  window.__certUI.bound = true;
+
+  // Default active
+  const first = controls.querySelector('.cert-filter-btn[data-filter="all"]');
+  if (first) first.click();
+}
+
+/* --- Enhanced Certificates Renderer (filters + preview + better cards) --- */
 function renderCertificates(company) {
   const certList = document.getElementById("p-certs-list");
   const btnAddCert = document.getElementById("btn-add-cert");
   const myId = localStorage.getItem("BTrustOn_my_company_id");
   const isOwner = (myId && String(company.id) === String(myId));
 
+  // Owner-only: add button visible
   if (btnAddCert) {
-     if (isOwner) btnAddCert.classList.remove("hidden-view");
-     else btnAddCert.classList.add("hidden-view");
+    if (isOwner) btnAddCert.classList.remove("hidden-view");
+    else btnAddCert.classList.add("hidden-view");
   }
+
+  // Bind filter/search UI once
+  _bindCertControlsOnce();
 
   if (!certList) return;
   certList.innerHTML = "";
 
-  const certs = company.certificates || [];
+  const raw = company.certificates || [];
+  const q = (window.__certUI.q || "").trim();
+  const mode = window.__certUI.filter || "all";
+
+  // Normalize into objects
+  let certs = raw.map(c => {
+    if (typeof c === "string") {
+      return { id: -1, name: c, issuer: "", expiry_date: null, file_url: null };
+    }
+    return {
+      id: (c && typeof c.id !== "undefined") ? c.id : -1,
+      name: c?.name || "",
+      issuer: c?.issuer || "",
+      expiry_date: c?.expiry_date || null,
+      file_url: c?.file_url || null,
+      updated_at: c?.updated_at || null,
+    };
+  }).filter(c => String(c.name || "").trim() !== "");
+
+  // Filter
+  certs = certs.filter(c => {
+    const status = _certStatus(c.expiry_date);
+    const hasDoc = !!c.file_url;
+
+    if (mode === "valid" && status !== "valid") return false;
+    if (mode === "expired" && status !== "expired") return false;
+    if (mode === "docs" && !hasDoc) return false;
+
+    if (q) {
+      const hay = (String(c.name || "") + " " + String(c.issuer || "")).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort: valid soonest first, unknown last, expired last (most recent expired first)
+  certs.sort((a, b) => {
+    const sa = _certStatus(a.expiry_date);
+    const sb = _certStatus(b.expiry_date);
+    if (sa !== sb) {
+      const order = { valid: 0, unknown: 1, expired: 2 };
+      return (order[sa] ?? 9) - (order[sb] ?? 9);
+    }
+    const da = _certParseDate(a.expiry_date);
+    const db = _certParseDate(b.expiry_date);
+    if (da && db) {
+      if (sa === "valid") return da - db;         // soonest
+      if (sa === "expired") return db - da;       // most recently expired
+      return db - da;
+    }
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    return String(a.name).localeCompare(String(b.name));
+  });
 
   if (certs.length === 0) {
-    certList.innerHTML = `<div class="col-span-2 py-8 text-center text-gray-400 text-xs italic bg-gray-50 rounded-xl border border-dashed border-gray-200">No certificates listed.</div>`;
+    certList.innerHTML = `
+      <div class="col-span-2 py-10 text-center text-gray-400 text-xs italic bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+        No certificates found.
+      </div>`;
     return;
   }
 
-  certs.forEach((cert, index) => {
-    let name = typeof cert === 'string' ? cert : cert.name;
-    let issuer = typeof cert === 'object' ? cert.issuer : "";
-    let date = typeof cert === 'object' ? cert.expiry_date : null;
-    let fileUrl = typeof cert === 'object' ? cert.file_url : null;
-    let id = typeof cert === 'object' ? cert.id : -1;
+  // Responsive grid
+  certList.className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4";
 
-    // Durum Rozeti
+  certs.forEach((cert) => {
+    const name = cert.name;
+    const issuer = cert.issuer || "Unknown issuer";
+    const date = cert.expiry_date;
+    const fileUrl = cert.file_url;
+    const id = cert.id;
+
+    const status = _certStatus(date);
+    const daysLeft = _certDaysLeft(date);
+
+    // Status badge
     let statusBadge = "";
-    if (date) {
-        const expiry = new Date(date);
-        const now = new Date();
-        const isExpired = expiry < now;
-        
-        if (isExpired) {
-            statusBadge = `<span class="ml-2 inline-flex items-center gap-1 bg-red-50 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-100 uppercase"><i class="fa-solid fa-circle-exclamation"></i> Expired</span>`;
-        } else {
-            statusBadge = `<span class="ml-2 inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-100 uppercase"><i class="fa-solid fa-circle-check"></i> Valid</span>`;
-        }
+    if (status === "valid") {
+      const warn = (typeof daysLeft === "number" && daysLeft <= 30);
+      statusBadge = `
+        <span class="inline-flex items-center gap-1 ${warn ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-emerald-50 text-emerald-700 border-emerald-100"} text-[9px] font-extrabold px-2 py-1 rounded-lg border uppercase">
+          <i class="fa-solid ${warn ? "fa-triangle-exclamation" : "fa-circle-check"}"></i>
+          ${warn ? "Expiring" : "Valid"}
+        </span>`;
+    } else if (status === "expired") {
+      statusBadge = `
+        <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-[9px] font-extrabold px-2 py-1 rounded-lg border border-red-100 uppercase">
+          <i class="fa-solid fa-circle-exclamation"></i> Expired
+        </span>`;
+    } else {
+      statusBadge = `
+        <span class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-[9px] font-extrabold px-2 py-1 rounded-lg border border-slate-200 uppercase">
+          <i class="fa-solid fa-circle-question"></i> No expiry
+        </span>`;
     }
 
-    // Dosya Butonu
-    let fileBtn = "";
-    if (fileUrl) {
-        fileBtn = `
-            <a href="${fileUrl}" target="_blank" class="ml-auto flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-600 hover:text-white transition" title="View Document">
-                <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">View Doc</span>
-            </a>
-        `;
-    }
-
-    // --- YÖNETİM BUTONLARI (RENKLENDİRİLDİ) ---
-    let ownerActions = "";
-    if(isOwner) {
-        ownerActions = `
-          <div class="flex gap-2 ml-2 pl-2 border-l border-gray-100">
-            <button onclick="openCertModal(${id})" class="w-7 h-7 rounded-lg bg-cyan-50 text-BTrustOn-accent border border-cyan-100 hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
-                <i class="fa-solid fa-pen text-[10px]"></i>
-            </button>
-            
-            <button onclick="deleteCert(${id}, '${name}')" class="w-7 h-7 rounded-lg bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
-                <i class="fa-solid fa-trash text-[10px]"></i>
-            </button>
-          </div>
-        `;
-    }
-
-    certList.innerHTML += `
-      <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:shadow-md transition group">
-        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-50 to-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm text-slate-400">
-           <i class="fa-solid fa-certificate text-lg"></i>
-        </div>
-        
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center flex-wrap gap-1">
-              <span class="font-bold text-gray-800 text-sm truncate">${name}</span>
-              ${statusBadge}
-          </div>
-          <div class="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
-            <span>${issuer || 'Unknown Issuer'}</span>
-            ${date ? `<span class="text-gray-300">•</span> <span>Exp: ${date}</span>` : ''}
-          </div>
-        </div>
-
-        ${fileBtn}
-        ${ownerActions}
+    // File preview icon
+    let thumb = `
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm text-slate-400">
+        <i class="fa-solid fa-certificate text-lg"></i>
       </div>`;
+    if (fileUrl) {
+      const lower = String(fileUrl).toLowerCase();
+      const isImg = lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp");
+      if (isImg) {
+        thumb = `
+          <div class="w-12 h-12 rounded-2xl overflow-hidden border border-gray-200 shadow-sm shrink-0 bg-white">
+            <img src="${fileUrl}" class="w-full h-full object-cover">
+          </div>`;
+      } else {
+        thumb = `
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 flex items-center justify-center shrink-0 shadow-sm text-blue-600">
+            <i class="fa-solid fa-file-lines text-lg"></i>
+          </div>`;
+      }
+    }
+
+    const meta = date
+      ? `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400">
+           <i class="fa-regular fa-calendar"></i>
+           Exp: <span class="font-bold text-gray-600">${date}</span>
+           ${typeof daysLeft === "number" ? `<span class="text-gray-300">•</span><span class="font-bold ${daysLeft < 0 ? "text-red-600" : (daysLeft <= 30 ? "text-amber-700" : "text-emerald-700")}">${Math.abs(daysLeft)}d ${daysLeft < 0 ? "ago" : "left"}</span>` : ``}
+         </span>`
+      : `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400"><i class="fa-regular fa-calendar"></i> Expiry: <span class="font-bold text-gray-600">Not provided</span></span>`;
+
+    // Actions
+    const viewBtn = fileUrl
+      ? `<button type="button" data-action="view-doc" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-extrabold hover:bg-blue-600 hover:text-white transition" title="View document">
+           <i class="fa-solid fa-arrow-up-right-from-square"></i> View
+         </button>`
+      : `<button type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 text-[11px] font-extrabold cursor-not-allowed" title="No document attached">
+           <i class="fa-regular fa-file"></i> View
+         </button>`;
+const ownerActions = isOwner ? `
+      <div class="flex gap-2">
+        <button type="button" onclick="openCertModal(${id})" class="w-9 h-9 rounded-xl bg-cyan-50 text-BTrustOn-accent border border-cyan-100 hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="Edit">
+          <i class="fa-solid fa-pen text-[11px]"></i>
+        </button>
+        <button type="button" onclick="deleteCert(${id}, '${String(name).replace(/'/g, "\\'")}')" class="w-9 h-9 rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white flex items-center justify-center transition shadow-sm" title="Delete">
+          <i class="fa-solid fa-trash text-[11px]"></i>
+        </button>
+      </div>
+    ` : ``;
+
+    const card = document.createElement("div");
+    card.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition group";
+
+    card.innerHTML = `
+      <div class="flex items-start gap-4">
+        ${thumb}
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="text-sm font-extrabold text-gray-800 truncate">${name}</div>
+            ${statusBadge}
+          </div>
+          <div class="text-[11px] text-gray-500 font-semibold truncate mt-0.5">${issuer}</div>
+          <div class="mt-2">${meta}</div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between gap-3">
+        ${viewBtn}
+        ${ownerActions}
+      </div>
+    `;
+
+    // View button opens in-page attachment viewer (no new tab) + keeps scroll
+    try{
+      const __viewBtn = card.querySelector('[data-action="view-doc"]');
+      if(__viewBtn && fileUrl){
+        __viewBtn.addEventListener('click', (e) => {
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          openAttachmentViewer(fileUrl, name || "Certificate");
+        });
+      }
+    }catch(e){}
+
+    // If card is clicked and has file, open
+    if (fileUrl) {
+      card.classList.add("cursor-pointer");
+      card.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (e.target.closest("button") || e.target.closest("a")) return;
+        openAttachmentViewer(fileUrl, name || "Certificate");
+      });
+}
+
+    certList.appendChild(card);
   });
 }
+
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
@@ -4640,7 +4977,13 @@ function animateValue(id, start, end, duration) {
 
     /* --- GÜÇLENDİRİLMİŞ OPEN PROFILE (OTOMATİK VERİ ÇEKME + EKRAN YÖNETİMİ) --- */
 /* --- GÜNCELLENMİŞ: openProfile (RENKLİ STATUS + ŞIK BUTONLAR) --- */
-async function openProfile(companyId) {
+async function openProfile(companyId, opts = {}) {
+
+  const __preserveScroll = !!(opts && opts.preserveScroll);
+  const __preserveTab    = !!(opts && opts.preserveTab);
+  const __scrollY        = __preserveScroll ? (window.scrollY || 0) : 0;
+  const __tabToRestore   = __preserveTab ? (opts.tab || window.__profileActiveTab || 'overview') : null;
+
 
   // --- ROUTE + FAST UI SWITCH (prevents 1-2s dashboard flash on refresh) ---
   try { localStorage.setItem("BTrustOn_last_route", `company:${companyId}`); } catch(e) {}
@@ -4670,9 +5013,10 @@ try {
   if (_vm) _vm.classList.add("hidden-view");
   if (_vp) _vp.classList.remove("hidden-view");
   if (_bb) _bb.classList.remove("hidden", "hidden-view");
-
-  // ✅ Always start profile at top (prevents "1 page down" offset)
-  try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
+  // ✅ Start profile at top unless we explicitly preserve scroll
+  if (!__preserveScroll) {
+    try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
+  }
 
 
   // ✅ Show skeleton while profile data loads
@@ -4947,61 +5291,153 @@ if (cityEl) {
   }
 
   // Hizmetler
-  /* --- GÜNCELLENMİŞ HİZMET GÖRÜNÜMÜ (Modern Tags + Açıklama) --- */
+  /* --- CORE SERVICES VIEW (Featured + Tags + Details) --- */
 const servicesGrid = document.getElementById("p-services-grid");
 if (servicesGrid) {
-  // Önce içeriği temizle
   servicesGrid.innerHTML = "";
-  
-  // 1. Dil kontrolü ve servis listesi
+
+  // Language-aware service list
   let displayServices = company.services || [];
   if (typeof currentLang !== 'undefined' && currentLang === 'tr' && company.services_tr && company.services_tr.length > 0) {
-      displayServices = company.services_tr;
+    displayServices = company.services_tr;
   }
 
-  // --- BÖLÜM 1: ETİKETLER (GRID YERİNE FLEX WRAP) ---
-  // Grid yapısını kaldırıp 'flex-wrap' yapıyoruz ki yan yana şık dursunlar
-  servicesGrid.className = "flex flex-wrap gap-3 mb-6"; 
+  // Normalize into array of strings
+  let tags = [];
+  if (Array.isArray(displayServices)) {
+    tags = displayServices;
+  } else if (typeof displayServices === "string") {
+    tags = displayServices.split(",").map(s => s.trim()).filter(Boolean);
+  }
+  tags = tags.map(s => String(s || "").trim()).filter(Boolean);
 
-  if (displayServices.length === 0) {
-    servicesGrid.innerHTML = '<div class="w-full py-4 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50"><p class="text-sm text-gray-400 italic">No services listed.</p></div>';
+  const featured = tags.slice(0, 3);
+  const rest = tags.slice(3);
+
+  // Layout: sections stacked (Featured, All, Details)
+  servicesGrid.className = "space-y-4 mb-8";
+
+  const myId = localStorage.getItem("BTrustOn_my_company_id");
+  const isOwner = (myId && String(company.id) === String(myId));
+
+  if (tags.length === 0) {
+    servicesGrid.innerHTML = `
+      <div class="w-full py-6 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50">
+        <p class="text-sm text-gray-400 italic">No services listed.</p>
+        ${isOwner ? `<button type="button" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" onclick="editMyProfile()">
+          <i class="fa-solid fa-pen"></i> Add services
+        </button>` : ``}
+      </div>`;
   } else {
-    displayServices.forEach((s) => {
-      // Tasarım: Mavi/Cam Göbeği tonlarında, hap şeklinde (Pill), Check ikonlu
-      servicesGrid.innerHTML += `
-        <div class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 rounded-lg shadow-sm hover:shadow-md hover:border-cyan-300 transition-all cursor-default group">
-          <div class="w-5 h-5 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center shrink-0 group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
-             <i class="fa-solid fa-check text-[10px]"></i>
+    // --- Featured ---
+    const featuredWrap = document.createElement("div");
+    featuredWrap.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm";
+    featuredWrap.innerHTML = `
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 text-BTrustOn-accent flex items-center justify-center">
+            <i class="fa-solid fa-bolt"></i>
+          </span>
+          <div class="min-w-0">
+            <div class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Featured</div>
+            <div class="text-sm font-bold text-gray-800">Top Capabilities</div>
           </div>
-          <span class="text-xs font-bold text-gray-700 group-hover:text-cyan-800 transition-colors">${s}</span>
-        </div>`;
-    });
+        </div>
+        ${isOwner ? `<div class="text-[10px] text-gray-400 font-semibold">Drag to reorder in Edit Profile</div>` : ``}
+      </div>
+      <div class="flex flex-wrap gap-2">
+        ${featured.map((s) => `
+          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 shadow-sm">
+            <span class="w-5 h-5 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center">
+              <i class="fa-solid fa-check text-[10px]"></i>
+            </span>
+            <span class="text-xs font-extrabold text-gray-700">${s}</span>
+          </span>
+        `).join("")}
+      </div>
+    `;
+    servicesGrid.appendChild(featuredWrap);
+
+    // --- All tags (collapsible if many) ---
+    const allWrap = document.createElement("div");
+    allWrap.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm";
+    const many = tags.length > 10;
+    const collapsedCount = 10;
+
+    const hiddenRest = many ? tags.slice(collapsedCount) : [];
+    const visibleTags = many ? tags.slice(0, collapsedCount) : tags;
+
+    allWrap.innerHTML = `
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center">
+            <i class="fa-solid fa-tags"></i>
+          </span>
+          <div class="min-w-0">
+            <div class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Services</div>
+            <div class="text-sm font-bold text-gray-800">All declared services</div>
+          </div>
+        </div>
+        ${many ? `<button id="svc-toggle-btn" type="button" class="text-xs font-bold text-BTrustOn-accent hover:underline">Show all (${tags.length})</button>` : ``}
+      </div>
+      <div id="svc-tags-wrap" class="flex flex-wrap gap-2">
+        ${visibleTags.map((s, i) => `
+          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
+            <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
+              <i class="fa-solid fa-check text-[10px]"></i>
+            </span>
+            <span class="text-xs font-bold text-gray-700">${s}</span>
+          </span>
+        `).join("")}
+      </div>
+      ${many ? `<div id="svc-hidden-wrap" class="flex flex-wrap gap-2 mt-2 hidden">
+        ${hiddenRest.map((s) => `
+          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
+            <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
+              <i class="fa-solid fa-check text-[10px]"></i>
+            </span>
+            <span class="text-xs font-bold text-gray-700">${s}</span>
+          </span>
+        `).join("")}
+      </div>` : ``}
+    `;
+    servicesGrid.appendChild(allWrap);
+
+    if (many) {
+      const btn = allWrap.querySelector("#svc-toggle-btn");
+      const hiddenWrap = allWrap.querySelector("#svc-hidden-wrap");
+      if (btn && hiddenWrap) {
+        btn.onclick = () => {
+          const isHidden = hiddenWrap.classList.contains("hidden");
+          if (isHidden) {
+            hiddenWrap.classList.remove("hidden");
+            btn.textContent = "Show less";
+          } else {
+            hiddenWrap.classList.add("hidden");
+            btn.textContent = `Show all (${tags.length})`;
+          }
+        };
+      }
+    }
   }
 
-  // --- BÖLÜM 2: DETAY AÇIKLAMASI (DÜZELTİLMİŞ) ---
+  // --- Details ---
   if (company.service_details && company.service_details.trim() !== "") {
-      const detailsDiv = document.createElement("div");
-      // w-full: Genişliği doldur
-      // max-w-full: Taşmayı engelle
-      detailsDiv.className = "w-full max-w-full mt-2 animate-fade-in";
-      
-      // NOT: .replace(/\n/g, '<br>') kodunu kaldırdık. 
-      // Aşağıdaki 'whitespace-pre-wrap' sınıfı bunu otomatik yapar.
-
-      detailsDiv.innerHTML = `
-        <div class="relative bg-slate-50 rounded-2xl p-6 border border-slate-100 overflow-hidden">
-           <i class="fa-solid fa-quote-left absolute top-4 left-4 text-slate-200 text-2xl"></i>
-           
-           <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pl-6">Technical Capability Statement</h4>
-           
-           <div class="text-sm text-gray-600 leading-relaxed pl-6 font-light break-words whitespace-pre-wrap font-sans">
-              ${company.service_details}
-           </div>
+    const detailsDiv = document.createElement("div");
+    detailsDiv.className = "w-full max-w-full animate-fade-in";
+    detailsDiv.innerHTML = `
+      <div class="relative bg-slate-50 rounded-2xl p-6 border border-slate-100 overflow-hidden">
+        <i class="fa-solid fa-quote-left absolute top-4 left-4 text-slate-200 text-2xl"></i>
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pl-6">Technical Capability Statement</h4>
+        <div class="text-sm text-gray-600 leading-relaxed pl-6 font-light break-words whitespace-pre-wrap font-sans">
+          ${company.service_details}
         </div>
-      `;
-      servicesGrid.appendChild(detailsDiv);
+      </div>
+    `;
+    servicesGrid.appendChild(detailsDiv);
   }
 }
+
 
 // --- BÖLÜM 3: OWNER / YETKİLİ KARTI (SIDEBAR İÇİN YENİ VERSİYON) ---
   
@@ -5019,10 +5455,8 @@ if (servicesGrid) {
       if (company.owner_name || company.owner_role) {
           
           const photoSrc = company.owner_photo_url 
-            ? `<img src="${company.owner_photo_url}" class="w-full h-full object-cover hover:scale-110 transition duration-500">`
-            : `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300"><i class="fa-solid fa-user text-lg"></i></div>`;
-          
-          const linkedinBtn = company.owner_linkedin 
+            ? `<img id="p-owner-photo-img" src="${company.owner_photo_url}" class="w-full h-full object-cover hover:scale-110 transition duration-500">`
+            : `<div id="p-owner-photo-placeholder" class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300"><i class="fa-solid fa-user text-lg"></i></div>`;const linkedinBtn = company.owner_linkedin 
             ? `<a href="${company.owner_linkedin}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2.5 mt-4 rounded-xl bg-[#0077b5]/10 text-[#0077b5] text-xs font-bold hover:bg-[#0077b5] hover:text-white transition-all group/btn">
                  <i class="fa-brands fa-linkedin text-sm"></i> <span>Connect on LinkedIn</span>
                </a>`
@@ -5038,8 +5472,11 @@ if (servicesGrid) {
                       </h4>
 
                       <div class="flex items-center gap-4">
-                          <div class="w-14 h-14 rounded-full border-[3px] border-white shadow-md overflow-hidden shrink-0 bg-gray-50">
+                          <div id="p-owner-photo-wrap" class="w-14 h-14 rounded-full border-[3px] border-white shadow-md overflow-hidden shrink-0 bg-gray-50 relative">
                               ${photoSrc}
+                              <div id="p-owner-photo-overlay" class="hidden">
+                                  <i class="fa-solid fa-camera text-sm"></i>
+                              </div>
                           </div>
                           <div class="min-w-0 flex-1">
                               <h5 class="text-sm font-bold text-gray-800 truncate leading-tight mb-0.5">
@@ -5088,6 +5525,18 @@ if (servicesGrid) {
           logoOverlay.classList.remove("hidden");
           logoOverlay.className = "absolute inset-0 bg-slate-900/30 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20"; 
       }
+
+      // Owner photo quick edit (Profile sidebar)
+      const ownerWrap = document.getElementById("p-owner-photo-wrap");
+      const ownerOverlay = document.getElementById("p-owner-photo-overlay");
+      if (ownerWrap) {
+          ownerWrap.classList.add("cursor-pointer", "group");
+          ownerWrap.setAttribute("onclick", "triggerOwnerPhotoUpload('direct')");
+      }
+      if (ownerOverlay) {
+          ownerOverlay.classList.remove("hidden");
+          ownerOverlay.className = "absolute inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-20 text-white";
+      }
   } else {
       if(btnEdit) btnEdit.classList.add("hidden-view");
       if(btnAddAsset) btnAddAsset.classList.add("hidden-view");
@@ -5102,9 +5551,24 @@ if (servicesGrid) {
       if (logoOverlay) {
           logoOverlay.classList.add("hidden");
       }
+
+      const ownerWrap = document.getElementById("p-owner-photo-wrap");
+      const ownerOverlay = document.getElementById("p-owner-photo-overlay");
+      if (ownerWrap) {
+          ownerWrap.classList.remove("cursor-pointer", "group");
+          ownerWrap.removeAttribute("onclick");
+      }
+      if (ownerOverlay) {
+          ownerOverlay.classList.add("hidden");
+      }
   }
 
-  switchProfileTab("overview");
+  // Keep current tab when re-opening the same company (e.g., viewing a certificate/doc)
+  const sameCompany = window.__profileActiveCompanyId && String(window.__profileActiveCompanyId) === String(company.id);
+  const desiredTab = (sameCompany && window.__profileActiveTab) ? window.__profileActiveTab : "overview";
+  switchProfileTab(desiredTab);
+  window.__profileActiveCompanyId = company.id;
+
   
   // --- PROJELER (TIKLANABİLİR KART + GİZLİ BUTONLAR) ---
   const projList = document.getElementById("p-projects-list");
@@ -5276,6 +5740,15 @@ if (servicesGrid) {
     
   // ✅ Hide skeleton once profile UI is ready
   try { hideProfileSkeleton(); } catch(e) {}
+
+  // ✅ Restore tab/scroll after refresh (so closing gallery / deleting items doesn't jump to top)
+  if (__preserveTab && __tabToRestore) {
+    try { switchProfileTab(__tabToRestore); } catch(e) {}
+  }
+  if (__preserveScroll) {
+    requestAnimationFrame(() => { try { window.scrollTo(0, __scrollY); } catch(e) {} });
+    setTimeout(() => { try { window.scrollTo(0, __scrollY); } catch(e) {} }, 0);
+  }
 }
 
    // ✅ YENİ KAYDETME FONKSİYONU (Supabase Uyumlu)
@@ -5506,6 +5979,253 @@ function showEditorView() {
   // 4. Sayfayı en üste kaydır
   window.scrollTo(0, 0);
 }
+
+
+/* =========================
+   SERVICES TAG EDITOR (chips + reorder)
+   - Stores canonical value in hidden #edit-services (comma-separated)
+   - Top 3 tags are treated as "Featured" on profile
+========================= */
+
+window.__svcEditor = window.__svcEditor || { tags: [], dragIndex: null, bound: false };
+
+const SERVICE_SUGGESTIONS = [
+  "EPC", "Engineering Design", "Procurement", "Construction", "Commissioning",
+  "Project Management", "Site Supervision", "Maintenance", "Shutdown Services",
+  "Mining Services", "Drilling", "Blasting", "Earthworks", "Excavation",
+  "Crushing & Screening", "Material Handling", "Conveyors", "Haulage",
+  "Equipment Rental", "OEM Supply", "Spare Parts", "Fabrication",
+  "Process Plant", "Laboratory", "Geology", "Geophysics", "Surveying",
+  "HSE", "Environmental", "Automation", "Instrumentation", "Electrical",
+  "Mechanical", "Civil", "Structural", "Piping", "Welding", "NDT"
+];
+
+function _svcNorm(s) {
+  return String(s || "").replace(/\s+/g, " ").trim();
+}
+
+function _svcSyncHiddenInput() {
+  const hidden = document.getElementById("edit-services");
+  if (!hidden) return;
+  hidden.value = (window.__svcEditor.tags || []).join(", ");
+}
+
+function initServiceTagEditor() {
+  const wrap = document.getElementById("svc-tags");
+  const input = document.getElementById("svc-add-input");
+  const suggest = document.getElementById("svc-suggest");
+  if (!wrap || !input || !suggest) return;
+
+  if (window.__svcEditor.bound) return;
+
+  // Hide suggest on outside click
+  document.addEventListener("click", (e) => {
+    const inside = e.target.closest("#svc-suggest") || e.target.closest("#svc-add-input");
+    if (!inside) {
+      suggest.classList.add("hidden");
+      suggest.innerHTML = "";
+    }
+  });
+
+  // Blur -> hide suggest (after click selection)
+  input.addEventListener("blur", () => {
+    setTimeout(() => {
+      suggest.classList.add("hidden");
+      suggest.innerHTML = "";
+    }, 180);
+  });
+
+  window.__svcEditor.bound = true;
+  renderServiceTags();
+}
+
+function setServiceTagsFromString(str) {
+  const s = String(str || "");
+  const parts = s.split(",").map(_svcNorm).filter(Boolean);
+  // de-dupe (case-insensitive)
+  const seen = new Set();
+  const unique = [];
+  parts.forEach(p => {
+    const k = p.toLowerCase();
+    if (!seen.has(k)) { seen.add(k); unique.push(p); }
+  });
+  window.__svcEditor.tags = unique;
+  _svcSyncHiddenInput();
+  renderServiceTags();
+}
+
+function addServiceTag(tag) {
+  const t = _svcNorm(tag);
+  if (!t) return;
+  const key = t.toLowerCase();
+  const tags = window.__svcEditor.tags || [];
+  if (tags.some(x => String(x).toLowerCase() === key)) return;
+  tags.push(t);
+  window.__svcEditor.tags = tags;
+  _svcSyncHiddenInput();
+  renderServiceTags();
+}
+
+function removeServiceTag(idx) {
+  const tags = window.__svcEditor.tags || [];
+  tags.splice(idx, 1);
+  window.__svcEditor.tags = tags;
+  _svcSyncHiddenInput();
+  renderServiceTags();
+}
+
+function clearServiceTags() {
+  window.__svcEditor.tags = [];
+  _svcSyncHiddenInput();
+  renderServiceTags();
+  const input = document.getElementById("svc-add-input");
+  if (input) input.value = "";
+}
+
+function renderServiceTags() {
+  const wrap = document.getElementById("svc-tags");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+  const tags = window.__svcEditor.tags || [];
+
+  if (tags.length === 0) {
+    wrap.innerHTML = `
+      <div class="w-full px-4 py-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-center">
+        <div class="text-xs text-gray-400 italic">No service tags yet.</div>
+        <div class="text-[10px] text-gray-400 mt-1">Add a tag below (press Enter).</div>
+      </div>`;
+    return;
+  }
+
+  tags.forEach((t, idx) => {
+    const chip = document.createElement("div");
+    chip.className = "group inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-cyan-200 hover:bg-cyan-50/40 transition cursor-grab";
+    chip.setAttribute("draggable", "true");
+    chip.dataset.idx = String(idx);
+
+    chip.innerHTML = `
+      <span class="w-6 h-6 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center">
+        <i class="fa-solid fa-grip-lines text-[10px]"></i>
+      </span>
+      <span class="text-xs font-extrabold text-gray-700">${t}</span>
+      ${idx < 3 ? `<span class="ml-1 text-[9px] font-extrabold px-2 py-1 rounded-lg bg-cyan-50 border border-cyan-100 text-BTrustOn-accent uppercase">Featured</span>` : ``}
+      <button type="button" class="ml-1 w-7 h-7 rounded-lg bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white flex items-center justify-center transition opacity-80 group-hover:opacity-100" title="Remove">
+        <i class="fa-solid fa-xmark text-[11px]"></i>
+      </button>
+    `;
+
+    // Remove
+    chip.querySelector("button")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      removeServiceTag(idx);
+    });
+
+    // Drag & Drop reorder
+    chip.addEventListener("dragstart", (e) => {
+      window.__svcEditor.dragIndex = idx;
+      try { e.dataTransfer.setData("text/plain", String(idx)); } catch(_) {}
+      chip.classList.add("opacity-60");
+    });
+
+    chip.addEventListener("dragend", () => {
+      chip.classList.remove("opacity-60");
+      window.__svcEditor.dragIndex = null;
+    });
+
+    chip.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      chip.classList.add("ring-2", "ring-cyan-200");
+    });
+
+    chip.addEventListener("dragleave", () => {
+      chip.classList.remove("ring-2", "ring-cyan-200");
+    });
+
+    chip.addEventListener("drop", (e) => {
+      e.preventDefault();
+      chip.classList.remove("ring-2", "ring-cyan-200");
+
+      const from = window.__svcEditor.dragIndex;
+      const to = Number(chip.dataset.idx);
+      if (from === null || from === undefined || isNaN(to) || from === to) return;
+
+      const list = window.__svcEditor.tags || [];
+      const [moved] = list.splice(from, 1);
+      list.splice(to, 0, moved);
+      window.__svcEditor.tags = list;
+      _svcSyncHiddenInput();
+      renderServiceTags();
+    });
+
+    wrap.appendChild(chip);
+  });
+}
+
+function serviceAddKeydown(e) {
+  const input = document.getElementById("svc-add-input");
+  if (!input) return;
+
+  if (e.key === "Enter" || e.key === ",") {
+    e.preventDefault();
+    const val = input.value;
+    input.value = "";
+    addServiceTag(val);
+    const suggest = document.getElementById("svc-suggest");
+    if (suggest) { suggest.classList.add("hidden"); suggest.innerHTML = ""; }
+    return;
+  }
+
+  if (e.key === "Escape") {
+    const suggest = document.getElementById("svc-suggest");
+    if (suggest) { suggest.classList.add("hidden"); suggest.innerHTML = ""; }
+  }
+}
+
+function serviceSuggest(query) {
+  const suggest = document.getElementById("svc-suggest");
+  if (!suggest) return;
+
+  const q = _svcNorm(query).toLowerCase();
+  if (!q) {
+    suggest.classList.add("hidden");
+    suggest.innerHTML = "";
+    return;
+  }
+
+  const existing = new Set((window.__svcEditor.tags || []).map(x => String(x).toLowerCase()));
+  const matches = SERVICE_SUGGESTIONS
+    .filter(s => s.toLowerCase().includes(q))
+    .filter(s => !existing.has(s.toLowerCase()))
+    .slice(0, 8);
+
+  if (matches.length === 0) {
+    suggest.classList.add("hidden");
+    suggest.innerHTML = "";
+    return;
+  }
+
+  suggest.innerHTML = matches.map(s => `
+    <button type="button" class="w-full text-left px-4 py-3 hover:bg-cyan-50 transition flex items-center justify-between gap-3" onclick="servicePickSuggestion('${s.replace(/'/g, "\\'")}')">
+      <span class="text-sm font-bold text-gray-700">${s}</span>
+      <span class="text-[10px] text-gray-400 font-bold">ADD</span>
+    </button>
+  `).join("");
+
+  suggest.classList.remove("hidden");
+}
+
+function servicePickSuggestion(s) {
+  addServiceTag(s);
+  const input = document.getElementById("svc-add-input");
+  if (input) input.value = "";
+  const suggest = document.getElementById("svc-suggest");
+  if (suggest) { suggest.classList.add("hidden"); suggest.innerHTML = ""; }
+}
+
+
+
     function toggleModal(id) {
       const modal = document.getElementById(id);
       if (!modal) return;
@@ -5547,7 +6267,10 @@ function showEditorView() {
           content.classList.add("hidden-view");
         }
       });
-    }
+    
+
+      try { window.__profileActiveTab = tab; } catch(e) {}
+}
 
     function switchLanguage(lang) {
       currentLang = lang === "tr" ? "tr" : "en";
@@ -5782,8 +6505,8 @@ async function saveAsset() {
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.assets = currentAssets;
 
-    openProfile(user.id);
-    switchProfileTab('assets');
+    openProfile(user.id, { preserveScroll: true, preserveTab: true });
+            switchProfileTab('assets');
     closeAssetModal();
     showToast("Success", "Asset saved successfully.", "success");
 
@@ -5815,7 +6538,7 @@ function deleteAsset(assetId) {
             const localRef = database.find(c => c.id == user.id);
             if(localRef) localRef.assets = currentAssets;
 
-            openProfile(user.id);
+            openProfile(user.id, { preserveScroll: true, preserveTab: true });
             switchProfileTab('assets');
             showToast("Deleted", "Asset removed successfully.", "success");
 
@@ -5998,8 +6721,8 @@ async function saveProject() {
     const localRef = database.find(c => c.id == user.id);
     if(localRef) localRef.projects = currentProjects;
 
-    openProfile(user.id);
-    switchProfileTab('projects');
+    openProfile(user.id, { preserveScroll: true, preserveTab: true });
+            switchProfileTab('projects');
     closeProjectModal();
     showToast("Success", "Project saved!", "success");
 
@@ -6033,7 +6756,7 @@ function deleteProject(projectId) {
             const localRef = database.find(c => c.id == user.id);
             if(localRef) localRef.projects = currentProjects;
 
-            openProfile(user.id);
+            openProfile(user.id, { preserveScroll: true, preserveTab: true });
             switchProfileTab('projects');
             showToast("Deleted", "Project removed successfully.", "success");
 
@@ -6070,7 +6793,7 @@ function deleteCert(certId, certName) {
             const localRef = database.find(c => c.id == user.id);
             if(localRef) localRef.certificates = currentCerts;
 
-            openProfile(user.id);
+            openProfile(user.id, { preserveScroll: true, preserveTab: true });
             showToast("Deleted", "Certificate removed successfully.", "success");
             
         } catch (error) {
@@ -6577,6 +7300,13 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   document.getElementById("edit-tax-id").value = selectedCompany.tax_id || "";
   document.getElementById("edit-duns").value = selectedCompany.duns_number || "";
   document.getElementById("edit-service-details").value = selectedCompany.service_details || ""; // <-- BU SATIRI EKLE 
+
+  // ✅ Services Tag Editor (chips + reorder)
+  try {
+    initServiceTagEditor();
+    setServiceTagsFromString(document.getElementById("edit-services").value);
+  } catch(e) {}
+ 
 
   // 👇👇👇 D ADIMI: OWNER VERİLERİNİ KUTULARA DOLDUR 👇👇👇
   
@@ -7723,83 +8453,401 @@ function removeAttachment() {
     const preview = document.getElementById("attachment-preview");
     if (preview) preview.classList.add("hidden");
 }
-let selectedLogoFile = null; // Seçilen dosyayı tutar
 
-function handleLogoSelect(input) {
-  if (input.files && input.files[0]) {
-    selectedLogoFile = input.files[0];
-    
-    // Tarayıcıda önizleme yap (Server'a gitmeden)
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById("edit-logo-img").src = e.target.result;
-      document.getElementById("edit-logo-img").classList.remove("hidden");
-      document.getElementById("edit-logo-icon").classList.add("hidden");
+let selectedLogoFile = null; // Seçilen logo dosyasını tutar
+
+/* =========================
+   CROPPER (Logo & Owner Photo)
+========================= */
+let __btonCropper = null;
+let __btonCropCtx = null; // { kind: 'logo'|'owner', mode: 'direct'|'edit' }
+let __btonCropBaseRatio = null;
+
+function openCropperForFile(file, ctx) {
+  if (!file) return;
+  __btonCropCtx = ctx || { kind: "logo", mode: "edit" };
+
+  const modal = document.getElementById("modal-cropper");
+  const imgEl = document.getElementById("cropper-image");
+  const titleEl = document.getElementById("cropper-title");
+  const zoomEl = document.getElementById("cropper-zoom");
+  const prevSq = document.getElementById("cropper-preview-square");
+  const prevCi = document.getElementById("cropper-preview-circle");
+  const prevRe = document.getElementById("cropper-preview-rect");
+  const tipEl = document.getElementById("cropper-tip");
+
+  if (titleEl) {
+    if (__btonCropCtx.kind === "owner") titleEl.textContent = "Adjust Contact Photo";
+    else if (__btonCropCtx.kind === "project_cover") titleEl.textContent = "Adjust Project Cover";
+    else titleEl.textContent = "Adjust Company Logo";
+  }
+
+  if (tipEl) {
+    tipEl.textContent = (__btonCropCtx.kind === "project_cover")
+      ? "Tip: Use a wide image. We'll crop it to a 16:9 cover."
+      : "Tip: For best quality, choose a clear image (min 400×400). We'll crop it to a square.";
+  }
+
+// Preview shape
+  if (prevSq && prevCi && prevRe) {
+    if (__btonCropCtx.kind === "owner") {
+      prevCi.classList.remove("hidden");
+      prevSq.classList.add("hidden");
+      prevRe.classList.add("hidden");
+    } else if (__btonCropCtx.kind === "project_cover") {
+      prevRe.classList.remove("hidden");
+      prevSq.classList.add("hidden");
+      prevCi.classList.add("hidden");
+    } else {
+      prevSq.classList.remove("hidden");
+      prevCi.classList.add("hidden");
+      prevRe.classList.add("hidden");
     }
-    reader.readAsDataURL(selectedLogoFile);
+  }
+
+// Reset zoom slider
+  if (zoomEl) zoomEl.value = 0;
+  __btonCropBaseRatio = null;
+
+  // Load image
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    if (!imgEl) return;
+    imgEl.src = e.target.result;
+
+    // Open modal (without toggling other modals)
+    if (modal) {
+      modal.classList.remove("opacity-0", "pointer-events-none");
+      document.body.classList.add("modal-active");
+    }
+
+    // Destroy old cropper
+    if (__btonCropper) {
+      try { __btonCropper.destroy(); } catch(_) {}
+      __btonCropper = null;
+    }
+
+    // Init cropper
+    __btonCropper = new Cropper(imgEl, {
+      aspectRatio: (__btonCropCtx.kind === "project_cover" ? (16/9) : 1),
+      viewMode: 1,
+      dragMode: "move",
+      autoCropArea: 1,
+      responsive: true,
+      background: false,
+      guides: false,
+      center: true,
+      highlight: false,
+      movable: true,
+      zoomable: true,
+      scalable: false,
+      rotatable: true,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      preview: ".cropper-preview",
+      ready() {
+        try {
+          const d = __btonCropper.getImageData();
+          __btonCropBaseRatio = d && d.ratio ? d.ratio : null;
+        } catch(_) {}
+      }
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function closeCropperModal() {
+  const modal = document.getElementById("modal-cropper");
+  if (modal) modal.classList.add("opacity-0", "pointer-events-none");
+
+  if (__btonCropper) {
+    try { __btonCropper.destroy(); } catch(_) {}
+    __btonCropper = null;
+  }
+  __btonCropCtx = null;
+  __btonCropBaseRatio = null;
+
+  // Keep modal-active only if another modal is open
+  syncBodyModalState();
+}
+
+function syncBodyModalState() {
+  const openAny = Array.from(document.querySelectorAll(".modal")).some(m => {
+    // ignore cropper itself if it's hidden
+    const isOpen = !m.classList.contains("opacity-0") && !m.classList.contains("pointer-events-none");
+    return isOpen;
+  });
+  if (openAny) document.body.classList.add("modal-active");
+  else document.body.classList.remove("modal-active");
+}
+
+function onCropperZoom(val) {
+  if (!__btonCropper) return;
+  const v = Math.max(0, Math.min(100, parseInt(val || "0", 10))) / 100;
+  try {
+    const base = __btonCropBaseRatio || (__btonCropper.getImageData()?.ratio) || 1;
+    // Map 0..1 -> base..(base*2.2)
+    __btonCropper.zoomTo(base * (1 + (v * 1.2)));
+  } catch (e) {
+    console.warn("Zoom error", e);
   }
 }
-/* --- PROFİL EKRANINDAN HIZLI LOGO DEĞİŞTİRME --- */
 
-async function uploadLogoDirectly(input) {
-  if (!input.files || !input.files[0]) return;
+function cropperRotate(deg) {
+  if (!__btonCropper) return;
+  try { __btonCropper.rotate(deg); } catch(_) {}
+}
 
-  const file = input.files[0];
-  
-  // 1. Kullanıcıya hemen önizleme göster (Bekletme)
-  const reader = new FileReader();
-  reader.onload = function(e) {
-      const img = document.getElementById("p-logo-image");
-      const icon = document.getElementById("p-default-icon");
-      if(img) { img.src = e.target.result; img.classList.remove("hidden"); }
-      if(icon) icon.classList.add("hidden");
+function cropperReset() {
+  if (!__btonCropper) return;
+  try { __btonCropper.reset(); } catch(_) {}
+  const zoomEl = document.getElementById("cropper-zoom");
+  if (zoomEl) zoomEl.value = 0;
+}
+
+async function confirmCropper() {
+  if (!__btonCropper || !__btonCropCtx) return;
+
+  // NOTE: closeCropperModal() resets __btonCropCtx to null.
+  // confirmCropper() continues after closing the modal (and inside an async toBlob callback),
+  // so we must snapshot the context first to avoid "Cannot read properties of null (reading 'kind')".
+  const ctx = { ...__btonCropCtx };
+
+  // Produce a high quality crop
+  const isCover = (ctx.kind === "project_cover");
+  const targetW = isCover ? 1200 : 512;
+  const targetH = isCover ? 675 : 512;
+
+  const canvas = __btonCropper.getCroppedCanvas({
+    width: targetW,
+    height: targetH,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high"
+  });
+
+  const mime = (ctx.kind === "logo") ? "image/png" : "image/jpeg";
+  const ext = (ctx.kind === "logo") ? "png" : "jpg";
+
+  showToast("Processing...", "Preparing your image...", "info");
+
+  canvas.toBlob(async (blob) => {
+    try {
+      if (!blob) throw new Error("Could not crop image.");
+      const croppedFile = new File([blob], `${ctx.kind}-${Date.now()}.${ext}`, { type: mime });
+
+      // Close cropper first (feels faster)
+      closeCropperModal();
+
+      if (ctx.kind === "logo") {
+        if (ctx.mode === "direct") {
+          await uploadLogoDirectFile(croppedFile);
+        } else {
+          // Edit mode: keep for Save & Preview
+          selectedLogoFile = croppedFile;
+          // Preview in editor
+          const url = URL.createObjectURL(croppedFile);
+          const img = document.getElementById("edit-logo-img");
+          const icon = document.getElementById("edit-logo-icon");
+          if (img) { img.src = url; img.classList.remove("hidden"); }
+          if (icon) icon.classList.add("hidden");
+          showToast("Ready", "Logo prepared. Click Save & Preview to publish.", "success");
+        }
+      } else if (ctx.kind === "owner") {
+        const mode = ctx.mode || "edit";
+        if (mode === "direct") {
+          await uploadOwnerPhotoDirectFile(croppedFile);
+        } else {
+          // Edit mode: keep for Save & Preview
+          selectedOwnerFile = croppedFile;
+          const url = URL.createObjectURL(croppedFile);
+          const img = document.getElementById("preview-owner-img");
+          const icon = document.getElementById("icon-owner-img");
+          if (img) { img.src = url; img.classList.remove("hidden"); }
+          if (icon) icon.classList.add("hidden");
+          showToast("Ready", "Photo prepared. Click Save & Preview to publish.", "success");
+        }
+      }
+
+      else if (ctx.kind === "project_cover") {
+        // Project cover: keep for SaveProject()
+        currentProjCover = croppedFile;
+        shouldRemoveCover = false;
+
+        const url = URL.createObjectURL(croppedFile);
+        const previewDiv = document.getElementById("cover-preview");
+        if (previewDiv) {
+          previewDiv.innerHTML = `
+            <img src="${url}" class="w-full h-full object-cover">
+            <button type="button" onclick="removeProjectCover()" class="absolute inset-0 bg-black/55 text-white text-[10px] font-bold opacity-0 hover:opacity-100 transition flex items-center justify-center">
+              <i class="fa-solid fa-trash mr-1"></i> Remove
+            </button>`;
+        }
+        showToast("Ready", "Cover prepared. Click Save to publish this project.", "success");
+      }
+
+    } catch (err) {
+      console.error(err);
+      showToast("Error", err.message || "Image processing failed.", "error");
+    } finally {
+      // ctx is local snapshot; global ctx is cleared by closeCropperModal().
+    }
+  }, mime, 0.92);
+}
+
+/* =========================
+   LOGO PICKERS (Edit & Profile)
+========================= */
+
+function handleLogoFromEdit(input) {
+  if (input.files && input.files[0]) {
+    openCropperForFile(input.files[0], { kind: "logo", mode: "edit" });
   }
-  reader.readAsDataURL(file);
+  // allow re-pick same file
+  input.value = "";
+}
 
-  // 2. Yükleme İşlemi Başlasın
+function handleLogoFromProfile(input) {
+  if (input.files && input.files[0]) {
+    openCropperForFile(input.files[0], { kind: "logo", mode: "direct" });
+  }
+  input.value = "";
+}
+
+/* =========================
+   OWNER PHOTO PICKERS
+========================= */
+
+function triggerOwnerPhotoUpload(mode = "edit") {
+  window.__ownerPhotoMode = mode;
+  const el = document.getElementById("edit-owner-photo");
+  if (el) el.click();
+}
+
+function handleOwnerPhotoPicked(input) {
+  if (input.files && input.files[0]) {
+    const mode = window.__ownerPhotoMode || "edit";
+    openCropperForFile(input.files[0], { kind: "owner", mode });
+  }
+  window.__ownerPhotoMode = "edit";
+  input.value = "";
+}
+
+/* =========================
+   DIRECT UPLOADS (No refresh)
+========================= */
+
+async function uploadLogoDirectFile(file) {
+  if (!file) return;
+
+  // Immediate preview on profile header
+  const previewUrl = URL.createObjectURL(file);
+  const pImg = document.getElementById("p-logo-image");
+  const pIcon = document.getElementById("p-default-icon");
+  if (pImg) { pImg.src = previewUrl; pImg.classList.remove("hidden"); }
+  if (pIcon) pIcon.classList.add("hidden");
+
   showToast("Uploading...", "Updating your logo...", "info");
 
   try {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) throw new Error("Login required");
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Login required");
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+    const fileExt = (file.name.split('.').pop() || "png").toLowerCase();
+    const fileName = `${user.id}-logo-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
 
-      // A. Storage'a Yükle
-      const { error: uploadError } = await supabaseClient.storage
-          .from('logos')
-          .upload(filePath, file);
+    const { error: uploadError } = await supabaseClient.storage
+      .from("logos")
+      .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+    if (uploadError) throw uploadError;
 
-      // B. Public URL Al
-      const { data: { publicUrl } } = supabaseClient.storage
-          .from('logos')
-          .getPublicUrl(filePath);
+    const { data: { publicUrl } } = supabaseClient.storage
+      .from("logos")
+      .getPublicUrl(filePath);
 
-      // C. Sadece Profil Tablosundaki 'logo_url' alanını güncelle
-      const { error: dbError } = await supabaseClient
-          .from('profiles')
-          .update({ logo_url: publicUrl, updated_at: new Date() })
-          .eq('id', user.id);
+    const { error: dbError } = await supabaseClient
+      .from("profiles")
+      .update({ logo_url: publicUrl, updated_at: new Date() })
+      .eq("id", user.id);
 
-      if (dbError) throw dbError;
+    if (dbError) throw dbError;
 
-      // D. Başarılı
-      showToast("Success", "Logo updated successfully!", "success");
+    // Local memory update
+    const localCompany = database.find(c => String(c.id) === String(user.id));
+    if (localCompany) localCompany.logo_url = publicUrl;
+    if (selectedCompany && String(selectedCompany.id) === String(user.id)) selectedCompany.logo_url = publicUrl;
 
-      // E. Local Database'i Güncelle (Sayfa yenilenmeden hafızada kalsın)
-      const localCompany = database.find(c => c.id == user.id);
-      if (localCompany) {
-          localCompany.logo_url = publicUrl;
-      }
+    showToast("Success", "Logo updated successfully!", "success");
 
   } catch (error) {
-      console.error(error);
-      showToast("Error", "Logo upload failed: " + error.message, "error");
-      // Hata olursa eski haline döndürmek için sayfayı yenileyebilir veya eski URL'i geri yükleyebiliriz
+    console.error(error);
+    showToast("Error", "Logo upload failed: " + (error.message || "Unknown error"), "error");
+  }
+}
+
+async function uploadOwnerPhotoDirectFile(file) {
+  if (!file) return;
+
+  // Immediate preview on sidebar card (if visible)
+  const previewUrl = URL.createObjectURL(file);
+  const wrap = document.getElementById("p-owner-photo-wrap");
+  if (wrap) {
+    let img = document.getElementById("p-owner-photo-img");
+    const overlay = document.getElementById("p-owner-photo-overlay");
+    const ph = document.getElementById("p-owner-photo-placeholder");
+    if (!img) {
+      if (ph) ph.remove();
+      img = document.createElement("img");
+      img.id = "p-owner-photo-img";
+      img.className = "w-full h-full object-cover hover:scale-110 transition duration-500";
+      wrap.insertBefore(img, overlay || null);
+    }
+    img.src = previewUrl;
+  }
+
+  // Also preview in edit modal if open
+  const eImg = document.getElementById("preview-owner-img");
+  const eIcon = document.getElementById("icon-owner-img");
+  if (eImg) { eImg.src = previewUrl; eImg.classList.remove("hidden"); }
+  if (eIcon) eIcon.classList.add("hidden");
+
+  showToast("Uploading...", "Updating contact photo...", "info");
+
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Login required");
+
+    const fileExt = (file.name.split('.').pop() || "jpg").toLowerCase();
+    const fileName = `${user.id}-owner-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabaseClient.storage
+      .from("logos")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabaseClient.storage
+      .from("logos")
+      .getPublicUrl(filePath);
+
+    const { error: dbError } = await supabaseClient
+      .from("profiles")
+      .update({ owner_photo_url: publicUrl, updated_at: new Date() })
+      .eq("id", user.id);
+
+    if (dbError) throw dbError;
+
+    // Local memory update
+    const localCompany = database.find(c => String(c.id) === String(user.id));
+    if (localCompany) localCompany.owner_photo_url = publicUrl;
+    if (selectedCompany && String(selectedCompany.id) === String(user.id)) selectedCompany.owner_photo_url = publicUrl;
+
+    showToast("Success", "Contact photo updated!", "success");
+  } catch (error) {
+    console.error(error);
+    showToast("Error", "Upload failed: " + (error.message || "Unknown error"), "error");
   }
 }
 /* --- SERTİFİKA YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
@@ -7948,7 +8996,7 @@ async function saveCert() {
     if(localRef) localRef.certificates = currentCerts;
 
     // --- KRİTİK DÜZELTME BURADA ---
-    openProfile(user.id);      // Profili yükle
+    openProfile(user.id, { preserveScroll: true, preserveTab: true });      // Profili yükle
     switchProfileTab('certs'); // HIZLICA SERTİFİKA SEKMESİNE DÖN
     
     showToast("Success", "Certificate saved!", "success");
@@ -7992,7 +9040,7 @@ function deleteCert(certId, certName) {
             const localRef = database.find(c => c.id == user.id);
             if(localRef) localRef.certificates = currentCerts;
 
-            openProfile(user.id);
+            openProfile(user.id, { preserveScroll: true, preserveTab: true });
             showToast("Deleted", "Certificate removed successfully.", "success");
             
         } catch (error) {
@@ -9452,6 +10500,285 @@ function closeCelebration() {
 }
 
 // --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
+// --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
+// Scroll sabitleme (modal aç/kapatta sayfa en üste zıplamasın)
+window.__scrollLock = window.__scrollLock || { count: 0, y: 0, prev: null };
+
+function __lockScrollForModal(){
+  const st = window.__scrollLock;
+  if (st.count === 0){
+    st.y = window.scrollY || document.documentElement.scrollTop || 0;
+    st.prev = {
+      position: document.body.style.position || "",
+      top: document.body.style.top || "",
+      left: document.body.style.left || "",
+      right: document.body.style.right || "",
+      width: document.body.style.width || "",
+      overflow: document.body.style.overflow || ""
+    };
+    // Sabitle
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${st.y}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+  }
+  st.count += 1;
+}
+
+function __unlockScrollForModal(){
+  const st = window.__scrollLock;
+  if (!st || st.count <= 0) return;
+  st.count -= 1;
+  if (st.count === 0){
+    const y = st.y || 0;
+    const prev = st.prev || {};
+    document.body.style.position = prev.position ?? "";
+    document.body.style.top      = prev.top ?? "";
+    document.body.style.left     = prev.left ?? "";
+    document.body.style.right    = prev.right ?? "";
+    document.body.style.width    = prev.width ?? "";
+    document.body.style.overflow = prev.overflow ?? "";
+    // Bir sonraki frame'de scroll'u geri al (layout otursun)
+    requestAnimationFrame(() => window.scrollTo(0, y));
+  }
+}
+
+/* =========================
+   ATTACHMENT VIEWER (Assets + Certificates)
+   - Opens image/PDF in an in-page modal (no new tab)
+   - Preserves scroll position on close (uses __lockScrollForModal)
+========================= */
+function __attachmentKind(url){
+  try{
+    const clean = String(url || "").split("#")[0].split("?")[0].toLowerCase();
+    if (clean.endsWith(".pdf")) return "pdf";
+    if (clean.match(/\.(png|jpg|jpeg|webp|gif|svg)$/)) return "image";
+    return "other";
+  }catch(e){ return "other"; }
+}
+
+// Image viewer state (attachment modal)
+let __attachmentZoom = 1;
+let __attachmentMode = "fit"; // "fit" | "actual"
+
+function __showAttachmentImgControls(show){
+  const ctr = document.getElementById("attachment-img-controls");
+  if(!ctr) return;
+  if(show){
+    ctr.classList.remove("hidden");
+    ctr.classList.add("flex");
+  }else{
+    ctr.classList.add("hidden");
+    ctr.classList.remove("flex");
+  }
+}
+
+function __updateAttachmentZoomLabel(){
+  const lbl = document.getElementById("attachment-zoom-label");
+  if(!lbl) return;
+  const pct = Math.round((__attachmentZoom || 1) * 100);
+  lbl.textContent = `${pct}%`;
+}
+
+function __setAttachmentMode(mode){
+  const stage = document.getElementById("attachment-stage");
+  const img = document.getElementById("attachment-img");
+  const fitBtn = document.getElementById("attachment-fit-btn");
+  const actBtn = document.getElementById("attachment-actual-btn");
+  if(!stage || !img) return;
+
+  __attachmentMode = mode === "actual" ? "actual" : "fit";
+
+  if(__attachmentMode === "fit"){
+    __attachmentZoom = 1;
+    stage.classList.add("overflow-hidden");
+    stage.classList.remove("overflow-auto");
+    img.style.transform = "none";
+    img.style.transformOrigin = "center center";
+    img.style.maxWidth = "100%";
+    img.style.maxHeight = "100%";
+  }else{
+    stage.classList.remove("overflow-hidden");
+    stage.classList.add("overflow-auto");
+    img.style.maxWidth = "none";
+    img.style.maxHeight = "none";
+    img.style.transformOrigin = "top left";
+    img.style.transform = `scale(${__attachmentZoom})`;
+  }
+
+  // Active button styling
+  if(fitBtn){
+    fitBtn.classList.toggle("bg-slate-900", __attachmentMode === "fit");
+    fitBtn.classList.toggle("text-white", __attachmentMode === "fit");
+    fitBtn.classList.toggle("bg-slate-50", __attachmentMode !== "fit");
+    fitBtn.classList.toggle("text-slate-700", __attachmentMode !== "fit");
+  }
+  if(actBtn){
+    actBtn.classList.toggle("bg-slate-900", __attachmentMode === "actual");
+    actBtn.classList.toggle("text-white", __attachmentMode === "actual");
+    actBtn.classList.toggle("bg-white", __attachmentMode !== "actual");
+    actBtn.classList.toggle("text-slate-600", __attachmentMode !== "actual");
+  }
+
+  __updateAttachmentZoomLabel();
+}
+
+function __setAttachmentZoom(delta){
+  const img = document.getElementById("attachment-img");
+  if(!img) return;
+
+  // If user starts zooming while in fit mode, switch to actual mode
+  if(__attachmentMode !== "actual"){
+    __setAttachmentMode("actual");
+  }
+
+  __attachmentZoom = Math.max(0.25, Math.min(4, (__attachmentZoom || 1) + delta));
+  img.style.transformOrigin = "top left";
+  img.style.transform = `scale(${__attachmentZoom})`;
+  __updateAttachmentZoomLabel();
+}
+
+// Wire controls once
+document.addEventListener("DOMContentLoaded", () => {
+  const fitBtn = document.getElementById("attachment-fit-btn");
+  const actBtn = document.getElementById("attachment-actual-btn");
+  const zin = document.getElementById("attachment-zoom-in");
+  const zout = document.getElementById("attachment-zoom-out");
+
+  if(fitBtn) fitBtn.onclick = () => __setAttachmentMode("fit");
+  if(actBtn) actBtn.onclick = () => __setAttachmentMode("actual");
+  if(zin) zin.onclick = () => __setAttachmentZoom(0.25);
+  if(zout) zout.onclick = () => __setAttachmentZoom(-0.25);
+});
+
+function openAttachmentViewer(url, title){
+  try{
+    if(!url) return;
+    const modal = document.getElementById("modal-attachment-viewer");
+    if(!modal) return;
+
+    __lockScrollForModal();
+
+    const kind = __attachmentKind(url);
+
+    const t = document.getElementById("attachment-title");
+    const sub = document.getElementById("attachment-sub");
+    const openBtn = document.getElementById("attachment-open-newtab");
+    const img = document.getElementById("attachment-img");
+    const frame = document.getElementById("attachment-frame");
+    const fb = document.getElementById("attachment-fallback");
+    const stage = document.getElementById("attachment-stage");
+
+    if(t) t.textContent = title || "Attachment";
+    if(sub) sub.textContent = kind === "pdf" ? "PDF preview" : (kind === "image" ? "Image preview" : "Preview");
+    if(openBtn){
+      openBtn.href = url;
+      openBtn.classList.remove("hidden");
+    }
+
+    // reset
+    __showAttachmentImgControls(false);
+    if(stage){
+      stage.classList.add("overflow-hidden");
+      stage.classList.remove("overflow-auto");
+    }
+    if(img){
+      img.classList.add("hidden");
+      img.src = "";
+      img.style.transform = "none";
+      img.style.transformOrigin = "center center";
+      img.style.maxWidth = "100%";
+      img.style.maxHeight = "100%";
+    }
+    if(frame){ frame.classList.add("hidden"); frame.src = "about:blank"; }
+    if(fb){ fb.classList.add("hidden"); }
+
+    if(kind === "image"){
+      if(img){
+        __showAttachmentImgControls(true);
+        __attachmentZoom = 1;
+        img.src = url;
+        img.classList.remove("hidden");
+
+        // Default behavior: show the FULL image (no crop) by fitting into the stage.
+        __setAttachmentMode("fit");
+      } else {
+        window.open(url, "_blank", "noopener");
+      }
+    } else if(kind === "pdf"){
+      __showAttachmentImgControls(false);
+      if(frame){
+        // Fit view for many pdf viewers
+        frame.src = url + (String(url).includes("#") ? "" : "#view=FitH");
+        frame.classList.remove("hidden");
+      } else {
+        window.open(url, "_blank", "noopener");
+      }
+    } else {
+      // fallback: no preview
+      __showAttachmentImgControls(false);
+      if(fb){
+        fb.classList.remove("hidden");
+      } else {
+        window.open(url, "_blank", "noopener");
+      }
+    }
+
+    modal.classList.remove("hidden");
+  }catch(e){
+    console.error("openAttachmentViewer error:", e);
+    try{ window.open(url, "_blank", "noopener"); }catch(_){}
+  }
+}
+
+function closeAttachmentViewer(){
+  const modal = document.getElementById("modal-attachment-viewer");
+  if(modal) modal.classList.add("hidden");
+
+  __showAttachmentImgControls(false);
+  __attachmentZoom = 1;
+  __attachmentMode = "fit";
+  __updateAttachmentZoomLabel();
+
+  try{
+    const stage = document.getElementById("attachment-stage");
+    const img = document.getElementById("attachment-img");
+    const frame = document.getElementById("attachment-frame");
+    const fb = document.getElementById("attachment-fallback");
+
+    if(stage){
+      stage.classList.add("overflow-hidden");
+      stage.classList.remove("overflow-auto");
+    }
+    if(img){
+      img.src = "";
+      img.style.transform = "none";
+      img.style.transformOrigin = "center center";
+      img.style.maxWidth = "100%";
+      img.style.maxHeight = "100%";
+      img.classList.add("hidden");
+    }
+    if(frame){
+      frame.src = "about:blank";
+      frame.classList.add("hidden");
+    }
+    if(fb) fb.classList.add("hidden");
+  }catch(e){}
+
+  __unlockScrollForModal();
+}
+
+// ESC to close
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape"){
+    const modal = document.getElementById("modal-attachment-viewer");
+    if(modal && !modal.classList.contains("hidden")) closeAttachmentViewer();
+  }
+});
+
+
 function openGallery(title, urls) {
     const modal = document.getElementById("modal-gallery");
     const mainImg = document.getElementById("gallery-main-img");
@@ -9459,19 +10786,19 @@ function openGallery(title, urls) {
     const caption = document.getElementById("gallery-caption");
 
     if(!modal) return;
-    
+
+    __lockScrollForModal();
+
     // İlk resmi aç
     mainImg.src = urls[0];
     caption.textContent = `${title} (1/${urls.length})`;
 
-    // Küçük resimleri oluştur
+    // Küçük resimleri temizle ve yeniden oluştur
     thumbs.innerHTML = "";
     urls.forEach((url, index) => {
         const thumb = document.createElement("img");
         thumb.src = url;
-        thumb.className = "h-16 w-24 object-cover rounded cursor-pointer border-2 border-transparent hover:border-white transition opacity-70 hover:opacity-100";
-        
-        // Tıklayınca ana resmi değiştir
+        thumb.className = "w-16 h-12 object-cover rounded-lg cursor-pointer opacity-70 hover:opacity-100 transition";
         thumb.onclick = () => {
             mainImg.src = url;
             caption.textContent = `${title} (${index + 1}/${urls.length})`;
@@ -9485,7 +10812,9 @@ function openGallery(title, urls) {
 function closeGallery() {
     const modal = document.getElementById("modal-gallery");
     if(modal) modal.classList.add("opacity-0", "pointer-events-none");
+    __unlockScrollForModal();
 }
+
 
 /* --- SERTİFİKA DOSYA YÖNETİMİ --- */
 let currentCertFile = null;
@@ -9747,4 +11076,79 @@ function sortProjectsUI(mode){
   </div>
 </div>
 
->
+
+    <!-- =========================
+       ATTACHMENT VIEWER MODAL
+       (Assets + Certificates)
+  ========================== -->
+  <div id="modal-attachment-viewer" class="hidden fixed inset-0 z-[99999]">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAttachmentViewer()"></div>
+
+    <div class="relative mx-auto w-[95vw] max-w-5xl h-[86vh] mt-[6vh] bg-white rounded-2xl shadow-2xl border border-white/40 overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-white/90">
+        <div class="min-w-0">
+          <div id="attachment-title" class="text-sm font-extrabold text-slate-800 truncate">Attachment</div>
+          <div id="attachment-sub" class="text-[11px] text-slate-500 truncate"></div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Image controls (only shown for images) -->
+          <div id="attachment-img-controls" class="hidden items-center gap-1 sm:gap-2 mr-1">
+            <button type="button" id="attachment-fit-btn"
+              class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition text-xs font-bold">
+              Fit
+            </button>
+            <button type="button" id="attachment-actual-btn"
+              class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition text-xs font-bold">
+              1:1
+            </button>
+            <div class="hidden sm:flex items-center gap-1">
+              <button type="button" id="attachment-zoom-out"
+                class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition flex items-center justify-center"
+                aria-label="Zoom out">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <div id="attachment-zoom-label" class="min-w-[58px] text-center text-[11px] font-extrabold text-slate-500 select-none">100%</div>
+              <button type="button" id="attachment-zoom-in"
+                class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition flex items-center justify-center"
+                aria-label="Zoom in">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </div>
+
+          <a id="attachment-open-newtab" href="#" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition text-xs font-bold">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[12px]"></i>
+            <span class="hidden sm:inline">Open</span>
+          </a>
+
+          <button type="button" onclick="closeAttachmentViewer()"
+                  class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-900 hover:text-white transition flex items-center justify-center"
+                  aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 bg-slate-50/60 relative">
+        <div id="attachment-stage" class="absolute inset-0 p-3 flex items-center justify-center overflow-hidden">
+          <img id="attachment-img" class="hidden max-w-full max-h-full object-contain select-none" alt="Attachment preview" />
+          <iframe id="attachment-frame" class="hidden w-full h-full" title="Attachment preview"></iframe>
+
+          <div id="attachment-fallback" class="hidden absolute inset-0 flex items-center justify-center p-6">
+            <div class="bg-white/90 border border-slate-200 rounded-2xl p-6 shadow-glass text-center max-w-md">
+              <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-file text-slate-500"></i>
+              </div>
+              <div class="text-sm font-extrabold text-slate-800 mb-1">Preview not available</div>
+              <div class="text-xs text-slate-500">Use <span class="font-bold">Open</span> to view this file in a new tab.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
