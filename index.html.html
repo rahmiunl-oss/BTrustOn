@@ -4,7 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BtrustOn</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  
+<!-- SAVED COMPANIES OVERLAY + PANEL -->
+<div id="saved-overlay" onclick="toggleSavedPanel()" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9988] hidden transition-opacity opacity-0"></div>
+
+<div id="saved-panel" class="flex flex-col">
+  <div class="bg-gradient-to-r from-BTrustOn-primary to-slate-900 text-white pt-6 px-6 shadow-lg relative overflow-hidden shrink-0 z-20">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+
+    <div class="relative z-10 flex items-center justify-between">
+      <div>
+        <div class="text-[11px] uppercase tracking-wider text-white/70 font-bold">Saved</div>
+        <div class="text-lg font-extrabold flex items-center gap-2">
+          Saved Companies
+          <span class="text-[11px] font-black px-2 py-0.5 rounded-full bg-white/15 border border-white/20" id="saved-panel-count">0</span>
+        </div>
+      </div>
+
+      <button onclick="toggleSavedPanel()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition flex items-center justify-center" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="relative z-10 mt-4 pb-5">
+      <div class="bg-white/10 border border-white/15 rounded-2xl px-3 py-2 flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-white/70 text-sm"></i>
+        <input
+          id="saved-search"
+          oninput="renderSavedCompanies()"
+          placeholder="Search saved companies..."
+          class="w-full bg-transparent outline-none text-sm placeholder:text-white/60"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-y-auto p-4 space-y-3">
+    <div id="saved-empty" class="hidden text-sm text-gray-500 bg-white/70 border border-gray-200 rounded-2xl p-4">
+      No saved companies yet. Use the bookmark icon on company cards to save.
+    </div>
+    <div id="saved-list" class="space-y-3"></div>
+  </div>
+</div>
+<!-- /SAVED COMPANIES PANEL -->
+
+
+<script src="https://cdn.tailwindcss.com"></script>
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -170,6 +215,44 @@
     #inbox-panel.open {
       transform: translateX(0); /* Açılınca gelir */
     }
+
+    /* --- SAVED PANEL (Saved Companies) --- */
+    #saved-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 420px;
+      max-width: 92vw;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      border-left: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: -10px 0 30px rgba(15, 23, 42, 0.15);
+      z-index: 9989;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #saved-panel.open { transform: translateX(0); }
+
+    .saved-item {
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      background: rgba(255,255,255,0.9);
+      transition: all 0.2s ease;
+    }
+    .saved-item:hover {
+      border-color: rgba(6, 182, 212, 0.45);
+      background: rgba(6, 182, 212, 0.04);
+    }
+    .saved-note {
+      background: rgba(241, 245, 249, 0.65);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+    .saved-note:focus {
+      outline: none;
+      border-color: rgba(6, 182, 212, 0.7);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+    }
+
 
     .inbox-item {
       position: relative;
@@ -514,7 +597,20 @@
         0
       </span>
     </button>
+    
     <button
+      id="btn-saved-companies"
+      onclick="toggleSavedPanel()"
+      class="relative flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-slate-700 font-bold text-xs hover:border-cyan-300 hover:bg-cyan-50 transition shadow-sm"
+      title="Saved Companies"
+    >
+      <i class="fa-regular fa-bookmark text-BTrustOn-accent"></i>
+      <span class="hidden md:inline">SAVED</span>
+      <span id="saved-badge" class="hidden absolute -top-1 -right-1 bg-BTrustOn-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white shadow-sm">
+        0
+      </span>
+    </button>
+<button
       id="btn-my-company"
       onclick="openMyCompanyIfExists()"
       class="flex items-center gap-2 px-4 py-2 bg-cyan-50 text-BTrustOn-accent border border-cyan-200 rounded-lg text-xs font-bold hover:bg-cyan-100 hover:border-cyan-300 transition shadow-sm"
@@ -1283,9 +1379,18 @@
         </button>
         
         <button
+          id="btn-save-company"
+          onclick="toggleSaveCompany(selectedCompany && selectedCompany.id)"
+          class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative"
+          title="Save company"
+        >
+          <i id="icon-save-company" class="fa-regular fa-bookmark text-BTrustOn-accent"></i>
+        </button>
+
+        <button
   id="btn-req-quote"
   onclick="openQuoteModal(selectedCompany.id, selectedCompany.name)"
-  class="bg-BTrustOn-primary text-white px-6 py-3 rounded-xl ... (diğer classlar aynı kalsın)"
+  class="bg-BTrustOn-primary text-white px-6 py-3 rounded-xl ... "
 >
   <i class="fa-solid fa-paper-plane"></i>
   <span data-i18n="req_quote">REQUEST QUOTE</span>
@@ -2317,6 +2422,11 @@
             <button onclick="switchInboxView('sent')" id="btn-tab-sent" class="pb-3 border-b-2 border-transparent hover:text-white transition-all flex items-center gap-2">
                 SENT <i class="fa-solid fa-paper-plane text-[10px]"></i>
             </button>
+            <button onclick="switchInboxView('notifications')" id="btn-tab-notif" class="pb-3 border-b-2 border-transparent hover:text-white transition-all flex items-center gap-2">
+                NOTIFICATIONS <i class="fa-solid fa-bell text-[10px]"></i>
+                <span id="notif-tab-badge" class="ml-1 hidden min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center">0</span>
+            </button>
+
         </div>
         </div>
 
@@ -3045,6 +3155,26 @@ async function partnerLogout() {
     let currentSector = "all";
     let selectedCompany = null;
     const ADMIN_EMAIL = "rahmiunl@gmail.com"; // BURAYI KENDİ MAİLİNİZLE DEĞİŞTİRİN
+
+// --- ADMIN PROFIL ID CACHE (analytics'te admin görüntülenmesin / sayılmasın) ---
+let __ADMIN_PROFILE_ID_CACHE = null;
+async function getAdminProfileId() {
+  try {
+    if (__ADMIN_PROFILE_ID_CACHE) return __ADMIN_PROFILE_ID_CACHE;
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('email', ADMIN_EMAIL)
+      .limit(1);
+
+    if (error) return null;
+    __ADMIN_PROFILE_ID_CACHE = (data && data[0] && data[0].id) ? data[0].id : null;
+    return __ADMIN_PROFILE_ID_CACHE;
+  } catch (e) {
+    return null;
+  }
+}
+
 /* --- YENİ EKLENEN DEĞİŞKENLER (DOSYA İÇİN) --- */
 let currentAssetFile = null; // Yeni yüklenecek dosyayı tutar
 let existingAssetFileUrl = null; // Zaten yüklü olan dosyanın linkini tutar
@@ -4838,6 +4968,9 @@ const ownerActions = isOwner ? `
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
     const { data: { user } } = await supabaseClient.auth.getUser();
+
+    // ✅ Admin kullanıcı (rahmiunl@gmail.com) görüntülediğinde analitiğe hiç yazma / sayma
+    if (user && user.email === ADMIN_EMAIL) return;
     
     // A. Kendi profilime bakıyorsam HİÇBİR ŞEY YAPMA
     if (user && user.id === targetProfileId) return;
@@ -4871,15 +5004,26 @@ async function trackProfileView(targetProfileId) {
 // 2. İSTATİSTİKLERİ ÇEK VE GÖSTER
 async function loadProfileAnalytics(profileId) {
     // A. UI Sıfırla (Yükleniyor...)
-    document.getElementById("stat-partner-count").textContent = "-";
-    document.getElementById("stat-guest-count").textContent = "-";
-    document.getElementById("stat-partner-list").innerHTML = '<div class="p-3 text-center"><i class="fa-solid fa-spinner fa-spin text-cyan-500"></i></div>';
+    const partnerCountEl = document.getElementById("stat-partner-count");
+    const guestCountEl = document.getElementById("stat-guest-count");
+    const listContainer = document.getElementById("stat-partner-list");
+    if (partnerCountEl) partnerCountEl.textContent = "-";
+    if (guestCountEl) guestCountEl.textContent = "-";
+    if (listContainer) listContainer.innerHTML = '<div class="p-3 text-center"><i class="fa-solid fa-spinner fa-spin text-cyan-500"></i></div>';
 
-    // B. Tarih Hesabı (Son 90 Gün)
+    // B. Pro kontrolü (kimin baktığı listesi sadece Pro)
+    const isPro = (selectedCompany && selectedCompany.subscription_tier === 'pro');
+    const upgradeBtn = document.getElementById("btn-card-upgrade");
+    if (upgradeBtn) {
+        if (isPro) upgradeBtn.classList.add("hidden");
+        else upgradeBtn.classList.remove("hidden");
+    }
+
+    // C. Tarih Hesabı (Son 90 Gün)
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    // C. Verileri Çek
+    // D. Verileri Çek
     const { data: views, error } = await supabaseClient
         .from('profile_views')
         .select('viewer_id, viewed_at')
@@ -4889,34 +5033,61 @@ async function loadProfileAnalytics(profileId) {
 
     if (error || !views) {
         console.error("Analytics Error:", error);
-        document.getElementById("stat-partner-count").textContent = "0";
-        document.getElementById("stat-guest-count").textContent = "0";
-        document.getElementById("stat-partner-list").innerHTML = '<div class="p-3 text-center text-[10px] text-gray-400">No data.</div>';
+        if (partnerCountEl) partnerCountEl.textContent = "0";
+        if (guestCountEl) guestCountEl.textContent = "0";
+        if (listContainer) listContainer.innerHTML = '<div class="p-3 text-center text-[10px] text-gray-400">No data.</div>';
         return;
     }
 
-    // D. Ayrıştır (Partner vs Guest)
-    let guestCount = 0;
-    let partnerMap = new Map(); // Aynı şirket birden fazla baktıysa son tarihini tut
+    // E. Admin'i filtrele (eski kayıtlar dahil)
+    let adminProfileId = null;
+    try { adminProfileId = await getAdminProfileId(); } catch(e) { adminProfileId = null; }
 
-    views.forEach(v => {
+    const filteredViews = (views || []).filter(v => {
+        if (!v) return false;
+        if (adminProfileId && v.viewer_id && String(v.viewer_id) === String(adminProfileId)) return false;
+        return true;
+    });
+
+    // F. Ayrıştır (Partner vs Guest) + Partner'da son görüntüleme tarihini tut
+    let guestCount = 0;
+    const partnerMap = new Map(); // viewer_id -> most recent viewed_at
+
+    filteredViews.forEach(v => {
         if (v.viewer_id) {
-            // Partner (Üye)
             if (!partnerMap.has(v.viewer_id)) {
-                partnerMap.set(v.viewer_id, v.viewed_at);
+                partnerMap.set(v.viewer_id, v.viewed_at); // zaten desc sıralı => ilk en güncel
             }
         } else {
-            // Guest (Misafir)
             guestCount++;
         }
     });
 
-    // E. Sayıları Animasyonla Bas
+    // G. Sayıları Animasyonla Bas (Ön sayım)
     animateValue("stat-partner-count", 0, partnerMap.size, 800);
     animateValue("stat-guest-count", 0, guestCount, 800);
 
-    // F. Partner Listesini Doldur (İsimleri Çekmek İçin)
-    const listContainer = document.getElementById("stat-partner-list");
+    // H. Liste alanı (kimin baktığı) sadece Pro
+    if (!listContainer) return;
+
+    if (!isPro) {
+        listContainer.innerHTML = `
+          <div class="p-4 text-center">
+            <div class="w-10 h-10 mx-auto rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 mb-2">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <div class="text-[11px] font-bold text-gray-700">Recent viewers are a Pro feature</div>
+            <div class="text-[9px] text-gray-400 mt-1">Upgrade to see which companies viewed your profile.</div>
+            <button class="mt-3 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-extrabold px-3 py-2 rounded-lg border border-amber-200 transition"
+                    onclick="toggleModal('modal-upgrade')">
+              <i class="fa-solid fa-bolt mr-1"></i> Upgrade to Pro
+            </button>
+          </div>
+        `;
+        return;
+    }
+
+    // Pro ise listeyi doldur
     listContainer.innerHTML = "";
 
     if (partnerMap.size === 0) {
@@ -4924,38 +5095,56 @@ async function loadProfileAnalytics(profileId) {
         return;
     }
 
+    const partnerIds = Array.from(partnerMap.keys());
+
     // ID'lere göre profil bilgilerini çek
-    const { data: profiles } = await supabaseClient
+    const { data: profiles, error: pErr } = await supabaseClient
         .from('profiles')
         .select('id, company_name, logo_url, city')
-        .in('id', Array.from(partnerMap.keys()));
+        .in('id', partnerIds);
 
-    if (profiles) {
-        profiles.forEach(p => {
-            const viewTime = partnerMap.get(p.id);
-            const dateStr = new Date(viewTime).toLocaleDateString();
-            const logoLetter = p.company_name.charAt(0).toUpperCase();
-
-            const item = document.createElement("div");
-            item.className = "flex items-center gap-3 p-2 hover:bg-cyan-50 rounded-lg transition cursor-pointer border-b border-gray-50 last:border-0";
-            item.onclick = () => openProfile(p.id); // Tıklayınca o şirkete git
-
-            item.innerHTML = `
-                <div class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-BTrustOn-accent font-bold text-xs shadow-sm shrink-0 overflow-hidden">
-                    ${p.logo_url ? `<img src="${p.logo_url}" class="w-full h-full object-cover">` : logoLetter}
-                </div>
-                <div class="min-w-0 flex-1">
-                    <div class="text-[11px] font-bold text-gray-700 truncate">${p.company_name}</div>
-                    <div class="text-[9px] text-gray-400 flex justify-between">
-                        <span class="truncate max-w-[80px]">${p.city || 'Unknown'}</span>
-                        <span>${dateStr}</span>
-                    </div>
-                </div>
-            `;
-            listContainer.appendChild(item);
-        });
+    if (pErr) {
+        console.warn("Analytics profile fetch error:", pErr);
     }
+
+    const safeProfiles = Array.isArray(profiles) ? profiles : [];
+
+    // ✅ Partner sayısını "gerçekte bulunan profil" sayısına göre düzelt (silinen/bozuk kayıtlar şişirmesin)
+    if (partnerCountEl) partnerCountEl.textContent = String(safeProfiles.length);
+
+    // Görüntüleme zamanına göre sırala (en yeni en üst)
+    safeProfiles.sort((a, b) => {
+        const ta = partnerMap.get(a.id) ? new Date(partnerMap.get(a.id)).getTime() : 0;
+        const tb = partnerMap.get(b.id) ? new Date(partnerMap.get(b.id)).getTime() : 0;
+        return tb - ta;
+    });
+
+    safeProfiles.forEach(p => {
+        const viewTime = partnerMap.get(p.id);
+        const dateStr = viewTime ? new Date(viewTime).toLocaleDateString() : "";
+        const name = p.company_name || "Unknown Company";
+        const logoLetter = name.charAt(0).toUpperCase();
+
+        const item = document.createElement("div");
+        item.className = "flex items-center gap-3 p-2 hover:bg-cyan-50 rounded-lg transition cursor-pointer border-b border-gray-50 last:border-0";
+        item.onclick = () => openProfile(p.id);
+
+        item.innerHTML = `
+            <div class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-BTrustOn-accent font-bold text-xs shadow-sm shrink-0 overflow-hidden">
+                ${p.logo_url ? `<img src="${p.logo_url}" class="w-full h-full object-cover">` : logoLetter}
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="text-[11px] font-bold text-gray-700 truncate">${name}</div>
+                <div class="text-[9px] text-gray-400 flex justify-between">
+                    <span class="truncate max-w-[80px]">${p.city || 'Unknown'}</span>
+                    <span>${dateStr}</span>
+                </div>
+            </div>
+        `;
+        listContainer.appendChild(item);
+    });
 }
+
 
 // Yardımcı: Sayı Animasyonu
 function animateValue(id, start, end, duration) {
@@ -5082,6 +5271,9 @@ try {
   }
 
   selectedCompany = company;
+
+  try { if (typeof updateSaveButtonsUI === 'function') updateSaveButtonsUI(); } catch(e) {}
+
 
   // 3. EKRAN GEÇİŞLERİ
   const viewDashboard = document.getElementById("view-dashboard");
@@ -6886,6 +7078,15 @@ async function handleJoin() {
     toggleModal('modal-join');
     showToast("Welcome!", "Registration successful. Profile created.", "success");
     checkUserAndOpenProfile();
+    // Saved companies (for KOBI MVP) - defer until script fully loaded (avoids TDZ)
+    setTimeout(() => {
+      try {
+        if (typeof fetchSavedCompanies === 'function') {
+          fetchSavedCompanies().then(() => { try { updateSaveButtonsUI(); refreshCompanyCardsAfterSavedChange(); } catch(e) {} });
+        }
+      } catch(e) {}
+    }, 0);
+
 
   } catch (error) {
     const errEl = document.getElementById("join-error");
@@ -7203,12 +7404,58 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     if (typeof checkAdminAccess === "function") checkAdminAccess();
 
     // 2. Sonra profili çek
-    checkUserAndOpenProfile(); 
+    checkUserAndOpenProfile();
+
+    // Saved companies (KOBI MVP)
+    setTimeout(() => {
+      try {
+        if (typeof fetchSavedCompanies === 'function') {
+          fetchSavedCompanies().then(() => { try { updateSaveButtonsUI(); refreshCompanyCardsAfterSavedChange(); } catch(e) {} });
+        }
+      } catch(e) {}
+    }, 0); 
   } 
   else if (event === 'SIGNED_OUT') {
-    // Çıkış yapıldıysa temizle
-    localStorage.removeItem("BTrustOn_my_company_id");
-    window.location.href = "/"; 
+    // Çıkış yapıldıysa temizle + ana sayfaya dön (deploy path bağımsız)
+    try { localStorage.removeItem("BTrustOn_my_company_id"); } catch(e) {}
+
+    // Inbox / Notifications UI reset
+    try {
+      inboxData = [];
+      notificationsData = [];
+    // Saved reset (defer; avoids TDZ during initial script load)
+    setTimeout(() => {
+      try {
+        if (typeof savedCompanyIds !== 'undefined') savedCompanyIds = new Set();
+        if (typeof savedCompaniesData !== 'undefined') savedCompaniesData = [];
+        if (typeof _savedLoadedOnce !== 'undefined') _savedLoadedOnce = false;
+        if (typeof updateSavedBadges === 'function') updateSavedBadges();
+        const sp = document.getElementById('saved-panel');
+        if (sp && sp.classList.contains('open') && typeof toggleSavedPanel === 'function') toggleSavedPanel();
+      } catch(e) {}
+    }, 0);
+notificationsUnreadCount = 0;
+      messagesUnreadCount = 0;
+      if (typeof renderInboxItems === "function") renderInboxItems();
+    } catch(e) {}
+
+    // Inbox panel açıksa kapat
+    try {
+      const panel = document.getElementById("inbox-panel");
+      if (panel && panel.classList.contains("open") && typeof toggleInbox === "function") toggleInbox();
+    } catch(e) {}
+
+    // Ana sayfa (Home) görünümüne dön
+    try {
+      if (typeof showMainView === "function") {
+        showMainView();
+      } else {
+        // fallback: aynı dosyayı yeniden yükle (subpath uyumlu)
+        window.location.href = window.location.pathname + window.location.search;
+      }
+    } catch(e) {
+      try { window.location.reload(); } catch(_) {}
+    }
   }
 });
 
@@ -7543,30 +7790,34 @@ let currentInboxView = 'inbox';
 // Sekme Değiştirme Fonksiyonu
 function switchInboxView(view) {
     currentInboxView = view;
-    
+
     // UI Güncelleme (Border ve Renkler)
     const btnInbox = document.getElementById("btn-tab-inbox");
-    const btnSent = document.getElementById("btn-tab-sent");
+    const btnSent  = document.getElementById("btn-tab-sent");
+    const btnNotif = document.getElementById("btn-tab-notif");
 
-    if (view === 'inbox') {
-        // Inbox Aktif
-        btnInbox.classList.add("border-BTrustOn-accent", "text-white");
-        btnInbox.classList.remove("border-transparent", "text-white/50"); 
-        
-        // Sent Pasif
-        btnSent.classList.remove("border-BTrustOn-accent", "text-white");
-        btnSent.classList.add("border-transparent", "text-white/50");
-    } else {
-        // Sent Aktif
-        btnSent.classList.add("border-BTrustOn-accent", "text-white");
-        btnSent.classList.remove("border-transparent", "text-white/50");
-        
-        // Inbox Pasif
-        btnInbox.classList.remove("border-BTrustOn-accent", "text-white");
-        btnInbox.classList.add("border-transparent", "text-white/50");
-    }
+    const setActive = (btn) => {
+      if(!btn) return;
+      btn.classList.add("border-BTrustOn-accent", "text-white");
+      btn.classList.remove("border-transparent", "text-white/50");
+    };
+    const setInactive = (btn) => {
+      if(!btn) return;
+      btn.classList.remove("border-BTrustOn-accent", "text-white");
+      btn.classList.add("border-transparent", "text-white/50");
+    };
 
-    // Listeyi yeniden çiz (Filtreleyerek)
+    // Reset all
+    setInactive(btnInbox);
+    setInactive(btnSent);
+    setInactive(btnNotif);
+
+    // Activate selected
+    if (view === 'inbox') setActive(btnInbox);
+    else if (view === 'sent') setActive(btnSent);
+    else setActive(btnNotif);
+
+    // Listeyi yeniden çiz
     renderInboxItems();
 }
 /* --- PREMIUM INBOX ENGINE (EN ALTA EKLE) --- */
@@ -7577,8 +7828,443 @@ let inboxData = [];
 
 // --- Notifications (for admin reject/approve updates) ---
 let notificationsUnreadCount = 0;
+let notificationsData = [];
 let messagesUnreadCount = 0;
 let _notifSubscribed = false;
+
+// --- Saved Companies (KOBI MVP: Save + Note) ---
+let savedCompanyIds = new Set();         // Set of saved_company_id
+let savedCompaniesData = [];             // [{id,rowId,saved_company_id,note,created_at, company:{...}}]
+let _savedLoadedOnce = false;
+
+// Saved snapshots indexed from rendered cards (safe: used only to enrich saved insert payload)
+const companySnapshotById = {};
+function normalizeCompanySnapshot(c) {
+  if (!c) return null;
+  const id = c.id || c.profile_id || c.company_id;
+  if (!id) return null;
+  return {
+    id,
+    name: c.company_name || c.name || c.company || "Company",
+    logo_url: c.logo_url || c.company_logo_url || c.logo || null,
+    city: c.city || "—",
+    country: c.country || "TR",
+    type: c.business_type || c.company_type || c.type || "Company"
+  };
+}
+function indexCompanySnapshot(c) {
+  const snap = normalizeCompanySnapshot(c);
+  if (snap && snap.id) companySnapshotById[String(snap.id)] = snap;
+}
+function getCompanySnapshotById(id) {
+  return companySnapshotById[String(id)] || null;
+}
+
+// UUID helper (for Supabase ids)
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isUuid(v){ return UUID_RE.test(String(v || '')); }
+
+function getMyCompanyId() {
+  try { return localStorage.getItem("BTrustOn_my_company_id"); } catch(e) { return null; }
+}
+
+function updateSavedBadges() {
+  const count = (savedCompanyIds && typeof savedCompanyIds.size === 'number')
+    ? savedCompanyIds.size
+    : (savedCompaniesData.length || 0);
+
+  const badge = document.getElementById("saved-badge");
+  const panelBadge = document.getElementById("saved-panel-count");
+
+  if (badge) {
+    badge.textContent = String(count);
+    if (count > 0) badge.classList.remove("hidden");
+    else badge.classList.add("hidden");
+  }
+  if (panelBadge) {
+    panelBadge.textContent = String(count);
+    if (count > 0) panelBadge.classList.remove("hidden");
+    else panelBadge.classList.add("hidden");
+  }
+}
+
+function isCompanySaved(companyId) {
+  if (!companyId) return false;
+  return savedCompanyIds.has(String(companyId));
+}
+
+async function fetchSavedCompanies() {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      savedCompanyIds = new Set();
+      savedCompaniesData = [];
+      updateSavedBadges();
+      return;
+    }
+
+    const storedCompanyId = getMyCompanyId();
+    const companyId = (storedCompanyId && isUuid(storedCompanyId)) ? storedCompanyId : user.id;
+    try { if (storedCompanyId !== companyId) localStorage.setItem("BTrustOn_my_company_id", String(companyId)); } catch(e) {}
+
+    const { data: rows, error } = await supabaseClient
+      .from('saved_companies')
+      .select('id, company_id, saved_company_id, note, created_at, updated_at, saved_company_name, saved_company_logo_url, saved_company_country, saved_company_city, saved_company_type')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn("fetchSavedCompanies error:", error.message);
+      savedCompanyIds = new Set();
+      savedCompaniesData = [];
+      updateSavedBadges();
+      return;
+    }
+
+    const list = rows || [];
+    savedCompanyIds = new Set(list.map(r => String(r.saved_company_id)));
+
+    // ✅ SAFE MODE: Use snapshot fields stored in saved_companies.
+    // This avoids any dependency on profiles RLS/policies.
+    savedCompaniesData = list.map(r => {
+      const company = {
+        id: r.saved_company_id,
+        name: (r.saved_company_name || "Company"),
+        logo_url: r.saved_company_logo_url || null,
+        city: r.saved_company_city || "—",
+        country: r.saved_company_country || "TR",
+        type: r.saved_company_type || "Company"
+      };
+      return {
+        rowId: r.id,
+        saved_company_id: r.saved_company_id,
+        note: r.note || "",
+        created_at: r.created_at,
+        company
+      };
+    });
+
+    updateSavedBadges();
+    _savedLoadedOnce = true;
+
+  } catch (e) {
+    console.warn("fetchSavedCompanies exception:", e);
+  }
+}
+
+function refreshCompanyCardsAfterSavedChange() {
+  try {
+    if (typeof isSearchActive !== 'undefined' && isSearchActive) {
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value : "";
+      if (typeof renderSearchResults === "function") renderSearchResults(q);
+    } else {
+      if (typeof renderShowcase === "function") renderShowcase();
+    }
+  } catch(e) {}
+}
+
+async function toggleSaveCompany(targetCompanyId) {
+  try {
+    if (!targetCompanyId) return;
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      // login prompt
+      if (typeof toggleModal === "function") toggleModal("modal-join");
+      else showToast("Login required", "Please sign in to save companies.", "brand");
+      return;
+    }
+
+    const storedCompanyId2 = getMyCompanyId();
+    const myCompanyId = (storedCompanyId2 && isUuid(storedCompanyId2)) ? storedCompanyId2 : user.id;
+    try { if (storedCompanyId2 !== myCompanyId) localStorage.setItem("BTrustOn_my_company_id", String(myCompanyId)); } catch(e) {}
+
+    if (String(targetCompanyId) === String(myCompanyId)) {
+      showToast("Not allowed", "You can't save your own company.", "warn");
+      return;
+    }
+
+    // Only registered (UUID) companies can be saved
+    if (!isUuid(targetCompanyId)) {
+      showToast("Unavailable", "Only registered companies can be saved.", "warn");
+      return;
+    }
+
+    const alreadySaved = isCompanySaved(targetCompanyId);
+
+    if (alreadySaved) {
+      const { error } = await supabaseClient
+        .from('saved_companies')
+        .delete()
+        .eq('company_id', myCompanyId)
+        .eq('saved_company_id', targetCompanyId);
+
+      if (error) {
+        showToast("Error", "Couldn't remove saved company: " + error.message, "error");
+        return;
+      }
+
+      savedCompanyIds.delete(String(targetCompanyId));
+      savedCompaniesData = savedCompaniesData.filter(x => String(x.saved_company_id) !== String(targetCompanyId));
+
+      updateSavedBadges();
+      updateSaveButtonsUI();
+      refreshCompanyCardsAfterSavedChange();
+      if (document.getElementById("saved-panel")?.classList.contains("open")) renderSavedCompanies();
+
+      showToast("Removed", "Company removed from Saved.", "success");
+      return;
+    }
+
+    // Insert
+    const snap = getCompanySnapshotById(targetCompanyId) ||
+      normalizeCompanySnapshot((typeof selectedCompany !== 'undefined' && selectedCompany && String(selectedCompany.id) === String(targetCompanyId)) ? selectedCompany : null);
+
+    const payload = {
+      company_id: myCompanyId,
+      saved_company_id: targetCompanyId,
+      note: "",
+      created_by_user_id: user.id,
+      saved_company_name: snap ? snap.name : null,
+      saved_company_logo_url: snap ? snap.logo_url : null,
+      saved_company_city: snap ? snap.city : null,
+      saved_company_country: snap ? snap.country : null,
+      saved_company_type: snap ? snap.type : null
+    };
+
+    const { data, error } = await supabaseClient
+      .from('saved_companies')
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (error) {
+      showToast("Error", "Couldn't save company: " + error.message, "error");
+      return;
+    }
+
+    // Optimistic update: we will refetch for correct ordering + profile fields
+    savedCompanyIds.add(String(targetCompanyId));
+    await fetchSavedCompanies();
+
+    updateSavedBadges();
+    updateSaveButtonsUI();
+    refreshCompanyCardsAfterSavedChange();
+    if (document.getElementById("saved-panel")?.classList.contains("open")) renderSavedCompanies();
+
+    showToast("Saved", "Company added to Saved.", "success");
+
+  } catch (e) {
+    console.warn("toggleSaveCompany exception:", e);
+    showToast("Error", "Unexpected error while saving.", "error");
+  }
+}
+
+async function updateSavedNote(rowId, newNote) {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const storedCompanyId2 = getMyCompanyId();
+    const myCompanyId = (storedCompanyId2 && isUuid(storedCompanyId2)) ? storedCompanyId2 : user.id;
+    try { if (storedCompanyId2 !== myCompanyId) localStorage.setItem("BTrustOn_my_company_id", String(myCompanyId)); } catch(e) {}
+
+    const { error } = await supabaseClient
+      .from('saved_companies')
+      .update({ note: String(newNote || "").slice(0, 800) })
+      .eq('id', rowId)
+      .eq('company_id', myCompanyId);
+
+    if (error) {
+      showToast("Error", "Note couldn't be saved: " + error.message, "error");
+      return;
+    }
+
+    const item = savedCompaniesData.find(x => x.rowId === rowId);
+    if (item) item.note = String(newNote || "");
+
+    showToast("Saved", "Note updated.", "success");
+  } catch (e) {
+    console.warn("updateSavedNote exception:", e);
+  }
+}
+
+async function removeSavedRow(rowId, savedCompanyId) {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+    const storedCompanyId2 = getMyCompanyId();
+    const myCompanyId = (storedCompanyId2 && isUuid(storedCompanyId2)) ? storedCompanyId2 : user.id;
+    try { if (storedCompanyId2 !== myCompanyId) localStorage.setItem("BTrustOn_my_company_id", String(myCompanyId)); } catch(e) {}
+
+    const { error } = await supabaseClient
+      .from('saved_companies')
+      .delete()
+      .eq('id', rowId)
+      .eq('company_id', myCompanyId);
+
+    if (error) {
+      showToast("Error", "Couldn't remove: " + error.message, "error");
+      return;
+    }
+
+    savedCompanyIds.delete(String(savedCompanyId));
+    savedCompaniesData = savedCompaniesData.filter(x => x.rowId !== rowId);
+
+    updateSavedBadges();
+    updateSaveButtonsUI();
+    refreshCompanyCardsAfterSavedChange();
+    renderSavedCompanies();
+
+    showToast("Removed", "Company removed.", "success");
+  } catch(e) {
+    console.warn("removeSavedRow exception:", e);
+  }
+}
+
+function renderSavedCompanies() {
+  const listEl = document.getElementById("saved-list");
+  const emptyEl = document.getElementById("saved-empty");
+  if (!listEl || !emptyEl) return;
+
+  const q = (document.getElementById("saved-search")?.value || "").trim().toLowerCase();
+
+  let list = Array.isArray(savedCompaniesData) ? savedCompaniesData.slice() : [];
+  if (q) {
+    list = list.filter(x => {
+      const c = x.company || {};
+      const hay = `${c.name || ""} ${c.type || ""} ${c.city || ""} ${c.country || ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  if (!list.length) {
+    listEl.innerHTML = "";
+    emptyEl.classList.remove("hidden");
+    return;
+  }
+
+  emptyEl.classList.add("hidden");
+
+  listEl.innerHTML = list.map(item => {
+    const c = item.company || {};
+    const initials = (c.name || "C").trim().slice(0, 1).toUpperCase();
+    const logo = c.logo_url
+      ? `<img src="${c.logo_url}" alt="" class="w-12 h-12 rounded-xl object-cover border border-gray-200 bg-white" />`
+      : `<div class="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center font-bold text-sm text-cyan-900">${initials}</div>`;
+
+    const missingBadge = c._missing
+      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">Unavailable</span>`
+      : "";
+
+    const metaCity = c.city || "—";
+    const metaCountry = c.country || "—";
+    const metaType = c.type || "Company";
+
+    return `
+      <div class="saved-item rounded-2xl p-4 bg-white border border-gray-200 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="shrink-0 cursor-pointer" onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
+            ${logo}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline truncate"
+                     onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
+                  ${c.name || "Company"}${missingBadge}
+                </div>
+                <div class="text-[11px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">${metaType}</span>
+                  <span class="text-gray-400">•</span>
+                  <span class="truncate">${metaCity}, ${metaCountry}</span>
+                </div>
+              </div>
+              <button
+                class="w-9 h-9 rounded-xl border border-gray-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition flex items-center justify-center"
+                title="Remove"
+                onclick="event.stopPropagation(); removeSavedRow('${item.rowId}', '${item.saved_company_id}')"
+              >
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+
+            <div class="mt-3">
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Note</label>
+              <textarea
+                class="w-full min-h-[68px] rounded-xl border border-gray-200 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-300"
+                placeholder="Add a short note (e.g., RFQ soon, good ref, price range...)"
+                onkeydown="event.stopPropagation()"
+                onclick="event.stopPropagation()"
+                onblur="updateSavedNote('${item.rowId}', this.value)"
+              >${(item.note || "").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+
+function toggleSavedPanel() {
+  const panel = document.getElementById("saved-panel");
+  const overlay = document.getElementById("saved-overlay");
+  if (!panel || !overlay) return;
+
+  const isOpen = panel.classList.contains("open");
+
+  if (isOpen) {
+    panel.classList.remove("open");
+    overlay.classList.remove("opacity-100");
+    overlay.classList.add("opacity-0");
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+  } else {
+    overlay.classList.remove("hidden");
+    setTimeout(() => {
+      overlay.classList.remove("opacity-0");
+      overlay.classList.add("opacity-100");
+      panel.classList.add("open");
+    }, 10);
+
+    // always refresh when opening (ensures new saves appear)
+    (async () => {
+      await fetchSavedCompanies();
+      renderSavedCompanies();
+    })();
+  }
+}
+
+function updateSaveButtonsUI() {
+  // Profile header save icon
+  try {
+    const btn = document.getElementById("btn-save-company");
+    const icon = document.getElementById("icon-save-company");
+    if (!btn || !icon) return;
+
+    // if no selected company, hide
+    if (typeof selectedCompany === "undefined" || !selectedCompany || !selectedCompany.id) {
+      btn.classList.add("hidden");
+      return;
+    }
+
+    // hide for own company
+    const myIdRaw = getMyCompanyId();
+    const myId = (myIdRaw && isUuid(myIdRaw)) ? myIdRaw : null;
+    if (myId && String(selectedCompany.id) === String(myId)) {
+      btn.classList.add("hidden");
+      return;
+    }
+
+    btn.classList.remove("hidden");
+    const saved = isCompanySaved(selectedCompany.id);
+
+    icon.classList.toggle("fa-solid", saved);
+    icon.classList.toggle("fa-regular", !saved);
+
+  } catch(e) {}
+}
+
  
 
 // Tarih formatlayıcı (Örn: "2 hours ago" yazar)
@@ -7816,25 +8502,32 @@ function subscribeToMessages() {
 }
 
 // --- Notifications: fetch + realtime subscribe ---
+// --- Notifications fetch + realtime subscribe ---
 async function fetchNotificationsUnread() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
+    // ✅ Fetch full list so the Inbox can actually show notifications
     const { data, error } = await supabaseClient
       .from('notifications')
-      .select('id')
+      .select('id,title,message,created_at,is_read')
       .eq('recipient_user_id', user.id)
-      .eq('is_read', false);
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (error) {
       console.warn('Notifications fetch error:', error.message);
       return;
     }
 
-    notificationsUnreadCount = (data || []).length;
+    const rawList = Array.isArray(data) ? data : [];
+    notificationsData = (typeof _applyNotifVisibility === "function") ? _applyNotifVisibility(rawList) : rawList;
 
-    // Refresh badges (renderInboxItems will call updateBadges with combined count)
+    // Count unread (supports boolean / 0-1 / null)
+    notificationsUnreadCount = notificationsData.filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
+
+    // Refresh badges + lists
     if (typeof renderInboxItems === "function") {
       renderInboxItems();
     } else if (typeof updateBadges === "function") {
@@ -7865,10 +8558,27 @@ function subscribeNotifications() {
         (payload) => {
           const n = payload.new || {};
 
-          if (n.is_read === false || n.is_read === 0 || n.is_read === null) {
+          // If user previously deleted/cleared locally, don't re-add
+          if (typeof _isNotifHidden === "function" && _isNotifHidden(n)) return;
+
+          const isUnread = (n.is_read === false || n.is_read === 0 || n.is_read === null);
+          if (isUnread) {
             notificationsUnreadCount += 1;
           }
-          if (typeof updateBadges === "function") {
+
+          // ✅ Keep list in sync so Inbox isn't empty
+          if (!Array.isArray(notificationsData)) notificationsData = [];
+          notificationsData.unshift({
+            id: n.id,
+            title: n.title || "Notification",
+            message: n.message || "",
+            created_at: n.created_at || new Date().toISOString(),
+            is_read: n.is_read
+          });
+
+          if (typeof renderInboxItems === "function") {
+            renderInboxItems();
+          } else if (typeof updateBadges === "function") {
             updateBadges(messagesUnreadCount + notificationsUnreadCount);
           }
 
@@ -7883,6 +8593,187 @@ function subscribeNotifications() {
       .subscribe();
   });
 }
+
+
+/* --- NOTIFICATION INBOX HELPERS --- */
+async function markNotificationRead(notifId) {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user || !notifId) return;
+
+    // Optimistic UI
+    const idx = (notificationsData || []).findIndex(n => String(n.id) === String(notifId));
+    if (idx > -1) {
+      const wasUnread = (notificationsData[idx].is_read === false || notificationsData[idx].is_read === 0 || notificationsData[idx].is_read === null);
+      notificationsData[idx].is_read = true;
+      if (wasUnread && notificationsUnreadCount > 0) notificationsUnreadCount -= 1;
+    }
+
+    await supabaseClient
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', notifId)
+      .eq('recipient_user_id', user.id);
+
+    renderInboxItems();
+  } catch (e) {
+    console.warn("markNotificationRead error:", e);
+  }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) throw new Error("Login required");
+
+    const unreadExists = (notificationsData || []).some(n => (n.is_read === false || n.is_read === 0 || n.is_read === null));
+    if (!unreadExists) {
+      showToast("Up to date", "All notifications are already read.", "info");
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("recipient_user_id", user.id)
+      .or("is_read.eq.false,is_read.eq.0,is_read.is.null");
+
+    if (error) throw error;
+
+    (notificationsData || []).forEach(n => n.is_read = true);
+    notificationsUnreadCount = 0;
+    renderInboxItems();
+    showToast("Success", "All notifications marked as read.", "success");
+  } catch (e) {
+    console.error("Mark all notifications read error:", e);
+    showToast("Error", "Could not update notifications.", "error");
+  }
+}
+
+
+/* --- NOTIFICATION VISIBILITY (DB DELETE + LOCAL FALLBACK) --- */
+const _notifDismissKey = "bton_notif_dismissed_ids";
+const _notifClearedAtKey = "bton_notif_cleared_at";
+
+function _getNotifDismissedIds() {
+  try { return JSON.parse(localStorage.getItem(_notifDismissKey) || "[]"); }
+  catch { return []; }
+}
+function _setNotifDismissedIds(arr) {
+  try { localStorage.setItem(_notifDismissKey, JSON.stringify(Array.isArray(arr) ? arr : [])); } catch {}
+}
+function _getNotifClearedAt() {
+  const v = localStorage.getItem(_notifClearedAtKey);
+  return v ? Date.parse(v) : null;
+}
+function _setNotifClearedAt(isoOrNull) {
+  try {
+    if (!isoOrNull) localStorage.removeItem(_notifClearedAtKey);
+    else localStorage.setItem(_notifClearedAtKey, isoOrNull);
+  } catch {}
+}
+function _isNotifHidden(n) {
+  const ids = _getNotifDismissedIds();
+  if (n && n.id != null && ids.includes(String(n.id))) return true;
+
+  const clearedAt = _getNotifClearedAt();
+  if (clearedAt) {
+    const t = n && n.created_at ? Date.parse(n.created_at) : null;
+    if (t && t <= clearedAt) return true;
+  }
+  return false;
+}
+function _applyNotifVisibility(list) {
+  const arr = Array.isArray(list) ? list : [];
+  return arr.filter(n => !_isNotifHidden(n));
+}
+function _dismissNotifIdLocal(id) {
+  const ids = _getNotifDismissedIds();
+  const s = String(id);
+  if (!ids.includes(s)) {
+    ids.unshift(s);
+    _setNotifDismissedIds(ids.slice(0, 500)); // cap
+  }
+}
+
+/* --- Single notification delete (with fallback) --- */
+function deleteNotification(notifId) {
+  openDeleteModal("Delete this notification?", async () => {
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error("Login required");
+
+      // Optimistic UI remove
+      const before = Array.isArray(notificationsData) ? notificationsData : [];
+      const target = before.find(n => String(n.id) === String(notifId));
+      const wasUnread = target ? (target.is_read === false || target.is_read === 0 || target.is_read === null) : false;
+
+      notificationsData = before.filter(n => String(n.id) !== String(notifId));
+      if (wasUnread && notificationsUnreadCount > 0) notificationsUnreadCount -= 1;
+      renderInboxItems();
+
+      // Try DB delete (may be blocked by RLS and return 0 rows without error)
+      const { data: deletedRows, error } = await supabaseClient
+        .from("notifications")
+        .delete()
+        .eq("id", notifId)
+        .eq("recipient_user_id", user.id)
+        .select("id");
+
+      if (error) throw error;
+
+      if (!deletedRows || deletedRows.length === 0) {
+        // Fallback: hide locally so refresh won't bring it back
+        _dismissNotifIdLocal(notifId);
+      }
+
+      showToast("Deleted", "Notification removed.", "success");
+    } catch (e) {
+      console.error("Delete notification error:", e);
+      showToast("Error", "Failed to delete notification.", "error");
+      // In case of error, re-fetch to recover UI
+      try { await fetchNotificationsUnread(); } catch {}
+    }
+  });
+}
+
+
+function deleteAllNotifications() {
+  openDeleteModal("Are you sure you want to delete all notifications?", async () => {
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error("Login required");
+
+      // Try DB delete first (may be blocked by RLS and return 0 rows without error)
+      const { data: deletedRows, error } = await supabaseClient
+        .from("notifications")
+        .delete()
+        .eq("recipient_user_id", user.id)
+        .select("id");
+
+      if (error) throw error;
+
+      if (!deletedRows || deletedRows.length === 0) {
+        // Fallback: keep it "deleted" on this device by hiding everything up to now
+        _setNotifClearedAt(new Date().toISOString());
+        _setNotifDismissedIds([]);
+      } else {
+        // DB delete worked → clear local hide state
+        _setNotifClearedAt(null);
+        _setNotifDismissedIds([]);
+      }
+
+      notificationsData = [];
+      notificationsUnreadCount = 0;
+      renderInboxItems();
+      showToast("Cleared", "All notifications removed.", "success");
+    } catch (e) {
+      console.error("Delete notifications error:", e);
+      showToast("Error", "Failed to delete notifications.", "error");
+    }
+  });
+}
+
 
 function toggleInbox() {
   const panel = document.getElementById("inbox-panel");
@@ -7925,6 +8816,60 @@ function renderInboxItems() {
 
   inboxData.forEach(item => { if(item.unread) totalUnreadCount++; });
   messagesUnreadCount = totalUnreadCount;
+
+  // 1.5 NOTIFICATIONS VIEW
+  if (currentInboxView === 'notifications') {
+    const list = Array.isArray(notificationsData) ? notificationsData : [];
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+            <i class="fa-solid fa-bell text-4xl mb-3 opacity-20"></i>
+            <p class="text-xs">No notifications.</p>
+        </div>`;
+      updateBadges(messagesUnreadCount + notificationsUnreadCount);
+      return;
+    }
+
+    list.forEach(n => {
+      const isUnread = (n.is_read === false || n.is_read === 0 || n.is_read === null);
+      const title = (n.title || "Notification").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const msg = (n.message || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const when = n.created_at ? timeAgo(n.created_at) : "";
+      const nidSafe = String(n.id).replace(/'/g, "\\'");
+
+      const card = document.createElement("div");
+      card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-gray-200 transition-all duration-200 cursor-pointer group`;
+      card.onclick = () => { if (isUnread) markNotificationRead(n.id); };
+
+      card.innerHTML = `
+        <button type="button" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition" title="Delete" onclick="event.stopPropagation(); deleteNotification('${nidSafe}')">
+          <i class="fa-solid fa-trash text-[11px]"></i>
+        </button>
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0 text-rose-600">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-extrabold text-gray-800 leading-tight break-words">${title}</div>
+                <div class="text-[11px] text-gray-400 mt-0.5">${when}</div>
+              </div>
+              ${isUnread ? `<span class="mt-1 inline-flex items-center gap-1 text-[10px] font-extrabold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">NEW</span>` : ``}
+            </div>
+            <div class="text-[12px] text-gray-600 mt-2 leading-relaxed whitespace-pre-wrap break-words">${msg}</div>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    updateBadges(messagesUnreadCount + notificationsUnreadCount);
+    return;
+  }
+
 
   // 2. FİLTRELEME
   const filteredData = inboxData.filter(item => {
@@ -8059,6 +9004,18 @@ function updateBadges(count) {
         badgeHeader.classList.add("hidden");
       }
   }
+
+  // Notifications tab badge (shows only notifications unread)
+  const notifTabBadge = document.getElementById("notif-tab-badge");
+  if (notifTabBadge) {
+      if (notificationsUnreadCount > 0) {
+          notifTabBadge.textContent = String(notificationsUnreadCount);
+          notifTabBadge.classList.remove("hidden");
+      } else {
+          notifTabBadge.classList.add("hidden");
+      }
+  }
+
 }
 // Sayfa açılınca badge'i kontrol et
 document.addEventListener("DOMContentLoaded", () => {
@@ -9222,6 +10179,12 @@ owner_name: p.owner_name,
 /* --- TÜMÜNÜ OKUNDU YAP (GÜÇLENDİRİLMİŞ) --- */
 /* --- TÜMÜNÜ OKUNDU YAP (AKILLI KONTROL) --- */
 async function markAllInboxRead() {
+  // Notifications tab uses notifications table
+  if (currentInboxView === 'notifications') {
+    await markAllNotificationsRead();
+    return;
+  }
+
   const btn = document.querySelector("#inbox-panel button[onclick='markAllInboxRead()']");
   
   // 1. ÖNCE KONTROL ET: Hiç okunmamış mesaj var mı?
@@ -9268,6 +10231,12 @@ async function markAllInboxRead() {
 
 /* --- EKSİK OLAN FONKSİYON: TÜMÜNÜ SİL --- */
 function deleteAllInbox() {
+    // Notifications tab uses notifications table
+    if (currentInboxView === 'notifications') {
+        deleteAllNotifications();
+        return;
+    }
+
     // 1. Hangi kutuda olduğumuzu kontrol et
     const isInbox = currentInboxView === 'inbox';
     const label = isInbox ? "received messages" : "sent messages";
@@ -9356,12 +10325,18 @@ function deleteAllInbox() {
 if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
                 return; // Admin ise bu turu pas geç, ekrana çizme
             }
+            // Index snapshot for Saved insert payload (safe)
+            indexCompanySnapshot(company);
             const score = computeScore(company.meta);
             const desc = currentLang === "tr" && company.desc_tr ? company.desc_tr : company.desc;
             const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
             
             // Veritabanındaki "type" veya "type_label" alanını kullanıyoruz
             const compType = company.type_label || company.type || "Company";
+
+            const saved = (typeof isCompanySaved === 'function') ? isCompanySaved(company.id) : false;
+
+            const canSave = (typeof isUuid === 'function') ? isUuid(company.id) : false;
 
             const card = document.createElement("div");
             card.className = "bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-glass flex flex-col h-full hover:border-BTrustOn-accent hover:shadow-lg hover:-translate-y-1 transition cursor-pointer fade-in";
@@ -9384,12 +10359,32 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
                       </div>
 
                     </div>
-                    <div class="text-right shrink-0 pl-2">
-                      <div class="text-xs font-header font-bold text-BTrustOn-primary leading-none">
-                        ${score}<span class="text-[10px] text-gray-400">/100</span>
-                      </div>
-                      <div class="text-[10px] text-emerald-500 font-semibold mt-0.5">
-                        ${getScoreLabel(score)}
+                    <div class="shrink-0 pl-2 flex flex-col items-end gap-2">
+                      ${canSave ? `
+                      <button
+                        class="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-slate-50 hover:border-BTrustOn-accent transition"
+                        title="Save company"
+                        onclick="event.stopPropagation(); toggleSaveCompany('${company.id}');"
+                      >
+                        <i class="${saved ? 'fa-solid' : 'fa-regular'} fa-bookmark text-[14px] text-BTrustOn-accent"></i>
+                      </button>
+                      ` : `
+                      <button
+                        class="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center opacity-50 cursor-not-allowed"
+                        title="Only registered companies can be saved"
+                        onclick="event.stopPropagation(); showToast('Unavailable','Only registered companies can be saved.','warn');"
+                      >
+                        <i class="fa-regular fa-bookmark text-[14px] text-BTrustOn-accent"></i>
+                      </button>
+                      `}
+
+                      <div class="text-right">
+                        <div class="text-xs font-header font-bold text-BTrustOn-primary leading-none">
+                          ${score}<span class="text-[10px] text-gray-400">/100</span>
+                        </div>
+                        <div class="text-[10px] text-emerald-500 font-semibold mt-0.5">
+                          ${getScoreLabel(score)}
+                        </div>
                       </div>
                     </div>
                   </div>
