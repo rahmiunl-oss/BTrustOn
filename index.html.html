@@ -5257,7 +5257,7 @@ try {
       try {
           const { data: profile, error } = await supabaseClient
               .from('profiles')
-              .select('*')
+              .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
               .eq('id', companyId)
               .single();
 
@@ -6189,7 +6189,7 @@ async function saveProfileData() {
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
-            name, city, sector, desc, tagline,
+            name, country, city, sector, desc, tagline,
             website, phone, contact_email: contactEmail,
             address, type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
@@ -6709,8 +6709,6 @@ function servicePickSuggestion(s) {
       
 
       switchLanguage("en");
-      // initRealData(); // disabled to prevent double-loading
-
       initShowcaseSystem();
     });
 /* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
@@ -7294,7 +7292,7 @@ async function fetchAllPublicProfiles() {
   // 1. Supabase'den profilleri çek
   const { data: profiles, error } = await supabaseClient
     .from('profiles')
-    .select('*');
+    .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at');
 
   if (error || !profiles) {
     console.log("Henüz kayıtlı şirket yok veya hata oluştu.");
@@ -7392,7 +7390,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   // 3. PROFİL VERİSİNİ ÇEK
   const { data: profile, error } = await supabaseClient
     .from('profiles')
-    .select('*')
+    .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
     .eq('id', session.user.id)
     .single();
 
@@ -7408,6 +7406,8 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     address: profile.address || "",
     subscription_tier: profile.subscription_tier || 'free', 
     verification_status: profile.verification_status || 'none',
+    verification_celebrated: (profile.verification_celebrated ?? false),
+    verification_celebrated_at: (profile.verification_celebrated_at ?? null),
     tax_id: profile.tax_id || "",
     duns_number: profile.duns_number || "",  
     tagline: profile.tagline || "",
@@ -7571,7 +7571,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderTopCompanies();
   startTopAnimations();
   switchLanguage("en");
-  initRealData();
+  try {
+    if (!window.__realDataLoaded) {
+      window.__realDataLoaded = true;
+      await initRealData();
+    }
+  } catch (e) {
+    console.error("initRealData failed", e);
+  }
   initShowcaseSystem();
 
   // 2) Fetch public profiles (can run after correct view is already visible)
@@ -8493,7 +8500,7 @@ async function fetchInboxMessages() {
     // 1. Tüm mesajları çek
     const { data: rawMessages, error } = await supabaseClient
         .from('messages')
-        .select('*')
+        .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
@@ -9385,7 +9392,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
     // --- SORGULAMA MANTIĞI DEĞİŞTİ ---
     let query = supabaseClient
         .from('messages')
-        .select('*')
+        .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
         .order('created_at', { ascending: true });
 
     // Eğer Partner ID 'null' ise (MİSAFİR SENARYOSU)
@@ -10395,7 +10402,7 @@ async function initRealData() {
   // 1. Supabase'den tüm profilleri al
   const { data: profiles, error } = await supabaseClient
     .from('profiles')
-    .select('*');
+    .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at');
 
   if (error) { console.error("Veri çekme hatası:", error); return; }
   if (!profiles) return;
@@ -11649,7 +11656,7 @@ async function loadAdminData() {
     // Supabase'den 'pending' olanları çek
     const { data: requests, error } = await supabaseClient
         .from('profiles')
-        .select('*')
+        .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
         .eq('verification_status', 'pending')
         .order('updated_at', { ascending: false });
 
@@ -11731,6 +11738,8 @@ async function processVerification(userId, action) {
         updates = {
             verification_status: 'verified',
             subscription_tier: 'pro',
+            verification_celebrated: false,
+            verification_celebrated_at: null,
             subscription_status: 'active_trial',
             trial_end_date: endDate.toISOString(),
             verification_reject_reason: null,
@@ -11840,17 +11849,42 @@ async function upgradeToPro() {
 /* --- KUTLAMA MANTIĞI --- */
 
 // 1. Durumu Kontrol Et ve Kutla
-function checkAndTriggerCelebration(company) {
-    // Sadece 'verified' statüsündekiler için
-    if (company.verification_status === 'verified') {
-        
-        // Daha önce kutladık mı? (Tarayıcı hafızasına bak)
-        const hasSeen = localStorage.getItem(`celebrated_${company.id}`);
-        
-        // Eğer daha önce görmediyse KUTLA!
-        if (!hasSeen) {
-            openCelebrationModal();
+async function checkAndTriggerCelebration(company) {
+    try {
+        // Only for verified companies
+        if (!company || company.verification_status !== 'verified') return;
+
+        // Prefer DB-backed flag (works across devices)
+        let hasSeen = !!company.verification_celebrated;
+
+        // Back-compat: if the field isn't on the object yet, fetch from DB (current user only)
+        if (typeof company.verification_celebrated === 'undefined') {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user && String(user.id) === String(company.id)) {
+                const { data, error } = await supabaseClient
+                    .from('profiles')
+                    .select('verification_celebrated')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!error && data) {
+                    hasSeen = !!data.verification_celebrated;
+                    company.verification_celebrated = hasSeen;
+                }
+            }
         }
+
+        // Fallback (old per-device flag) just in case
+        if (!hasSeen) {
+            try {
+                const ls = localStorage.getItem(`celebrated_${company.id}`);
+                if (ls === "true") hasSeen = true;
+            } catch(e) {}
+        }
+
+        if (!hasSeen) openCelebrationModal();
+    } catch (e) {
+        console.warn("checkAndTriggerCelebration error:", e);
     }
 }
 
@@ -11872,14 +11906,44 @@ function openCelebrationModal() {
     // BURADAKİ KONFETİ KODLARINI SİLDİK (Daha profesyonel durması için)
 }
 // 3. Modalı Kapat ve Kaydet
-function closeCelebration() {
+async function closeCelebration() {
     const modal = document.getElementById("modal-celebration");
-    if(modal) modal.classList.add("opacity-0", "pointer-events-none");
-    
-    // Hafızaya kaydet ki tekrar tekrar çıkmasın
-    if(selectedCompany) {
-        localStorage.setItem(`celebrated_${selectedCompany.id}`, "true");
+    if (modal) modal.classList.add("opacity-0", "pointer-events-none");
+
+    // ✅ Persist "seen" state in DB so it won't show again on another device
+    try {
+        if (selectedCompany && selectedCompany.id) {
+            const nowIso = new Date().toISOString();
+
+            // Update local runtime state immediately (better UX)
+            selectedCompany.verification_celebrated = true;
+            selectedCompany.verification_celebrated_at = nowIso;
+            try {
+                if (typeof database !== 'undefined' && Array.isArray(database)) {
+                    const idx = database.findIndex(c => String(c.id) === String(selectedCompany.id));
+                    if (idx > -1) {
+                        database[idx].verification_celebrated = true;
+                        database[idx].verification_celebrated_at = nowIso;
+                    }
+                }
+            } catch(e) {}
+
+            // Persist to Supabase
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+                .eq('id', selectedCompany.id);
+
+            if (error) throw error;
+        }
+    } catch (e) {
+        console.warn("Could not persist verification_celebrated:", e);
     }
+
+    // Fallback (legacy per-device flag)
+    try {
+        if (selectedCompany) localStorage.setItem(`celebrated_${selectedCompany.id}`, "true");
+    } catch(e) {}
 }
 
 // --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
