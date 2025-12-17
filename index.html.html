@@ -29,6 +29,59 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
   <script>
+/* =========================
+   TIME TRAVEL (TESTING)
+   - Leave __TEST_NOW_ISO__ = null for real time
+   - Or set to an ISO string, e.g. "2027-01-10T12:00:00+03:00"
+   - Optional: set localStorage key STRABON_TEST_NOW to an ISO string to override without editing code
+   - To turn off localStorage override: localStorage.setItem("STRABON_TEST_NOW","off")
+========================= */
+const __TEST_NOW_ISO__ = null;
+const __REAL_DATE_NOW__ = Date.now.bind(Date);
+
+function _getTestNowISO() {
+  try {
+    const v = localStorage.getItem("STRABON_TEST_NOW");
+    if (v && v !== "off" && v !== "null") return v;
+  } catch(e) {}
+  return __TEST_NOW_ISO__;
+}
+function nowTs() {
+  const iso = _getTestNowISO();
+  return iso ? new Date(iso).getTime() : __REAL_DATE_NOW__();
+}
+function nowDate() { return new Date(nowTs()); }
+function nowISO() { return nowDate().toISOString(); }
+
+// ==== TIME TRAVEL: Console helpers + visible badge ====
+try {
+  window.__STRABON_nowISO = nowISO;
+  window.__STRABON_nowTs = nowTs;
+  window.__STRABON_setTestNow = (iso)=>{ localStorage.setItem("STRABON_TEST_NOW", iso); location.reload(); };
+  window.__STRABON_clearTestNow = ()=>{ localStorage.setItem("STRABON_TEST_NOW","off"); location.reload(); };
+} catch(e) {}
+
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const iso = _getTestNowISO();
+    if (!iso) return;
+
+    const b = document.createElement("div");
+    b.className = "fixed top-3 right-3 z-[9999] rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 shadow";
+    const dt = new Date(iso);
+    b.innerHTML = `
+      <div class="font-semibold tracking-wide">TEST TIME ACTIVE</div>
+      <div class="mt-0.5">Now: <span class="font-mono">${dt.toLocaleString()}</span></div>
+      <button id="tt-off" class="mt-2 inline-flex items-center justify-center rounded-lg bg-amber-900 px-2 py-1 text-[11px] font-semibold text-amber-50">Turn off</button>
+    `;
+    document.body.appendChild(b);
+    b.querySelector("#tt-off")?.addEventListener("click", () => {
+      localStorage.setItem("STRABON_TEST_NOW","off");
+      location.reload();
+    });
+  } catch(e) {}
+});
+
     tailwind.config = {
       theme: {
         extend: {
@@ -594,7 +647,7 @@
     
     <button
       id="btn-nav-upgrade"
-      onclick="toggleModal('modal-upgrade')"
+      onclick="openUpgradeModal()"
       class="hidden flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold hover:shadow-md hover:scale-105 transition mr-2 animate-pulse-slow"
     >
       <i class="fa-solid fa-crown text-amber-600"></i>
@@ -1643,7 +1696,7 @@
                           <i class="fa-solid fa-chart-line text-BTrustOn-accent"></i>
                           Profile Analytics
                         </h3>
-                        <button id="btn-card-upgrade" onclick="toggleModal('modal-upgrade')" class="hidden bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-1 rounded border border-amber-200 transition shadow-sm items-center gap-1">
+                        <button id="btn-card-upgrade" onclick="openUpgradeModal()" class="hidden bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-1 rounded border border-amber-200 transition shadow-sm items-center gap-1">
                             <i class="fa-solid fa-bolt"></i> GO PRO
                         </button>
                     </div>
@@ -2724,15 +2777,15 @@
 
         <div class="bg-amber-50 border border-amber-100 rounded-lg p-2.5 mb-5 flex items-center gap-2 justify-center text-[10px] text-amber-800 font-bold">
             <i class="fa-solid fa-gift text-amber-500"></i> 
-            <span>6-Month Free Trial. No payment required.</span>
+            <span id="upgrade-offer-text">3-Month Free Trial. Then $19/month.</span>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
             <button onclick="toggleModal('modal-upgrade')" class="py-3 rounded-xl border border-gray-200 text-gray-500 font-bold text-xs hover:bg-gray-50 transition">
                 NO, THANKS
             </button>
-            <button onclick="upgradeToPro()" class="py-3 rounded-xl bg-gradient-to-r from-BTrustOn-accent to-blue-600 text-white font-bold text-xs shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] transition transform flex items-center justify-center gap-2">
-                <span>START FREE TRIAL</span>
+            <button id="btn-upgrade-cta" onclick="handleUpgradeCTA()" class="py-3 rounded-xl bg-gradient-to-r from-BTrustOn-accent to-blue-600 text-white font-bold text-xs shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] transition transform flex items-center justify-center gap-2">
+                <span id="upgrade-cta-label">START FREE TRIAL</span>
                 <i class="fa-solid fa-arrow-right"></i>
             </button>
         </div>
@@ -4065,7 +4118,7 @@ function getCompanyTypeBadge(rawType) {
       if (searchInput) searchInput.placeholder = t("search_ph");
 
       const yearSpan = document.getElementById("year-span");
-      if (yearSpan) yearSpan.textContent = new Date().getFullYear().toString();
+      if (yearSpan) yearSpan.textContent = nowDate().getFullYear().toString();
     }
 
     // TOP COMPANIES BAND
@@ -4732,7 +4785,7 @@ function _certParseDate(d) {
 function _certStatus(expiryDate) {
   const dt = _certParseDate(expiryDate);
   if (!dt) return "unknown";
-  const today = new Date();
+  const today = nowDate();
   today.setHours(0,0,0,0);
   dt.setHours(0,0,0,0);
   return (dt < today) ? "expired" : "valid";
@@ -4741,7 +4794,7 @@ function _certStatus(expiryDate) {
 function _certDaysLeft(expiryDate) {
   const dt = _certParseDate(expiryDate);
   if (!dt) return null;
-  const today = new Date();
+  const today = nowDate();
   today.setHours(0,0,0,0);
   dt.setHours(0,0,0,0);
   const diff = Math.round((dt.getTime() - today.getTime()) / (1000*60*60*24));
@@ -5011,7 +5064,7 @@ async function trackProfileView(targetProfileId) {
 
     // B. SPAM KONTROLÜ (LOCAL STORAGE)
     // Anahtar: "view_PROFILID_TARIH" (Örn: view_12345_2025-12-12)
-    const today = new Date().toISOString().split('T')[0]; 
+    const today = nowDate().toISOString().split('T')[0]; 
     const storageKey = `BTrustOn_view_${targetProfileId}_${today}`;
 
     // Eğer tarayıcıda "Bugün baktı" işareti varsa dur (Veritabanına gitme)
@@ -5054,7 +5107,7 @@ async function loadProfileAnalytics(profileId) {
     }
 
     // C. Tarih Hesabı (Son 90 Gün)
-    const ninetyDaysAgo = new Date();
+    const ninetyDaysAgo = nowDate();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     // D. Verileri Çek
@@ -5217,7 +5270,7 @@ async function openProfile(companyId, opts = {}) {
 try {
   const newHash = `#company=${encodeURIComponent(companyId)}`;
   if (window.location.hash !== newHash) {
-    const st = { view: "profile", id: String(companyId), t: Date.now() };
+    const st = { view: "profile", id: String(companyId), t: nowTs() };
     if (history && history.pushState && !window.__routeRestoring) history.pushState(st, "", newHash);
     else if (history && history.replaceState) history.replaceState(st, "", newHash);
     else window.location.hash = newHash;
@@ -5255,7 +5308,7 @@ try {
         showToast("Loading...", "Fetching company profile...", "info");
       }
       try {
-          const { data: profile, error } = await supabaseClient
+          let { data: profile, error } = await supabaseClient
               .from('profiles')
               .select('*')
               .eq('id', companyId)
@@ -6065,7 +6118,7 @@ async function saveProfileData() {
     let finalLogoUrl = selectedCompany.logo_url || null;
     if (typeof selectedLogoFile !== 'undefined' && selectedLogoFile) {
         const fileExt = selectedLogoFile.name.split('.').pop();
-        const filePath = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}-${nowTs()}.${fileExt}`;
         const { error: uploadError } = await supabaseClient.storage.from('logos').upload(filePath, selectedLogoFile);
         if (uploadError) throw uploadError;
         const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
@@ -6121,7 +6174,7 @@ async function saveProfileData() {
         
         if (typeof selectedOwnerFile !== 'undefined' && selectedOwnerFile) {
             const fileExt = selectedOwnerFile.name.split('.').pop();
-            const filePath = `owner-${user.id}-${Date.now()}.${fileExt}`;
+            const filePath = `owner-${user.id}-${nowTs()}.${fileExt}`;
             const { error: upErr } = await supabaseClient.storage.from('logos').upload(filePath, selectedOwnerFile);
             if (!upErr) {
                 const { data } = supabaseClient.storage.from('logos').getPublicUrl(filePath);
@@ -6163,7 +6216,7 @@ async function saveProfileData() {
       owner_linkedin: ownerLink,
       owner_photo_url: finalOwnerPhotoUrl,
 
-      updated_at: new Date(),
+      updated_at: nowDate(),
     };
 
     // --- 5. DB GÖNDER ---
@@ -6248,7 +6301,7 @@ function showMainView() {
 try {
   const base = window.location.pathname + window.location.search;
   const hadHash = !!window.location.hash;
-  const st = { view: "home", t: Date.now() };
+  const st = { view: "home", t: nowTs() };
   if (history && history.pushState && hadHash && !window.__routeRestoring) {
     history.pushState(st, "", base);
   } else if (history && history.replaceState) {
@@ -6830,7 +6883,7 @@ async function saveAsset() {
     if (currentAssetFile) {
         const fileExt = currentAssetFile.name.split('.').pop();
         const cleanName = currentAssetFile.name.replace(/[^a-zA-Z0-9]/g, '_');
-        const filePath = `${user.id}/${Date.now()}_${cleanName}.${fileExt}`;
+        const filePath = `${user.id}/${nowTs()}_${cleanName}.${fileExt}`;
 
         // 'asset-docs' bucketına yükle (Adım 1'de oluşturduğumuz yer)
         const { error: uploadError } = await supabaseClient.storage
@@ -6862,7 +6915,7 @@ async function saveAsset() {
         status: status,
         file_url: finalFileUrl, // Yeni alan
         file_name: finalFileName, // Yeni alan
-        updated_at: new Date().toISOString()
+        updated_at: nowDate().toISOString()
     };
 
     if (currentEditingAssetId) {
@@ -6871,13 +6924,13 @@ async function saveAsset() {
             currentAssets[index] = { ...currentAssets[index], ...assetObj };
         }
     } else {
-        currentAssets.push({ id: Date.now(), ...assetObj, date_added: new Date().toISOString() });
+        currentAssets.push({ id: nowTs(), ...assetObj, date_added: nowDate().toISOString() });
     }
 
     // --- DB UPDATE ---
     const { error } = await supabaseClient
       .from('profiles')
-      .update({ assets: currentAssets, updated_at: new Date() })
+      .update({ assets: currentAssets, updated_at: nowDate() })
       .eq('id', user.id);
 
     if (error) throw error;
@@ -6910,7 +6963,7 @@ function deleteAsset(assetId) {
             
             const { error } = await supabaseClient
                 .from('profiles')
-                .update({ assets: currentAssets, updated_at: new Date() })
+                .update({ assets: currentAssets, updated_at: nowDate() })
                 .eq('id', user.id);
 
             if (error) throw error;
@@ -7047,7 +7100,7 @@ async function saveProject() {
     
     if (currentProjCover) {
         // Yeni resim yükleniyor
-        const path = `${user.id}/cover_${Date.now()}_${currentProjCover.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const path = `${user.id}/cover_${nowTs()}_${currentProjCover.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
         await supabaseClient.storage.from('project-gallery').upload(path, currentProjCover);
         const { data } = supabaseClient.storage.from('project-gallery').getPublicUrl(path);
         finalCoverUrl = data.publicUrl;
@@ -7060,7 +7113,7 @@ async function saveProject() {
     // Üzerine: Yeni seçilen dosyaları yükle ve ekle
     if (currentProjGalleryFiles.length > 0) {
         const uploadPromises = currentProjGalleryFiles.map(async (file) => {
-            const path = `${user.id}/gallery_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const path = `${user.id}/gallery_${nowTs()}_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
             await supabaseClient.storage.from('project-gallery').upload(path, file);
             const { data } = supabaseClient.storage.from('project-gallery').getPublicUrl(path);
             return data.publicUrl;
@@ -7072,14 +7125,14 @@ async function saveProject() {
 
     // --- VERİ HAZIRLAMA ---
     const projObj = {
-        id: currentEditingProjectId || Date.now(),
+        id: currentEditingProjectId || nowTs(),
         title: title,
         loc: loc,
         desc: desc,
         project_date: projDate,
         cover_url: finalCoverUrl,
         gallery_urls: finalGallery,
-        updated_at: new Date().toISOString()
+        updated_at: nowDate().toISOString()
     };
 
     if (currentEditingProjectId) {
@@ -7092,7 +7145,7 @@ async function saveProject() {
     // --- DB KAYIT ---
     const { error } = await supabaseClient
       .from('profiles')
-      .update({ projects: currentProjects, updated_at: new Date() })
+      .update({ projects: currentProjects, updated_at: nowDate() })
       .eq('id', user.id);
 
     if (error) throw error;
@@ -7128,7 +7181,7 @@ function deleteProject(projectId) {
 
             const { error } = await supabaseClient
                 .from('profiles')
-                .update({ projects: currentProjects, updated_at: new Date() })
+                .update({ projects: currentProjects, updated_at: nowDate() })
                 .eq('id', user.id);
 
             if (error) throw error;
@@ -7165,7 +7218,7 @@ function deleteCert(certId, certName) {
             
             const { error } = await supabaseClient
                 .from('profiles')
-                .update({ certificates: currentCerts, updated_at: new Date() })
+                .update({ certificates: currentCerts, updated_at: nowDate() })
                 .eq('id', user.id);
 
             if (error) throw error;
@@ -7258,7 +7311,9 @@ async function handleJoin() {
         country: country, // YENİ SÜTUN
         services: services,
         description: "",
-        size: "1-10"
+        size: "1-10",
+        subscription_tier: "free",
+        subscription_status: "free"
       }
     ]);
 
@@ -7390,13 +7445,16 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   }
 
   // 3. PROFİL VERİSİNİ ÇEK
-  const { data: profile, error } = await supabaseClient
+  let { data: profile, error } = await supabaseClient
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
 
   if (error || !profile) { console.log("Profil verisi çekilemedi."); return; }
+
+  // ✅ Enforce Pro lifecycle (expiry + reminder notifications)
+  try { profile = await enforceProLifecycle(profile); } catch(e) {}
 
   // 4. VERİYİ FORMATLA
   const mappedProfile = {
@@ -7406,7 +7464,11 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     city: profile.city,
     country: profile.country || "Turkey",
     address: profile.address || "",
-    subscription_tier: profile.subscription_tier || 'free', 
+    subscription_tier: profile.subscription_tier || 'free',
+    subscription_status: profile.subscription_status || 'free',
+    trial_start_date: profile.trial_start_date || null,
+    trial_end_date: profile.trial_end_date || null,
+    created_at: profile.created_at || null,
     verification_status: profile.verification_status || 'none',
     tax_id: profile.tax_id || "",
     duns_number: profile.duns_number || "",  
@@ -8470,7 +8532,7 @@ function updateSaveButtonsUI() {
 // Tarih formatlayıcı (Örn: "2 hours ago" yazar)
 function timeAgo(dateString) {
     const date = new Date(dateString);
-    const now = new Date();
+    const now = nowDate();
     const seconds = Math.floor((now - date) / 1000);
     
     let interval = seconds / 31536000;
@@ -8632,7 +8694,7 @@ function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
 
     // 4. Yeni veri objesi
     const newItem = {
-        id: Date.now(), // Geçici ID (Ekran için yeterli)
+        id: nowTs(), // Geçici ID (Ekran için yeterli)
         count: existingIndex > -1 ? inboxData[existingIndex].count + 1 : 1,
         partner_id: partnerId,
         company: partnerName,
@@ -8772,7 +8834,7 @@ function subscribeNotifications() {
             id: n.id,
             title: n.title || "Notification",
             message: n.message || "",
-            created_at: n.created_at || new Date().toISOString(),
+            created_at: n.created_at || nowDate().toISOString(),
             is_read: n.is_read
           });
 
@@ -8864,7 +8926,18 @@ function _setNotifDismissedIds(arr) {
 }
 function _getNotifClearedAt() {
   const v = localStorage.getItem(_notifClearedAtKey);
-  return v ? Date.parse(v) : null;
+  if (!v) return null;
+  const t = Date.parse(v);
+  if (!t || Number.isNaN(t)) return null;
+
+  // SAFETY: If a future "cleared_at" was stored while Time Travel was active,
+  // it can unintentionally hide all DB notifications (created_at is server time).
+  // Clamp overly-future values to real now.
+  try {
+    const realNow = __REAL_DATE_NOW__();
+    if (t > realNow + (48 * 60 * 60 * 1000)) return realNow;
+  } catch (e) {}
+  return t;
 }
 function _setNotifClearedAt(isoOrNull) {
   try {
@@ -8955,7 +9028,7 @@ function deleteAllNotifications() {
 
       if (!deletedRows || deletedRows.length === 0) {
         // Fallback: keep it "deleted" on this device by hiding everything up to now
-        _setNotifClearedAt(new Date().toISOString());
+        _setNotifClearedAt(new Date(__REAL_DATE_NOW__()).toISOString());
         _setNotifDismissedIds([]);
       } else {
         // DB delete worked → clear local hide state
@@ -9034,13 +9107,18 @@ function renderInboxItems() {
     list.forEach(n => {
       const isUnread = (n.is_read === false || n.is_read === 0 || n.is_read === null);
       const title = (n.title || "Notification").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const msg = (n.message || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const msgRaw = (n.message || "");
+      const action = _extractNotifAction(msgRaw);
+      const msg = _stripNotifMarkers(msgRaw).replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const when = n.created_at ? timeAgo(n.created_at) : "";
       const nidSafe = String(n.id).replace(/'/g, "\\'");
 
       const card = document.createElement("div");
       card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-gray-200 transition-all duration-200 cursor-pointer group`;
-      card.onclick = () => { if (isUnread) markNotificationRead(n.id); };
+      card.onclick = () => {
+        if (isUnread) markNotificationRead(n.id);
+        if (action === 'UPGRADE') { try { openUpgradeModal(); } catch(e) {} }
+      };
 
       card.innerHTML = `
         <button type="button" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition" title="Delete" onclick="event.stopPropagation(); deleteNotification('${nidSafe}')">
@@ -9972,7 +10050,7 @@ async function confirmCropper() {
   canvas.toBlob(async (blob) => {
     try {
       if (!blob) throw new Error("Could not crop image.");
-      const croppedFile = new File([blob], `${ctx.kind}-${Date.now()}.${ext}`, { type: mime });
+      const croppedFile = new File([blob], `${ctx.kind}-${nowTs()}.${ext}`, { type: mime });
 
       // Close cropper first (feels faster)
       closeCropperModal();
@@ -10092,7 +10170,7 @@ async function uploadLogoDirectFile(file) {
     if (!user) throw new Error("Login required");
 
     const fileExt = (file.name.split('.').pop() || "png").toLowerCase();
-    const fileName = `${user.id}-logo-${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}-logo-${nowTs()}.${fileExt}`;
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabaseClient.storage
@@ -10107,7 +10185,7 @@ async function uploadLogoDirectFile(file) {
 
     const { error: dbError } = await supabaseClient
       .from("profiles")
-      .update({ logo_url: publicUrl, updated_at: new Date() })
+      .update({ logo_url: publicUrl, updated_at: nowDate() })
       .eq("id", user.id);
 
     if (dbError) throw dbError;
@@ -10158,7 +10236,7 @@ async function uploadOwnerPhotoDirectFile(file) {
     if (!user) throw new Error("Login required");
 
     const fileExt = (file.name.split('.').pop() || "jpg").toLowerCase();
-    const fileName = `${user.id}-owner-${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}-owner-${nowTs()}.${fileExt}`;
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabaseClient.storage
@@ -10173,7 +10251,7 @@ async function uploadOwnerPhotoDirectFile(file) {
 
     const { error: dbError } = await supabaseClient
       .from("profiles")
-      .update({ owner_photo_url: publicUrl, updated_at: new Date() })
+      .update({ owner_photo_url: publicUrl, updated_at: nowDate() })
       .eq("id", user.id);
 
     if (dbError) throw dbError;
@@ -10287,7 +10365,7 @@ async function saveCert() {
     if (currentCertFile) {
         if (selectedCompany.subscription_tier === 'pro') {
             const fileExt = currentCertFile.name.split('.').pop();
-            const filePath = `${user.id}/cert_${Date.now()}.${fileExt}`;
+            const filePath = `${user.id}/cert_${nowTs()}.${fileExt}`;
             
             const { error: uploadError } = await supabaseClient.storage
                 .from('certificate-docs')
@@ -10308,7 +10386,7 @@ async function saveCert() {
         issuer: issuer,
         expiry_date: date,
         file_url: finalUrl,
-        updated_at: new Date().toISOString()
+        updated_at: nowDate().toISOString()
     };
 
     let currentCerts = [...(selectedCompany.certificates || [])];
@@ -10319,13 +10397,13 @@ async function saveCert() {
             currentCerts[index] = { ...currentCerts[index], ...certObj };
         }
     } else {
-        currentCerts.push({ id: Date.now(), ...certObj });
+        currentCerts.push({ id: nowTs(), ...certObj });
     }
 
     // --- DB GÜNCELLEME ---
     const { error } = await supabaseClient
       .from('profiles')
-      .update({ certificates: currentCerts, updated_at: new Date() })
+      .update({ certificates: currentCerts, updated_at: nowDate() })
       .eq('id', user.id);
 
     if (error) throw error;
@@ -10370,7 +10448,7 @@ function deleteCert(certId, certName) {
             
             const { error } = await supabaseClient
                 .from('profiles')
-                .update({ certificates: currentCerts, updated_at: new Date() })
+                .update({ certificates: currentCerts, updated_at: nowDate() })
                 .eq('id', user.id);
 
             if (error) throw error;
@@ -11240,7 +11318,7 @@ async function uploadFileToSupabase(file, folder = 'uploads') {
     // Benzersiz dosya ismi oluştur: user_id + timestamp + orjinal isim
     const fileExt = file.name.split('.').pop();
     const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_'); // Türkçe karakter sorununu önlemek için
-    const filePath = `${folder}/${user.id}-${Date.now()}-${cleanName}.${fileExt}`;
+    const filePath = `${folder}/${user.id}-${nowTs()}-${cleanName}.${fileExt}`;
 
     // 1. Storage'a Yükle (Bucket adı 'logos' veya 'files' olmalı. 
     // Sizin kodunuzda 'logos' bucket'ı var gibi görünüyor, onu kullanalım)
@@ -11279,7 +11357,7 @@ function appendLocalMessage(content) {
     if (container.innerHTML.includes("Start the conversation")) container.innerHTML = "";
 
     // Tarih
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = nowDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Satır başlarını <br> yap
     let cleanContent = content.replace(/\n/g, '<br>');
@@ -11724,14 +11802,15 @@ async function processVerification(userId, action) {
     let updates = {};
 
     if (action === 'approve') {
-        // 3 Ay sonrasını hesapla
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 3);
+        const now = nowDate();
+        // Use the same Pro trial rules everywhere for consistency
+        const { endDate } = computeProTrialEnd(now, null);
 
         updates = {
             verification_status: 'verified',
             subscription_tier: 'pro',
             subscription_status: 'active_trial',
+            trial_start_date: now.toISOString(),
             trial_end_date: endDate.toISOString(),
             verification_reject_reason: null,
             verification_rejected_at: null
@@ -11744,7 +11823,7 @@ async function processVerification(userId, action) {
         updates = {
             verification_status: 'rejected',
             verification_reject_reason: reason ? reason.trim() : null,
-            verification_rejected_at: new Date().toISOString()
+            verification_rejected_at: nowDate().toISOString()
         };
     }
 
@@ -11762,6 +11841,243 @@ async function processVerification(userId, action) {
     }
 }
 
+
+/* =========================
+   PRO LIFECYCLE (TRIAL -> PAID -> DOWNGRADE)
+   Goal: clear rules + revenue-friendly flow
+========================= */
+const PRO_MONTHLY_PRICE_USD = 19;                  // ✅ change if needed
+const PRO_EARLY_BIRD_END_UTC = "2026-12-31T23:59:59Z";
+const PRO_TRIAL_MONTHS_EARLY = 3;                  // early adopters
+const PRO_TRIAL_DAYS_DEFAULT = 30;                 // new signups after early-bird
+const PRO_PAYMENT_URL = "https://buy.stripe.com/REPLACE_ME"; // ✅ replace with Stripe/checkout link
+
+function _stripNotifMarkers(text="") {
+  return String(text)
+    .replace(/\[(ACTION|KEY):[^\]]+\]/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+function _extractNotifAction(text="") {
+  const m = String(text).match(/\[ACTION:([^\]]+)\]/);
+  return m ? m[1] : null;
+}
+function _hasNotifKey(text="", key="") {
+  return String(text).includes(`[KEY:${key}]`);
+}
+
+function computeProTrialEnd(nowDate, createdAtISO=null) {
+  const now = nowDate instanceof Date ? nowDate : new Date(nowDate);
+  const createdAt = createdAtISO ? new Date(createdAtISO) : now;
+  const earlyEnd = new Date(PRO_EARLY_BIRD_END_UTC);
+
+  const endDate = new Date(now);
+  let label = "";
+
+  if (!isNaN(createdAt.getTime()) && createdAt <= earlyEnd) {
+    endDate.setMonth(now.getMonth() + PRO_TRIAL_MONTHS_EARLY);
+    label = `${PRO_TRIAL_MONTHS_EARLY}-Month Free Trial`;
+  } else {
+    endDate.setDate(now.getDate() + PRO_TRIAL_DAYS_DEFAULT);
+    label = `${PRO_TRIAL_DAYS_DEFAULT}-Day Free Trial`;
+  }
+  return { endDate, label };
+}
+
+function openProPayment() {
+  // For now: open your checkout link in a new tab
+  if (!PRO_PAYMENT_URL || PRO_PAYMENT_URL.includes("REPLACE_ME")) {
+    showToast("Payment link missing", "Please set PRO_PAYMENT_URL in the code.", "error");
+    return;
+  }
+  window.open(PRO_PAYMENT_URL, "_blank", "noopener,noreferrer");
+}
+
+function openUpgradeModal() {
+  try {
+    // Update copy dynamically before opening
+    const offerEl = document.getElementById("upgrade-offer-text");
+    const ctaLbl = document.getElementById("upgrade-cta-label");
+
+    const now = nowDate();
+    const createdAt = (selectedCompany && selectedCompany.created_at) ? selectedCompany.created_at : null;
+    const { label } = computeProTrialEnd(now, createdAt);
+
+    const trialAlreadyUsed = !!(selectedCompany && selectedCompany.trial_start_date);
+    const isTrialActive = !!(selectedCompany && selectedCompany.subscription_status === "active_trial" && selectedCompany.trial_end_date && new Date(selectedCompany.trial_end_date) > now);
+
+    if (trialAlreadyUsed) {
+      if (offerEl) offerEl.textContent = `Pro is $${PRO_MONTHLY_PRICE_USD}/month. Upgrade now to keep unlimited features.`;
+      if (ctaLbl) ctaLbl.textContent = "UPGRADE TO PRO";
+    } else {
+      if (offerEl) offerEl.textContent = `${label}. Then $${PRO_MONTHLY_PRICE_USD}/month.`;
+      if (ctaLbl) ctaLbl.textContent = "START FREE TRIAL";
+    }
+
+    if (isTrialActive && selectedCompany && selectedCompany.trial_end_date) {
+      const d = new Date(selectedCompany.trial_end_date);
+      if (offerEl) offerEl.textContent = `Your Pro trial is active until ${d.toLocaleDateString()}.`;
+      if (ctaLbl) ctaLbl.textContent = "OK";
+    }
+
+  } catch(e) {}
+  toggleModal('modal-upgrade');
+}
+
+async function handleUpgradeCTA() {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      showToast("Login required", "Please login to continue.", "info");
+      toggleModal('modal-login');
+      return;
+    }
+
+    const now = nowDate();
+    const isTrialActive = !!(selectedCompany && selectedCompany.subscription_status === "active_trial" && selectedCompany.trial_end_date && new Date(selectedCompany.trial_end_date) > now);
+    if (isTrialActive) {
+      toggleModal('modal-upgrade');
+      return;
+    }
+
+    const trialAlreadyUsed = !!(selectedCompany && selectedCompany.trial_start_date);
+    if (trialAlreadyUsed) {
+      toggleModal('modal-upgrade');
+      openProPayment();
+      return;
+    }
+    // start trial
+    await upgradeToPro();
+  } catch(e) {
+    showToast("Error", e.message || "Could not continue.", "error");
+  }
+}
+
+async function _maybeSendLifecycleNotification(userId, key, title, message) {
+  try {
+    if (!userId || !key) return;
+
+    const keyTag = `[KEY:${key}]`;
+    const baseRow = {
+      recipient_user_id: userId,
+      title,
+      message: `${keyTag}[ACTION:UPGRADE]
+` + message,
+      is_read: false
+    };
+
+    // Prefer DB-level dedupe (needs notifications.dedupe_key + unique index)
+    try {
+      const row = Object.assign({}, baseRow, { dedupe_key: key });
+      const { error } = await supabaseClient
+        .from('notifications')
+        .upsert([row], { onConflict: 'recipient_user_id,dedupe_key', ignoreDuplicates: true });
+      if (error) throw error;
+    } catch (e) {
+      // Fallback (no schema change): best-effort dedupe by scanning recent notifications
+      const since = new Date(nowTs() - 30*24*60*60*1000).toISOString();
+      const { data } = await supabaseClient
+        .from('notifications')
+        .select('id,message,created_at')
+        .eq('recipient_user_id', userId)
+        .gte('created_at', since)
+        .limit(50);
+
+      const already = (data || []).some(n => String(n.message || "").includes(keyTag));
+      if (already) return;
+
+      const { error: err2 } = await supabaseClient.from('notifications').insert([baseRow]);
+      if (err2) throw err2;
+    }
+
+    // Refresh UI fast
+    try { if (typeof fetchNotificationsUnread === "function") fetchNotificationsUnread(); } catch(_) {}
+  } catch(e) {
+    console.warn("Lifecycle notification error:", e);
+  }
+}
+
+async function enforceProLifecycle(profileRow) {
+  try {
+    if (!profileRow || !profileRow.id) return profileRow;
+
+    const now = nowDate();
+    const tier = profileRow.subscription_tier || 'free';
+    const status = profileRow.subscription_status || 'free';
+    const trialEnd = profileRow.trial_end_date ? new Date(profileRow.trial_end_date) : null;
+
+    // If active trial: send reminders + expire when needed
+    if (status === 'active_trial' && trialEnd && !isNaN(trialEnd.getTime())) {
+      const msLeft = trialEnd.getTime() - now.getTime();
+
+      // Calendar-day based (stable across time-of-day + time-travel testing)
+      const _msDay = 24*60*60*1000;
+      const _dayStart = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+      const today0 = _dayStart(now);
+      const end0 = _dayStart(trialEnd);
+      const daysLeft = Math.round((end0.getTime() - today0.getTime()) / _msDay);
+      const endKey = end0.toISOString().slice(0,10);
+
+      if (daysLeft === 10) {
+        await _maybeSendLifecycleNotification(
+          profileRow.id,
+          `PRO_TRIAL_10D_${endKey}`,
+          "Pro trial ending soon",
+          `Your Pro trial ends on ${trialEnd.toLocaleDateString()}. Upgrade to keep unlimited features.`
+        );
+      }
+
+      if (daysLeft === 1) {
+        await _maybeSendLifecycleNotification(
+          profileRow.id,
+          `PRO_TRIAL_1D_${endKey}`,
+          "Pro trial ends tomorrow",
+          `Your Pro trial ends on ${trialEnd.toLocaleDateString()}. Upgrade now to avoid losing Pro features.`
+        );
+      }
+
+      // Expired
+      if (msLeft <= 0) {
+        await supabaseClient.from('profiles').update({
+          subscription_tier: 'free',
+          subscription_status: 'trial_expired',
+          updated_at: now.toISOString()
+        }).eq('id', profileRow.id);
+
+        await _maybeSendLifecycleNotification(
+          profileRow.id,
+          `PRO_TRIAL_ENDED_${endKey}`,
+          "Pro trial ended",
+          `Your Pro trial ended on ${trialEnd.toLocaleDateString()}. You are now on the Free plan (your verification badge stays). Upgrade to restore unlimited features.`
+        );
+
+        profileRow.subscription_tier = 'free';
+        profileRow.subscription_status = 'trial_expired';
+      }
+    }
+
+    // Safety: if tier says pro but status not active_trial -> downgrade unless you add paid_until later
+    if (tier === 'pro' && status !== 'active_trial') {
+      // If there's no valid active trial end date, treat as free to avoid "forever pro"
+      if (!trialEnd || isNaN(trialEnd.getTime()) || trialEnd <= now) {
+        await supabaseClient.from('profiles').update({
+          subscription_tier: 'free',
+          subscription_status: status === 'active_paid' ? status : 'trial_expired',
+          updated_at: now.toISOString()
+        }).eq('id', profileRow.id);
+        profileRow.subscription_tier = 'free';
+        if (profileRow.subscription_status !== 'active_paid') profileRow.subscription_status = 'trial_expired';
+      }
+    }
+
+    return profileRow;
+  } catch(e) {
+    console.warn("enforceProLifecycle error:", e);
+    return profileRow;
+  }
+}
+
+
 /* --- GÜNCELLENMİŞ: upgradeToPro (ANINDA BUTON GİZLEME) --- */
 async function upgradeToPro() {
     const btn = document.querySelector("#modal-upgrade button:last-child");
@@ -11773,10 +12089,17 @@ async function upgradeToPro() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Please login first.");
 
-        // --- TARİH HESAPLAMA ---
-        const now = new Date();
-        const endDate = new Date();
-        endDate.setMonth(now.getMonth() + 6); // 6 AY EKLE
+        // --- TRIAL DATE (revenue-friendly rules) ---
+        const now = nowDate();
+        // Trial is one-time per company (prevents infinite free Pro)
+        const trialAlreadyUsed = !!(selectedCompany && selectedCompany.trial_start_date);
+        if (trialAlreadyUsed) {
+            toggleModal('modal-upgrade');
+            openProPayment();
+            return;
+        }
+        const _createdAtISO = (selectedCompany && selectedCompany.created_at) ? selectedCompany.created_at : null;
+        const { endDate, label } = computeProTrialEnd(now, _createdAtISO);
 
         // 1. Veritabanı Güncellemesi
         const { error } = await supabaseClient
@@ -11795,6 +12118,9 @@ async function upgradeToPro() {
         // 2. Yerel Hafızayı Güncelle
         if (selectedCompany) {
             selectedCompany.subscription_tier = 'pro';
+            selectedCompany.subscription_status = 'active_trial';
+            selectedCompany.trial_start_date = now.toISOString();
+            selectedCompany.trial_end_date = endDate.toISOString();
         }
 
         // 3. Modalı Kapat
@@ -11821,7 +12147,7 @@ async function upgradeToPro() {
         
         // 6. Kullanıcıyı Bilgilendir
         const niceDate = endDate.toLocaleDateString(); 
-        showToast("Welcome to Pro!", `Trial active until ${niceDate}`, "success");
+        showToast("Welcome to Pro!", `${label} active until ${niceDate}`, "success");
         
         // 7. Profili Yeniden Çiz (Rozetler vs. için)
         openProfile(user.id);
@@ -11882,7 +12208,7 @@ async function __fetchCelebrationSeen(userId) {
 
 async function __setCelebrationSeen(userId) {
   if (!userId) return;
-  const nowIso = new Date().toISOString();
+  const nowIso = nowDate().toISOString();
 
   // id üzerinden dene
   let { error } = await supabaseClient
@@ -12480,7 +12806,7 @@ async function deleteLogo() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const { error } = await supabaseClient
             .from('profiles')
-            .update({ logo_url: null, updated_at: new Date() })
+            .update({ logo_url: null, updated_at: nowDate() })
             .eq('id', user.id);
 
         if(error) throw error;
