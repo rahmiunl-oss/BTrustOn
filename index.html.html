@@ -8716,20 +8716,44 @@ async function fetchNotificationsUnread() {
     if (!user) return;
 
     // ✅ Fetch full list so the Inbox can actually show notifications
-    const { data, error } = await supabaseClient
+    // Prefer DB-backed soft-delete (is_deleted/deleted_at) if the columns exist.
+    let data, error;
+
+    // Try with soft-delete columns
+    ({ data, error } = await supabaseClient
       .from('notifications')
-      .select('id,title,message,created_at,is_read')
+      .select('id,title,message,created_at,is_read,is_deleted,deleted_at')
       .eq('recipient_user_id', user.id)
+      .or('is_deleted.is.null,is_deleted.eq.false')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(50));
+
+    // If schema doesn't have is_deleted/deleted_at, fallback gracefully
+    if (error && (String(error.message || '').includes('is_deleted') || String(error.message || '').includes('deleted_at'))) {
+      ({ data, error } = await supabaseClient
+        .from('notifications')
+        .select('id,title,message,created_at,is_read')
+        .eq('recipient_user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50));
+    }
 
     if (error) {
       console.warn('Notifications fetch error:', error.message);
       return;
     }
 
-    const rawList = Array.isArray(data) ? data : [];
-    notificationsData = (typeof _applyNotifVisibility === "function") ? _applyNotifVisibility(rawList) : rawList;
+    // Apply local hide fallback (legacy) AND DB soft-delete
+    const clearedAt = _getNotifClearedAt ? _getNotifClearedAt() : null;
+    notificationsData = (data || []).filter(n => {
+      if (n && (n.is_deleted === true || n.is_deleted === 1)) return false;
+      if (clearedAt && n && n.created_at) {
+        const t = Date.parse(n.created_at);
+        if (!Number.isNaN(t) && t <= clearedAt) return false;
+      }
+      if (typeof _isNotifHidden === "function" && _isNotifHidden(n)) return false;
+      return true;
+    });
 
     // Count unread (supports boolean / 0-1 / null)
     notificationsUnreadCount = notificationsData.filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
@@ -8911,27 +8935,42 @@ function deleteNotification(notifId) {
       if (!user) throw new Error("Login required");
 
       // Optimistic UI remove
-      const before = Array.isArray(notificationsData) ? notificationsData : [];
-      const target = before.find(n => String(n.id) === String(notifId));
-      const wasUnread = target ? (target.is_read === false || target.is_read === 0 || target.is_read === null) : false;
-
-      notificationsData = before.filter(n => String(n.id) !== String(notifId));
-      if (wasUnread && notificationsUnreadCount > 0) notificationsUnreadCount -= 1;
+      notificationsData = (notificationsData || []).filter(n => String(n.id) !== String(notifId));
+      notificationsUnreadCount = (notificationsData || []).filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
       renderInboxItems();
 
-      // Try DB delete (may be blocked by RLS and return 0 rows without error)
-      const { data: deletedRows, error } = await supabaseClient
+      const nowIso = new Date().toISOString();
+
+      // ✅ Prefer DB soft-delete so it won't reappear on other devices
+      let updatedRows = null;
+      let upErr = null;
+
+      ({ data: updatedRows, error: upErr } = await supabaseClient
         .from("notifications")
-        .delete()
+        .update({ is_deleted: true, deleted_at: nowIso, is_read: true })
         .eq("id", notifId)
         .eq("recipient_user_id", user.id)
-        .select("id");
+        .select("id"));
 
-      if (error) throw error;
+      // If schema doesn't have is_deleted/deleted_at, fallback to hard delete
+      if (upErr && (String(upErr.message || '').includes('is_deleted') || String(upErr.message || '').includes('deleted_at'))) {
+        upErr = null;
+        ({ data: updatedRows, error: upErr } = await supabaseClient
+          .from("notifications")
+          .delete()
+          .eq("id", notifId)
+          .eq("recipient_user_id", user.id)
+          .select("id"));
+      }
 
-      if (!deletedRows || deletedRows.length === 0) {
-        // Fallback: hide locally so refresh won't bring it back
+      if (upErr) throw upErr;
+
+      if (!updatedRows || updatedRows.length === 0) {
+        // Fallback: hide locally so refresh on THIS device won't bring it back
         _dismissNotifIdLocal(notifId);
+      } else {
+        // DB write worked → clear local hide for this id
+        // (Optional) leave it; harmless if present
       }
 
       showToast("Deleted", "Notification removed.", "success");
@@ -8951,21 +8990,37 @@ function deleteAllNotifications() {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) throw new Error("Login required");
 
-      // Try DB delete first (may be blocked by RLS and return 0 rows without error)
-      const { data: deletedRows, error } = await supabaseClient
+      const nowIso = new Date().toISOString();
+
+      // ✅ Prefer DB soft-delete (cross-device)
+      let updatedRows = null;
+      let upErr = null;
+
+      ({ data: updatedRows, error: upErr } = await supabaseClient
         .from("notifications")
-        .delete()
+        .update({ is_deleted: true, deleted_at: nowIso, is_read: true })
         .eq("recipient_user_id", user.id)
-        .select("id");
+        .or("is_deleted.is.null,is_deleted.eq.false")
+        .select("id"));
 
-      if (error) throw error;
+      // If schema doesn't have soft-delete columns, fallback to hard delete
+      if (upErr && (String(upErr.message || '').includes('is_deleted') || String(upErr.message || '').includes('deleted_at'))) {
+        upErr = null;
+        ({ data: updatedRows, error: upErr } = await supabaseClient
+          .from("notifications")
+          .delete()
+          .eq("recipient_user_id", user.id)
+          .select("id"));
+      }
 
-      if (!deletedRows || deletedRows.length === 0) {
+      if (upErr) throw upErr;
+
+      if (!updatedRows || updatedRows.length === 0) {
         // Fallback: keep it "deleted" on this device by hiding everything up to now
-        _setNotifClearedAt(new Date().toISOString());
+        _setNotifClearedAt(nowIso);
         _setNotifDismissedIds([]);
       } else {
-        // DB delete worked → clear local hide state
+        // DB write worked → clear local hide state
         _setNotifClearedAt(null);
         _setNotifDismissedIds([]);
       }
@@ -8977,6 +9032,7 @@ function deleteAllNotifications() {
     } catch (e) {
       console.error("Delete notifications error:", e);
       showToast("Error", "Failed to delete notifications.", "error");
+      try { await fetchNotificationsUnread(); } catch {}
     }
   });
 }
@@ -11912,29 +11968,22 @@ async function closeCelebration() {
 
     // ✅ Persist "seen" state in DB so it won't show again on another device
     try {
-        if (selectedCompany && selectedCompany.id) {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
             const nowIso = new Date().toISOString();
-
-            // Update local runtime state immediately (better UX)
-            selectedCompany.verification_celebrated = true;
-            selectedCompany.verification_celebrated_at = nowIso;
-            try {
-                if (typeof database !== 'undefined' && Array.isArray(database)) {
-                    const idx = database.findIndex(c => String(c.id) === String(selectedCompany.id));
-                    if (idx > -1) {
-                        database[idx].verification_celebrated = true;
-                        database[idx].verification_celebrated_at = nowIso;
-                    }
-                }
-            } catch(e) {}
-
-            // Persist to Supabase
             const { error } = await supabaseClient
                 .from('profiles')
                 .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
-                .eq('id', selectedCompany.id);
+                .eq('id', user.id);
 
-            if (error) throw error;
+            if (!error) {
+                // Keep local object in sync
+                if (selectedCompany && String(selectedCompany.id) === String(user.id)) {
+                    selectedCompany.verification_celebrated = true;
+                }
+            } else {
+                console.warn("Could not persist verification_celebrated:", error);
+            }
         }
     } catch (e) {
         console.warn("Could not persist verification_celebrated:", e);
