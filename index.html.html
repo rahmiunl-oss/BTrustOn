@@ -11837,92 +11837,116 @@ async function upgradeToPro() {
     }
 }
 
-/* --- KUTLAMA MANTIĞI (CROSS-DEVICE) --- */
+/* --- KUTLAMA MANTIĞI --- */
 
-/**
- * ✅ Amaç:
- * - Kullanıcı verified olduktan sonra tebrik sadece 1 kez görünsün.
- * - Kullanıcı başka bir bilgisayardan girse bile tekrar görünmesin.
- * - Bu yüzden "seen" bilgisini localStorage değil, profiles tablosunda saklıyoruz.
- */
-
-// 1) Durumu Kontrol Et ve Kutla (SADECE KENDİ PROFİLİNDE)
-async function checkAndTriggerCelebration(company) {
+// 1. Durumu Kontrol Et ve Kutla
+/* --- CROSS-DEVICE: Verification Celebration (DB-based, no repeat across devices) --- */
+async function __getAuthUserId() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
+    return user?.id || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function __fetchCelebrationSeen(userId) {
+  if (!userId) return true; // güvenli varsayım: tekrar göstermeyelim
+  try {
+    // 1) primary key = id
+    let { data, error } = await supabaseClient
+      .from("profiles")
+      .select("verification_celebrated")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // 2) bazı şemalarda auth uid ayrı kolonda olabilir: user_id
+    if ((error || !data) && typeof userId === "string") {
+      const fallback = await supabaseClient
+        .from("profiles")
+        .select("verification_celebrated")
+        .eq("user_id", userId)
+        .maybeSingle();
+      data = fallback.data;
+      error = fallback.error;
+    }
+
+    // Eğer okuma hatası varsa tekrar göstermeyelim (cross-device tekrar riskini önler)
+    if (error) return true;
+
+    return !!data?.verification_celebrated;
+  } catch (e) {
+    return true;
+  }
+}
+
+async function __setCelebrationSeen(userId) {
+  if (!userId) return;
+  const nowIso = new Date().toISOString();
+
+  // id üzerinden dene
+  let { error } = await supabaseClient
+    .from("profiles")
+    .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+    .eq("id", userId);
+
+  // user_id fallback
+  if (error) {
+    await supabaseClient
+      .from("profiles")
+      .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+      .eq("user_id", userId);
+  }
+}
+
+async function checkAndTriggerCelebration(company) {
+  try {
+    const userId = await __getAuthUserId();
+    if (!userId) return;
 
     // Sadece kendi profilinde ve verified ise çalışsın
     if (!company || company.verification_status !== "verified") return;
-    if (String(company.id) !== String(user.id)) return;
+    if (String(company.id) !== String(userId)) return;
 
-    // DB'den cross-device "seen" flag'ini oku
-    let hasSeen = false;
-    try {
-      const { data, error } = await supabaseClient
-        .from("profiles")
-        .select("verification_celebrated")
-        .eq("id", user.id)
-        .single();
-      if (!error && data) hasSeen = !!data.verification_celebrated;
-    } catch (e) {}
+    const hasSeen = await __fetchCelebrationSeen(userId);
+    if (hasSeen) return;
 
-    // Legacy fallback (eski cihaz bazlı kayıt)
-    if (!hasSeen) {
-      try {
-        const ls = localStorage.getItem(`celebrated_${user.id}`);
-        if (ls === "true") hasSeen = true;
-      } catch (e) {}
+    // Modalı açmadan önce DB'ye yaz: başka cihazlarda tekrar çıkmasın
+    __setCelebrationSeen(userId).catch(() => {});
+    openCelebrationModal();
+  } catch (e) {
+    // hiçbir şey yapma
+  }
+}
+
+// 2. Modalı Aç ve Konfeti Patlat
+/* --- GÜNCELLENMİŞ: openCelebrationModal (SADE VE KURUMSAL) --- */
+function openCelebrationModal() {
+    const modal = document.getElementById("modal-celebration");
+    const card = document.getElementById("celebration-card");
+    
+    if(!modal) return;
+
+    // Modalı Göster
+    modal.classList.remove("opacity-0", "pointer-events-none");
+    if(card) {
+        card.classList.remove("scale-90");
+        card.classList.add("scale-100");
     }
 
-    if (!hasSeen) openCelebrationModal();
-  } catch (e) {
-    console.warn("checkAndTriggerCelebration error:", e);
-  }
+    // BURADAKİ KONFETİ KODLARINI SİLDİK (Daha profesyonel durması için)
 }
-
-// 2) Modalı Aç
-function openCelebrationModal() {
-  const modal = document.getElementById("modal-celebration");
-  const card = document.getElementById("celebration-card");
-  if (!modal) return;
-
-  modal.classList.remove("opacity-0", "pointer-events-none");
-  if (card) {
-    card.classList.remove("scale-90");
-    card.classList.add("scale-100");
-  }
-}
-
-// 3) Modalı Kapat ve DB'ye "seen" yaz
+// 3. Modalı Kapat ve Kaydet
 async function closeCelebration() {
   const modal = document.getElementById("modal-celebration");
   if (modal) modal.classList.add("opacity-0", "pointer-events-none");
 
+  // Ek güvenlik: modal kapatılırken de DB'ye "seen" yaz
   try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    const nowIso = new Date().toISOString();
-
-    // ✅ Persist: cross-device tek seferlik tebrik
-    const { error } = await supabaseClient
-      .from("profiles")
-      .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
-      .eq("id", user.id);
-
-    if (error) console.warn("Could not persist verification_celebrated:", error);
-  } catch (e) {
-    console.warn("Could not persist verification_celebrated:", e);
-  }
-
-  // Legacy fallback (eski cihaz bazlı)
-  try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (user) localStorage.setItem(`celebrated_${user.id}`, "true");
+    const userId = await __getAuthUserId();
+    if (userId) await __setCelebrationSeen(userId);
   } catch (e) {}
 }
-
 
 // --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
 // --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
