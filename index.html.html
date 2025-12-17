@@ -1100,10 +1100,11 @@
         </label>
         <p class="text-[11px] text-gray-400 mb-2">Comma separated keywords. e.g. EPC, Excavation, Maintenance</p>
         <input type="hidden" id="edit-services" />
+        <input type="hidden" id="edit-services-featured" />
         <div class="mt-3">
           <div class="flex items-center justify-between mb-2">
             <div class="text-[11px] text-gray-400">
-              Tip: Add services as tags. <span class="font-bold">Drag</span> to reorder. The <span class="font-bold">top 3</span> will be featured on your profile.
+              Tip: Add services as tags. <span class="font-bold">Drag</span> to reorder, and click ⭐ to mark any item as <span class="font-bold">Featured</span>. We show up to <span class="font-bold">5</span> featured items on the profile header.
             </div>
             <button type="button" onclick="clearServiceTags()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition">
               Clear
@@ -3006,7 +3007,13 @@ async function partnerLogout() {
         certs_title: "Certifications & Compliance",
         certs_sub: "Declared certificates of this company",
         tab_assets: "ASSETS",
-        lbl_services: "Core Services",
+        lbl_services: "Expertise",
+        svc_card_title: "Highlights",
+        svc_featured: "Featured",
+        svc_more: "More",
+        svc_reorder_hint: "Reorder in Edit Profile",
+        show_all: "Show all",
+        show_less: "Show less",
         th_item: "Item",
         th_specs: "Specs",
         th_status: "Status",
@@ -3107,6 +3114,12 @@ async function partnerLogout() {
         tab_projects: "PROJELER",
         tab_assets: "VARLIKLAR",
         lbl_services: "Hizmetler",
+        svc_card_title: "Özet",
+        svc_featured: "Öne çıkan",
+        svc_more: "Diğerleri",
+        svc_reorder_hint: "Sıralama: Profili Düzenle",
+        show_all: "Tümünü gör",
+        show_less: "Daha az",
         th_item: "Ekipman",
         th_specs: "Özellik",
         th_status: "Durum",
@@ -5504,7 +5517,7 @@ if (cityEl) {
   }
 
   // Hizmetler
-  /* --- CORE SERVICES VIEW (Featured + Tags + Details) --- */
+  /* --- CORE SERVICES VIEW (Top Capabilities + Other Services + Details) --- */
 const servicesGrid = document.getElementById("p-services-grid");
 if (servicesGrid) {
   servicesGrid.innerHTML = "";
@@ -5524,10 +5537,42 @@ if (servicesGrid) {
   }
   tags = tags.map(s => String(s || "").trim()).filter(Boolean);
 
-  const featured = tags.slice(0, 3);
-  const rest = tags.slice(3);
+  // Featured services (user-selected). If not available, fallback to first 5.
+  let featuredRaw = company.services_featured || [];
+  if (typeof currentLang !== 'undefined' && currentLang === 'tr' && company.services_featured_tr && company.services_featured_tr.length > 0) {
+    featuredRaw = company.services_featured_tr;
+  }
 
-  // Layout: sections stacked (Featured, All, Details)
+  let featuredList = [];
+  if (Array.isArray(featuredRaw)) {
+    featuredList = featuredRaw;
+  } else if (typeof featuredRaw === "string") {
+    featuredList = featuredRaw.split(",").map(s => s.trim()).filter(Boolean);
+  }
+  featuredList = featuredList.map(s => String(s || "").trim()).filter(Boolean);
+
+  // keep only items that exist in tags + preserve featured order
+  const tagKey = (s) => String(s || "").trim().toLowerCase();
+  const tagSet = new Set(tags.map(tagKey));
+  featuredList = featuredList.filter(s => tagSet.has(tagKey(s)));
+
+  // de-dupe featured
+  const seenFeat = new Set();
+  featuredList = featuredList.filter(s => {
+    const k = tagKey(s);
+    if (seenFeat.has(k)) return false;
+    seenFeat.add(k);
+    return true;
+  });
+
+  if (featuredList.length === 0) {
+    featuredList = tags.slice(0, 5);
+  }
+
+  // Other = everything not featured
+  const featSet = new Set(featuredList.map(tagKey));
+  const other = tags.filter(s => !featSet.has(tagKey(s)));
+
   servicesGrid.className = "space-y-4 mb-8";
 
   const myId = localStorage.getItem("BTrustOn_my_company_id");
@@ -5542,92 +5587,130 @@ if (servicesGrid) {
         </button>` : ``}
       </div>`;
   } else {
-    // --- Featured ---
-    const featuredWrap = document.createElement("div");
-    featuredWrap.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm";
-    featuredWrap.innerHTML = `
+    // ✅ Single-card layout (no “double stacked” feel)
+    const card = document.createElement("div");
+    card.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm";
+
+    const featuredMany = featuredList.length > 5;
+    const featuredVisible = featuredMany ? featuredList.slice(0, 5) : featuredList;
+    const featuredHidden = featuredMany ? featuredList.slice(5) : [];
+
+    const otherMany = other.length > 12;
+    const otherVisible = otherMany ? other.slice(0, 12) : other;
+    const otherHidden = otherMany ? other.slice(12) : [];
+
+    card.innerHTML = `
       <div class="flex items-center justify-between gap-3 mb-4">
         <div class="flex items-center gap-2 shrink-0">
           <span class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 text-BTrustOn-accent flex items-center justify-center">
             <i class="fa-solid fa-bolt"></i>
           </span>
           <div class="min-w-0">
-            <div class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Featured</div>
-            <div class="text-sm font-bold text-gray-800">Top Capabilities</div>
+            <div class="text-sm font-bold text-gray-800">${t("svc_card_title")}</div>
           </div>
         </div>
-        ${isOwner ? `<div class="text-[10px] text-gray-400 font-semibold">Drag to reorder in Edit Profile</div>` : ``}
+        ${isOwner ? `<div class="text-[10px] text-gray-400 font-semibold">${t("svc_reorder_hint")}</div>` : ``}
       </div>
-      <div class="flex flex-wrap gap-2">
-        ${featured.map((s) => `
-          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 shadow-sm">
-            <span class="w-5 h-5 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center">
-              <i class="fa-solid fa-check text-[10px]"></i>
-            </span>
-            <span class="text-xs font-extrabold text-gray-700">${s}</span>
-          </span>
-        `).join("")}
-      </div>
-    `;
-    servicesGrid.appendChild(featuredWrap);
 
-    // --- All tags (collapsible if many) ---
-    const allWrap = document.createElement("div");
-    allWrap.className = "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm";
-    const many = tags.length > 10;
-    const collapsedCount = 10;
-
-    const hiddenRest = many ? tags.slice(collapsedCount) : [];
-    const visibleTags = many ? tags.slice(0, collapsedCount) : tags;
-
-    allWrap.innerHTML = `
-      <div class="flex items-center justify-between gap-3 mb-4">
-        <div class="flex items-center gap-2 shrink-0">
-          <span class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center">
-            <i class="fa-solid fa-tags"></i>
-          </span>
-          <div class="min-w-0">
-            <div class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Services</div>
-            <div class="text-sm font-bold text-gray-800">All declared services</div>
+      ${featuredVisible.length ? `
+        <div class="mb-4">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <div class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+              ${t("svc_featured")} <span class="text-gray-300">(${featuredList.length})</span>
+            </div>
+            ${featuredMany ? `<button id="svc-featured-toggle-btn" type="button" class="text-[11px] font-bold text-BTrustOn-accent hover:underline">${t("show_all")}</button>` : ``}
           </div>
-        </div>
-        ${many ? `<button id="svc-toggle-btn" type="button" class="text-xs font-bold text-BTrustOn-accent hover:underline">Show all (${tags.length})</button>` : ``}
-      </div>
-      <div id="svc-tags-wrap" class="flex flex-wrap gap-2">
-        ${visibleTags.map((s, i) => `
-          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
-            <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
-              <i class="fa-solid fa-check text-[10px]"></i>
-            </span>
-            <span class="text-xs font-bold text-gray-700">${s}</span>
-          </span>
-        `).join("")}
-      </div>
-      ${many ? `<div id="svc-hidden-wrap" class="flex flex-wrap gap-2 mt-2 hidden">
-        ${hiddenRest.map((s) => `
-          <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
-            <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
-              <i class="fa-solid fa-check text-[10px]"></i>
-            </span>
-            <span class="text-xs font-bold text-gray-700">${s}</span>
-          </span>
-        `).join("")}
-      </div>` : ``}
-    `;
-    servicesGrid.appendChild(allWrap);
 
-    if (many) {
-      const btn = allWrap.querySelector("#svc-toggle-btn");
-      const hiddenWrap = allWrap.querySelector("#svc-hidden-wrap");
+          <div id="svc-featured-wrap" class="flex flex-wrap gap-2">
+            ${featuredVisible.map((s) => `
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 shadow-sm">
+                <span class="w-5 h-5 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center">
+                  <i class="fa-solid fa-star text-[10px]"></i>
+                </span>
+                <span class="text-xs font-extrabold text-gray-700">${s}</span>
+              </span>
+            `).join("")}
+          </div>
+
+          ${featuredMany ? `<div id="svc-featured-hidden-wrap" class="flex flex-wrap gap-2 mt-2 hidden">
+            ${featuredHidden.map((s) => `
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-br from-white to-cyan-50 border border-cyan-100 shadow-sm">
+                <span class="w-5 h-5 rounded-lg bg-cyan-100 text-cyan-700 flex items-center justify-center">
+                  <i class="fa-solid fa-star text-[10px]"></i>
+                </span>
+                <span class="text-xs font-extrabold text-gray-700">${s}</span>
+              </span>
+            `).join("")}
+          </div>` : ``}
+        </div>
+      ` : ``}
+
+      ${other.length ? `
+        <div class="pt-4 border-t border-gray-100">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <div class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+              ${t("svc_more")} <span class="text-gray-300">(${other.length})</span>
+            </div>
+            ${otherMany ? `<button id="svc-toggle-btn" type="button" class="text-xs font-bold text-BTrustOn-accent hover:underline">${t("show_all")}</button>` : ``}
+          </div>
+
+          <div id="svc-other-wrap" class="flex flex-wrap gap-2">
+            ${otherVisible.map((s) => `
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
+                <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                </span>
+                <span class="text-xs font-bold text-gray-700">${s}</span>
+              </span>
+            `).join("")}
+          </div>
+
+          ${otherMany ? `<div id="svc-hidden-wrap" class="flex flex-wrap gap-2 mt-2 hidden">
+            ${otherHidden.map((s) => `
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
+                <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                </span>
+                <span class="text-xs font-bold text-gray-700">${s}</span>
+              </span>
+            `).join("")}
+          </div>` : ``}
+        </div>
+      ` : ``}
+    `;
+
+    servicesGrid.appendChild(card);
+
+    // Featured toggle
+    if (featuredMany) {
+      const btnF = card.querySelector("#svc-featured-toggle-btn");
+      const hiddenF = card.querySelector("#svc-featured-hidden-wrap");
+      if (btnF && hiddenF) {
+        btnF.onclick = () => {
+          const isHidden = hiddenF.classList.contains("hidden");
+          if (isHidden) {
+            hiddenF.classList.remove("hidden");
+            btnF.textContent = t("show_less");
+          } else {
+            hiddenF.classList.add("hidden");
+            btnF.textContent = t("show_all");
+          }
+        };
+      }
+    }
+
+    if (otherMany) {
+      const btn = card.querySelector("#svc-toggle-btn");
+      const hiddenWrap = card.querySelector("#svc-hidden-wrap");
       if (btn && hiddenWrap) {
         btn.onclick = () => {
           const isHidden = hiddenWrap.classList.contains("hidden");
           if (isHidden) {
             hiddenWrap.classList.remove("hidden");
-            btn.textContent = "Show less";
+            btn.textContent = t("show_less");
           } else {
             hiddenWrap.classList.add("hidden");
-            btn.textContent = `Show all (${tags.length})`;
+            btn.textContent = t("show_all");
           }
         };
       }
@@ -5650,6 +5733,7 @@ if (servicesGrid) {
     servicesGrid.appendChild(detailsDiv);
   }
 }
+
 
 
 // --- BÖLÜM 3: OWNER / YETKİLİ KARTI (SIDEBAR İÇİN YENİ VERSİYON) ---
@@ -6000,7 +6084,14 @@ async function saveProfileData() {
     const sector = document.getElementById("edit-sector").value;
     const desc = document.getElementById("edit-desc").value.trim();
     const servicesStr = document.getElementById("edit-services").value.trim();
+    const featuredStrRaw = (document.getElementById("edit-services-featured")?.value || "").trim();
     const serviceDetails = document.getElementById("edit-service-details").value.trim();
+    // Featured services (comma-separated). If empty, fallback to first 5 services.
+    let featuredStr = featuredStrRaw;
+    if (!featuredStr) {
+      const tmp = servicesStr.split(",").map(s => s.trim()).filter(Boolean);
+      featuredStr = tmp.slice(0, 5).join(", ");
+    }
     const website = document.getElementById("edit-website").value.trim();
     const phone = document.getElementById("edit-phone").value.trim();
     const contactEmail = document.getElementById("edit-email").value.trim();
@@ -6056,6 +6147,7 @@ async function saveProfileData() {
       sector: sector,
       description: desc,
       services: servicesStr,
+      services_featured: featuredStr,
       service_details: serviceDetails,
       website: website,
       phone: phone,
@@ -6075,10 +6167,19 @@ async function saveProfileData() {
     };
 
     // --- 5. DB GÖNDER ---
-    const { error } = await supabaseClient
+    let { error } = await supabaseClient
       .from('profiles')
       .update(updates)
       .eq('id', user.id);
+
+    // If the DB doesn't have the new column yet, retry without it (backward compatible)
+    if (error && String(error.message || "").toLowerCase().includes("services_featured") && String(error.message || "").toLowerCase().includes("does not exist")) {
+      try { delete updates.services_featured; } catch(e) {}
+      ({ error } = await supabaseClient
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id));
+    }
 
     if (error) throw error;
 
@@ -6093,6 +6194,7 @@ async function saveProfileData() {
             address, type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
             services: servicesStr.split(',').map(s => s.trim()).filter(s => s),
+            services_featured: featuredStr,
             service_details: serviceDetails,
             
             // BURASI ÇOK ÖNEMLİ: Hesaplanan (veya null olan) değerleri basıyoruz
@@ -6197,10 +6299,10 @@ function showEditorView() {
 /* =========================
    SERVICES TAG EDITOR (chips + reorder)
    - Stores canonical value in hidden #edit-services (comma-separated)
-   - Top 3 tags are treated as "Featured" on profile
+   - User-selected ⭐ tags are treated as "Featured" on profile
 ========================= */
 
-window.__svcEditor = window.__svcEditor || { tags: [], dragIndex: null, bound: false };
+window.__svcEditor = window.__svcEditor || { tags: [], featured: [], dragIndex: null, bound: false };
 
 const SERVICE_SUGGESTIONS = [
   "EPC", "Engineering Design", "Procurement", "Construction", "Commissioning",
@@ -6217,10 +6319,25 @@ function _svcNorm(s) {
   return String(s || "").replace(/\s+/g, " ").trim();
 }
 
+function _svcKey(s) {
+  return String(s || "").trim().toLowerCase();
+}
+
 function _svcSyncHiddenInput() {
+  const tags = window.__svcEditor.tags || [];
+  const featured = window.__svcEditor.featured || [];
+
+  // keep featured in-sync with current tags (remove deleted, keep order by tags)
+  const tagKeys = new Set(tags.map(_svcKey));
+  const featuredClean = featured.filter(t => tagKeys.has(_svcKey(t)));
+  const featuredSorted = tags.filter(t => featuredClean.some(f => _svcKey(f) === _svcKey(t)));
+  window.__svcEditor.featured = featuredSorted;
+
   const hidden = document.getElementById("edit-services");
-  if (!hidden) return;
-  hidden.value = (window.__svcEditor.tags || []).join(", ");
+  if (hidden) hidden.value = tags.join(", ");
+
+  const hiddenFeat = document.getElementById("edit-services-featured");
+  if (hiddenFeat) hiddenFeat.value = featuredSorted.join(", ");
 }
 
 function initServiceTagEditor() {
@@ -6267,6 +6384,42 @@ function setServiceTagsFromString(str) {
   renderServiceTags();
 }
 
+function setServiceFeaturedFromAny(val) {
+  let arr = [];
+  if (Array.isArray(val)) {
+    arr = val.map(_svcNorm).filter(Boolean);
+  } else if (typeof val === "string") {
+    arr = String(val || "").split(",").map(_svcNorm).filter(Boolean);
+  }
+  // de-dupe + keep only existing tags (sync will handle)
+  const seen = new Set();
+  const uniq = [];
+  arr.forEach(p => {
+    const k = _svcKey(p);
+    if (!seen.has(k)) { seen.add(k); uniq.push(p); }
+  });
+  window.__svcEditor.featured = uniq;
+  _svcSyncHiddenInput();
+  renderServiceTags();
+}
+
+function toggleServiceFeatured(tag) {
+  const t = _svcNorm(tag);
+  if (!t) return;
+  const tags = window.__svcEditor.tags || [];
+  let featured = window.__svcEditor.featured || [];
+  const key = _svcKey(t);
+  const has = featured.some(x => _svcKey(x) === key);
+  if (has) {
+    featured = featured.filter(x => _svcKey(x) !== key);
+  } else {
+    featured = [...featured, t];
+  }
+  window.__svcEditor.featured = featured;
+  _svcSyncHiddenInput();
+  renderServiceTags();
+}
+
 function addServiceTag(tag) {
   const t = _svcNorm(tag);
   if (!t) return;
@@ -6289,6 +6442,7 @@ function removeServiceTag(idx) {
 
 function clearServiceTags() {
   window.__svcEditor.tags = [];
+  window.__svcEditor.featured = [];
   _svcSyncHiddenInput();
   renderServiceTags();
   const input = document.getElementById("svc-add-input");
@@ -6317,19 +6471,33 @@ function renderServiceTags() {
     chip.setAttribute("draggable", "true");
     chip.dataset.idx = String(idx);
 
+    const isFeatured = (window.__svcEditor.featured || []).some(x => _svcKey(x) === _svcKey(t));
+
     chip.innerHTML = `
       <span class="w-6 h-6 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center">
         <i class="fa-solid fa-grip-lines text-[10px]"></i>
       </span>
       <span class="text-xs font-extrabold text-gray-700">${t}</span>
-      ${idx < 3 ? `<span class="ml-1 text-[9px] font-extrabold px-2 py-1 rounded-lg bg-cyan-50 border border-cyan-100 text-BTrustOn-accent uppercase">Featured</span>` : ``}
-      <button type="button" class="ml-1 w-7 h-7 rounded-lg bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white flex items-center justify-center transition opacity-80 group-hover:opacity-100" title="Remove">
+
+      <button type="button" class="svc-star ml-1 w-7 h-7 rounded-lg border border-amber-200 bg-amber-50 text-amber-600 flex items-center justify-center transition opacity-85 group-hover:opacity-100" title="Toggle Featured" aria-pressed="${isFeatured ? "true" : "false"}">
+        <i class="${isFeatured ? "fa-solid" : "fa-regular"} fa-star text-[11px]"></i>
+      </button>
+      ${isFeatured ? `<span class="ml-1 text-[9px] font-extrabold px-2 py-1 rounded-lg bg-cyan-50 border border-cyan-100 text-BTrustOn-accent uppercase">Featured</span>` : ``}
+
+      <button type="button" class="svc-remove ml-1 w-7 h-7 rounded-lg bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 hover:text-red-700 flex items-center justify-center transition opacity-80 group-hover:opacity-100" title="Remove">
         <i class="fa-solid fa-xmark text-[11px]"></i>
       </button>
     `;
 
+    // Featured toggle
+    chip.querySelector(".svc-star")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleServiceFeatured(t);
+    });
+
     // Remove
-    chip.querySelector("button")?.addEventListener("click", (e) => {
+    chip.querySelector(".svc-remove")?.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       removeServiceTag(idx);
@@ -7571,14 +7739,25 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   document.getElementById("edit-duns").value = selectedCompany.duns_number || "";
   document.getElementById("edit-service-details").value = selectedCompany.service_details || ""; // <-- BU SATIRI EKLE 
 
-  // ✅ Services Tag Editor (chips + reorder)
+  // ✅ Services Tag Editor (chips + featured + reorder)
   try {
     initServiceTagEditor();
     setServiceTagsFromString(document.getElementById("edit-services").value);
-  } catch(e) {}
- 
 
-  // 👇👇👇 D ADIMI: OWNER VERİLERİNİ KUTULARA DOLDUR 👇👇👇
+    const existingFeatured = selectedCompany.services_featured || "";
+    const hasExisting = Array.isArray(existingFeatured) ? existingFeatured.length > 0 : String(existingFeatured || "").trim() !== "";
+    if (hasExisting) {
+      setServiceFeaturedFromAny(existingFeatured);
+    } else {
+      // default: first 5 tags become featured (user can change anytime)
+      const currentTags = (window.__svcEditor && window.__svcEditor.tags) ? window.__svcEditor.tags : [];
+      setServiceFeaturedFromAny(currentTags.slice(0, 5));
+    }
+  } catch(e) {}
+
+
+
+// 👇👇👇 D ADIMI: OWNER VERİLERİNİ KUTULARA DOLDUR 👇👇👇
   
   // 1. Önce "Bu şirketin bir yetkili kaydı var mı?" diye bakıyoruz
   const hasOwner = selectedCompany.owner_name || selectedCompany.owner_role;
