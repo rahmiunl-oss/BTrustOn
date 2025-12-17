@@ -5257,7 +5257,7 @@ try {
       try {
           const { data: profile, error } = await supabaseClient
               .from('profiles')
-              .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
+              .select('*')
               .eq('id', companyId)
               .single();
 
@@ -6189,7 +6189,7 @@ async function saveProfileData() {
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
-            name, country, city, sector, desc, tagline,
+            name, city, sector, desc, tagline,
             website, phone, contact_email: contactEmail,
             address, type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
@@ -6709,6 +6709,8 @@ function servicePickSuggestion(s) {
       
 
       switchLanguage("en");
+      // initRealData(); // disabled to prevent double-loading
+
       initShowcaseSystem();
     });
 /* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
@@ -7292,7 +7294,7 @@ async function fetchAllPublicProfiles() {
   // 1. Supabase'den profilleri çek
   const { data: profiles, error } = await supabaseClient
     .from('profiles')
-    .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at');
+    .select('*');
 
   if (error || !profiles) {
     console.log("Henüz kayıtlı şirket yok veya hata oluştu.");
@@ -7390,7 +7392,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   // 3. PROFİL VERİSİNİ ÇEK
   const { data: profile, error } = await supabaseClient
     .from('profiles')
-    .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
+    .select('*')
     .eq('id', session.user.id)
     .single();
 
@@ -7406,8 +7408,6 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     address: profile.address || "",
     subscription_tier: profile.subscription_tier || 'free', 
     verification_status: profile.verification_status || 'none',
-    verification_celebrated: (profile.verification_celebrated ?? false),
-    verification_celebrated_at: (profile.verification_celebrated_at ?? null),
     tax_id: profile.tax_id || "",
     duns_number: profile.duns_number || "",  
     tagline: profile.tagline || "",
@@ -7571,14 +7571,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderTopCompanies();
   startTopAnimations();
   switchLanguage("en");
-  try {
-    if (!window.__realDataLoaded) {
-      window.__realDataLoaded = true;
-      await initRealData();
-    }
-  } catch (e) {
-    console.error("initRealData failed", e);
-  }
+  initRealData();
   initShowcaseSystem();
 
   // 2) Fetch public profiles (can run after correct view is already visible)
@@ -8500,7 +8493,7 @@ async function fetchInboxMessages() {
     // 1. Tüm mesajları çek
     const { data: rawMessages, error } = await supabaseClient
         .from('messages')
-        .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
+        .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
@@ -8716,44 +8709,20 @@ async function fetchNotificationsUnread() {
     if (!user) return;
 
     // ✅ Fetch full list so the Inbox can actually show notifications
-    // Prefer DB-backed soft-delete (is_deleted/deleted_at) if the columns exist.
-    let data, error;
-
-    // Try with soft-delete columns
-    ({ data, error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('notifications')
-      .select('id,title,message,created_at,is_read,is_deleted,deleted_at')
+      .select('id,title,message,created_at,is_read')
       .eq('recipient_user_id', user.id)
-      .or('is_deleted.is.null,is_deleted.eq.false')
       .order('created_at', { ascending: false })
-      .limit(50));
-
-    // If schema doesn't have is_deleted/deleted_at, fallback gracefully
-    if (error && (String(error.message || '').includes('is_deleted') || String(error.message || '').includes('deleted_at'))) {
-      ({ data, error } = await supabaseClient
-        .from('notifications')
-        .select('id,title,message,created_at,is_read')
-        .eq('recipient_user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50));
-    }
+      .limit(50);
 
     if (error) {
       console.warn('Notifications fetch error:', error.message);
       return;
     }
 
-    // Apply local hide fallback (legacy) AND DB soft-delete
-    const clearedAt = _getNotifClearedAt ? _getNotifClearedAt() : null;
-    notificationsData = (data || []).filter(n => {
-      if (n && (n.is_deleted === true || n.is_deleted === 1)) return false;
-      if (clearedAt && n && n.created_at) {
-        const t = Date.parse(n.created_at);
-        if (!Number.isNaN(t) && t <= clearedAt) return false;
-      }
-      if (typeof _isNotifHidden === "function" && _isNotifHidden(n)) return false;
-      return true;
-    });
+    const rawList = Array.isArray(data) ? data : [];
+    notificationsData = (typeof _applyNotifVisibility === "function") ? _applyNotifVisibility(rawList) : rawList;
 
     // Count unread (supports boolean / 0-1 / null)
     notificationsUnreadCount = notificationsData.filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
@@ -8935,42 +8904,27 @@ function deleteNotification(notifId) {
       if (!user) throw new Error("Login required");
 
       // Optimistic UI remove
-      notificationsData = (notificationsData || []).filter(n => String(n.id) !== String(notifId));
-      notificationsUnreadCount = (notificationsData || []).filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
+      const before = Array.isArray(notificationsData) ? notificationsData : [];
+      const target = before.find(n => String(n.id) === String(notifId));
+      const wasUnread = target ? (target.is_read === false || target.is_read === 0 || target.is_read === null) : false;
+
+      notificationsData = before.filter(n => String(n.id) !== String(notifId));
+      if (wasUnread && notificationsUnreadCount > 0) notificationsUnreadCount -= 1;
       renderInboxItems();
 
-      const nowIso = new Date().toISOString();
-
-      // ✅ Prefer DB soft-delete so it won't reappear on other devices
-      let updatedRows = null;
-      let upErr = null;
-
-      ({ data: updatedRows, error: upErr } = await supabaseClient
+      // Try DB delete (may be blocked by RLS and return 0 rows without error)
+      const { data: deletedRows, error } = await supabaseClient
         .from("notifications")
-        .update({ is_deleted: true, deleted_at: nowIso, is_read: true })
+        .delete()
         .eq("id", notifId)
         .eq("recipient_user_id", user.id)
-        .select("id"));
+        .select("id");
 
-      // If schema doesn't have is_deleted/deleted_at, fallback to hard delete
-      if (upErr && (String(upErr.message || '').includes('is_deleted') || String(upErr.message || '').includes('deleted_at'))) {
-        upErr = null;
-        ({ data: updatedRows, error: upErr } = await supabaseClient
-          .from("notifications")
-          .delete()
-          .eq("id", notifId)
-          .eq("recipient_user_id", user.id)
-          .select("id"));
-      }
+      if (error) throw error;
 
-      if (upErr) throw upErr;
-
-      if (!updatedRows || updatedRows.length === 0) {
-        // Fallback: hide locally so refresh on THIS device won't bring it back
+      if (!deletedRows || deletedRows.length === 0) {
+        // Fallback: hide locally so refresh won't bring it back
         _dismissNotifIdLocal(notifId);
-      } else {
-        // DB write worked → clear local hide for this id
-        // (Optional) leave it; harmless if present
       }
 
       showToast("Deleted", "Notification removed.", "success");
@@ -8990,37 +8944,21 @@ function deleteAllNotifications() {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) throw new Error("Login required");
 
-      const nowIso = new Date().toISOString();
-
-      // ✅ Prefer DB soft-delete (cross-device)
-      let updatedRows = null;
-      let upErr = null;
-
-      ({ data: updatedRows, error: upErr } = await supabaseClient
+      // Try DB delete first (may be blocked by RLS and return 0 rows without error)
+      const { data: deletedRows, error } = await supabaseClient
         .from("notifications")
-        .update({ is_deleted: true, deleted_at: nowIso, is_read: true })
+        .delete()
         .eq("recipient_user_id", user.id)
-        .or("is_deleted.is.null,is_deleted.eq.false")
-        .select("id"));
+        .select("id");
 
-      // If schema doesn't have soft-delete columns, fallback to hard delete
-      if (upErr && (String(upErr.message || '').includes('is_deleted') || String(upErr.message || '').includes('deleted_at'))) {
-        upErr = null;
-        ({ data: updatedRows, error: upErr } = await supabaseClient
-          .from("notifications")
-          .delete()
-          .eq("recipient_user_id", user.id)
-          .select("id"));
-      }
+      if (error) throw error;
 
-      if (upErr) throw upErr;
-
-      if (!updatedRows || updatedRows.length === 0) {
+      if (!deletedRows || deletedRows.length === 0) {
         // Fallback: keep it "deleted" on this device by hiding everything up to now
-        _setNotifClearedAt(nowIso);
+        _setNotifClearedAt(new Date().toISOString());
         _setNotifDismissedIds([]);
       } else {
-        // DB write worked → clear local hide state
+        // DB delete worked → clear local hide state
         _setNotifClearedAt(null);
         _setNotifDismissedIds([]);
       }
@@ -9032,7 +8970,6 @@ function deleteAllNotifications() {
     } catch (e) {
       console.error("Delete notifications error:", e);
       showToast("Error", "Failed to delete notifications.", "error");
-      try { await fetchNotificationsUnread(); } catch {}
     }
   });
 }
@@ -9448,7 +9385,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
     // --- SORGULAMA MANTIĞI DEĞİŞTİ ---
     let query = supabaseClient
         .from('messages')
-        .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
+        .select('*')
         .order('created_at', { ascending: true });
 
     // Eğer Partner ID 'null' ise (MİSAFİR SENARYOSU)
@@ -10458,7 +10395,7 @@ async function initRealData() {
   // 1. Supabase'den tüm profilleri al
   const { data: profiles, error } = await supabaseClient
     .from('profiles')
-    .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at');
+    .select('*');
 
   if (error) { console.error("Veri çekme hatası:", error); return; }
   if (!profiles) return;
@@ -11712,7 +11649,7 @@ async function loadAdminData() {
     // Supabase'den 'pending' olanları çek
     const { data: requests, error } = await supabaseClient
         .from('profiles')
-        .select('id,email,company_name,city,country,sector,tagline,description,company_type,company_size,founded_year,services,assets,projects,certificates,logo_url,owner_name,owner_role,owner_linkedin,owner_photo_url,subscription_tier,verification_status,updated_at')
+        .select('*')
         .eq('verification_status', 'pending')
         .order('updated_at', { ascending: false });
 
@@ -11794,8 +11731,6 @@ async function processVerification(userId, action) {
         updates = {
             verification_status: 'verified',
             subscription_tier: 'pro',
-            verification_celebrated: false,
-            verification_celebrated_at: null,
             subscription_status: 'active_trial',
             trial_end_date: endDate.toISOString(),
             verification_reject_reason: null,
@@ -11902,98 +11837,92 @@ async function upgradeToPro() {
     }
 }
 
-/* --- KUTLAMA MANTIĞI --- */
+/* --- KUTLAMA MANTIĞI (CROSS-DEVICE) --- */
 
-// 1. Durumu Kontrol Et ve Kutla
+/**
+ * ✅ Amaç:
+ * - Kullanıcı verified olduktan sonra tebrik sadece 1 kez görünsün.
+ * - Kullanıcı başka bir bilgisayardan girse bile tekrar görünmesin.
+ * - Bu yüzden "seen" bilgisini localStorage değil, profiles tablosunda saklıyoruz.
+ */
+
+// 1) Durumu Kontrol Et ve Kutla (SADECE KENDİ PROFİLİNDE)
 async function checkAndTriggerCelebration(company) {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    // Sadece kendi profilinde ve verified ise çalışsın
+    if (!company || company.verification_status !== "verified") return;
+    if (String(company.id) !== String(user.id)) return;
+
+    // DB'den cross-device "seen" flag'ini oku
+    let hasSeen = false;
     try {
-        // Only for verified companies
-        if (!company || company.verification_status !== 'verified') return;
+      const { data, error } = await supabaseClient
+        .from("profiles")
+        .select("verification_celebrated")
+        .eq("id", user.id)
+        .single();
+      if (!error && data) hasSeen = !!data.verification_celebrated;
+    } catch (e) {}
 
-        // Prefer DB-backed flag (works across devices)
-        let hasSeen = !!company.verification_celebrated;
-
-        // Back-compat: if the field isn't on the object yet, fetch from DB (current user only)
-        if (typeof company.verification_celebrated === 'undefined') {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (user && String(user.id) === String(company.id)) {
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .select('verification_celebrated')
-                    .eq('id', user.id)
-                    .single();
-
-                if (!error && data) {
-                    hasSeen = !!data.verification_celebrated;
-                    company.verification_celebrated = hasSeen;
-                }
-            }
-        }
-
-        // Fallback (old per-device flag) just in case
-        if (!hasSeen) {
-            try {
-                const ls = localStorage.getItem(`celebrated_${company.id}`);
-                if (ls === "true") hasSeen = true;
-            } catch(e) {}
-        }
-
-        if (!hasSeen) openCelebrationModal();
-    } catch (e) {
-        console.warn("checkAndTriggerCelebration error:", e);
+    // Legacy fallback (eski cihaz bazlı kayıt)
+    if (!hasSeen) {
+      try {
+        const ls = localStorage.getItem(`celebrated_${user.id}`);
+        if (ls === "true") hasSeen = true;
+      } catch (e) {}
     }
+
+    if (!hasSeen) openCelebrationModal();
+  } catch (e) {
+    console.warn("checkAndTriggerCelebration error:", e);
+  }
 }
 
-// 2. Modalı Aç ve Konfeti Patlat
-/* --- GÜNCELLENMİŞ: openCelebrationModal (SADE VE KURUMSAL) --- */
+// 2) Modalı Aç
 function openCelebrationModal() {
-    const modal = document.getElementById("modal-celebration");
-    const card = document.getElementById("celebration-card");
-    
-    if(!modal) return;
+  const modal = document.getElementById("modal-celebration");
+  const card = document.getElementById("celebration-card");
+  if (!modal) return;
 
-    // Modalı Göster
-    modal.classList.remove("opacity-0", "pointer-events-none");
-    if(card) {
-        card.classList.remove("scale-90");
-        card.classList.add("scale-100");
-    }
-
-    // BURADAKİ KONFETİ KODLARINI SİLDİK (Daha profesyonel durması için)
+  modal.classList.remove("opacity-0", "pointer-events-none");
+  if (card) {
+    card.classList.remove("scale-90");
+    card.classList.add("scale-100");
+  }
 }
-// 3. Modalı Kapat ve Kaydet
+
+// 3) Modalı Kapat ve DB'ye "seen" yaz
 async function closeCelebration() {
-    const modal = document.getElementById("modal-celebration");
-    if (modal) modal.classList.add("opacity-0", "pointer-events-none");
+  const modal = document.getElementById("modal-celebration");
+  if (modal) modal.classList.add("opacity-0", "pointer-events-none");
 
-    // ✅ Persist "seen" state in DB so it won't show again on another device
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) {
-            const nowIso = new Date().toISOString();
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
-                .eq('id', user.id);
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
 
-            if (!error) {
-                // Keep local object in sync
-                if (selectedCompany && String(selectedCompany.id) === String(user.id)) {
-                    selectedCompany.verification_celebrated = true;
-                }
-            } else {
-                console.warn("Could not persist verification_celebrated:", error);
-            }
-        }
-    } catch (e) {
-        console.warn("Could not persist verification_celebrated:", e);
-    }
+    const nowIso = new Date().toISOString();
 
-    // Fallback (legacy per-device flag)
-    try {
-        if (selectedCompany) localStorage.setItem(`celebrated_${selectedCompany.id}`, "true");
-    } catch(e) {}
+    // ✅ Persist: cross-device tek seferlik tebrik
+    const { error } = await supabaseClient
+      .from("profiles")
+      .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+      .eq("id", user.id);
+
+    if (error) console.warn("Could not persist verification_celebrated:", error);
+  } catch (e) {
+    console.warn("Could not persist verification_celebrated:", e);
+  }
+
+  // Legacy fallback (eski cihaz bazlı)
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (user) localStorage.setItem(`celebrated_${user.id}`, "true");
+  } catch (e) {}
 }
+
 
 // --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
 // --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
