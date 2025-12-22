@@ -1497,10 +1497,10 @@ html{ scroll-padding-top: 118px; }
       onclick="toggleSavedPanel()"
       class="bton-nav-pill relative flex items-center gap-2 px-3 py-2 rounded-full"
       title="My Lists"
-      aria-label="My Lists"
+      aria-label="My Lists" data-i18n-title="nav_lists" data-i18n-aria="nav_lists"
     >
       <i class="fa-regular fa-bookmark text-BTrustOn-accent"></i>
-      <span class="hidden md:inline">LISTS</span>
+      <span class="hidden md:inline" data-i18n="nav_lists">LISTS</span>
       <span id="saved-badge" class="bton-badge hidden">
         0
       </span>
@@ -1510,12 +1510,12 @@ html{ scroll-padding-top: 118px; }
       onclick="openMyCompanyIfExists()"
       class="bton-nav-pill relative flex items-center gap-2 px-3 py-2 rounded-full"
       title="My Company"
-      aria-label="My Company"
+      aria-label="My Company" data-i18n-title="nav_my_company" data-i18n-aria="nav_my_company"
     >
       <span class="bton-nav-mini-ic" aria-hidden="true">
         <i class="fa-regular fa-building"></i>
       </span>
-      <span class="hidden md:inline">MY COMPANY</span>
+      <span class="hidden md:inline" data-i18n="nav_my_company">MY COMPANY</span>
     </button>
 
     
@@ -1564,12 +1564,12 @@ html{ scroll-padding-top: 118px; }
 <h1
         id="hero-title"
         class="text-3xl md:text-5xl font-header font-extrabold text-BTrustOn-primary mb-3 leading-[1.05] tracking-tight drop-shadow-sm py-1 max-w-4xl mx-auto"
-       data-i18n="hero_title">Verified Partners.<br> <span class='text-transparent bg-clip-text bg-gradient-to-r from-BTrustOn-accent to-blue-600'>Get discovered by buyers.</span></h1>
+      ></h1>
       
       <p
         id="hero-desc"
         class="text-lg md:text-xl text-slate-600 mb-6 max-w-3xl mx-auto font-normal leading-relaxed"
-       data-i18n="hero_desc">Project references • industrial assets • certificates... <span class='text-base md:text-lg text-slate-500'>Proof of capability on one screen—so sourcing is faster, safer, and smarter.</span></p>
+      ></p>
 
       <div id="hero-cta" class="flex flex-col md:flex-row items-center justify-center gap-3 mb-2">
         <button id="hero-btn-join" type="button"
@@ -1706,14 +1706,14 @@ html{ scroll-padding-top: 118px; }
     onchange="filterSector(this.value)"
     class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]"
 >
-    <option value="all">All Sectors</option>
-    <option value="construction">Construction & Infrastructure</option>
-    <option value="energy">Energy & Oil/Gas</option>
-    <option value="mining">Mining & Metals</option>
-    <option value="manufacturing">Manufacturing & Machinery</option>
-    <option value="technology">Technology & Automation</option>
-    <option value="logistics">Logistics & Trade</option>
-    <option value="engineering">Engineering & Services</option> </select>
+    <option value="all" data-i18n="sec_all">All Sectors</option>
+    <option value="construction" data-i18n="sec_const">Construction & Infrastructure</option>
+    <option value="energy" data-i18n="sec_energy">Energy & Oil/Gas</option>
+    <option value="mining" data-i18n="sec_mine">Mining & Metals</option>
+    <option value="manufacturing" data-i18n="sec_manu">Manufacturing & Machinery</option>
+    <option value="technology" data-i18n="sec_tech">Technology & Automation</option>
+    <option value="logistics" data-i18n="sec_logi">Logistics & Trade</option>
+    <option value="engineering" data-i18n="sec_eng">Engineering & Services</option> </select>
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
                     </div>
@@ -1728,7 +1728,7 @@ html{ scroll-padding-top: 118px; }
                         onchange="handleCountryChange(this.value)"
                         class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]"
                     >
-                        <option value="all">All Countries</option>
+                        <option value="all" data-i18n="filter_all_countries">All Countries</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
@@ -1744,12 +1744,12 @@ html{ scroll-padding-top: 118px; }
                         onchange="handleSortChange(this.value)"
                         class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition"
                     >
-                        <option value="recommended">Recommended</option>
-                        <option value="verified_first">Verified: First</option>
-                        <option value="year_oldest">Experience: Oldest First</option>
-                        <option value="year_newest">Experience: Newest First</option>
-                        <option value="name_asc">Name: A to Z</option>
-                        <option value="name_desc">Name: Z to A</option>
+                        <option value="recommended" data-i18n="sort_recommended">Recommended</option>
+                        <option value="verified_first" data-i18n="sort_verified_first">Verified: First</option>
+                        <option value="year_oldest" data-i18n="sort_year_oldest">Experience: Oldest First</option>
+                        <option value="year_newest" data-i18n="sort_year_newest">Experience: Newest First</option>
+                        <option value="name_asc" data-i18n="sort_name_asc">Name: A to Z</option>
+                        <option value="name_desc" data-i18n="sort_name_desc">Name: Z to A</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
@@ -2195,24 +2195,24 @@ html{ scroll-padding-top: 118px; }
                             
                             <div id="section-general" class="space-y-6 scroll-mt-6">
                                 <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 pb-2">
-                                  General Information
+                                  <span data-i18n="mc_section_general">General Information</span>
                                 </h3>
                                 
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                      Company Name <span class="text-red-500">*</span>
+                                      <span data-i18n="mc_field_company_name">Company Name</span> <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="text" id="edit-name" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 font-bold focus:outline-none transition" placeholder="e.g. Acme Construction" required />
+                                    <input type="text" id="edit-name" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 font-bold focus:outline-none transition" data-i18n-placeholder="mc_ph_company_name" placeholder="e.g. Acme Construction" required />
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Country <span class="text-red-500">*</span></label>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_country">Country</span> <span class="text-red-500">*</span></label>
                                         <select id="edit-country" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
                                              </select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">City <span class="text-red-500">*</span></label>
+                                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_city">City</span> <span class="text-red-500">*</span></label>
                                         <input type="text" id="edit-city" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Berlin" required />
                                     </div>
                                 </div>
@@ -2231,40 +2231,40 @@ html{ scroll-padding-top: 118px; }
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sector <span class="text-red-500">*</span></label>
                                     <select id="edit-sector" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white" required>
                                         <option value="">Select sector…</option>
-                                        <option value="construction">Construction & Infrastructure</option>
-                                        <option value="energy">Energy & Oil/Gas</option>
-                                        <option value="mining">Mining & Metals</option>
-                                        <option value="manufacturing">Manufacturing & Machinery</option>
-                                        <option value="technology">Technology & Automation</option>
-                                        <option value="logistics">Logistics & Trade</option>
-                                        <option value="engineering">Engineering & Services</option>
+                                        <option value="construction" data-i18n="sec_const">Construction & Infrastructure</option>
+                                        <option value="energy" data-i18n="sec_energy">Energy & Oil/Gas</option>
+                                        <option value="mining" data-i18n="sec_mine">Mining & Metals</option>
+                                        <option value="manufacturing" data-i18n="sec_manu">Manufacturing & Machinery</option>
+                                        <option value="technology" data-i18n="sec_tech">Technology & Automation</option>
+                                        <option value="logistics" data-i18n="sec_logi">Logistics & Trade</option>
+                                        <option value="engineering" data-i18n="sec_eng">Engineering & Services</option>
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Tagline (Slogan)</label>
-                                    <input type="text" id="edit-tagline" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="e.g. Building the Future" />
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_tagline">Tagline (Slogan)</span></label>
+                                    <input type="text" id="edit-tagline" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" data-i18n-placeholder="mc_ph_tagline" placeholder="e.g. Building the Future" />
                                 </div>
 
 <div class="grid grid-cols-2 gap-4">
     <div>
-      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Website</label>
-      <input type="text" id="edit-website" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" placeholder="www.example.com" />
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_website">Website</span></label>
+      <input type="text" id="edit-website" class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" data-i18n-placeholder="mc_ph_website" placeholder="www.example.com" />
     </div>
     <div>
-      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Phone</label>
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_phone">Phone</span></label>
       <input 
   type="text" 
   id="edit-phone" 
   class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" 
-  placeholder="+ (Country Code) Phone Number" 
+  data-i18n-placeholder="mc_ph_phone" placeholder="+ (Country Code) Phone Number" 
 />
     </div>
 </div>
 
 <div class="mt-4">
     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-        Public Contact Email <span class="text-gray-400 font-normal lowercase">(optional)</span>
+        <span data-i18n="mc_field_public_email">Public Contact Email</span> <span class="text-gray-400 font-normal lowercase">(optional)</span>
     </label>
     <input 
       type="email" 
@@ -2805,10 +2805,10 @@ html{ scroll-padding-top: 118px; }
           <select id="asset-filter-status"
             class="w-full border border-[rgba(15,23,42,.10)] bg-white/70 rounded-xl px-3 py-2 text-[12px] font-semibold text-slate-700 outline-none focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer"
             onchange="filterAssetsUI()">
-            <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="maintenance">Under Maintenance</option>
-            <option value="out">Out of Service</option>
+            <option value="all" data-i18n="asset_status_all">All Status</option>
+            <option value="available" data-i18n="asset_status_available">Available</option>
+            <option value="maintenance" data-i18n="asset_status_maintenance">Under Maintenance</option>
+            <option value="out" data-i18n="asset_status_out">Out of Service</option>
           </select>
           <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
         </div>
@@ -3092,11 +3092,11 @@ html{ scroll-padding-top: 118px; }
 
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <label class="block text-xs font-bold text-gray-600 mb-1.5">Email</label>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_email">Email</label>>
       <input type="email" id="join-email" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" required />
     </div>
     <div>
-      <label class="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_password">Password</label>
       <input type="password" id="join-password" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" placeholder="******" required />
     </div>
   </div>
@@ -3104,7 +3104,7 @@ html{ scroll-padding-top: 118px; }
   <div class="grid grid-cols-2 gap-4">
     
     <div>
-      <label class="block text-xs font-bold text-gray-600 mb-1.5">Primary Sector</label>
+      <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_primary_sector">Primary Sector</label>
       <select id="join-sector" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700">
     <option value="construction">Construction & Infrastructure</option>
     <option value="energy">Energy & Oil/Gas</option>
@@ -3334,8 +3334,8 @@ html{ scroll-padding-top: 118px; }
           <i class="fa-solid fa-key text-cyan-700"></i>
         </div>
         <div>
-          <h2 class="text-base font-extrabold text-slate-900 leading-tight">Partner Login</h2>
-          <p class="text-[11px] text-gray-500 mt-0.5">Access your company dashboard.</p>
+          <h2 class="text-base font-extrabold text-slate-900 leading-tight" data-i18n="login_title">Partner Login</h2>
+          <p class="text-[11px] text-gray-500 mt-0.5" data-i18n="login_desc">Access your company dashboard.</p>
         </div>
       </div>
 
@@ -3347,7 +3347,7 @@ html{ scroll-padding-top: 118px; }
     <div class="p-6">
       <form id="login-form" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-gray-600 mb-1.5">Email</label>
+          <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_email">Email</label>
           <input
             type="email"
             name="email"
@@ -3359,7 +3359,7 @@ html{ scroll-padding-top: 118px; }
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
+          <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_password">Password</label>
           <input
             type="password"
             name="password"
@@ -3377,15 +3377,11 @@ html{ scroll-padding-top: 118px; }
             type="button"
             onclick="closeLoginModal()"
             class="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-extrabold text-gray-600 hover:bg-gray-50 transition"
-          >
-            Cancel
-          </button>
+          ><span data-i18n="btn_cancel">Cancel</span></button>
           <button
             type="submit"
             class="px-4 py-2.5 rounded-xl bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white text-xs font-extrabold shadow-lg shadow-cyan-500/20 transition"
-          >
-            Login
-          </button>
+          ><span data-i18n="btn_login">Login</span></button>
         </div>
       </form>
     </div>
@@ -7354,7 +7350,16 @@ function getCompanyTypeBadge(rawType) {
         if (value) el.setAttribute("title", value);
       });
 
-      const heroTitle = document.getElementById("hero-title");
+      
+
+      // Aria labels (accessibility)
+      document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-aria");
+        if (!key) return;
+        const value = t(key);
+        if (value) el.setAttribute("aria-label", value);
+      });
+const heroTitle = document.getElementById("hero-title");
       const heroDesc = document.getElementById("hero-desc");
 
       if (heroTitle) {
