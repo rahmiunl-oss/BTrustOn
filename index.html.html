@@ -1550,15 +1550,26 @@ html{ scroll-padding-top: 118px; }
   <div id="view-dashboard" class="fade-in">
     <header class="pt-4 pb-4 px-4 text-center relative overflow-hidden z-10">
       <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-28 w-[760px] h-[760px] bg-gradient-to-br from-cyan-200/45 via-blue-200/25 to-purple-200/15 blur-3xl rounded-full"></div>
-      <h1
+      
+      <!-- Language switcher -->
+      <div class="absolute top-4 right-4 z-20 flex items-center gap-1 bg-white/80 backdrop-blur-md border border-white/60 shadow-sm rounded-full p-1">
+        <button id="lang-en" type="button" onclick="switchLanguage('en')" class="px-3 py-1.5 rounded-full text-xs font-extrabold tracking-wide text-gray-500 transition">
+          EN
+        </button>
+        <button id="lang-tr" type="button" onclick="switchLanguage('tr')" class="px-3 py-1.5 rounded-full text-xs font-extrabold tracking-wide text-gray-500 transition">
+          TR
+        </button>
+      </div>
+
+<h1
         id="hero-title"
         class="text-3xl md:text-5xl font-header font-extrabold text-BTrustOn-primary mb-3 leading-[1.05] tracking-tight drop-shadow-sm py-1 max-w-4xl mx-auto"
-      ></h1>
+       data-i18n="hero_title">Verified Partners.<br> <span class='text-transparent bg-clip-text bg-gradient-to-r from-BTrustOn-accent to-blue-600'>Get discovered by buyers.</span></h1>
       
       <p
         id="hero-desc"
         class="text-lg md:text-xl text-slate-600 mb-6 max-w-3xl mx-auto font-normal leading-relaxed"
-      ></p>
+       data-i18n="hero_desc">Project references • industrial assets • certificates... <span class='text-base md:text-lg text-slate-500'>Proof of capability on one screen—so sourcing is faster, safer, and smarter.</span></p>
 
       <div id="hero-cta" class="flex flex-col md:flex-row items-center justify-center gap-3 mb-2">
         <button id="hero-btn-join" type="button"
@@ -4708,426 +4719,48 @@ async function partnerLogout() {
 
 
   <script>
-    const translations = {
-      en: {
-        hero_title:
-          "Verified Partners.<br> <span class='text-transparent bg-clip-text bg-gradient-to-r from-BTrustOn-accent to-blue-600'>Get discovered by buyers.</span>",
-        hero_desc:
-          "Project references • industrial assets • certificates<br><span class='text-base md:text-lg text-slate-500'>Proof of capability on one screen—so sourcing is faster, safer, and smarter.</span>",
-        hero_cta_join: "Join as a Company",
-hero_cta_how: "How BTrustOn Works",
-        hero_cta_post: "Post Update",
-        hero_cta_post_pro: "Post Update (Pro)",
-        hero_proof: "Verified badge after review. Show proof, not promises.",
-        hero_badge_verified: "Verified Partners",
-        hero_badge_references: "Project References",
-        hero_badge_assets: "Industrial Assets",
-        search_ph:
-          "Search verified partners, services & equipment...",
-        btn_discover: "DISCOVER",
-        join: "JOIN NETWORK",
-        tab_certs: "CERTIFICATES",
-        no_certs: "No certificates listed for this company.",
-        no_certs_found_title: "No certificates found",
-        no_certs_found_desc: "This company hasn’t listed any certificates yet.",
-        no_projects_found_title: "No projects found",
-        no_projects_found_desc: "This company hasn’t listed any projects yet.",
-asset_categories: "Asset categories:",
-        join_title: "Join the Network",
-        proj_key_ref: "Key Reference Projects",
-        proj_selected_from_supplier: "Selected projects from this company",
-        join_desc:
-          "Create your company profile.",
-        quote_title: "Request Quote",
-        btn_submit: "SUBMIT APPLICATION",
-        btn_send_quote: "SEND REQUEST",
-        back: "BACK TO LIST",
-        req_quote: "REQUEST QUOTE",
-        sec_all: "All Sectors",
-        sec_const: "Construction",
-        sec_mine: "Mining",
-        sec_energy: "Energy",
-        sec_drill: "Drilling",
-        sec_manu: "Manufacturing",
-        sec_tech: "Technology",
-        sec_logi: "Logistics",
-        sec_equip: "Equipment",
-        tab_overview: "OVERVIEW",
-        tab_projects: "PROJECTS",
-        tab_certs: "CERTIFICATES",
-        certs_title: "Certifications & Compliance",
-        certs_sub: "Declared certificates of this company",
-        assets_title: "Equipment & Assets",
-        assets_sub: "Declared assets of this company",
-        tab_assets: "ASSETS",
-        lbl_services: "Expertise",
-        svc_card_title: "Highlights",
-        svc_featured: "Featured",
-        svc_more: "More",
-        svc_reorder_hint: "Reorder in Edit Profile",
-        show_all: "Show all",
-        show_less: "Show less",
-        th_item: "Item",
-        th_specs: "Specs",
-        th_status: "Status",
-        btn_view: "INSPECT",
-        results_label: "Results",
-        live_db: "Live Database",
-        how_title: "How BTrustOn Works",
-        how_sub:
-          "A simple workflow for companies and buyers—prove capability, get verified, and be found fast.",
-how_for_companies: "For Companies",
-how_for_companies_sub: "Join, showcase proof, get verified.",
-how_badge_company: "SUPPLIER",
-how_for_buyers: "For Buyers",
-how_for_buyers_sub: "Search, compare, save, and follow.",
-how_badge_buyer: "BUYER",
-how_c1_t: "Join & create your profile",
-how_c1_d: "Add services, sectors, location, and key contacts.",
-how_c2_t: "Add proof: projects, certificates, assets",
-how_c2_d: "Publish references and industrial inventory to show capability.",
-how_c3_t: "Post company updates",
-how_c3_d: "Share progress, milestones, and new assets in a structured format.",
-how_verif_title: "How verification works",
-how_verif_sub: "A quick review to unlock the blue tick.",
-how_v1_t: "Submit verification",
-how_v1_d: "Provide your business ID and request a review.",
-how_v2_t: "Review & approval",
-how_v2_d: "We check consistency and approve verified companies.",
-how_v3_t: "Get the blue tick",
-how_v3_d: "Verified badge becomes visible to everyone.",
-how_b1_t: "Search verified partners",
-how_b1_d: "Filter by sector, location, services, projects, assets.",
-how_b2_t: "Validate quickly",
-how_b2_d: "Review project references, certificates, and asset lists.",
-how_b3_t: "Join to save & add notes",
-how_b3_d: "Create a free account to bookmark companies and keep private notes for your team.",
-how_b4_t: "Follow updates & stay in touch",
-how_b4_d: "After joining, follow companies to get notified on new posts, request quotes, and message via inbox.",
-how_b5_t: "Request quotes",
-how_b5_d: "Contact the right partner with one request.",
-how_feature_updates_title: "Company Updates",
-how_feature_updates_desc: "Structured posts keep profiles active and easier to evaluate.",
-how_feature_saved_title: "Saved & Notes",
-how_feature_saved_desc: "Save companies and add private notes for follow-up.",
-how_feature_verified_title: "Verified Badge",
-how_feature_verified_desc: "Buyers spot verified partners instantly in search.",
-        how_step1_title: "Create your profile",
-        how_step1_desc:
-          "Add your company details, sectors, core services, assets and project highlights.",
-        how_step2_title: "Verify references",
-        how_step2_desc:
-          "Send verification requests to past clients and partners to build a verified track record.",
-        how_step3_title: "Stand out with verified proof",
-        how_step3_desc:
-          "Verified profiles and clear proof can increase visibility in search and bring more qualified leads.",
-        pricing_title: "Simple, transparent pricing",
-        pricing_sub:
-          "Start free. Try Pro free for 3 months—no card required. Then $19/month.",
-        pricing_pay_note: "Simple & secure payment — cancel anytime.",
-        showcase_pro_note: "Verified partners rotate here — Go Pro to unlock updates visibility.",
-        price_month: "/month",
-        price_free_tag: "For teams getting started.",
-        price_pro_tag: "For suppliers who want to win more work.",
-        badge_trial: "3-MO FREE",
-        badge_starter: "STARTER",
-        price_no_payment: "NO PAYMENT",
-        price_trial_note: "3 months free trial",
-        price_no_card: "No card required",
-        price_free_1: "Create a public company profile",
-        price_free_2: "Limited projects, certificates & assets",
-        price_free_3: "Follow & save companies + private notes",
-        price_free_4: "Appear in search results",
-        price_free_5: "Receive quote requests & chat",
-        price_pro_1: "Verified badge after approval",
-        price_pro_2: "Unlimited projects, certificates & assets",
-        price_pro_3: "Post Company Updates",
-        price_pro_4: "Albums (galleries) for projects & assets",
-        price_pro_5: "Priority visibility in search",
-        price_pro_6: "Easier access for buyers after verification",
-        btn_join_free: "JOIN FREE",
-        btn_current_plan: "CURRENT PLAN",
-        btn_start_trial: "START FREE TRIAL",
-        btn_upgrade_to_pro: "UPGRADE TO PRO",
-        pricing_pro_active_title: "You're on Pro",
-        pricing_pro_active_desc: "Your plan is active.",
-        pricing_pro_active_cta: "Post an Update",
-        plan_upgrade_title: "Upgrade to Pro",
-        plan_upgrade_desc: "Unlimited uploads, updates & priority visibility.",
-        upgrade_benefits_title: "What you get with Pro",
-        upgrade_offer_title: "Offer",
-        upgrade_btn_not_now: "NOT NOW",
-        btn_upgrade_pro: "UPGRADE TO PRO",
-        upgrade_btn_ok: "OK",
-        plan_cancel_title: "Cancel Pro",
-        plan_cancel_desc: "Stop renewal and return to Free.",
-        badge_popular: "MOST POPULAR",
-        top_title: "Top Verified Companies",
-        top_sub: "Updated in real-time",
-      updates_title: "Company Updates",
-      updates_sub: "Last 7 days • posted by companies",
-      
-      updates_filter_all: "All updates",
-      updates_filter_followed: "Only followed",
-      updates_follow: "Follow",
-      updates_following: "Following",
-      updates_signin_to_filter: "Sign in to see only followed updates.",
-      updates_signin_to_follow: "Sign in to follow companies.",
-      updates_no_followed: "Follow companies to see their updates here.",
-updates_active_label: "Most active:",
-      updates_empty: "No updates posted in the last 7 days.",
-      updates_pro_hint: "Posting updates is a Pro feature.",
-      updates_upgrade: "Upgrade",
-      updates_cta_pro: "Upgrade to post",
-      btn_post_update: "POST UPDATE",
+        const translations = { en: {}, tr: {} };
 
-      post_modal_title: "Post an Update",
-      post_last7: "Visible on homepage for 7 days",
-      post_choose_area: "Select area",
-      post_area_general: "General",
-      post_area_projects: "Projects",
-      post_area_certs: "Certificates",
-      post_area_assets: "Assets",
-      post_select_item: "Select item",
-      post_select_update: "Update type",
-      post_note_ph: "Add a short note (optional)…",
-      post_note_hint: "Max 160 characters",
-      post_publish: "PUBLISH",
-      post_cancel: "CANCEL",
+let currentLang = "en";
 
-      toast_login_required: "Please sign in to post an update.",
-      toast_pro_only: "Posting updates is a Pro feature.",
-        score_info_main:
-          "Based on verification status and the strength of your proof (projects, certificates, assets).",
-        score_info_verify:
-          "Add more proof to be easier to evaluate in search.",
-        field_company: "Company Name",
-        field_sector: "Sector",
-        field_city: "City",
-        field_website: "Website",
-        field_size: "Company Size",
-        field_services: "Core Services / Focus",
-        field_note: "Additional Notes",
-        field_your_name: "Your Name",
-        field_project: "Project Details",
-        footer_rights: "All rights reserved.",
-        footer_about: "About",
-        footer_pricing: "Pricing",
-        footer_privacy: "Privacy",
-        footer_terms: "Terms",
-      },
-      tr: {
-        hero_title:
-          "Doğrulanmış Partnerler.<br> <span class='text-transparent bg-clip-text bg-gradient-to-r from-BTrustOn-accent to-blue-600'>Alıcılar tarafından keşfedilin.</span>",
-        hero_desc:
-          "Proje referansları • endüstriyel varlıklar • sertifikalar<br><span class='text-base md:text-lg text-slate-500'>Kabiliyet kanıtı tek ekranda—tedarik daha hızlı, daha güvenli, daha akıllı.</span>",
-        hero_cta_join: "Şirket Olarak Katıl",
-hero_cta_how: "BTrustOn nasıl çalışır?",
-        hero_cta_post: "Güncelleme Paylaş",
-        hero_cta_post_pro: "Güncelleme Paylaş (Pro)",
-        hero_proof: "Doğrulama sonrası Verified rozeti. Söz değil, kanıt.",
-        hero_badge_verified: "Doğrulanmış Partnerler",
-        hero_badge_references: "Proje Referansları",
-        hero_badge_assets: "Endüstriyel Varlıklar",
-        search_ph:
-         "Doğrulanmış partner, hizmet ve ekipman ara...",
-        btn_discover: "KEŞFET",
-        join: "AĞA KATIL",
-        asset_categories: "Varlık kategorileri:",
-        proj_key_ref: "Öne Çıkan Referans Projeler",
-        proj_selected_from_supplier: "Bu şirketten seçilmiş projeler",
-        join_title: "Ağa Katılın",
-        join_desc:
-          "Firma profilinizi oluşturun.",
-        quote_title: "Teklif İste",
-        btn_submit: "BAŞVURUYU GÖNDER",
-        btn_send_quote: "TALEBİ GÖNDER",
-        back: "LİSTEYE DÖN",
-        req_quote: "TEKLİF İSTE",
-        sec_all: "Tüm Sektörler",
-        sec_const: "İnşaat",
-        sec_mine: "Maden",
-        sec_energy: "Enerji",
-        sec_drill: "Sondaj",
-        sec_manu: "Üretim",
-        sec_tech: "Teknoloji",
-        sec_logi: "Lojistik",
-        sec_equip: "Ekipman",
-        tab_certs: "SERTİFİKALAR",
-        no_certs: "Bu tedarikçi için listelenen sertifika yok.",
-        no_certs_found_title: "Sertifika bulunamadı",
-        no_certs_found_desc: "Bu şirket henüz sertifika eklemedi.",
-        no_projects_found_title: "Proje bulunamadı",
-        no_projects_found_desc: "Bu şirket henüz proje eklemedi.",
-sec_energy: "Enerji",
-        sec_drill: "Sondaj",
-        sec_equip: "Ekipman",
-        tab_certs: "SERTİFİKALAR",
-        tab_overview: "GENEL BAKIŞ",
-        tab_projects: "PROJELER",
-        tab_assets: "VARLIKLAR",
-        lbl_services: "Hizmetler",
-        svc_card_title: "Özet",
-        svc_featured: "Öne çıkan",
-        svc_more: "Diğerleri",
-        svc_reorder_hint: "Sıralama: Profili Düzenle",
-        show_all: "Tümünü gör",
-        show_less: "Daha az",
-        th_item: "Ekipman",
-        th_specs: "Özellik",
-        th_status: "Durum",
-        btn_view: "İNCELE",
-        results_label: "Sonuç",
-        live_db: "Canlı Veritabanı",
-        certs_title: "Sertifikalar ve Uyum",
-        certs_sub: "Bu tedarikçinin beyan ettiği sertifikalar",
-        assets_title: "Ekipman ve Varlıklar",
-        assets_sub: "Bu şirketin beyan ettiği varlıklar",
-        how_title: "BTrustOn Nasıl Çalışır?",
-        how_sub:
-          "Şirketler ve alıcılar için tek akış: kanıtını yayınla, doğrulan ve hızlıca bulun.",
-how_for_companies: "Şirketler için",
-how_for_companies_sub: "Katıl, kanıtını göster, doğrulan.",
-how_badge_company: "TEDARİKÇİ",
-how_for_buyers: "Alıcılar için",
-how_for_buyers_sub: "Ara, karşılaştır, kaydet, takip et.",
-how_badge_buyer: "ALICI",
-how_c1_t: "Katıl ve profilini oluştur",
-how_c1_d: "Hizmetler, sektörler, lokasyon ve iletişim bilgilerini ekle.",
-how_c2_t: "Kanıt ekle: projeler, sertifikalar, varlıklar",
-how_c2_d: "Referanslarını ve envanterini yayınla, yetkinliğini göster.",
-how_c3_t: "Şirket güncellemeleri paylaş",
-how_c3_d: "İlerleme, kilometre taşı ve yeni varlıkları standart formatta duyur.",
-how_verif_title: "Doğrulama nasıl çalışır?",
-how_verif_sub: "Kısa bir inceleme ile mavi tiki aç.",
-how_v1_t: "Doğrulama talebi gönder",
-how_v1_d: "VKN/ID bilgisini gir ve inceleme iste.",
-how_v2_t: "İnceleme ve onay",
-how_v2_d: "Bilgiler kontrol edilir, uygun firmalar onaylanır.",
-how_v3_t: "Mavi tiki al",
-how_v3_d: "Doğrulanmış rozeti herkese görünür olur.",
-how_b1_t: "Doğrulanmış partner ara",
-how_b1_d: "Sektör, lokasyon, hizmet, proje ve varlığa göre filtrele.",
-how_b2_t: "Hızlı doğrula",
-how_b2_d: "Proje referansları, sertifikalar ve varlık listesini incele.",
-how_b3_t: "Kaydet ve not ekle",
-how_b3_d: "Ücretsiz hesapla firmaları kaydet, ekip için özel notlar tut.",
-how_b4_t: "Güncellemeleri takip et",
-how_b4_d: "Üye olduğunda firmaları takip edebilir, yeni update’lerde bildirim alabilir; inbox üzerinden yazışıp teklif isteyebilirsin.",
-how_b5_t: "Teklif iste",
-how_b5_d: "Doğru partnere tek adımda talep gönder.",
-how_feature_updates_title: "Şirket Güncellemeleri",
-how_feature_updates_desc: "Standart paylaşımlar profili canlı tutar ve değerlendirmeyi hızlandırır.",
-how_feature_saved_title: "Kayıt & Notlar",
-how_feature_saved_desc: "Firmaları kaydet ve takip için özel notlar ekle.",
-how_feature_verified_title: "Doğrulanmış Rozet",
-how_feature_verified_desc: "Alıcılar aramada doğrulanmış firmaları anında görür.",
-        how_step1_title: "Profilinizi oluşturun",
-        how_step1_desc:
-          "Firma bilgilerinizi, sektörlerinizi, temel hizmetlerinizi, varlıklarınızı ve öne çıkan projelerinizi ekleyin.",
-        how_step2_title: "Referansları doğrulayın",
-        how_step2_desc:
-          "Geçmiş iş ortaklarınıza doğrulama isteği göndererek doğrulanmış bir geçmiş oluşturun.",
-        how_step3_title: "Kanıtla öne çıkın",
-        how_step3_desc:
-          "Doğrulanmış profiller ve net kanıtlar aramada daha yüksek görünürlük ve daha nitelikli talepler getirir.",
-        pricing_title: "Basit ve şeffaf fiyatlandırma",
-        pricing_sub:
-          "Ücretsiz başla. Pro’yu 3 ay ücretsiz dene—kart gerekmez. Sonra 19$/ay.",
-        pricing_pay_note: "Basit ve güvenli ödeme — istediğin zaman iptal et.",
-        showcase_pro_note: "Doğrulanmış partnerler burada döner — Güncellemeleri açmak için Pro’ya geç.",
-        price_month: "/ay",
-        price_free_tag: "Başlamak isteyen ekipler için.",
-        price_pro_tag: "Daha fazla iş almak isteyen tedarikçiler için.",
-        badge_trial: "3 AY ÜCRETSİZ",
-        badge_starter: "BAŞLANGIÇ",
-        price_no_payment: "ÖDEME YOK",
-        price_trial_note: "3 ay ücretsiz deneme",
-        price_no_card: "Kart gerekmez",
-        price_free_1: "Herkese açık firma profili oluştur",
-        price_free_2: "Sınırlı proje, sertifika ve varlık girişi",
-        price_free_3: "Takip et & kaydet + özel notlar",
-        price_free_4: "Arama sonuçlarında görün",
-        price_free_5: "Teklif talepleri al & mesajlaş",
-        price_pro_1: "Onay sonrası doğrulanmış rozet",
-        price_pro_2: "Sınırsız proje, sertifika ve varlık",
-        price_pro_3: "Şirket Güncellemeleri paylaş",
-        price_pro_4: "Projeler & varlıklar için albüm (galeri)",
-        price_pro_5: "Aramada öncelikli görünürlük",
-        price_pro_6: "Doğrulama sonrası alıcılar için daha kolay erişim",
-        btn_join_free: "ÜCRETSİZ KATIL",
-        btn_current_plan: "MEVCUT PLAN",
-        btn_start_trial: "ÜCRETSİZ DENEMEYİ BAŞLAT",
-        btn_upgrade_to_pro: "PRO\'YA YÜKSELT",
-        pricing_pro_active_title: "Pro planındasın",
-        pricing_pro_active_desc: "Planın aktif.",
-        pricing_pro_active_cta: "Güncelleme Paylaş",
-        plan_upgrade_title: "Pro’ya Yükselt",
-        plan_upgrade_desc: "Sınırsız ekleme, paylaşımlar ve daha görünür profil.",
-        upgrade_benefits_title: "Pro ile gelenler",
-        upgrade_offer_title: "Teklif",
-        upgrade_btn_not_now: "ŞİMDİ DEĞİL",
-        btn_upgrade_pro: "PRO'YA YÜKSELT",
-        upgrade_btn_ok: "TAMAM",
-        plan_cancel_title: "Pro’yu İptal Et",
-        plan_cancel_desc: "Ödemeyi durdur ve Free plana dön.",
-        badge_popular: "EN POPÜLER",
-        top_title: "Öne Çıkan Doğrulanmış Firmalar",
-        top_sub: "Gerçek zamanlı güncellenir",
-      updates_title: "Şirket Güncellemeleri",
-      updates_sub: "Son 7 gün • şirket paylaşımları",
-      
-      updates_filter_all: "Tüm güncellemeler",
-      updates_filter_followed: "Sadece takip ettiklerim",
-      updates_follow: "Takip et",
-      updates_following: "Takip ediliyor",
-      updates_signin_to_filter: "Sadece takip ettiklerini görmek için giriş yap.",
-      updates_signin_to_follow: "Şirketleri takip etmek için giriş yap.",
-      updates_no_followed: "Burada görmek için şirketleri takip et.",
-updates_empty: "Son 7 günde paylaşım yok.",
-      updates_pro_hint: "Güncelleme paylaşmak Pro özelliğidir.",
-      updates_upgrade: "Yükselt",
-      updates_cta_pro: "Paylaşmak için yükselt",
-      btn_post_update: "GÜNCELLEME PAYLAŞ",
+// =======================
+// i18n JSON Loader (Tolgee Export via /i18n/*.json)
+// =======================
+const I18N_ENDPOINTS = {
+  en: "/i18n/en.json",
+  tr: "/i18n/tr.json",
+};
 
-      post_modal_title: "Güncelleme Paylaş",
-      post_last7: "Ana sayfada 7 gün görünür",
-      post_choose_area: "Alan seç",
-      post_area_general: "Genel",
-      post_area_projects: "Projeler",
-      post_area_certs: "Sertifikalar",
-      post_area_assets: "Asset'ler",
-      post_select_item: "Öğe seç",
-      post_select_update: "Bildirim tipi",
-      post_note_ph: "Kısa bir not ekleyin (opsiyonel)…",
-      post_note_hint: "Maks. 160 karakter",
-      post_publish: "PAYLAŞ",
-      post_cancel: "İPTAL",
+const __i18nLoad = { en: null, tr: null };
 
-      toast_login_required: "Paylaşım için giriş yapın.",
-      toast_pro_only: "Güncelleme paylaşmak Pro özelliğidir.",
-        score_info_main:
-          "Doğrulanmış referanslar, teslimat performansı, şirket yaşı ve dijital sinyallerden hesaplanır.",
-        score_info_verify:
-          "Daha kolay değerlendirilmek için daha fazla kanıt ekleyin.",
-        field_company: "Firma Adı",
-        field_sector: "Sektör",
-        field_city: "Şehir",
-        field_website: "Web Sitesi",
-        field_size: "Firma Büyüklüğü",
-        field_services: "Temel Hizmetler / Odak Alanı",
-        field_note: "Ek Notlar",
-        field_your_name: "İsminiz",
-        field_project: "Proje Detayları",
-        footer_rights: "Tüm hakları saklıdır.",
-        footer_about: "Hakkında",
-        footer_pricing: "Fiyatlandırma",
-        footer_privacy: "Gizlilik",
-        footer_terms: "Şartlar",
-      },
-    };
+function loadI18n(lang) {
+  const L = (lang === "tr") ? "tr" : "en";
+  if (translations[L] && Object.keys(translations[L]).length) return Promise.resolve(translations[L]);
+  if (__i18nLoad[L]) return __i18nLoad[L];
 
-    let currentLang = "en";
+  __i18nLoad[L] = fetch(I18N_ENDPOINTS[L], { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : {}))
+    .then((json) => {
+      if (json && typeof json === "object") translations[L] = json;
+      return translations[L] || {};
+    })
+    .catch(() => (translations[L] || {}))
+    .finally(() => { __i18nLoad[L] = null; });
+
+  return __i18nLoad[L];
+}
+
+async function bootI18n() {
+  let saved = "en";
+  try { saved = localStorage.getItem("bton_lang") || "en"; } catch(e) {}
+  saved = (saved === "tr") ? "tr" : "en";
+
+  // 2 dil olduğu için preload yapıyoruz (flicker yok)
+  await Promise.all([loadI18n("en"), loadI18n("tr")]);
+
+  // switchLanguage zaten applyTranslations + UI refresh yapıyor
+  if (typeof switchLanguage === "function") switchLanguage(saved);
+}
     let currentSector = "all";
     let selectedCompany = null;
     const ADMIN_EMAIL = "rahmiunl@gmail.com"; // BURAYI KENDİ MAİLİNİZLE DEĞİŞTİRİN
@@ -7697,22 +7330,47 @@ function getCompanyTypeBadge(rawType) {
     }
 
     function applyTranslations() {
+      // Text / HTML
       document.querySelectorAll("[data-i18n]").forEach((el) => {
         const key = el.getAttribute("data-i18n");
         if (!key) return;
         const value = t(key);
-        if (value) {
-          el.innerHTML = value;
-        }
+        if (value) el.innerHTML = value;
+      });
+
+      // Placeholders
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        if (!key) return;
+        const value = t(key);
+        if (value) el.setAttribute("placeholder", value);
+      });
+
+      // Titles / tooltips
+      document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-title");
+        if (!key) return;
+        const value = t(key);
+        if (value) el.setAttribute("title", value);
       });
 
       const heroTitle = document.getElementById("hero-title");
       const heroDesc = document.getElementById("hero-desc");
-      if (heroTitle) heroTitle.innerHTML = t("hero_title");
-      if (heroDesc) heroDesc.innerHTML = t("hero_desc");
+
+      if (heroTitle) {
+        const v = t("hero_title");
+        if (v) heroTitle.innerHTML = v;
+      }
+      if (heroDesc) {
+        const v = t("hero_desc");
+        if (v) heroDesc.innerHTML = v;
+      }
 
       const searchInput = document.getElementById("search-input");
-      if (searchInput) searchInput.placeholder = t("search_ph");
+      if (searchInput) {
+        const v = t("search_ph");
+        if (v) searchInput.placeholder = v;
+      }
 
       const yearSpan = document.getElementById("year-span");
       if (yearSpan) yearSpan.textContent = nowDate().getFullYear().toString();
@@ -10388,6 +10046,23 @@ function servicePickSuggestion(s) {
 
     function switchLanguage(lang) {
       currentLang = lang === "tr" ? "tr" : "en";
+      try { localStorage.setItem("bton_lang", currentLang); } catch(e) {}
+
+      // If translations aren't loaded yet, load and re-render once ready
+      try {
+        const __needsI18n = !(translations && translations[currentLang] && Object.keys(translations[currentLang]).length);
+        if (__needsI18n && typeof loadI18n === "function") {
+          loadI18n(currentLang).then(() => {
+            try {
+              applyTranslations();
+              const searchInput = document.getElementById("search-input");
+              const value = searchInput ? searchInput.value : "";
+              if (typeof renderCards === "function") renderCards(value);
+              if (typeof renderHomeUpdates === "function") renderHomeUpdates(homeUpdatesData);
+            } catch(e) {}
+          });
+        }
+      } catch(e) {}
 
       const btnEn = document.getElementById("lang-en");
       const btnTr = document.getElementById("lang-tr");
@@ -10460,15 +10135,7 @@ function renderResultCountSkeleton() {
   el.innerHTML = `<span class="inline-block skel h-7 w-40 align-middle"></span>`;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-      applyTranslations();
-renderHomeUpdates([]); // home updates skeleton handled by empty state
-      renderResultCountSkeleton();
-switchLanguage("en");
-      // initRealData(); // disabled to prevent double-loading
-
-      initShowcaseSystem();
-    });
+// Boot is handled in the main DOMContentLoaded (avoid double init)
 /* --- GELİŞMİŞ ASSET YÖNETİMİ (EKLE - DÜZENLE - SİL) --- */
 
 let currentEditingAssetId = null;
@@ -11038,7 +10705,7 @@ async function handleJoin() {
     toggleModal('modal-join');
     showToast("Welcome!", "Registration successful. Profile created.", "success");
     checkUserAndOpenProfile();
-    setTimeout(refreshHeroCTA, 120);
+    if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
     // If user joined from the Pro pricing CTA, start Pro trial immediately
     if (__intent.toLowerCase() === "pro") {
       setTimeout(async () => {
@@ -11394,8 +11061,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   finishBoot();
 
   // 1) Start static systems
-  applyTranslations();
-switchLanguage("en");
+  await bootI18n();
   initRealData();
   initShowcaseSystem();
 
@@ -11411,8 +11077,8 @@ switchLanguage("en");
 
   // 3) User session check (refresh user UI / My Company button etc.)
   checkUserAndOpenProfile();
-  setTimeout(refreshHeroCTA, 120);
-  setTimeout(refreshPricingSection, 160);
+  if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
+  if (typeof refreshPricingSection === "function") if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160);
   setTimeout(refreshHomeUpdatesCTA, 200);
 });
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
@@ -11429,8 +11095,8 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     // 2. Sonra profili çek
     checkUserAndOpenProfile();
 
-    setTimeout(refreshHeroCTA, 120);
-    setTimeout(refreshPricingSection, 160);
+    if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
+    if (typeof refreshPricingSection === "function") if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160);
     // Saved companies (KOBI MVP)
     setTimeout(() => {
       try {
@@ -11474,8 +11140,8 @@ notificationsUnreadCount = 0;
     try {
       if (typeof showMainView === "function") {
         showMainView();
-        setTimeout(refreshHeroCTA, 0);
-        setTimeout(refreshPricingSection, 0);
+        if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 0);
+        if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 0);
         setTimeout(refreshHomeUpdatesCTA, 0);
       } else {
         // fallback: aynı dosyayı yeniden yükle (subpath uyumlu)
