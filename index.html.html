@@ -8317,12 +8317,16 @@ if (nameEl) {
 // Location (City, Country)
 if (cityEl) {
     const city = (company.city || "").trim();
-    const country = (company.country || "").trim();
+    const countryRaw = (company.country || "").trim();
+    const country = localizeCountryName(countryRaw);
     let loc = "";
 
     if (city && country) {
         // Avoid duplicates like "Ankara, Turkey, Turkey"
-        if (city.toLowerCase().includes(country.toLowerCase())) loc = city;
+        const cityL = city.toLowerCase();
+        const cL = String(country).toLowerCase();
+        const cRawL = String(countryRaw || "").toLowerCase();
+        if (cityL.includes(cL) || (cRawL && cityL.includes(cRawL))) loc = city;
         else loc = `${city}, ${country}`;
     } else {
         loc = city || country || ((typeof currentLang !== 'undefined' && currentLang === 'tr') ? "Konum Yok" : "Location N/A");
@@ -8344,7 +8348,9 @@ if (cityEl) {
               "logistics": "Lojistik ve Ticaret",
               "engineering": "Mühendislik ve Hizmetler"
           };
-          sectorEl.textContent = sectorMap[company.sector] || (company.sector.charAt(0).toUpperCase() + company.sector.slice(1));
+          const __sraw = String(company.sector || "");
+          const __skey = __sraw.toLowerCase();
+          sectorEl.textContent = sectorMap[__skey] || (__sraw ? (__sraw.charAt(0).toUpperCase() + __sraw.slice(1)) : "");
       } else {
           sectorEl.textContent = company.sector.charAt(0).toUpperCase() + company.sector.slice(1);
       }
@@ -9694,6 +9700,16 @@ function switchLanguage(lang) {
               const value = searchInput ? searchInput.value : "";
               if (typeof renderCards === "function") renderCards(value);
               if (typeof renderHomeUpdates === "function") renderHomeUpdates(homeUpdatesData);
+              try {
+                const viewProfile = document.getElementById("view-profile");
+                const isProfileVisible = viewProfile && !viewProfile.classList.contains("hidden-view");
+                if (isProfileVisible) {
+                  const cid = (window.__profileActiveCompanyId || (selectedCompany && selectedCompany.id));
+                  if (cid) openProfile(cid, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
+                }
+              } catch(e) {}
+              try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 60); } catch(e) {}
+              try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 300); } catch(e) {}
             } catch(e) {}
           });
         }
@@ -9735,10 +9751,15 @@ const searchInput = document.getElementById("search-input");
   const isProfileVisible =
     viewProfile && !viewProfile.classList.contains("hidden-view");
 
-  // Sadece profil ekranındaysak ilgili şirket profilini yeniden çiz
-  if (isProfileVisible && selectedCompany) {
-    openProfile(selectedCompany.id);
+  // Sadece profil ekranındaysak ilgili şirket profilini yeniden çiz (dinamik metinler + rozetler güncellensin)
+  if (isProfileVisible) {
+    const cid = (window.__profileActiveCompanyId || (selectedCompany && selectedCompany.id));
+    if (cid) openProfile(cid, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
   }
+
+  // Bazı içerikler async render ile geliyorsa, i18n'i kısa aralıklarla tekrar uygula
+  try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 60); } catch(e) {}
+  try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 300); } catch(e) {}
 
   // Refresh country dropdown labels (localized)
   try { if (typeof populateCountryFilter === "function") populateCountryFilter(); } catch(e) {}
