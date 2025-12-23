@@ -680,5 +680,11 @@
   "ui_no_document_attached": "No document attached",
   "ui_delete_project": "Delete project",
   "ui_delete_asset": "Delete asset",
-  "ui_delete_certificate": "Delete certificate"
+  "ui_delete_certificate": "Delete certificate",
+  "ui_not_provided": "Not provided",
+  "ui_unknown_issuer": "Unknown issuer",
+  "ui_no_expiry": "No expiry",
+  "ui_no_specs_provided": "No specs provided.",
+  "ui_expiry": "Expiry",
+  "ui_qty": "Qty"
 }
