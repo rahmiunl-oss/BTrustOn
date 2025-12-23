@@ -687,5 +687,11 @@
   "ui_no_specs_provided": "No specs provided.",
   "ui_expiry": "Expiry",
   "ui_qty": "Qty",
-  "_build": "updated9"
+  "_build": "updated9",
+  "nav_login_short": "LOGIN",
+  "join_type_tech": "Tech & Software",
+  "join_type_specialist_sub": "Specialist / Sub",
+  "ui_verified_badge_active": "Verified. Badge active.",
+  "ui_review_pending_24h": "Review pending (24h).",
+  "badge_active": "ACTIVE"
 }
