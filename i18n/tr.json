@@ -608,7 +608,7 @@
   "ui_status_available_first_bc5a8a": "Status (Available first)",
   "ui_submit_82b1fb": "SUBMIT",
   "ui_submit_documentation_4aed11": "SUBMIT DOCUMENTATION",
-  "ui_submit_tax_details_a51891": "Submit tax details.",
+  "ui_submit_tax_details_a51891": "Vergi bilgilerinizi gönderin.",
   "ui_submit_your_official_tax_details_4f896b": "Resmi vergi bilgilerinizi gönderin. Uyum ekibimiz 24 saat içinde doğrulayacaktır.",
   "ui_submitted_at_626a47": "Submitted At",
   "ui_tax_id_info_0dfb18": "Tax ID / Info",
@@ -687,5 +687,11 @@
   "ui_no_specs_provided": "Özellik belirtilmedi.",
   "ui_expiry": "Geçerlilik",
   "ui_qty": "Adet",
-  "_build": "updated9"
+  "_build": "updated9",
+  "nav_login_short": "GİRİŞ",
+  "join_type_tech": "Teknoloji & Yazılım",
+  "join_type_specialist_sub": "Uzman / Alt",
+  "ui_verified_badge_active": "Onaylandı. Rozet aktif.",
+  "ui_review_pending_24h": "İnceleme bekleniyor (24s).",
+  "badge_active": "AKTİF"
 }
