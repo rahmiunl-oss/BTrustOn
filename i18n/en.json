@@ -686,5 +686,6 @@
   "ui_no_expiry": "No expiry",
   "ui_no_specs_provided": "No specs provided.",
   "ui_expiry": "Expiry",
-  "ui_qty": "Qty"
+  "ui_qty": "Qty",
+  "_build": "updated9"
 }
