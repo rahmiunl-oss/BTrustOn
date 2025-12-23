@@ -613,7 +613,7 @@
   "ui_submitted_at_626a47": "Submitted At",
   "ui_tax_id_info_0dfb18": "Tax ID / Info",
   "ui_technical_capability_statement": "Teknik Kabiliyet Beyanı",
-  "ui_technical_document_26b178": "Technical Document",
+  "ui_technical_document_26b178": "Teknik Doküman",
   "ui_the_platform_is_provided_as_is_a_27ebcb": "The platform is provided “as is” and “as available”. We disclaim warranties to the maximum extent permitted by law, including fitness for a particular purpose and non-infringement.",
   "ui_these_terms_are_governed_by_the_4e4761": "These Terms are governed by the laws of the Republic of Turkey. Disputes shall be resolved in the courts of Istanbul (Çağlayan), unless mandatory law requires otherwise.",
   "ui_this_company_hasn_t_listed_any_a_410cda": "This company hasn’t listed any assets yet.",
@@ -680,5 +680,11 @@
   "ui_no_document_attached": "Doküman eklenmemiş",
   "ui_delete_project": "Projeyi sil",
   "ui_delete_asset": "Varlığı sil",
-  "ui_delete_certificate": "Sertifikayı sil"
+  "ui_delete_certificate": "Sertifikayı sil",
+  "ui_not_provided": "Belirtilmedi",
+  "ui_unknown_issuer": "Bilinmeyen düzenleyen",
+  "ui_no_expiry": "Süresiz",
+  "ui_no_specs_provided": "Özellik belirtilmedi.",
+  "ui_expiry": "Geçerlilik",
+  "ui_qty": "Adet"
 }
