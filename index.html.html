@@ -1437,8 +1437,8 @@ html{ scroll-padding-top: 118px; }
 <div class="flex items-center gap-2 md:gap-3" id="guest-actions">
 <button aria-label="Partner Login" class="bton-nav-pill bton-pill-muted inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" data-i18n-aria="login_title" id="btn-partner-login" onclick="openLoginModal()">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-key"></i></span>
-<span class="hidden sm:inline">PARTNER LOGIN</span>
-<span class="sm:hidden">LOGIN</span>
+<span class="hidden sm:inline" data-i18n="login_title">Partner Login</span>
+<span class="sm:hidden" data-i18n="nav_login_short">Login</span>
 </button>
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" id="btn-join-network" onclick="openJoinModal('free')">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-paper-plane"></i></span>
@@ -4094,8 +4094,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated9",
-  tr: "i18n/tr.json?v=updated9",
+  en: "i18n/en.json?v=updated10",
+  tr: "i18n/tr.json?v=updated10",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -6204,6 +6204,15 @@ function localizeCountryName(name) {
 }
 
 
+
+
+function formatCityCountry(city, country) {
+  const c = (city || "").toString().trim();
+  const cn = localizeCountryName(country || "");
+  if (c && cn) return `${c}, ${cn}`;
+  return c || cn || "";
+}
+
 function populateCountrySelects() {
     const selects = ["join-country", "edit-country"];
     
@@ -6673,7 +6682,7 @@ function populateCountrySelects() {
     function translateCompanyType(typeRaw) {
       const v = (typeRaw || "").trim();
       if (!v) return "";
-      if (currentLang === "tr") {
+      if (__normLangCode(currentLang) === "tr") {
         const key = v.toLowerCase();
         const map = {
           "operator": "Operatör / Varlık Sahibi",
@@ -6693,7 +6702,11 @@ function populateCountrySelects() {
           "industrial supplier": "Endüstriyel Tedarikçi",
           "service provider": "Hizmet Sağlayıcı",
           "consultant": "Danışman",
-          "engineering": "Mühendislik"
+          "engineering": "Mühendislik",
+          "tech": "Teknoloji & Yazılım",
+          "tech & software": "Teknoloji & Yazılım",
+          "technology": "Teknoloji & Yazılım",
+          "software": "Yazılım"
         };
         return map[key] || map[v] || v;
       }
@@ -6843,7 +6856,7 @@ function getCompanyTypeBadge(rawType) {
   } 
   // 3. Alt Yükleniciler (Turuncu - Açık)
   else if (type.includes("subcontractor") || type.includes("specialist")) {
-    label = "Specialist / Sub";
+    label = (t("join_type_specialist_sub") || "Specialist / Sub");
     icon = "fa-screwdriver-wrench";
     colorClass = "bg-orange-50 text-orange-600 border-orange-100";
   }
@@ -6855,7 +6868,7 @@ function getCompanyTypeBadge(rawType) {
   } 
   // 5. Teknoloji (Mavi)
   else if (type.includes("tech") || type.includes("software")) {
-    label = "Tech & Software";
+    label = (t("join_type_tech") || "Tech & Software");
     icon = "fa-microchip";
     colorClass = "bg-blue-50 text-blue-700 border-blue-100";
   } 
@@ -7045,9 +7058,9 @@ function renderTopCompanies() {
           <div class="flex items-center justify-between mt-auto w-full">
             <span class="flex items-center gap-1.5 text-[10px] text-slate-500">
               <i class="fa-solid fa-location-dot"></i>
-              <span class="line-clamp-1 max-w-[80px]">${company.city}</span>
+              <span class="line-clamp-1 max-w-[80px]">${formatCityCountry(company.city, company.country)}</span>
             </span>
-            ${isVerified ? `<span class="text-[10px] font-bold text-cyan-200 flex items-center gap-1"><i class="fa-solid fa-circle-check text-cyan-300"></i>Verified</span>` : ``}
+            ${isVerified ? `<span class="text-[10px] font-bold text-cyan-200 flex items-center gap-1"><i class="fa-solid fa-circle-check text-cyan-300"></i>${t("badge_verified") || "Verified"}</span>` : ``}
           </div>
         `;
         container.appendChild(card);
@@ -8402,7 +8415,7 @@ if (cityEl) {
   
   // Sektör (Dil Desteği)
   if (sectorEl) {
-      if (typeof currentLang !== 'undefined' && currentLang === 'tr') {
+      if (__normLangCode(currentLang) === 'tr') {
           const sectorMap = {
               "construction": "İnşaat ve Altyapı",
               "mining": "Madencilik ve Metal",
@@ -14549,7 +14562,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                           ${getCompanyTypeBadge(compType)}
                           <span class="text-[10px] text-gray-400 flex items-center gap-1 shrink-0">
                             <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                            ${company.city}, ${company.country || "TR"}
+                            ${formatCityCountry(company.city, company.country || "TR")}
                           </span>
                         </div>
                       </div>
@@ -15689,7 +15702,7 @@ function updateVerificationUI(status) {
         if (type === 'verified') {
             // ✅ DURUM 1: ONAYLI (Sadece Mesaj Kalsın, Formlar Uçsun)
             alertEl.classList.add("bg-emerald-50", "border-emerald-200", "text-emerald-700");
-            alertEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified. Badge active.';
+            alertEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (t("ui_verified_badge_active") || "Verified. Badge active.");
             alertEl.classList.remove("hidden");
 
             // Form elemanlarını komple GİZLE
@@ -15702,7 +15715,7 @@ function updateVerificationUI(status) {
         } else if (type === 'pending') {
             // ✅ DURUM 2: BEKLEMEDE (Mesaj Var, Inputlar Pasif, Buton Yok)
             alertEl.classList.add("bg-amber-50", "border-amber-200", "text-amber-700");
-            alertEl.innerHTML = '<i class="fa-solid fa-clock"></i> Review pending (24h).';
+            alertEl.innerHTML = '<i class="fa-solid fa-clock"></i> ' + (t("ui_review_pending_24h") || "Review pending (24h).");
             alertEl.classList.remove("hidden");
 
             // Inputları göster ama kilitle
