@@ -6767,13 +6767,13 @@ function getCompanyTypeBadge(rawType) {
 
   // 1. Üreticiler (Mor)
   if (type.includes("manufacturer") || type.includes("oem")) {
-    label = "Manufacturer / OEM";
+    label = (t("join_type_manufacturer") || "Manufacturer / OEM");
     icon = "fa-industry";
     colorClass = "bg-purple-50 text-purple-700 border-purple-100";
   } 
   // 2. Ana Yükleniciler (Turuncu - Koyu)
   else if (type.includes("epc") || type.includes("general contractor")) {
-    label = "EPC Contractor";
+    label = (t("join_type_contractor") || "EPC Contractor");
     icon = "fa-helmet-safety";
     colorClass = "bg-orange-100 text-orange-800 border-orange-200";
   } 
@@ -6785,7 +6785,7 @@ function getCompanyTypeBadge(rawType) {
   }
   // 4. Tedarikçiler (İndigo)
   else if (type.includes("distributor") || type.includes("supplier")) {
-    label = "Distributor / Supplier";
+    label = (t("join_type_distributor") || "Distributor / Supplier");
     icon = "fa-truck-ramp-box";
     colorClass = "bg-indigo-50 text-indigo-700 border-indigo-100";
   } 
@@ -6797,13 +6797,13 @@ function getCompanyTypeBadge(rawType) {
   } 
   // 6. Mühendislik (Cam Göbeği / Teal)
   else if (type.includes("engineering") || type.includes("consultancy")) {
-    label = "Engineering & Consult.";
+    label = (t("join_type_engineering_consultancy") || "Engineering & Consult.");
     icon = "fa-drafting-compass";
     colorClass = "bg-teal-50 text-teal-700 border-teal-100";
   }
   // 7. İşletmeciler / Maden Sahipleri (Zümrüt Yeşili)
   else if (type.includes("operator") || type.includes("asset") || type.includes("mining")) {
-    label = "Operator / Asset Owner";
+    label = (t("join_type_operator") || "Operator / Asset Owner");
     icon = "fa-gem";
     colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
   }
@@ -7260,7 +7260,20 @@ function filterSector(sector, btnEl) {
         classes = "bg-rose-50 text-rose-700 border-rose-100";
       }
 
-      const label = displayStatus || baseStatusRaw || "";
+      let label = displayStatus || baseStatusRaw || "";
+      try {
+        const base2 = (baseStatusRaw || "").toLowerCase();
+        if ((currentLang || "en") === "tr") {
+          if (base2.includes("available")) label = (t("asset_status_available") || label);
+          else if (base2.includes("maintenance") || base2.includes("maint")) label = (t("asset_status_maintenance") || label);
+          else if (base2.includes("out of service") || base2.includes("oos")) label = (t("asset_status_out") || label);
+        } else {
+          // normalize common Turkish statuses back to EN if needed
+          if (base2.includes("müsait")) label = (t("asset_status_available") || "Available");
+          else if (base2.includes("bakım")) label = (t("asset_status_maintenance") || "Under Maintenance");
+          else if (base2.includes("servis dışı")) label = (t("asset_status_out") || "Out of Service");
+        }
+      } catch(e) {}
 
       return `
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${classes}">
@@ -7407,7 +7420,7 @@ function renderAssetsCards(company, isMyProfile){
     const attachmentPreview = buildAssetAttachmentPreview(a);
     const locText = (_assetLoc(a) || "").toString().trim();
     const specRaw = (_assetSpec(a) || "").toString().trim();
-    const specText = specRaw ? specRaw : "No specs provided.";
+    const specText = specRaw ? specRaw : (t("ui_no_specs_provided") || "No specs provided.");
 
     const actions = isMyProfile ? `
       <div class="flex gap-2">
@@ -7444,7 +7457,7 @@ function renderAssetsCards(company, isMyProfile){
             </div>
 
             <div class="mt-4 rounded-xl bg-slate-50/70 border border-slate-200/70 px-3 py-2.5">
-              <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Specs</div>
+              <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("th_specs") || "Specs"}</div>
               <div class="mt-1 text-[12px] text-slate-700 font-medium leading-snug line-clamp-2">${_safeText(specText)}</div>
             </div>
           </div>
@@ -7453,7 +7466,7 @@ function renderAssetsCards(company, isMyProfile){
             <div>${getStatusBadge(a.status)}</div>
             <div class="flex items-center gap-2">
               <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200 text-[11px] font-extrabold text-slate-800">
-                <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Qty</span>
+                <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("ui_qty") || "Qty"}</span>
                 <span>${(a.qty ?? "-")}</span>
               </span>
               ${actions}
@@ -7730,7 +7743,7 @@ function renderCertificates(company) {
 
   certs.forEach((cert) => {
     const name = cert.name;
-    const issuer = cert.issuer || "Unknown issuer";
+    const issuer = cert.issuer || (t("ui_unknown_issuer") || "Unknown issuer");
     const date = cert.expiry_date;
     const fileUrl = cert.file_url;
     const id = cert.id;
@@ -7755,7 +7768,7 @@ function renderCertificates(company) {
     } else {
       statusBadge = `
         <span class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-[9px] font-extrabold px-2 py-1 rounded-lg border border-slate-200 uppercase">
-          <i class="fa-solid fa-circle-question"></i> No expiry
+          <i class="fa-solid fa-circle-question"></i> ${t("ui_no_expiry") || "No expiry"}
         </span>`;
     }
 
@@ -7786,7 +7799,7 @@ function renderCertificates(company) {
            Exp: <span class="font-bold text-gray-600">${date}</span>
            ${typeof daysLeft === "number" ? `<span class="text-gray-300">•</span><span class="font-bold ${daysLeft < 0 ? "text-red-600" : (daysLeft <= 30 ? "text-amber-700" : "text-emerald-700")}">${Math.abs(daysLeft)}d ${daysLeft < 0 ? "ago" : "left"}</span>` : ``}
          </span>`
-      : `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400"><i class="fa-regular fa-calendar"></i> Expiry: <span class="font-bold text-gray-600">Not provided</span></span>`;
+      : `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400"><i class="fa-regular fa-calendar"></i> ${t("ui_expiry") || "Expiry"}: <span class="font-bold text-gray-600">${t("ui_not_provided") || "Not provided"}</span></span>`;
 
     // Actions
     const viewBtn = fileUrl
@@ -9106,7 +9119,7 @@ async function saveProfileData() {
     const localCompany = database.find(c => c.id == user.id);
     if (localCompany) {
         Object.assign(localCompany, {
-            name, city, sector, desc, tagline,
+            name, city, country, sector, desc, tagline,
             website, phone, contact_email: contactEmail,
             address, type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
@@ -10686,10 +10699,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   populateCountrySelects(); // Country dropdowns
 
-  // 0) Restore last view FIRST (prevents dashboard flash)
-  await restoreInitialRoute();
   // Apply language before showing UI (prevents EN→TR flash)
   await bootI18n();
+  // Restore last view after language is ready
+  await restoreInitialRoute();
   finishBoot();
   initRealData();
   initShowcaseSystem();
@@ -14728,7 +14741,7 @@ function renderSearchResults(query) {
         // 2. Ülke Filtresi (GÜNCEL - Direkt Veriden)
         if (currentCountryFilter !== "all") {
             // Artık şehri parçalamıyoruz, direkt 'country' sütununa bakıyoruz
-            if (company.country !== currentCountryFilter) return false;
+            if (countryNameToISO2(company.country) && countryNameToISO2(currentCountryFilter)) { if (countryNameToISO2(company.country) !== countryNameToISO2(currentCountryFilter)) return false; } else { if (company.country !== currentCountryFilter) return false; }
         }
 
         // 3. METİN ARAMASI (HAYSTACK MANTIĞI)
@@ -17241,7 +17254,7 @@ function sortProjectsUI(mode){
 <div class="p-5">
 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
 <div class="md:col-span-8">
-<div class="text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="lbl_asset_specs">Specs</div>
+<div class="text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="lbl_asset_specs">${t("th_specs") || "Specs"}</div>
 <div class="mt-1 text-sm text-gray-700 whitespace-pre-wrap" id="av-spec"></div>
 <div class="mt-5 text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="ui_document_094535">Document</div>
 <div class="mt-2" id="av-file"></div>
