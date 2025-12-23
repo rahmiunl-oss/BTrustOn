@@ -653,5 +653,13 @@
   "results_refreshing_5s": "(Refreshing every 5s)",
   "results_showcase_note_pro": "Verified companies rotate here.",
   "results_showcase_note_free": "Verified companies rotate here — Go Pro to unlock updates visibility.",
-  "results_none_found": "No companies found matching your criteria."
+  "results_none_found": "No companies found matching your criteria.",
+  "results_hint_pro": "Updates rotate here — Go Pro to unlock updates visibility.",
+  "ui_change_file": "Change File",
+  "ui_change_cover": "Change Cover",
+  "ui_edit_project": "Edit Project",
+  "ui_edit_certificate": "Edit Certificate",
+  "ui_edit_asset_details": "Edit Asset Details",
+  "ph_add_service_enter": "Add a service (type and press Enter)",
+  "profile_key_contact": "Key Contact"
 }
