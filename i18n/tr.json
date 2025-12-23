@@ -653,9 +653,5 @@
   "results_refreshing_5s": "(5 sn’de bir yenilenir)",
   "results_showcase_note_pro": "Doğrulanmış şirketler burada döner.",
   "results_showcase_note_free": "Doğrulanmış şirketler burada döner — Güncellemeleri görünür kılmak için Pro’ya geç.",
-  "results_none_found": "Kriterlerinize uyan şirket bulunamadı.",
-  "btn_request_quote": "Teklif İste",
-  "verified_tooltip": "Doğrulandı: işletme kimliği kontrol edildi.",
-  "profile_completion_label": "Profil tamamlanma oranı",
-  "profile_completion_hint": "Güven ve görünürlüğü artırmak için profilini tamamla."
+  "results_none_found": "Kriterlerinize uyan şirket bulunamadı."
 }
