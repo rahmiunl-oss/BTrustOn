@@ -653,9 +653,5 @@
   "results_refreshing_5s": "(Refreshing every 5s)",
   "results_showcase_note_pro": "Verified companies rotate here.",
   "results_showcase_note_free": "Verified companies rotate here — Go Pro to unlock updates visibility.",
-  "results_none_found": "No companies found matching your criteria.",
-  "btn_request_quote": "Request Quote",
-  "verified_tooltip": "Verified: business identity checked.",
-  "profile_completion_label": "Profile completeness",
-  "profile_completion_hint": "Complete your profile to increase trust and visibility."
+  "results_none_found": "No companies found matching your criteria."
 }
