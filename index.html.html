@@ -2367,17 +2367,6 @@ html{ scroll-padding-top: 118px; }
 <div class="flex flex-wrap gap-2" id="p-badge"></div>
 </div>
 </div>
-</div>
-<div id="p-completion-wrap" class="hidden mb-3 max-w-md">
-  <div class="flex items-center justify-between text-[11px] text-slate-600 mb-1">
-    <span class="font-bold text-slate-700" data-i18n="profile_completion_label">Profile completeness</span>
-    <span id="p-completion-pct" class="font-extrabold text-slate-900">0%</span>
-  </div>
-  <div class="h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200/70">
-    <div id="p-completion-bar" class="h-full bg-cyan-500" style="width:0%"></div>
-  </div>
-  <div class="mt-1 text-[10px] text-slate-500" data-i18n="profile_completion_hint">Complete your profile to increase trust and visibility.</div>
-</div>
 <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-4">
 <span class="font-semibold text-gray-700" data-i18n="ui_industrial_supplier_d8f500" id="p-type-tag">
             Industrial Supplier
@@ -2648,7 +2637,7 @@ html{ scroll-padding-top: 118px; }
 <p class="text-[10px] text-gray-400 mt-5 leading-relaxed text-center"><span data-i18n="ui_verified_profiles_rank_higher_in_4967d9">Verified profiles rank higher in search results.</span><span class="text-BTrustOn-accent font-bold" data-i18n="plan_upgrade_title">Upgrade to Pro</span><span data-i18n="ui_to_maximize_your_visibility_and_80eaa3">to maximize your visibility and reach more partners.</span></p>
 </div>
 </div>
-<div id="profile-contact" class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+<div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4" data-i18n="ui_contact_info_dbeeb2">Contact Info</h4>
 <div class="space-y-4 text-sm text-gray-600">
 <div class="flex items-center gap-3">
@@ -4104,8 +4093,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json",
-  tr: "i18n/tr.json",
+  en: "/i18n/en.json",
+  tr: "/i18n/tr.json",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -4296,18 +4285,6 @@ function focusProfileEntity(tab, entityId){
 
     // Ensure tab is visible first
     try { if (typeof switchProfileTab === 'function') switchProfileTab(t); } catch(e) {}
-
-    // Special focus targets (non-list sections)
-    if ((t === 'overview' || t === 'profile' || t === 'company') && id === 'contact') {
-      const el = document.getElementById('profile-contact');
-      if (el) {
-        try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) { try { el.scrollIntoView(); } catch(_) {} }
-        try { el.classList.add('bton-focus-flash'); } catch(e) {}
-        try { setTimeout(() => { try { el.classList.remove('bton-focus-flash'); } catch(_) {} }, 1400); } catch(e) {}
-      }
-      return;
-    }
-
 
     let domId = "";
     if (t === 'projects') domId = _btonEntityDomId('project', id);
@@ -6654,10 +6631,7 @@ function getTrustBadge(company) {
 /* --- LIVE SHOWCASE CARD HELPERS --- */
 function getVerifiedMark(company){
   if (!isCompanyVerified(company)) return "";
-  let tip = "Verified: business identity checked";
-  try { if (typeof t === 'function') tip = t('verified_tooltip') || tip; } catch(e) {}
-  const safeTip = escapeHtml(tip);
-  return `<i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle" title="${safeTip}"></i>`;
+  return `<i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle" title="Verified company"></i>`;
 }
 
 function getCompanyLogoThumb(company){
@@ -6674,71 +6648,6 @@ function getCompanyLogoThumb(company){
 
 // 👇 YENİ FONKSİYON: Şirket Tipine Göre Rozet Üretir 👇
     /* --- GÜNCELLENMİŞ: getCompanyTypeBadge (YENİ TİPLER) --- */
-
-
-function computeProfileCompleteness(company){
-  try{
-    const c = company || {};
-    let total = 0, done = 0;
-
-    const has = (v) => {
-      if (v == null) return false;
-      if (Array.isArray(v)) return v.length > 0;
-      const s = String(v).trim();
-      return s.length > 0 && s !== "-";
-    };
-
-    const check = (ok, weight=1) => {
-      total += weight;
-      if (ok) done += weight;
-    };
-
-    // Identity & basics
-    check(has(c.logo_url), 1);
-    check(has(c.company_type) || has(c.business_type) || has(c.type), 1);
-    check(has(c.primary_sector) || has(c.sector), 1);
-    check(has(c.tagline) || has(c.description) || has(c.about) || has(c.summary), 1);
-
-    // Contact
-    check(has(c.website), 1);
-    check(has(c.contact_email) || has(c.public_email) || has(c.email), 1);
-    check(has(c.phone), 1);
-    check(has(c.city), 0.5);
-    check(has(c.country), 0.5);
-
-    // Capabilities
-    check(has(c.services) || has(c.top_capabilities) || has(c.core_services) || has(c.capabilities), 1.5);
-
-    // Proof (very important)
-    check(has(c.projects), 2);
-    check(has(c.certificates), 1.5);
-    check(has(c.assets), 1.5);
-
-    const pct = total ? Math.round((done / total) * 100) : 0;
-    return { percent: Math.max(0, Math.min(100, pct)) };
-  }catch(e){
-    return { percent: 0 };
-  }
-}
-
-function updateProfileCompleteness(company){
-  try{
-    const wrap = document.getElementById("p-completion-wrap");
-    if (!wrap) return;
-
-    const isOwn = (__authUserId && company && String(company.id) === String(__authUserId));
-    if (!isOwn) { wrap.classList.add("hidden"); return; }
-
-    const pctEl = document.getElementById("p-completion-pct");
-    const barEl = document.getElementById("p-completion-bar");
-    const res = computeProfileCompleteness(company);
-    const pct = (res && typeof res.percent === "number") ? res.percent : 0;
-
-    if (pctEl) pctEl.textContent = pct + "%";
-    if (barEl) barEl.style.width = pct + "%";
-    wrap.classList.remove("hidden");
-  }catch(e){}
-}
 function getCompanyTypeBadge(rawType) {
   const type = (rawType || "company").toLowerCase();
   let label = rawType;
@@ -8263,7 +8172,7 @@ if (nameEl) {
     else if (isVerified) {
             // 💎 ONAYLI ÜYE: LIQUID CRYSTAL MAVİ TİK (EN HAVALISI)
             nameEl.innerHTML += `
-                <span class="group relative inline-flex items-center justify-center ml-2 align-middle cursor-help select-none" title="${escapeHtml((typeof t==='function' ? (t('verified_tooltip') || 'Verified: business identity checked') : 'Verified: business identity checked'))}">
+                <span class="group relative inline-flex items-center justify-center ml-2 align-middle cursor-help select-none" title="Officially Verified Partner">
                     
                     <span class="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20 animate-ping duration-[3s]"></span>
                     
@@ -10249,8 +10158,8 @@ async function handleJoin() {
 
     toggleModal('modal-join');
     showToast("Welcome!", "Registration successful. Profile created.", "success");
-    Promise.resolve(checkUserAndOpenProfile()).catch(e => console.warn("checkUserAndOpenProfile failed:", e));
-try { if (typeof refreshHeroCTA === "function") setTimeout(() => { try { refreshHeroCTA(); } catch(e){} }, 120); } catch(e) {}
+    checkUserAndOpenProfile();
+    if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
     // If user joined from the Pro pricing CTA, start Pro trial immediately
     if (__intent.toLowerCase() === "pro") {
       setTimeout(async () => {
@@ -10381,7 +10290,6 @@ if (profile.email === ADMIN_EMAIL) {
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
 /* --- DÜZELTİLMİŞ: checkUserAndOpenProfile --- */
 async function checkUserAndOpenProfile(forceOpen = false) {
-  try {
   // 1. Oturumu Kontrol Et
   const { data: { session } } = await supabaseClient.auth.getSession();
   
@@ -10509,9 +10417,6 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   // Keep a reliable "my company" snapshot for plan UI + pro gates
   try { __postCompany = mappedProfile; } catch(e) {}
   try { renderNavPlanButton(mappedProfile); } catch(e) {}
-  } catch (e) {
-    console.warn("checkUserAndOpenProfile failed:", e);
-  }
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 /* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
@@ -10607,32 +10512,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (window.__BTON_MAIN_BOOTED) return;
   window.__BTON_MAIN_BOOTED = true;
 
-  try { populateCountrySelects(); } catch (e) { console.warn("populateCountrySelects failed:", e); }
+  populateCountrySelects(); // Country dropdowns
 
   // 0) Restore last view FIRST (prevents dashboard flash)
-  try { await restoreInitialRoute(); } catch (e) {
-    console.warn("restoreInitialRoute failed:", e);
-    try { showMainView(); } catch (_) {}
-  }
-
-  try { finishBoot(); } catch(e) {}
+  await restoreInitialRoute();
+  finishBoot();
 
   // 1) Start static systems
-  try { await bootI18n(); } catch (e) { console.warn("bootI18n failed:", e); }
-
-  try { Promise.resolve(initRealData()).catch(e => console.warn("initRealData failed:", e)); } catch(e) {}
-  try { initShowcaseSystem(); } catch(e) { console.warn("initShowcaseSystem failed:", e); }
+  await bootI18n();
+  initRealData();
+  initShowcaseSystem();
 
   // Home updates (last 7 days)
-  try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
-  try { Promise.resolve(fetchHomeUpdates()).catch(e => console.warn("fetchHomeUpdates failed:", e)); } catch(e) {}
-  try { subscribeHomeUpdatesRealtime(); } catch(e) {}
+  _setHomeUpdatesFilterUI(homeUpdatesFilter);
+  fetchHomeUpdates();
+  subscribeHomeUpdatesRealtime();
+
+
+  // 2) Fetch public profiles (can run after correct view is already visible)
+  // fetchAllPublicProfiles(); // disabled (initRealData handles public profiles)
+ 
 
   // 3) User session check (refresh user UI / My Company button etc.)
-  try { Promise.resolve(checkUserAndOpenProfile()).catch(e => console.warn("checkUserAndOpenProfile failed:", e)); } catch(e) {}
-  try { if (typeof refreshHeroCTA === "function") setTimeout(() => { try { refreshHeroCTA(); } catch(e){} }, 120); } catch(e) {}
-  try { if (typeof refreshPricingSection === "function") setTimeout(() => { try { refreshPricingSection(); } catch(e){} }, 160); } catch(e) {}
-  try { setTimeout(() => { try { refreshHomeUpdatesCTA(); } catch(e){} }, 200); } catch(e) {}
+  checkUserAndOpenProfile();
+  if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
+  if (typeof refreshPricingSection === "function") if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160);
+  setTimeout(refreshHomeUpdatesCTA, 200);
 });
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
@@ -10646,9 +10551,10 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     if (typeof checkAdminAccess === "function") checkAdminAccess();
 
     // 2. Sonra profili çek
-    Promise.resolve(checkUserAndOpenProfile()).catch(e => console.warn("checkUserAndOpenProfile failed:", e));
-try { if (typeof refreshHeroCTA === "function") setTimeout(() => { try { refreshHeroCTA(); } catch(e){} }, 120); } catch(e) {}
-    try { if (typeof refreshPricingSection === "function") setTimeout(() => { try { refreshPricingSection(); } catch(e){} }, 160); } catch(e) {}
+    checkUserAndOpenProfile();
+
+    if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
+    if (typeof refreshPricingSection === "function") if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160);
     // Saved companies (KOBI MVP)
     setTimeout(() => {
       try {
@@ -10713,7 +10619,7 @@ notificationsUnreadCount = 0;
         showMainView();
         if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 0);
         if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 0);
-        try { if (typeof refreshHomeUpdatesCTA === "function") setTimeout(() => { try { refreshHomeUpdatesCTA(); } catch(e){} }, 0); } catch(e) {}
+        setTimeout(refreshHomeUpdatesCTA, 0);
       } else {
         // fallback: aynı dosyayı yeniden yükle (subpath uyumlu)
         window.location.href = window.location.pathname + window.location.search;
@@ -10733,8 +10639,7 @@ function openMyCompanyIfExists() {
   
   if (!myId) {
     console.warn("Kayıtlı şirket ID'si bulunamadı, oturum kontrol ediliyor...");
-    Promise.resolve(checkUserAndOpenProfile()).catch(e => console.warn("checkUserAndOpenProfile failed:", e));
-// ID yoksa tekrar giriş kontrolü yap
+    checkUserAndOpenProfile(); // ID yoksa tekrar giriş kontrolü yap
     return;
   }
 
@@ -10751,8 +10656,8 @@ function openMyCompanyIfExists() {
     openProfile(myId);
   } else {
     // Şirket listede yoksa, verileri tekrar çekip açması için checkUser'ı tetikle
-    Promise.resolve(checkUserAndOpenProfile()).catch(e => console.warn("checkUserAndOpenProfile failed:", e));
-}
+    checkUserAndOpenProfile();
+  }
 }
 
 /* --- PROFİL DÜZENLEME FONKSİYONLARI --- */
@@ -12119,7 +12024,6 @@ function timeAgo(dateString) {
 }
 /* --- GÜNCELLENMİŞ: fetchInboxMessages (Kesin Filtreleme) --- */
 async function fetchInboxMessages() {
-  try {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
@@ -12240,9 +12144,6 @@ async function fetchInboxMessages() {
 
     inboxData = Array.from(groupedMap.values());
     renderInboxItems();
-  } catch (err) {
-    console.warn('fetchInboxMessages failed:', err);
-  }
 }
 /* --- YENİ YARDIMCI: Anlık Liste Güncelleyici (Gecikmeyi Önler) --- */
 function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
@@ -12451,7 +12352,7 @@ function subscribeNotifications() {
       console.warn("subscribeNotifications exception:", e);
       _notifSubscribed = false;
     }
-  }).catch(() => {});
+  });
 }
 
 
@@ -14435,18 +14336,9 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                   </button>
                   ` : ``}
                 </div>
-                <div class="flex items-center gap-2">
-                  <button type="button"
-                    class="text-[11px] font-extrabold inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-BTrustOn-accent text-white shadow-sm hover:shadow-md hover:opacity-95 transition"
-                    title="${t('btn_request_quote') || 'Request Quote'}"
-                    onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'overview', focus:'contact'});">
-                    <i class="fa-solid fa-paper-plane text-[10px]"></i>
-                    <span>${t('btn_request_quote') || 'Request Quote'}</span>
-                  </button>
-                  <button class="text-[11px] font-extrabold text-BTrustOn-accent inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-cyan-50/60 border border-cyan-100 hover:bg-cyan-50 transition">
+                <button class="text-[11px] font-extrabold text-BTrustOn-accent inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-cyan-50/60 border border-cyan-100 hover:bg-cyan-50 transition">
                   <span>${t("btn_view")}</span> <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
                 </button>
-                </div>
               </div>
             `;
             container.appendChild(card);
