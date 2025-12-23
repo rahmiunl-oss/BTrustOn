@@ -9366,19 +9366,19 @@ function renderServiceTags() {
     return;
   }
 
-  tags.forEach((t, idx) => {
+  tags.forEach((tag, idx) => {
     const chip = document.createElement("div");
     chip.className = "group inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-cyan-200 hover:bg-cyan-50/40 transition cursor-grab";
     chip.setAttribute("draggable", "true");
     chip.dataset.idx = String(idx);
 
-    const isFeatured = (window.__svcEditor.featured || []).some(x => _svcKey(x) === _svcKey(t));
+    const isFeatured = (window.__svcEditor.featured || []).some(x => _svcKey(x) === _svcKey(tag));
 
     chip.innerHTML = `
       <span class="w-6 h-6 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 flex items-center justify-center">
         <i class="fa-solid fa-grip-lines text-[10px]"></i>
       </span>
-      <span class="text-xs font-extrabold text-gray-700">${svcEscape(svcDisplayLabel(t))}</span>
+      <span class="text-xs font-extrabold text-gray-700">${svcEscape(svcDisplayLabel(tag))}</span>
 
       <button type="button" class="svc-star ml-1 w-7 h-7 rounded-lg border border-amber-200 bg-amber-50 text-amber-600 flex items-center justify-center transition opacity-85 group-hover:opacity-100" title="${t("svc_toggle_featured") || "Toggle Featured"}" aria-pressed="${isFeatured ? "true" : "false"}">
         <i class="${isFeatured ? "fa-solid" : "fa-regular"} fa-star text-[11px]"></i>
@@ -9394,7 +9394,7 @@ function renderServiceTags() {
     chip.querySelector(".svc-star")?.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      toggleServiceFeatured(t);
+      toggleServiceFeatured(tag);
     });
 
     // Remove
@@ -10633,10 +10633,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 0) Restore last view FIRST (prevents dashboard flash)
   await restoreInitialRoute();
-  finishBoot();
-
-  // 1) Start static systems
+  // Apply language before showing UI (prevents EN→TR flash)
   await bootI18n();
+  finishBoot();
   initRealData();
   initShowcaseSystem();
 
