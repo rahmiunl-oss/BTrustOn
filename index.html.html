@@ -4093,8 +4093,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "/i18n/en.json",
-  tr: "/i18n/tr.json",
+  en: "i18n/en.json",
+  tr: "i18n/tr.json",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -5877,7 +5877,7 @@ function removeAssetFile() {
     const linkEl = document.getElementById("current-asset-link");
 
     if(inputEl) inputEl.value = "";
-    if(textEl) textEl.textContent = "Attach File (Max 5MB)";
+    if(textEl) textEl.textContent = (t("lbl_asset_file_input") || "Attach File (Max 5MB)");
     if(labelEl) labelEl.classList.remove("border-BTrustOn-accent", "bg-cyan-50");
     if(removeBtn) removeBtn.classList.add("hidden");
     if(linkEl) linkEl.classList.add("hidden");
@@ -6545,7 +6545,9 @@ function populateCountrySelects() {
     ];
 
     function t(key) {
-      return translations[currentLang][key] || translations.en[key] || "";
+      const pack = (translations && translations[currentLang]) ? translations[currentLang] : {};
+      const en = (translations && translations.en) ? translations.en : {};
+      return (pack && pack[key]) || (en && en[key]) || "";
     }
 
     // =======================
@@ -6555,26 +6557,28 @@ function populateCountrySelects() {
       const v = (typeRaw || "").trim();
       if (!v) return "";
       if (currentLang === "tr") {
+        const key = v.toLowerCase();
         const map = {
-          "Operator": "İşletmeci / Varlık Sahibi",
-          "Operator / Asset Owner": "İşletmeci / Varlık Sahibi",
-          "EPC Contractor": "Yüklenici",
-          "EPC / General Contractor": "Yüklenici",
-          "General Contractor": "Yüklenici",
-          "Subcontractor": "Alt Yüklenici",
-          "Subcontractor / Specialist": "Alt Yüklenici",
-          "Manufacturer": "Üretici",
-          "Manufacturer / OEM": "Üretici",
-          "OEM": "Üretici",
-          "Distributor": "Distribütör",
-          "Distributor / Supplier": "Distribütör",
-          "Supplier": "Tedarikçi",
-          "Industrial Supplier": "Endüstriyel Tedarikçi",
-          "Service Provider": "Hizmet Sağlayıcı",
-          "Consultant": "Danışman",
-          "Engineering": "Mühendislik"
+          "operator": "Operatör / Varlık Sahibi",
+          "operator / asset owner": "Operatör / Varlık Sahibi",
+          "asset owner": "Varlık Sahibi",
+          "epc contractor": "Yüklenici",
+          "epc / general contractor": "Yüklenici",
+          "general contractor": "Yüklenici",
+          "subcontractor": "Alt Yüklenici",
+          "subcontractor / specialist": "Alt Yüklenici",
+          "manufacturer": "Üretici",
+          "manufacturer / oem": "Üretici",
+          "oem": "Üretici",
+          "distributor": "Distribütör",
+          "distributor / supplier": "Distribütör",
+          "supplier": "Tedarikçi",
+          "industrial supplier": "Endüstriyel Tedarikçi",
+          "service provider": "Hizmet Sağlayıcı",
+          "consultant": "Danışman",
+          "engineering": "Mühendislik"
         };
-        return map[v] || v;
+        return map[key] || map[v] || v;
       }
       return v;
     }
@@ -8502,7 +8506,7 @@ if (servicesGrid) {
                 <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
                   <i class="fa-solid fa-check text-[10px]"></i>
                 </span>
-                <span class="text-xs font-bold text-gray-700">${s}</span>
+                <span class="text-xs font-bold text-gray-700">${svcEscape(svcDisplayLabel(s))}</span>
               </span>
             `).join("")}
           </div>
@@ -8513,7 +8517,7 @@ if (servicesGrid) {
                 <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
                   <i class="fa-solid fa-check text-[10px]"></i>
                 </span>
-                <span class="text-xs font-bold text-gray-700">${s}</span>
+                <span class="text-xs font-bold text-gray-700">${svcEscape(svcDisplayLabel(s))}</span>
               </span>
             `).join("")}
           </div>` : ``}
@@ -8566,7 +8570,7 @@ if (servicesGrid) {
     detailsDiv.innerHTML = `
       <div class="relative bg-slate-50 rounded-2xl p-6 border border-slate-100 overflow-hidden">
         <i class="fa-solid fa-quote-left absolute top-4 left-4 text-slate-200 text-2xl"></i>
-        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pl-6"data-i18n="ui_technical_capability_statement">Technical Capability Statement</h4>
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pl-6"data-i18n="ui_technical_capability_statement"></h4>
         <div class="text-sm text-gray-600 leading-relaxed pl-6 font-light break-words whitespace-pre-wrap font-sans">
           ${company.service_details}
         </div>
@@ -8607,7 +8611,7 @@ if (servicesGrid) {
 
                   <div class="relative z-10">
                       <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                          <i class="fa-solid fa-certificate text-BTrustOn-accent"></i> <span data-i18n="ui_profile_key_contact_title">Key Contact</span>
+                          <i class="fa-solid fa-certificate text-BTrustOn-accent"></i> <span data-i18n="ui_profile_key_contact_title"></span>
                       </h4>
 
                       <div class="flex items-center gap-4">
@@ -9462,37 +9466,48 @@ function serviceAddKeydown(e) {
 }
 
 function serviceSuggest(query) {
-  const suggest = document.getElementById("svc-suggest");
-  if (!suggest) return;
+    const suggest = document.getElementById("svc-suggest");
+    if (!suggest) return;
 
-  const q = _svcNorm(query).toLowerCase();
-  if (!q) {
-    suggest.classList.add("hidden");
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) { suggest.innerHTML = ""; suggest.classList.add("hidden"); return; }
+
+    let matches = [];
+    try {
+      matches = getServiceSuggestions()
+        .filter(Boolean)
+        .filter(s => String(s).toLowerCase().includes(q))
+        .slice(0, 8);
+    } catch (e) {
+      matches = [];
+    }
+
+    if (!matches.length) { suggest.innerHTML = ""; suggest.classList.add("hidden"); return; }
+
+    // Build safely (no inline onclick; avoids escaping issues like '&' in labels)
     suggest.innerHTML = "";
-    return;
+    matches.forEach((s) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between gap-2";
+      btn.addEventListener("click", () => servicePickSuggestion(String(s)));
+
+      const left = document.createElement("span");
+      left.className = "text-sm text-gray-700 truncate";
+      // Display label respects current language mapping
+      left.textContent = svcDisplayLabel(String(s));
+
+      const right = document.createElement("span");
+      right.className = "text-[10px] font-extrabold text-BTrustOn-accent";
+      right.textContent = (t("svc_add") || "ADD");
+
+      btn.appendChild(left);
+      btn.appendChild(right);
+      suggest.appendChild(btn);
+    });
+
+    suggest.classList.remove("hidden");
   }
-
-  const existing = new Set((window.__svcEditor.tags || []).map(x => String(x).toLowerCase()));
-  const matches = getServiceSuggestions()
-    .filter(s => s.toLowerCase().includes(q))
-    .filter(s => !existing.has(s.toLowerCase()))
-    .slice(0, 8);
-
-  if (matches.length === 0) {
-    suggest.classList.add("hidden");
-    suggest.innerHTML = "";
-    return;
-  }
-
-  suggest.innerHTML = matches.map(s => `
-    <button type="button" class="w-full text-left px-4 py-3 hover:bg-cyan-50 transition flex items-center justify-between gap-3" onclick="servicePickSuggestion('${s.replace(/'/g, "\\'")}')">
-      <span class="text-sm font-bold text-gray-700">${s}</span>
-      <span class="text-[10px] text-gray-400 font-bold">ADD</span>
-    </button>
-  `).join("");
-
-  suggest.classList.remove("hidden");
-}
 
 function servicePickSuggestion(s) {
   addServiceTag(s);
@@ -9661,6 +9676,15 @@ const searchInput = document.getElementById("search-input");
     openProfile(selectedCompany.id);
   }
 
+  // If editor is open, re-render service chips (so labels switch language cleanly)
+  try {
+    const viewEditor = document.getElementById("view-editor");
+    const isEditorVisible = viewEditor && !viewEditor.classList.contains("hidden-view");
+    if (isEditorVisible && typeof renderServiceTags === "function") {
+      renderServiceTags();
+    }
+  } catch(e) {}
+
     }
       
     /* --- Skeleton helpers (Top Companies + Result Count) --- */
@@ -9772,7 +9796,7 @@ function openAssetModal(assetId = null) {
     }
   } else {
     currentEditingAssetId = null;
-    if(title) title.textContent = "Add New Asset";
+    if(title) title.textContent = (t("ui_add_new_asset_3632ed") || "Add New Asset");
   }
 }
 function closeAssetModal() {
@@ -9981,7 +10005,7 @@ function openProjectModal(projectId = null) {
   } else {
     // --- YENİ EKLEME MODU ---
     currentEditingProjectId = null;
-    if(title) title.textContent = "Add New Project";
+    if(title) title.textContent = (t("ui_add_new_project_17bde1") || "Add New Project");
   }
 }
 
@@ -10862,7 +10886,26 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   // Editörü Aç
   showEditorView();
   
-  // Profil doluluk oranını hesapla
+  
+  // ✅ Ensure services tag editor renders AFTER editor view becomes visible (prevents blank list / JS timing issues)
+  try {
+    setTimeout(() => {
+      try {
+        initServiceTagEditor();
+        setServiceTagsFromString(document.getElementById("edit-services").value);
+
+        const existingFeatured = selectedCompany.services_featured || "";
+        const hasExisting = Array.isArray(existingFeatured) ? existingFeatured.length > 0 : String(existingFeatured || "").trim() !== "";
+        if (hasExisting) {
+          setServiceFeaturedFromAny(existingFeatured);
+        } else {
+          const currentTags = (window.__svcEditor && window.__svcEditor.tags) ? window.__svcEditor.tags : [];
+          setServiceFeaturedFromAny(currentTags.slice(0, 5));
+        }
+      } catch(e) { if (typeof BTON_DEBUG !== "undefined" && BTON_DEBUG) console.error(e); }
+    }, 0);
+  } catch(e) {}
+// Profil doluluk oranını hesapla
   setTimeout(initEditorListeners, 100); 
   // ✅ Jump directly to a requested editor section (e.g., Services & Capabilities)
   if (targetSectionId) {
@@ -13928,7 +13971,7 @@ function openCertModal(certId = null) {
     }
   } else {
     currentEditingCertId = null;
-    if(title) title.textContent = "Add New Certificate";
+    if(title) title.textContent = (t("ui_add_new_certificate_1b4fc5") || "Add New Certificate");
   }
 }
 
@@ -16929,7 +16972,7 @@ function removeCertFile() {
     currentCertFile = null;
     existingCertFileUrl = null;
     document.getElementById("cert-file-input").value = "";
-    document.getElementById("cert-file-text").textContent = "Attach Proof (Max 5MB)";
+    document.getElementById("cert-file-text").textContent = (t("ui_attach_proof_max_5mb_81863c") || "Attach Proof (Max 5MB)");
     document.getElementById("cert-file-label").classList.remove("border-BTrustOn-accent", "bg-cyan-50");
     document.getElementById("btn-remove-cert-file").classList.add("hidden");
     document.getElementById("current-cert-link").classList.add("hidden");
