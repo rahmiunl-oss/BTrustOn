@@ -686,5 +686,6 @@
   "ui_no_expiry": "Süresiz",
   "ui_no_specs_provided": "Özellik belirtilmedi.",
   "ui_expiry": "Geçerlilik",
-  "ui_qty": "Adet"
+  "ui_qty": "Adet",
+  "_build": "updated9"
 }
