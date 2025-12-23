@@ -1015,6 +1015,7 @@ html{ scroll-padding-top: 118px; }
 <!-- Supabase Auth client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+    window.__BTON_BUILD = "updated9";
     const SUPABASE_URL = "https://ncssozhpwzvzeneaumlz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jc3Nvemhwd3p2emVuZWF1bWx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MzkyMjgsImV4cCI6MjA4MDQxNTIyOH0.pk9p8_KRcmcbzhulo4dA06uk_3FOFXwVT1vNiYOEfck";
 
@@ -4093,8 +4094,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json",
-  tr: "i18n/tr.json",
+  en: "i18n/en.json?v=updated9",
+  tr: "i18n/tr.json?v=updated9",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -6113,32 +6114,95 @@ function __buildCountryNameMap(locale) {
   return map;
 }
 
+function __normLangCode(l) {
+  const s = String(l || 'en').toLowerCase();
+  if (s.startsWith('tr')) return 'tr';
+  if (s.startsWith('en')) return 'en';
+  return s;
+}
+
+function __normalizeCountryInput(v) {
+  let s = String(v || '');
+  try { s = s.replace(/[\u200B-\u200D\uFEFF]/g, ''); } catch(e) {}
+  try { s = s.replace(/\u00A0/g, ' '); } catch(e) {}
+  try { s = s.replace(/\s+/g, ' ').trim(); } catch(e) {}
+  try { if (s.normalize) s = s.normalize('NFKC'); } catch(e) {}
+  return s;
+}
+
+const __COUNTRY_ALIAS_CODE = {
+  // Common EN/TR aliases (add more if needed)
+  "turkey":"TR", "türkiye":"TR", "turkiye":"TR", "tr":"TR", "t.c.":"TR",
+  "finland":"FI", "finlandiya":"FI",
+  "france":"FR", "fransa":"FR",
+  "germany":"DE", "almanya":"DE",
+  "united states":"US", "usa":"US", "amerika":"US", "abd":"US",
+  "united kingdom":"GB", "uk":"GB", "birleşik krallık":"GB", "ingiltere":"GB",
+  "netherlands":"NL", "hollanda":"NL",
+  "spain":"ES", "ispanya":"ES",
+  "italy":"IT", "italya":"IT",
+  "saudi arabia":"SA", "suudi arabistan":"SA",
+  "united arab emirates":"AE", "uae":"AE", "birleşik arap emirlikleri":"AE",
+  "china":"CN", "çin":"CN"
+};
+
 function countryNameToISO2(name) {
-  const raw = String(name || '').trim();
+  const raw = __normalizeCountryInput(name);
   if (!raw) return null;
+
+  // Already ISO2
   if (/^[A-Za-z]{2}$/.test(raw)) return raw.toUpperCase();
+
   const key = raw.toLowerCase();
+  if (__COUNTRY_ALIAS_CODE[key]) return __COUNTRY_ALIAS_CODE[key];
+
   try {
     if (!__countryNameCodeCache.en) __countryNameCodeCache.en = __buildCountryNameMap('en');
     if (__countryNameCodeCache.en[key]) return __countryNameCodeCache.en[key];
+
     if (!__countryNameCodeCache.tr) __countryNameCodeCache.tr = __buildCountryNameMap('tr');
     if (__countryNameCodeCache.tr[key]) return __countryNameCodeCache.tr[key];
   } catch (e) {}
+
   return null;
 }
 
 function localizeCountryName(name) {
-  const raw = String(name || '').trim();
+  const raw = __normalizeCountryInput(name);
   if (!raw) return '';
+
   const code = countryNameToISO2(raw);
   if (!code) return raw;
+
+  const lang = __normLangCode(typeof currentLang !== 'undefined' ? currentLang : 'en');
+
+  // Deterministic TR fallbacks (prevents showing Turkey/Finland in TR UI)
+  if (lang === 'tr') {
+    const manual = {
+      "TR": "Türkiye",
+      "FI": "Finlandiya",
+      "FR": "Fransa",
+      "DE": "Almanya",
+      "US": "ABD",
+      "GB": "Birleşik Krallık",
+      "NL": "Hollanda",
+      "ES": "İspanya",
+      "IT": "İtalya",
+      "SA": "Suudi Arabistan",
+      "AE": "Birleşik Arap Emirlikleri",
+      "CN": "Çin"
+    };
+    if (manual[code]) return manual[code];
+  }
+
   try {
-    const dn = new Intl.DisplayNames([currentLang || 'en'], { type: 'region' });
+    const dn = new Intl.DisplayNames([lang], { type: 'region' });
     return dn.of(code) || raw;
   } catch (e) {
     return raw;
   }
 }
+
 
 function populateCountrySelects() {
     const selects = ["join-country", "edit-country"];
@@ -7263,7 +7327,7 @@ function filterSector(sector, btnEl) {
       let label = displayStatus || baseStatusRaw || "";
       try {
         const base2 = (baseStatusRaw || "").toLowerCase();
-        if ((currentLang || "en") === "tr") {
+        if (__normLangCode(currentLang) === "tr") {
           if (base2.includes("available")) label = (t("asset_status_available") || label);
           else if (base2.includes("maintenance") || base2.includes("maint")) label = (t("asset_status_maintenance") || label);
           else if (base2.includes("out of service") || base2.includes("oos")) label = (t("asset_status_out") || label);
@@ -15410,7 +15474,7 @@ async function downloadFile(fileUrl, fileName) {
     }
 }
 /* --- STATUS RENGİNİ AYARLAYAN FONKSİYON --- */
-function getStatusBadge(status) {
+function getStatusBadgeLegacy(status) {
     const s = (status || "").toLowerCase();
     
     // Varsayılan (Gri)
