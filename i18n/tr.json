@@ -669,5 +669,16 @@
   "upgrade_cta_not_now": "ŞİMDİ DEĞİL",
   "upgrade_cta_start_trial": "ÜCRETSİZ DENEMEYİ BAŞLAT",
   "upgrade_offer_line": "3 ay ücretsiz deneme • Kart gerekmez • Sonra $19/ay",
-  "upgrade_offer_title": "Teklif"
+  "upgrade_offer_title": "Teklif",
+  "ui_select_country": "Ülke seçin...",
+  "ui_other_not_listed": "Diğer / Listede Yok",
+  "ui_unknown_location": "Bilinmeyen konum",
+  "ui_no_description": "Açıklama girilmemiş.",
+  "ui_edit": "Düzenle",
+  "ui_delete": "Sil",
+  "ui_view_document": "Dokümanı görüntüle",
+  "ui_no_document_attached": "Doküman eklenmemiş",
+  "ui_delete_project": "Projeyi sil",
+  "ui_delete_asset": "Varlığı sil",
+  "ui_delete_certificate": "Sertifikayı sil"
 }
