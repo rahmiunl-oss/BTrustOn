@@ -669,5 +669,16 @@
   "upgrade_cta_not_now": "NOT NOW",
   "upgrade_cta_start_trial": "START FREE TRIAL",
   "upgrade_offer_line": "3 months free trial • No card required • Then $19/month.",
-  "upgrade_offer_title": "Offer"
+  "upgrade_offer_title": "Offer",
+  "ui_select_country": "Select Country...",
+  "ui_other_not_listed": "Other / Not Listed",
+  "ui_unknown_location": "Unknown Location",
+  "ui_no_description": "No description provided.",
+  "ui_edit": "Edit",
+  "ui_delete": "Delete",
+  "ui_view_document": "View document",
+  "ui_no_document_attached": "No document attached",
+  "ui_delete_project": "Delete project",
+  "ui_delete_asset": "Delete asset",
+  "ui_delete_certificate": "Delete certificate"
 }
