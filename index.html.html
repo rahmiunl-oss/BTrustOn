@@ -2106,7 +2106,7 @@ html{ scroll-padding-top: 118px; }
 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_address">
         Official Address
     </label>
-<textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition resize-none" id="edit-address" data-i18n-placeholder="ph_edit_address" placeholder="Headquarters full address (Street, No, District...)" rows="2"></textarea>
+<textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition resize-none" id="edit-address" data-i18n-placeholder="ui_placeholder_official_address_full_7c2a1a" placeholder="Headquarters full address (Street, No, District...)" rows="2"></textarea>
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="field_sector">Sector</span><span class="text-red-500" data-i18n="ui_3389da">*</span></label>
@@ -2143,7 +2143,7 @@ html{ scroll-padding-top: 118px; }
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_desc">Description</label>
-<textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" id="edit-desc" data-i18n-placeholder="ph_edit_desc" placeholder="Describe your company\'s core capabilities..." rows="4"></textarea>
+<textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" id="edit-desc" data-i18n-placeholder="ui_placeholder_describe_company_3f91b2" placeholder="Describe your company's core capabilities..." rows="4"></textarea>
 </div>
 <div class="grid grid-cols-3 gap-4">
 <div>
@@ -7457,10 +7457,33 @@ function _assetQty(a){
   return Number.isFinite(n) ? n : 0;
 }
 function _assetNormStatus(s){
-  const v = (s || "").toString().toLowerCase();
-  if (v.includes("avail") || v.includes("ready") || v.includes("active") || v.includes("solid")) return "available";
-  if (v.includes("maint") || v.includes("bak") || v.includes("servis") || v.includes("service")) return "maintenance";
-  if (v.includes("out") || v.includes("offline") || v.includes("off") || v.includes("kapalı") || v.includes("service dışı") || v.includes("deaktif")) return "out";
+  const v = (s || "").toString().toLowerCase().trim();
+
+  // Out of service / disabled (check first so "service dışı" doesn't get caught by maintenance)
+  if (
+    v.includes("out of service") || v.includes("out") ||
+    v.includes("offline") || v.includes("off") ||
+    v.includes("service dışı") || v.includes("servis dışı") ||
+    v.includes("devre dışı") || v.includes("deaktif") ||
+    v.includes("disabled") || v.includes("inactive")
+  ) return "out";
+
+  // Under maintenance
+  if (
+    v.includes("maint") || v.includes("maintenance") ||
+    v.includes("bakım") || v.includes("bakim") ||
+    v.includes("repair") || v.includes("serviste") ||
+    v.includes("servis") ||
+    (v.includes("service") && !v.includes("service dışı") && !v.includes("servis dışı"))
+  ) return "maintenance";
+
+  // Available / active
+  if (
+    v.includes("available") || v.includes("avail") ||
+    v.includes("ready") || v.includes("active") ||
+    v.includes("müsait") || v.includes("musait")
+  ) return "available";
+
   return "other";
 }
 function _assetStatusRank(s){
@@ -11159,7 +11182,7 @@ function calculateProfileStatus() {
 
   // RENK VE MESAJ AYARLARI
   if (totalPercent >= 100) {
-      if(msg) msg.textContent = "Excellent! Your profile is fully optimized.";
+      if(msg) msg.textContent = (t("ui_profile_strength_fully_optimized_33b0be") || "Excellent! Your profile is fully optimized.");
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
       if(text) text.classList.replace("text-blue-600", "text-emerald-600");
   } else if (totalPercent >= 70) {
@@ -12918,7 +12941,7 @@ function renderInboxItems() {
       container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64 text-gray-400">
             <i class="fa-solid fa-bell text-4xl mb-3 opacity-20"></i>
-            <p class="text-xs">${t("notifications_empty") || "No notifications."}</p>
+            <p class="text-xs">${t("ui_no_notifications_2ef213") || "No notifications."}</p>
         </div>`;
       updateBadges(messagesUnreadCount + notificationsUnreadCount);
       return;
@@ -12980,7 +13003,7 @@ function renderInboxItems() {
 
   // Boş durum mesajı
   if (filteredData.length === 0) {
-      const msg = currentInboxView === 'inbox' ? (t("inbox_no_received_messages") || "No received messages.") : (t("inbox_no_sent_messages") || "No sent messages.");
+      const msg = currentInboxView === 'inbox' ? (t("ui_no_received_messages_9d2a12") || "No received messages.") : (t("ui_no_sent_messages_83b1fd") || "No sent messages.");
       container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64 text-gray-400">
             <i class="fa-solid ${currentInboxView === 'inbox' ? 'fa-inbox' : 'fa-paper-plane'} text-4xl mb-3 opacity-20"></i>
@@ -14533,8 +14556,7 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
             const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
             
             // Veritabanındaki "type" veya "type_label" alanını kullanıyoruz
-            const rawCompType = (company.type_label || company.type || "—");
-            const compType = translateCompanyType(rawCompType);
+            const compType = (company.type_label || company.type || "—");
 
             const refCount = (company.projects || []).length;
             const certCount = (company.certificates || []).length;
@@ -14579,7 +14601,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                         </h3>
 
                         <div class="flex flex-wrap items-center gap-2 mt-1">
-                          ${getCompanyTypeBadge(rawCompType)}
+                          ${getCompanyTypeBadge(compType)}
                           <span class="text-[10px] text-gray-400 flex items-center gap-1 shrink-0">
                             <span class="w-1 h-1 rounded-full bg-gray-300"></span>
                             ${formatCityCountry(company.city, company.country || "TR")}
