@@ -694,7 +694,11 @@
   "ui_verified_badge_active": "Verified. Badge active.",
   "ui_review_pending_24h": "Review pending (24h).",
   "badge_active": "ACTIVE",
-  "inbox_no_received_messages": "No received messages.",
-  "inbox_no_sent_messages": "No sent messages.",
-  "notifications_empty": "No notifications."
+  "ui_profile_strength_fully_optimized_33b0be": "Excellent! Your profile is fully optimized.",
+  "ui_no_notifications_2ef213": "No notifications.",
+  "ui_no_received_messages_9d2a12": "No received messages.",
+  "ui_no_sent_messages_83b1fd": "No sent messages.",
+  "ui_placeholder_official_address_full_7c2a1a": "Headquarters full address (Street, No, District...)",
+  "ui_placeholder_describe_company_3f91b2": "Describe your company's core capabilities...",
+  "ui_upgrade_to_pro": "Upgrade to Pro"
 }
