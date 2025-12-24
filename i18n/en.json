@@ -690,8 +690,11 @@
   "_build": "updated9",
   "nav_login_short": "LOGIN",
   "join_type_tech": "Tech & Software",
-  "join_type_specialist_sub": "Specialist / Sub",
+  "join_type_specialist_sub": "Subcontractor",
   "ui_verified_badge_active": "Verified. Badge active.",
   "ui_review_pending_24h": "Review pending (24h).",
-  "badge_active": "ACTIVE"
+  "badge_active": "ACTIVE",
+  "inbox_no_received_messages": "No received messages.",
+  "inbox_no_sent_messages": "No sent messages.",
+  "notifications_empty": "No notifications."
 }
