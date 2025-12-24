@@ -1015,7 +1015,7 @@ html{ scroll-padding-top: 118px; }
 <!-- Supabase Auth client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    window.__BTON_BUILD = "updated9";
+    window.__BTON_BUILD = "updated11";
     const SUPABASE_URL = "https://ncssozhpwzvzeneaumlz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jc3Nvemhwd3p2emVuZWF1bWx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MzkyMjgsImV4cCI6MjA4MDQxNTIyOH0.pk9p8_KRcmcbzhulo4dA06uk_3FOFXwVT1vNiYOEfck";
 
@@ -1435,9 +1435,9 @@ html{ scroll-padding-top: 118px; }
 </div>
 <div class="ml-auto flex items-center gap-3 text-sm font-medium flex-nowrap" id="nav-right">
 <div class="flex items-center gap-2 md:gap-3" id="guest-actions">
-<button aria-label="Partner Login" class="bton-nav-pill bton-pill-muted inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" data-i18n-aria="login_title" id="btn-partner-login" onclick="openLoginModal()">
+<button aria-label="Login" class="bton-nav-pill bton-pill-muted inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" data-i18n-aria="login_title" id="btn-partner-login" onclick="openLoginModal()">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-key"></i></span>
-<span class="hidden sm:inline" data-i18n="login_title">Partner Login</span>
+<span class="hidden sm:inline" data-i18n="login_title">Login</span>
 <span class="sm:hidden" data-i18n="nav_login_short">Login</span>
 </button>
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" id="btn-join-network" onclick="openJoinModal('free')">
@@ -2903,7 +2903,7 @@ html{ scroll-padding-top: 118px; }
 <i class="fa-solid fa-key text-cyan-700"></i>
 </div>
 <div>
-<h2 class="text-base font-extrabold text-slate-900 leading-tight" data-i18n="login_title">Partner Login</h2>
+<h2 class="text-base font-extrabold text-slate-900 leading-tight" data-i18n="login_title">Login</h2>
 <p class="text-[11px] text-gray-500 mt-0.5" data-i18n="login_desc">Access your company dashboard.</p>
 </div>
 </div>
@@ -4094,8 +4094,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated10",
-  tr: "i18n/tr.json?v=updated10",
+  en: "i18n/en.json?v=updated11",
+  tr: "i18n/tr.json?v=updated11",
 };
 
 const __i18nLoad = { en: null, tr: null };
