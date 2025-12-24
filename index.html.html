@@ -494,7 +494,17 @@ document.addEventListener("DOMContentLoaded", () => {
       --bton-focus: 0 0 0 4px rgba(6,182,212,.18);
     }
 
-    /* --- Profile Tabs: unified premium typography --- */
+    
+    /* Hero subtle gradient (logo-aligned) */
+    .bton-hero-gradient{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(900px 420px at 15% 0%, rgba(6,182,212,.18), transparent 62%),
+        radial-gradient(700px 380px at 85% 10%, rgba(8,145,178,.16), transparent 60%),
+        linear-gradient(180deg, rgba(15,23,42,.05), rgba(255,255,255,0));
+      pointer-events:none;
+    }
+/* --- Profile Tabs: unified premium typography --- */
     .bton-tab-head{
       display:flex;
       align-items:flex-end;
@@ -1015,7 +1025,7 @@ html{ scroll-padding-top: 118px; }
 <!-- Supabase Auth client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    window.__BTON_BUILD = "updated11";
+    window.__BTON_BUILD="updated12";
     const SUPABASE_URL = "https://ncssozhpwzvzeneaumlz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jc3Nvemhwd3p2emVuZWF1bWx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MzkyMjgsImV4cCI6MjA4MDQxNTIyOH0.pk9p8_KRcmcbzhulo4dA06uk_3FOFXwVT1vNiYOEfck";
 
@@ -1509,6 +1519,8 @@ html{ scroll-padding-top: 118px; }
 </nav>
 <div class="fade-in" id="view-dashboard">
 <header class="pt-4 pb-4 px-4 text-center relative overflow-hidden z-10">
+<div class="bton-hero-gradient"></div>
+
 <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-28 w-[760px] h-[760px] bg-gradient-to-br from-cyan-200/45 via-blue-200/25 to-purple-200/15 blur-3xl rounded-full"></div>
 <!-- Language switcher -->
 <!-- Global language menu -->
@@ -1582,7 +1594,7 @@ html{ scroll-padding-top: 118px; }
 <div class="pl-4 pr-3 text-BTrustOn-accent shrink-0">
 <i class="fa-solid fa-magnifying-glass text-lg md:text-xl animate-pulse"></i>
 </div>
-<input class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-10 md:h-12" id="search-input" onkeydown="if(event.key === 'Enter') { event.preventDefault(); handleSearchInput(this.value); scrollToResults(); }" onkeyup="handleSearchInput(this.value)" placeholder="" type="text"/>
+<input class="w-full bg-transparent outline-none text-gray-700 text-base md:text-lg placeholder-gray-400 font-light h-10 md:h-12" id="search-input" onkeydown="if(event.key === 'Enter') { event.preventDefault(); handleSearchInput(this.value); scrollToResults(); }" onkeyup="handleSearchInput(this.value)" data-i18n-placeholder="search_ph" placeholder="" type="text"/>
 <button class="shrink-0 inline-flex items-center justify-center gap-2 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-10 h-10 md:w-auto md:h-12 md:px-6 font-bold transition shadow-lg shadow-cyan-500/30 group" onclick="handleSearchInput(document.getElementById('search-input')?.value || ''); scrollToResults();">
 <span class="hidden md:inline whitespace-nowrap" data-i18n="btn_discover">DISCOVER</span>
 <i class="fa-solid fa-compass text-lg group-hover:rotate-45 transition-transform duration-300"></i>
@@ -4094,8 +4106,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated11",
-  tr: "i18n/tr.json?v=updated11",
+  en: "i18n/en.json?v=updated12",
+  tr: "i18n/tr.json?v=updated12",
 };
 
 const __i18nLoad = { en: null, tr: null };
