@@ -2143,7 +2143,7 @@ html{ scroll-padding-top: 118px; }
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_desc">Description</label>
-<textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" id="edit-desc" data-i18n-placeholder="ph_edit_desc" placeholder="Describe your company's core capabilities..." rows="4"></textarea>
+<textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" id="edit-desc" data-i18n-placeholder="ph_edit_desc" placeholder="Describe your company\'s core capabilities..." rows="4"></textarea>
 </div>
 <div class="grid grid-cols-3 gap-4">
 <div>
@@ -6856,7 +6856,7 @@ function getCompanyLogoThumb(company){
     /* --- GÜNCELLENMİŞ: getCompanyTypeBadge (YENİ TİPLER) --- */
 function getCompanyTypeBadge(rawType) {
   const type = (rawType || "company").toLowerCase();
-  let label = (typeof translateCompanyType === "function") ? translateCompanyType(rawType) : rawType;
+  let label = rawType;
   let icon = "fa-building";
   // Varsayılan Renk (Gri)
   let colorClass = "bg-gray-50 text-gray-500 border-gray-200";
@@ -6875,7 +6875,7 @@ function getCompanyTypeBadge(rawType) {
   } 
   // 3. Alt Yükleniciler (Turuncu - Açık)
   else if (type.includes("subcontractor") || type.includes("specialist")) {
-    label = (t("join_type_specialist_sub") || "Specialist / Sub");
+    label = (t("join_type_specialist_sub") || "Subcontractor");
     icon = "fa-screwdriver-wrench";
     colorClass = "bg-orange-50 text-orange-600 border-orange-100";
   }
@@ -12918,7 +12918,7 @@ function renderInboxItems() {
       container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64 text-gray-400">
             <i class="fa-solid fa-bell text-4xl mb-3 opacity-20"></i>
-            <p class="text-xs">No notifications.</p>
+            <p class="text-xs">${t("notifications_empty") || "No notifications."}</p>
         </div>`;
       updateBadges(messagesUnreadCount + notificationsUnreadCount);
       return;
@@ -12980,7 +12980,7 @@ function renderInboxItems() {
 
   // Boş durum mesajı
   if (filteredData.length === 0) {
-      const msg = currentInboxView === 'inbox' ? "No received messages." : "No sent messages.";
+      const msg = currentInboxView === 'inbox' ? (t("inbox_no_received_messages") || "No received messages.") : (t("inbox_no_sent_messages") || "No sent messages.");
       container.innerHTML = `
         <div class="flex flex-col items-center justify-center h-64 text-gray-400">
             <i class="fa-solid ${currentInboxView === 'inbox' ? 'fa-inbox' : 'fa-paper-plane'} text-4xl mb-3 opacity-20"></i>
@@ -14533,7 +14533,8 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
             const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
             
             // Veritabanındaki "type" veya "type_label" alanını kullanıyoruz
-            const compType = (company.type_label || company.type || company.business_type || company.company_type || "—");
+            const rawCompType = (company.type_label || company.type || "—");
+            const compType = translateCompanyType(rawCompType);
 
             const refCount = (company.projects || []).length;
             const certCount = (company.certificates || []).length;
@@ -14578,7 +14579,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                         </h3>
 
                         <div class="flex flex-wrap items-center gap-2 mt-1">
-                          ${getCompanyTypeBadge(compType)}
+                          ${getCompanyTypeBadge(rawCompType)}
                           <span class="text-[10px] text-gray-400 flex items-center gap-1 shrink-0">
                             <span class="w-1 h-1 rounded-full bg-gray-300"></span>
                             ${formatCityCountry(company.city, company.country || "TR")}
