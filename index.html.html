@@ -284,8 +284,8 @@ document.addEventListener("DOMContentLoaded", () => {
     #modal-cropper .cropper-face, #modal-cropper .cropper-view-box { cursor: grab; }
     #modal-cropper .cropper-face:active { cursor: grabbing; }
     .dot-map-bg {
-      background-image: radial-gradient(#94a3b8 1px, transparent 1px);
-      background-size: 30px 30px;
+      background-image: radial-gradient(rgba(148,163,184,.55) 1px, transparent 1px);
+      background-size: 32px 32px;
     }
     /* Editör input stilleri */
     .input-field:focus {
@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     /* Hero title: premium subtle gradient text */
     .bton-hero-title-grad{
-      background: linear-gradient(90deg, rgba(15,23,42,1) 0%, rgba(15,23,42,1) 55%, rgba(8,145,178,.95) 112%);
+      background: linear-gradient(90deg, rgba(15,23,42,1) 0%, rgba(15,23,42,1) 72%, rgba(8,145,178,.70) 110%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -1032,7 +1032,7 @@ html{ scroll-padding-top: 118px; }
 <!-- Supabase Auth client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    window.__BTON_BUILD="updated13";
+    window.__BTON_BUILD = "updated14";
     const SUPABASE_URL = "https://ncssozhpwzvzeneaumlz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jc3Nvemhwd3p2emVuZWF1bWx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MzkyMjgsImV4cCI6MjA4MDQxNTIyOH0.pk9p8_KRcmcbzhulo4dA06uk_3FOFXwVT1vNiYOEfck";
 
@@ -1436,8 +1436,8 @@ html{ scroll-padding-top: 118px; }
 </div>
 </div>
 </div>
-<div class="fixed inset-0 z-[-1] dot-map-bg opacity-[0.4] pointer-events-none"></div>
-<div class="fixed inset-0 z-[-2] bg-gradient-to-tr from-blue-50 via-white to-cyan-50/30"></div>
+<div class="fixed top-0 left-0 right-0 h-[820px] md:h-[740px] z-[-1] dot-map-bg opacity-[0.14] pointer-events-none"></div>
+<div class="fixed top-0 left-0 right-0 h-[820px] md:h-[740px] z-[-2] bton-hero-aura pointer-events-none"></div>
 <nav class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/50 h-24">
 <div class="max-w-7xl mx-auto px-4 h-full flex items-center gap-3 flex-nowrap">
 <div class="flex items-center gap-3 shrink-0" id="nav-left">
@@ -4113,8 +4113,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated13",
-  tr: "i18n/tr.json?v=updated13",
+  en: "i18n/en.json?v=updated14",
+  tr: "i18n/tr.json?v=updated14",
 };
 
 const __i18nLoad = { en: null, tr: null };
