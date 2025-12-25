@@ -65,6 +65,11 @@
   box-shadow: 0 0 0 3px rgba(14,165,233,.10); /* subtle, eye-friendly */
   background: rgba(255,255,255,.92);
 }
+/* --- Mobile cleanup: keep Updates header compact --- */
+@media (max-width: 640px){
+  .bton-hide-mobile{ display:none !important; }
+}
+
 </style>
 <style id="bton-apple-premium-skin">
   :root{
@@ -2052,7 +2057,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span data-i18n="updates_title">Company Updates</span>
 </h3>
 <div class="flex items-center gap-2 mt-1">
-<span class="text-[11px] text-gray-400" data-i18n="updates_sub">Last 7 days • posted by companies</span>
+<span class="bton-hide-mobile text-[11px] text-gray-400" data-i18n="updates_sub">Last 7 days • posted by companies</span>
 <div class="inline-flex items-center rounded-full border border-gray-200 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="home-updates-filter">
 <button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
 <span data-i18n="updates_filter_all">All updates</span>
@@ -2061,8 +2066,8 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span data-i18n="updates_filter_followed">Only followed</span>
 </button>
 </div>
-<span class="text-[11px] text-gray-400 hidden md:inline" id="home-updates-active-wrap"><span data-i18n="ui_53fe08">•</span><span data-i18n="updates_active_label">Most active:</span> <span class="font-extrabold text-gray-500" id="home-updates-active-count">0</span></span>
-<span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold hidden" id="home-updates-dot">
+<span class="bton-hide-mobile text-[11px] text-gray-400 hidden md:inline" id="home-updates-active-wrap"><span data-i18n="ui_53fe08">•</span><span data-i18n="updates_active_label">Most active:</span> <span class="font-extrabold text-gray-500" id="home-updates-active-count">0</span></span>
+<span class="bton-hide-mobile inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold hidden" id="home-updates-dot">
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span data-i18n="ui_live_f35d25"></span></span>
 </div>
 </div>
