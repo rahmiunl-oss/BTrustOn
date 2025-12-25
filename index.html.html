@@ -1402,6 +1402,114 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       }catch(e){}
     })();
   </script>
+
+<style id="bton-mobile-premium-v3">
+  /* ==============================
+     MOBILE (PREMIUM) — UPDATES + SHEET MENU
+     ============================== */
+
+  /* Lock background scroll when sheet open */
+  html.bton-lock, body.bton-lock { overflow: hidden !important; }
+
+  /* Bottom-sheet backdrop */
+  #mobile-sheet-backdrop{
+    opacity: 0;
+    transition: opacity .18s ease;
+  }
+  #mobile-sheet-backdrop.bton-open{ opacity: 1; }
+
+  /* Bottom-sheet menu */
+  #mobile-nav-menu{
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+
+    margin-top: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+
+    border-radius: 22px 22px 0 0 !important;
+    max-height: min(78dvh, 680px) !important;
+    overflow: auto !important;
+
+    transform: translateY(14px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .18s ease, opacity .18s ease;
+  }
+  #mobile-nav-menu.bton-open{
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Mobile: make Company Updates breathe */
+  @media (max-width: 640px){
+    #home-updates-header{
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+      margin-bottom: 12px !important;
+    }
+    #btn-open-post-update{
+      width: 100% !important;
+      justify-content: center !important;
+      height: 44px !important;
+      border-radius: 16px !important;
+    }
+
+    #home-updates-meta{
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+    }
+    /* First subtitle line takes full row */
+    #home-updates-meta > span:first-child{
+      flex: 1 0 100% !important;
+      font-size: 12px !important;
+    }
+
+    /* Filter becomes full-width segmented control */
+    #home-updates-filter{
+      width: 100% !important;
+      display: flex !important;
+      padding: 4px !important;
+      border-radius: 999px !important;
+    }
+    #home-updates-filter button{
+      flex: 1 1 0% !important;
+      text-align: center !important;
+      padding-top: 10px !important;
+      padding-bottom: 10px !important;
+      font-size: 12px !important;
+    }
+
+    /* Updates list becomes vertical */
+    #home-updates{
+      flex-direction: column !important;
+      overflow-x: visible !important;
+      gap: 14px !important;
+      padding-right: 0 !important;
+      padding-bottom: 4px !important;
+    }
+    .home-update-card{
+      min-width: 100% !important;
+      width: 100% !important;
+    }
+
+    /* Pro hint readability */
+    #home-updates-prohint{
+      font-size: 12px !important;
+      padding: 12px 14px !important;
+      border-radius: 16px !important;
+    }
+    #home-updates-prohint button{
+      font-size: 12px !important;
+    }
+  }
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -1613,10 +1721,15 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     <span class="bton-badge hidden" id="mobile-nav-badge">0</span>
   </button>
 
-  <div class="hidden absolute right-0 mt-2 w-72 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-[80]"
+  
+  <div id="mobile-sheet-backdrop" class="hidden fixed inset-0 bg-black/30 backdrop-blur-[2px] z-[79]" onclick="closeMobileNavMenu()"></div>
+<div class="hidden absolute right-0 mt-2 w-72 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-[80]"
        id="mobile-nav-menu"
        role="menu"
        aria-label="Menu">
+    <div class="pt-3 pb-1 flex justify-center">
+      <div class="w-10 h-1.5 rounded-full bg-slate-200"></div>
+    </div>
     <div class="px-4 py-3 border-b border-slate-100">
       <div class="text-[11px] font-black tracking-wider text-slate-600">MENU</div>
     </div>
@@ -1807,13 +1920,13 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
 <div class="flex flex-col gap-4 mb-5 border-b border-gray-200/50 pb-4">
 <div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
-<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-start justify-between gap-3 mb-3" id="home-updates-header">
 <div class="min-w-0">
 <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
 <i class="fa-solid fa-bolt text-cyan-500"></i>
 <span data-i18n="updates_title">Company Updates</span>
 </h3>
-<div class="flex items-center gap-2 mt-1">
+<div class="flex items-center gap-2 mt-1" id="home-updates-meta">
 <span class="text-[11px] text-gray-400" data-i18n="updates_sub">Last 7 days • posted by companies</span>
 <div class="inline-flex items-center rounded-full border border-gray-200 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="home-updates-filter">
 <button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
@@ -4870,7 +4983,7 @@ function renderHomeUpdates(list) {
 
     return `
       <button onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
-        class="group relative min-w-[330px] md:min-w-[380px] text-left bg-white/80 backdrop-blur border border-slate-200/70 hover:border-BTrustOn-accent rounded-3xl px-4 py-3 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all overflow-hidden">
+        class="home-update-card group relative min-w-[330px] md:min-w-[380px] text-left bg-white/80 backdrop-blur border border-slate-200/70 hover:border-BTrustOn-accent rounded-3xl px-4 py-3 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all overflow-hidden">
 
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-cyan-50/80 via-white to-white"></div>
         <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-cyan-200/25 blur-2xl pointer-events-none"></div>
@@ -10088,23 +10201,45 @@ function toggleLangMenu(forceOpen) {
 function closeLangMenu() { toggleLangMenu(false); }
 
 /* --- Mobile Nav Menu (Hamburger) --- */
+
 function toggleMobileNavMenu(ev, forceOpen) {
   if (ev && typeof ev.stopPropagation === "function") ev.stopPropagation();
+
   const dd = document.getElementById("mobile-nav-menu");
   const btn = document.getElementById("mobile-nav-toggle");
+  const bd = document.getElementById("mobile-sheet-backdrop");
   if (!dd) return;
 
   const isOpen = !dd.classList.contains("hidden");
   const next = (typeof forceOpen === "boolean") ? forceOpen : !isOpen;
 
   if (next) {
+    // Show
     dd.classList.remove("hidden");
-    dd.classList.add("bton-open");
+    bd && bd.classList.remove("hidden");
+
+    // Animate in on next frame (ensures transitions run)
+    requestAnimationFrame(() => {
+      dd.classList.add("bton-open");
+      bd && bd.classList.add("bton-open");
+    });
+
     btn && btn.setAttribute("aria-expanded", "true");
+    document.documentElement.classList.add("bton-lock");
+    document.body.classList.add("bton-lock");
   } else {
-    dd.classList.add("hidden");
+    // Animate out
     dd.classList.remove("bton-open");
+    bd && bd.classList.remove("bton-open");
     btn && btn.setAttribute("aria-expanded", "false");
+    document.documentElement.classList.remove("bton-lock");
+    document.body.classList.remove("bton-lock");
+
+    // Wait for transition then hide
+    setTimeout(() => {
+      dd.classList.add("hidden");
+      bd && bd.classList.add("hidden");
+    }, 190);
   }
 }
 function closeMobileNavMenu() { toggleMobileNavMenu(null, false); }
@@ -10120,6 +10255,10 @@ function initMobileNavMenuOnce() {
     closeMobileNavMenu();
   });
 
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !dd.classList.contains("hidden")) closeMobileNavMenu();
+  });
   window.addEventListener("resize", () => {
     if (window.innerWidth >= 768) closeMobileNavMenu();
   });
