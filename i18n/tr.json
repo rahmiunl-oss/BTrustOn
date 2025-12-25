@@ -744,5 +744,7 @@
   "msg_project_saved": "Proje kaydedildi.",
   "msg_certificate_saved": "Sertifika kaydedildi.",
   "ui_open_document": "Belgeyi aç",
-  "toast_registration_success": "Kayıt başarılı. Profil oluşturuldu."
+  "toast_registration_success": "Kayıt başarılı. Profil oluşturuldu.",
+  "hero_title_signed_in": "BTrustOn İle Doğru İş Ortaklarıyla Büyüyün.",
+  "hero_cta_profile": "Profilini Geliştir"
 }
