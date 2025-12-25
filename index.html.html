@@ -8616,7 +8616,7 @@ if (servicesGrid) {
       <div class="w-full py-6 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50">
         <p class="text-sm text-gray-400 italic">${t("svc_no_tags") || "No service tags yet."}</p>
         ${isOwner ? `<button type="button" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" onclick="editMyProfile('section-services')">
-          <i class="fa-solid fa-pen"></i> Add services
+          <i class="fa-solid fa-pen"></i> ${t("ui_add_services_btn_3d0ce2") || "Add services"}
         </button>` : ``}
       </div>`;
   } else {
@@ -11186,10 +11186,10 @@ function calculateProfileStatus() {
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
       if(text) text.classList.replace("text-blue-600", "text-emerald-600");
   } else if (totalPercent >= 70) {
-      if(msg) msg.textContent = "Strong profile. Fill missing info to reach 100%.";
+      if(msg) msg.textContent = (t("ui_profile_strength_strong_fill_missing_100_6b2b57") || "Strong profile. Fill missing info to reach 100%.");
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-blue-600";
   } else {
-      if(msg) msg.textContent = "Your profile needs more proof. Add projects & assets to improve visibility.";
+      if(msg) msg.textContent = (t("ui_profile_strength_need_more_proof_add_projects_assets_5b07c1") || "Your profile needs more proof. Add projects & assets to improve visibility.");
       if(bar) bar.className = "h-1.5 rounded-full transition-all duration-700 bg-amber-500";
       if(text) text.classList.replace("text-blue-600", "text-amber-600");
   }
