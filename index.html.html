@@ -4153,8 +4153,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated32",
-  tr: "i18n/tr.json?v=updated32",
+  en: "i18n/en.json?v=updated34",
+  tr: "i18n/tr.json?v=updated34",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -7511,11 +7511,12 @@ function buildAssetAttachmentPreview(a){
 
   const safeUrl = JSON.stringify(a.file_url || "");
   const safeTitle = JSON.stringify(a.file_name || _assetName(a) || "Attachment");
+  const safeFileName = JSON.stringify(a.file_name || "");
 
   if (isImg){
     return `
       <button type="button"
-         onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle});"
+         onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle}, ${safeFileName});"
          class="absolute bottom-3 right-3 w-12 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition overflow-hidden opacity-70 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
          title="View image">
         <img src="${a.file_url}" alt="Attachment" class="w-full h-full object-cover filter saturate-75 contrast-95 brightness-95" loading="lazy" />
@@ -7525,7 +7526,7 @@ function buildAssetAttachmentPreview(a){
 
   return `
     <button type="button"
-       onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle});"
+       onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle}, ${safeFileName});"
        class="absolute bottom-3 right-3 w-9 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition flex items-center justify-center opacity-75 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
        title="Open document">
       <i class="fa-solid ${iconClass} text-[18px] ${isPdf ? "text-rose-400" : "text-slate-600"}"></i>
@@ -7776,7 +7777,7 @@ function openAssetViewer(assetId){
       `;
       const __btn = document.getElementById("av-open-file");
       if(__btn){
-        __btn.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} openAttachmentViewer(a.file_url, label); };
+        __btn.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} openAttachmentViewer(a.file_url, (a.file_name || label), a.file_name); };
       }
     } else {
       fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">${t("ui_no_document_attached") || (currentLang === "tr" ? "Ekli belge yok." : "No document attached.")}</div>`;
@@ -8076,7 +8077,7 @@ const ownerActions = isOwner ? `
       if(__viewBtn && fileUrl){
         __viewBtn.addEventListener('click', (e) => {
           try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-          openAttachmentViewer(fileUrl, name || "Certificate");
+          openAttachmentViewer(fileUrl, name || "Certificate", (cert.file_name || cert.file_url || ""));
         });
       }
     }catch(e){}
@@ -8087,7 +8088,7 @@ const ownerActions = isOwner ? `
       card.addEventListener("click", (e) => {
         e.stopPropagation();
         if (e.target.closest("button") || e.target.closest("a")) return;
-        openAttachmentViewer(fileUrl, name || "Certificate");
+        openAttachmentViewer(fileUrl, name || "Certificate", (cert.file_name || cert.file_url || ""));
       });
 }
 
@@ -16863,12 +16864,17 @@ function __unlockScrollForModal(){
    - Preserves scroll position on close (uses __lockScrollForModal)
 ========================= */
 
-function __attachmentKind(url){
+function __attachmentKind(url, fileName){
   try{
-    const clean = String(url || "").split("#")[0].split("?")[0].toLowerCase();
-    if (clean.endsWith(".pdf")) return "pdf";
-    if (clean.match(/\.(png|jpg|jpeg|webp|gif|svg)$/)) return "image";
-    return "other";
+    const pick = (v) => {
+      const clean = String(v || "").split("#")[0].split("?")[0].toLowerCase();
+      if (clean.endsWith(".pdf")) return "pdf";
+      if (clean.match(/\.(png|jpg|jpeg|webp|gif|svg|bmp)$/)) return "image";
+      return "other";
+    };
+    const k1 = pick(fileName);
+    if(k1 !== "other") return k1;
+    return pick(url);
   }catch(e){ return "other"; }
 }
 
@@ -17090,7 +17096,7 @@ function __resetAttachmentViewer(){
   }
 }
 
-async function openAttachmentViewer(url, title){
+async function openAttachmentViewer(url, title, fileName){
   try{
     if(!url) return;
     const modal = document.getElementById("modal-attachment-viewer");
@@ -17103,7 +17109,7 @@ async function openAttachmentViewer(url, title){
 
     __resetAttachmentViewer();
 
-    let kind = __attachmentKind(url);
+    let kind = __attachmentKind(url, fileName || title);
     if(kind === "other"){
       // Many Supabase object URLs don't carry .pdf/.jpg extensions
       kind = await __probeAttachmentKind(url);
@@ -17588,7 +17594,7 @@ function sortProjectsUI(mode){
 </div>
 <a class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition text-xs font-bold" href="#" id="attachment-open-newtab" rel="noopener noreferrer" target="_blank">
 <i class="fa-solid fa-arrow-up-right-from-square text-[12px]"></i>
-<span class="hidden sm:inline" data-i18n="attachment_preview_not_available">Open</span>
+<span class="hidden sm:inline" data-i18n="attachment_open">Open</span>
 </a>
 <button aria-label="Close" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-900 hover:text-white transition grid place-items-center" data-i18n-aria="attr_close_d3d2e6" onclick="closeAttachmentViewer()" type="button">
 <i class="fa-solid fa-xmark"></i>
@@ -17606,8 +17612,8 @@ function sortProjectsUI(mode){
 <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
 <i class="fa-solid fa-file text-slate-500"></i>
 </div>
-<div class="text-sm font-extrabold text-slate-800 mb-1" data-i18n="attachment_use">Preview not available</div>
-<div class="text-xs text-slate-500"><span data-i18n="attachment_open">Use</span><span class="font-bold" data-i18n="attachment_preview_not_available">Open</span><span data-i18n="attachment_close">to view this file in a new tab.</span></div>
+<div class="text-sm font-extrabold text-slate-800 mb-1" data-i18n="attachment_preview_not_available">Preview not available</div>
+<div class="text-xs text-slate-500" data-i18n="attachment_to_view_new_tab">Use Open to view this file in a new tab.</div>
 </div>
 </div>
 </div>
