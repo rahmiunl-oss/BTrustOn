@@ -66,6 +66,112 @@
   background: rgba(255,255,255,.92);
 }
 </style>
+<style id="bton-apple-premium-skin">
+  :root{
+    --bton-apple-bg:#f5f5f7;
+    --bton-apple-text:#1d1d1f;
+    --bton-apple-sub:#6e6e73;
+    --bton-apple-border:rgba(15,23,42,.10);
+  }
+
+  /* Apple-like backdrop (subtle, calm) */
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.98), rgba(245,245,247,1) 55%),
+      radial-gradient(900px 520px at 15% 18%, rgba(99,102,241,.055), rgba(245,245,247,0) 60%),
+      radial-gradient(900px 520px at 85% 18%, rgba(14,165,233,.045), rgba(245,245,247,0) 60%),
+      var(--bton-apple-bg) !important;
+  }
+
+  /* HERO: premium / Apple-ish */
+  header{
+    padding-top: 26px !important;
+    padding-bottom: 22px !important;
+    border-bottom: 1px solid rgba(15,23,42,.06);
+    background: radial-gradient(900px 420px at 50% 0%, rgba(255,255,255,.95), rgba(245,245,247,0) 68%);
+  }
+  header .pointer-events-none{ opacity:.28; filter: saturate(.65); }
+
+  #hero-title{
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    letter-spacing: -0.035em;
+    color: var(--bton-apple-text) !important;
+    text-shadow: none !important;
+  }
+  #hero-title, #hero-title *{
+    color: var(--bton-apple-text) !important;
+  }
+  #hero-desc{
+    color: var(--bton-apple-sub) !important;
+    line-height: 1.65 !important;
+  }
+
+  /* CTA: calmer shadow */
+  #hero-cta .bton-pill-primary{
+    box-shadow: 0 14px 30px -18px rgba(15,23,42,.55);
+  }
+
+  /* HOME UPDATES rail: looks like an Apple cards shelf */
+  .bton-updates-wrap::before,
+  .bton-updates-wrap::after{
+    content:"";
+    position:absolute;
+    top:0; bottom:0;
+    width:56px;
+    pointer-events:none;
+    z-index:5;
+  }
+  .bton-updates-wrap::before{
+    left:0;
+    background: linear-gradient(90deg, rgba(245,245,247,1), rgba(245,245,247,0));
+  }
+  .bton-updates-wrap::after{
+    right:0;
+    background: linear-gradient(270deg, rgba(245,245,247,1), rgba(245,245,247,0));
+  }
+  .bton-updates-rail{
+    scroll-padding-left: 14px;
+    scroll-padding-right: 14px;
+  }
+
+  .bton-updates-nav{
+    position:absolute;
+    top:50%;
+    transform: translateY(-50%);
+    z-index:6;
+    width:38px;
+    height:38px;
+    border-radius:9999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(255,255,255,.82);
+    border: 1px solid rgba(15,23,42,.10);
+    box-shadow: 0 12px 30px -22px rgba(15,23,42,.65);
+    backdrop-filter: blur(12px);
+  }
+  .bton-updates-nav:hover{ background: rgba(255,255,255,.92); }
+  .bton-updates-nav:disabled{ opacity:.35; cursor:not-allowed; }
+  .bton-updates-nav-left{ left: 6px; }
+  .bton-updates-nav-right{ right: 6px; }
+
+  /* Cards */
+  .bton-upd-card{ border-radius: 18px !important; }
+  .bton-upd-card:focus-visible{
+    outline:none;
+    box-shadow: 0 0 0 4px rgba(59,130,246,.14), 0 20px 45px -28px rgba(15,23,42,.60);
+  }
+  .bton-upd-note{
+    background: rgba(255,255,255,.86) !important;
+    border-color: rgba(15,23,42,.10) !important;
+  }
+
+  @media (max-width: 640px){
+    header{ padding-top: 18px !important; }
+    .bton-updates-wrap::before, .bton-updates-wrap::after{ width: 34px; }
+  }
+</style>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Oswald:wght@500;700&amp;display=swap" rel="stylesheet"/>
@@ -1833,8 +1939,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span data-i18n="btn_post_update">POST UPDATE</span>
 </button>
 </div>
-<div class="relative">
-<div class="flex items-start gap-4 overflow-x-auto no-scrollbar pb-1 pr-2" id="home-updates"></div>
+<div class="relative bton-updates-wrap">
+  <button type="button" class="bton-updates-nav bton-updates-nav-left hidden md:flex" id="home-updates-left" aria-label="Scroll updates left">
+    <i class="fa-solid fa-chevron-left text-xs"></i>
+  </button>
+  <button type="button" class="bton-updates-nav bton-updates-nav-right hidden md:flex" id="home-updates-right" aria-label="Scroll updates right">
+    <i class="fa-solid fa-chevron-right text-xs"></i>
+  </button>
+  <div class="flex items-start gap-4 overflow-x-auto no-scrollbar pb-2 pr-2 scroll-smooth snap-x snap-mandatory bton-updates-rail" id="home-updates"></div>
 <div class="hidden p-5 text-center text-gray-400 text-xs italic bg-white/50 rounded-xl border border-dashed border-gray-200" id="home-updates-empty">
 <span data-i18n="updates_empty">No updates posted in the last 7 days.</span>
 </div>
@@ -4566,9 +4678,9 @@ function _signalMeta(area, code) {
       tone,
       icon: "fa-circle-check",
       iconWrap: "bg-white/75 border border-emerald-200/70 text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]",
-      pill: "bg-emerald-50/70 border-emerald-200/70 text-emerald-900",
-      bar: "bg-gradient-to-b from-emerald-400 via-emerald-500 to-green-600",
-      glow: "shadow-[0_0_0_1px_rgba(16,185,129,0.10)]"
+      pill: "bg-emerald-50/40 border-emerald-200/60 text-slate-800",
+      bar: "bg-emerald-500/45",
+      glow: "shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
     };
   }
 
@@ -4577,9 +4689,9 @@ function _signalMeta(area, code) {
       tone,
       icon: "fa-arrow-trend-up",
       iconWrap: "bg-white/75 border border-blue-200/70 text-blue-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]",
-      pill: "bg-blue-50/70 border-blue-200/70 text-blue-900",
-      bar: "bg-gradient-to-b from-blue-400 via-cyan-500 to-blue-600",
-      glow: "shadow-[0_0_0_1px_rgba(59,130,246,0.10)]"
+      pill: "bg-blue-50/40 border-blue-200/60 text-slate-800",
+      bar: "bg-blue-500/40",
+      glow: "shadow-[0_0_0_1px_rgba(59,130,246,0.08)]"
     };
   }
 
@@ -4588,9 +4700,9 @@ function _signalMeta(area, code) {
       tone,
       icon: "fa-triangle-exclamation",
       iconWrap: "bg-white/75 border border-amber-200/70 text-amber-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]",
-      pill: "bg-amber-50/70 border-amber-200/70 text-amber-950",
-      bar: "bg-gradient-to-b from-amber-400 via-orange-500 to-amber-600",
-      glow: "shadow-[0_0_0_1px_rgba(245,158,11,0.10)]"
+      pill: "bg-amber-50/40 border-amber-200/60 text-slate-800",
+      bar: "bg-amber-500/45",
+      glow: "shadow-[0_0_0_1px_rgba(245,158,11,0.08)]"
     };
   }
 
@@ -4598,9 +4710,9 @@ function _signalMeta(area, code) {
     tone,
     icon: "fa-circle-info",
     iconWrap: "bg-white/75 border border-cyan-200/70 text-cyan-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]",
-    pill: "bg-cyan-50/70 border-cyan-200/70 text-cyan-900",
-    bar: "bg-gradient-to-b from-cyan-300 via-cyan-400 to-sky-500",
-    glow: "shadow-[0_0_0_1px_rgba(6,182,212,0.10)]"
+    pill: "bg-slate-50/70 border-slate-200/70 text-slate-800",
+    bar: "bg-slate-300/70",
+    glow: "shadow-[0_0_0_1px_rgba(15,23,42,0.06)]"
   };
 }
 
@@ -4628,7 +4740,7 @@ function renderHomeUpdatesSkeleton(count = 6) {
   empty.classList.add("hidden");
 
   const cards = Array.from({ length: count }).map(() => `
-    <div class="min-w-[330px] md:min-w-[380px] bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm overflow-hidden">
+    <div class="bton-upd-card snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] rounded-2xl px-4 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] overflow-hidden">
       <div class="animate-pulse">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-xl bg-gray-100"></div>
@@ -4818,6 +4930,44 @@ function startHomeUpdatesAutoScroll() {
   }, 30);
 }
 
+function setupHomeUpdatesNav() {
+  const rail = document.getElementById("home-updates");
+  const btnL = document.getElementById("home-updates-left");
+  const btnR = document.getElementById("home-updates-right");
+  if (!rail || !btnL || !btnR) return;
+
+  const step = () => Math.min(Math.max(rail.clientWidth * 0.85, 360), 560);
+
+  btnL.addEventListener("click", () => {
+    try { rail.scrollBy({ left: -step(), behavior: "smooth" }); } catch(e) { rail.scrollLeft -= step(); }
+  });
+  btnR.addEventListener("click", () => {
+    try { rail.scrollBy({ left: step(), behavior: "smooth" }); } catch(e) { rail.scrollLeft += step(); }
+  });
+
+  const sync = () => {
+    const max = Math.max(0, rail.scrollWidth - rail.clientWidth - 2);
+    const x = rail.scrollLeft || 0;
+
+    btnL.disabled = x <= 2;
+    btnR.disabled = x >= max;
+
+    const overflow = rail.scrollWidth > (rail.clientWidth + 10);
+    // Only show arrows on desktop AND only when overflow exists
+    const show = overflow;
+    btnL.style.display = show ? "" : "none";
+    btnR.style.display = show ? "" : "none";
+  };
+
+  rail.addEventListener("scroll", () => requestAnimationFrame(sync), { passive: true });
+  window.addEventListener("resize", () => requestAnimationFrame(sync), { passive: true });
+
+  // Initial sync after the rail gets content
+  setTimeout(() => requestAnimationFrame(sync), 350);
+  setTimeout(() => requestAnimationFrame(sync), 1200);
+}
+
+
 function renderHomeUpdates(list) {
   const wrap = document.getElementById("home-updates");
   const empty = document.getElementById("home-updates-empty");
@@ -4870,11 +5020,11 @@ function renderHomeUpdates(list) {
 
     return `
       <button onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
-        class="group relative min-w-[330px] md:min-w-[380px] text-left bg-white/80 backdrop-blur border border-slate-200/70 hover:border-BTrustOn-accent rounded-3xl px-4 py-3 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all overflow-hidden">
+        class="bton-upd-card group relative snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] px-4 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
 
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-cyan-50/80 via-white to-white"></div>
-        <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-cyan-200/25 blur-2xl pointer-events-none"></div>
-        <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-full ${_signalMeta(area, templateCode).bar}"></div>
+        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
+        <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-slate-200/50 blur-2xl pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-full bton-upd-bar ${_signalMeta(area, templateCode).bar}"></div>
 
         <div class="relative flex items-start gap-3">
           <div class="w-10 h-10 rounded-2xl bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm overflow-hidden shrink-0 grid place-items-center">
@@ -4913,7 +5063,7 @@ function renderHomeUpdates(list) {
                   </span>
                 `;
               })()}
-            </div><div class="mt-2 relative bg-white/65 border border-slate-200/60 rounded-2xl p-2.5 h-[78px] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            </div><div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 h-[86px] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
               ${hasNote ? `<div class="text-xs text-gray-600 leading-snug break-words clamp-4">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
               ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-1 right-2 text-[10px] font-extrabold text-cyan-700 pointer-events-none">${(currentLang==="tr") ? "Devamı profilde" : "More in profile"}</div>` : ``}
@@ -11193,6 +11343,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   _setHomeUpdatesFilterUI(homeUpdatesFilter);
   fetchHomeUpdates();
   subscribeHomeUpdatesRealtime();
+  setupHomeUpdatesNav();
 
 
   // 2) Fetch public profiles (can run after correct view is already visible)
@@ -14982,7 +15133,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
 
             card.innerHTML = `
               <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-cyan-50/70 via-white to-white pointer-events-none"></div>
-              <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-cyan-200/25 blur-2xl pointer-events-none"></div>
+              <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-slate-200/50 blur-2xl pointer-events-none"></div>
               <div class="relative flex-1 flex flex-col gap-3">
                   <div class="flex items-start justify-between gap-3">
                     <div class="flex items-start gap-3 min-w-0 flex-1">
