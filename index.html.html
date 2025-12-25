@@ -1,7 +1,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>BtrustOn</title>
 <!-- UX STABILITY FIXES (prevents horizontal jump on refresh / scroll lock) -->
 <style id="ux-stability-fixes">
@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
 /* TOAST NOTIFICATION STYLES */
     #toast-container {
       position: fixed;
-      top: 20px;
+      top: max(20px, calc(var(--bton-nav-h) + 12px));
       right: 20px;
       z-index: 99999;
       display: flex;
@@ -349,6 +349,17 @@ document.addEventListener("DOMContentLoaded", () => {
       opacity: 0;
       transform: translateX(100%);
     }
+
+    /* --- Mobile polish: toast + panels + iOS input zoom --- */
+    @media (max-width: 420px){
+      #toast-container{ left: 12px; right: 12px; }
+      .toast{ min-width: 0 !important; width: 100% !important; border-radius: 14px; }
+    }
+    @media (max-width: 640px){
+      #inbox-panel, #saved-panel{ width: 100vw !important; max-width: 100vw !important; height: 100dvh !important; border-radius: 0 !important; }
+      input, textarea, select{ font-size: 16px !important; }
+    }
+
 
     .toast.success { border-color: #10b981; } /* Yeşil */
     .toast.error { border-color: #ef4444; }   /* Kırmızı */
@@ -894,8 +905,8 @@ document.addEventListener("DOMContentLoaded", () => {
   color: #67e8f9;
 }
 /* Search results scroll alignment */
-#live-showcase{ scroll-margin-top: 118px; }
-html{ scroll-padding-top: 118px; }
+#live-showcase{ scroll-margin-top: calc(var(--bton-nav-h) + 22px); }
+html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 
 /* Overlay: darker + cleaner cinematic feel */
     #inbox-overlay, #saved-overlay{
@@ -1067,6 +1078,40 @@ html{ scroll-padding-top: 118px; }
       .bton-badge{ animation: none !important; }
     }
 
+
+
+  /* ==============================
+     MOBILE NAV (HAMBURGER MENU)
+     ============================== */
+  @media (max-width: 640px){
+    /* Hide crowded top actions on mobile; use hamburger instead */
+    #guest-actions, #user-actions { display: none !important; }
+    #nav-right { gap: 10px !important; }
+  }
+
+  /* Hamburger dropdown animation */
+  #mobile-nav-menu { transform-origin: top right; }
+  #mobile-nav-menu.bton-open { animation: btonMenuIn 0.14s ease-out both; }
+  @keyframes btonMenuIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Tiny badge on hamburger */
+  #mobile-nav-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+  }
+
+  /* Extra-compact logo on very small phones */
+  @media (max-width: 420px){
+    #nav-left img{
+      max-width: 128px !important;
+      height: 34px !important;
+    }
+  }
+
 </style>
 
 <!-- Supabase Auth client -->
@@ -1086,7 +1131,12 @@ html{ scroll-padding-top: 118px; }
 <!-- Boot overlay: prevents dashboard flash on refresh -->
 <style>
     /* ===== APP SHELL (LinkedIn-like) ===== */
-    :root { --bton-nav-h: 96px; }
+    :root{ --bton-nav-h: calc(96px + env(safe-area-inset-top)); }
+    @media (max-width: 640px){
+      :root{ --bton-nav-h: calc(80px + env(safe-area-inset-top)); }
+    }
+    #bton-nav{ height: var(--bton-nav-h) !important; box-sizing: border-box; padding-top: env(safe-area-inset-top); }
+
     /* Ensure anchor scrolling accounts for the fixed header */
     #how-section { scroll-margin-top: calc(var(--bton-nav-h) + 18px); }
 
@@ -1352,146 +1402,6 @@ html{ scroll-padding-top: 118px; }
       }catch(e){}
     })();
   </script>
-<style id="bton-mobile-premium-v4">
-  /* ==============================
-     MOBILE PREMIUM (v4) — SAFE & STABLE
-     ============================== */
-
-  /* Single source of header height (safe-area aware) */
-  :root{ --bton-nav-h: calc(96px + env(safe-area-inset-top)); }
-  @media (max-width: 640px){
-    /* Updates meta tidy */
-    #home-updates-meta{ width: 100% !important; }
-    #home-updates-meta > span[data-i18n="updates_sub"]{ line-height: 1.2 !important; }
-    #home-updates-filter{ width: 100% !important; }
-    #home-updates-active-wrap, #home-updates-dot{ display: none !important; }
- :root{ --bton-nav-h: calc(80px + env(safe-area-inset-top)); } }
-
-  /* Enforce nav height */
-  #bton-nav{ height: var(--bton-nav-h) !important; }
-
-  /* Anchor / scroll alignment */
-  html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px) !important; }
-  #live-showcase{ scroll-margin-top: calc(var(--bton-nav-h) + 22px) !important; }
-
-  /* Toast positioning + small-screen fit */
-  #toast-container{ top: max(18px, calc(var(--bton-nav-h) + 10px)) !important; }
-  @media (max-width: 420px){
-    #toast-container{ left: 12px !important; right: 12px !important; }
-    .toast{ min-width: 0 !important; width: 100% !important; border-radius: 14px !important; }
-  }
-
-  /* Panels (Saved/Inbox) as full-screen on mobile */
-  @media (max-width: 640px){
-    #inbox-panel, #saved-panel{
-      width: 100vw !important;
-      max-width: 100vw !important;
-      height: 100dvh !important;
-      border-radius: 0 !important;
-    }
-  }
-
-  /* iOS Safari: prevent input zoom */
-  @media (max-width: 640px){
-    input, textarea, select{ font-size: 16px !important; }
-  }
-
-  /* Mobile nav: keep top bar clean */
-  @media (max-width: 640px){
-    #btn-partner-login, #btn-join-network{ display: none !important; }
-  }
-
-  /* Mobile nav buttons */
-  #mobile-nav{ display: none; }
-  @media (max-width: 640px){
-    #mobile-nav{ display: inline-flex !important; align-items: center; gap: 10px; }
-  }
-
-  /* Bottom sheet menu (lightweight — no backdrop-filter to avoid iOS crashes) */
-  #mobile-sheet-backdrop{
-    position: fixed; inset: 0; z-index: 9997;
-    background: rgba(2,6,23,.38);
-    opacity: 0; pointer-events: none;
-    transition: opacity .18s ease;
-  }
-  #mobile-sheet-backdrop.bton-open{ opacity: 1; pointer-events: auto; }
-
-  #mobile-nav-menu{
-    position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 9998;
-    background: rgba(255,255,255,.98);
-    border: 1px solid rgba(148,163,184,.22);
-    border-radius: 18px;
-    box-shadow: 0 18px 45px rgba(2,6,23,.22);
-    transform: translateY(16px);
-    opacity: 0; pointer-events: none;
-    transition: transform .18s ease, opacity .18s ease;
-    max-height: min(78dvh, 680px);
-    overflow: auto;
-  }
-  #mobile-nav-menu.bton-open{
-    transform: translateY(0);
-    opacity: 1; pointer-events: auto;
-  }
-
-  /* Company Updates: make it breathe on mobile */
-  @media (max-width: 640px){
-    /* Header becomes stacked */
-    #home-updates-header{ flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
-    #home-updates-meta{ margin-top: 6px !important; }
-    #btn-open-post-update{ width: 100% !important; justify-content: center !important; }
-
-    /* Filter becomes segmented full width */
-    #home-updates-filter{ width: 100% !important; }
-    #home-updates-filter > div{
-      width: 100% !important;
-      display: flex !important;
-      gap: 0 !important;
-      border-radius: 999px !important;
-      overflow: hidden !important;
-    }
-    #home-updates-filter button{
-      flex: 1 1 0% !important;
-      text-align: center !important;
-      padding: 10px 0 !important;
-      font-size: 12px !important;
-    }
-
-    /* Updates list becomes vertical */
-    #home-updates{
-      flex-direction: column !important;
-      overflow-x: visible !important;
-      gap: 14px !important;
-      padding-right: 0 !important;
-      padding-bottom: 4px !important;
-    }
-    .home-update-card{
-      min-width: 100% !important;
-      width: 100% !important;
-      border-radius: 18px !important;
-    }
-    /* Slightly roomier inner padding */
-    .home-update-card .p-4{ padding: 16px !important; }
-    .home-update-card .text-[10px]{ font-size: 12px !important; }
-  }
-
-
-  @media (max-width: 640px){
-    /* Reduce heavy blur on iOS Safari (stability) */
-    #bton-nav{
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-      background: rgba(255,255,255,.92) !important;
-    }
-
-    /* Ensure update cards truly fill width */
-    #home-updates > *{
-      min-width: 100% !important;
-      width: 100% !important;
-    }
-  }
-
-</style>
-
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -1675,33 +1585,113 @@ html{ scroll-padding-top: 118px; }
     </button>
 
     <div class="px-3 py-2 text-[11px] text-slate-500" data-i18n="lang_more_soon">More languages soon</div>
-  </div>
+  
 </div>
-<!-- Mobile Nav (small screens) -->
-<div id="mobile-nav" class="ml-1">
-  <!-- Quick My Company (shown when authed) -->
-  <button id="mobile-quick-my-company"
-          type="button"
-          class="hidden bton-nav-icon w-10 h-10 rounded-full grid place-items-center"
-          aria-label="My Company"
-          title="My Company"
-          onclick="openMyCompanyIfExists()">
-    <i class="fa-regular fa-building text-lg text-slate-700 hover:text-BTrustOn-primary transition"></i>
-  </button>
+</div>
 
-  <!-- Hamburger -->
+<!-- Mobile quick (authed) -->
+<button id="mobile-quick-my-company"
+        type="button"
+        class="hidden md:hidden bton-nav-icon w-10 h-10 rounded-full grid place-items-center"
+        aria-label="My Company"
+        title="My Company"
+        onclick="openMyCompanyIfExists()">
+  <i class="fa-regular fa-building text-lg text-slate-700 hover:text-BTrustOn-primary transition"></i>
+</button>
+
+<!-- Mobile Menu (Hamburger) -->
+<div class="relative md:hidden" id="mobile-nav">
   <button id="mobile-nav-toggle"
           type="button"
           class="bton-nav-icon w-10 h-10 rounded-full grid place-items-center relative"
+          aria-haspopup="menu"
+          aria-expanded="false"
           aria-label="Menu"
-          title="Menu">
+          title="Menu"
+          onclick="toggleMobileNavMenu(event)">
     <i class="fa-solid fa-bars text-lg text-slate-700 hover:text-BTrustOn-primary transition"></i>
-    <span id="mobile-inbox-badge"
-          class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black grid place-items-center leading-none">0</span>
+    <span class="bton-badge hidden" id="mobile-nav-badge">0</span>
   </button>
+
+  <div class="hidden absolute right-0 mt-2 w-72 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-[80]"
+       id="mobile-nav-menu"
+       role="menu"
+       aria-label="Menu">
+    <div class="px-4 py-3 border-b border-slate-100">
+      <div class="text-[11px] font-black tracking-wider text-slate-600">MENU</div>
+    </div>
+
+    <div class="p-2">
+      <!-- Guest -->
+      <div id="mobile-guest-actions" class="flex flex-col gap-1">
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openLoginModal();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-solid fa-key"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="login_title">Login</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openJoinModal('free');">
+          <span class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-700 grid place-items-center">
+            <i class="fa-solid fa-paper-plane"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="join">JOIN NETWORK</span>
+        </button>
+      </div>
+
+      <!-- Logged in -->
+      <div id="mobile-user-actions" class="hidden flex-col gap-1">
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openMyCompanyIfExists();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-regular fa-building"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="nav_my_company">MY COMPANY</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); toggleInbox();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-solid fa-bell"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="ui_inbox_7e3342">INBOX</span>
+          <span class="ml-auto text-[11px] font-black px-2 py-1 rounded-full bg-slate-900/5 text-slate-700 hidden" id="mobile-inbox-badge">0</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openSavedPanel();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-regular fa-bookmark"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="nav_lists">LISTS</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openUpgradeModal();">
+          <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 grid place-items-center">
+            <i class="fa-solid fa-gem"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="btn_upgrade_pro">Upgrade to Pro</span>
+        </button>
+
+        <div class="h-px my-1 bg-slate-100"></div>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 transition"
+                onclick="closeMobileNavMenu(); partnerLogout();">
+          <span class="w-9 h-9 rounded-xl bg-red-50 text-red-700 grid place-items-center">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </span>
+          <span class="font-extrabold text-red-700">Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="flex items-center gap-2 md:gap-3" id="guest-actions">
+
 <button aria-label="Login" class="bton-nav-pill bton-pill-muted inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" data-i18n-aria="login_title" id="btn-partner-login" onclick="openLoginModal()">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-key"></i></span>
 <span class="hidden sm:inline" data-i18n="login_title">Login</span>
@@ -1709,7 +1699,8 @@ html{ scroll-padding-top: 118px; }
 </button>
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" id="btn-join-network" onclick="openJoinModal('free')">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-paper-plane"></i></span>
-<span class="bton-pill-label" data-i18n="join">JOIN NETWORK</span>
+<span class="bton-pill-label hidden sm:inline" data-i18n="join">JOIN NETWORK</span>
+            <span class="bton-pill-label sm:hidden">JOIN</span>
 </button>
 </div>
 <div class="hidden flex items-center gap-3" id="user-actions">
@@ -1816,19 +1807,19 @@ html{ scroll-padding-top: 118px; }
 <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
 <div class="flex flex-col gap-4 mb-5 border-b border-gray-200/50 pb-4">
 <div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
-<div id="home-updates-header" class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-start justify-between gap-3 mb-3">
 <div class="min-w-0">
 <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
 <i class="fa-solid fa-bolt text-cyan-500"></i>
 <span data-i18n="updates_title">Company Updates</span>
 </h3>
-<div id="home-updates-meta" class="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
+<div class="flex items-center gap-2 mt-1">
 <span class="text-[11px] text-gray-400" data-i18n="updates_sub">Last 7 days • posted by companies</span>
-<div class="inline-flex w-full sm:w-auto items-center rounded-full border border-gray-200/80 bg-white/70 px-1 py-1 shadow-sm overflow-hidden" id="home-updates-filter">
-<button class="flex-1 sm:flex-none px-3 py-2 sm:px-2.5 sm:py-1 rounded-full text-[12px] sm:text-[11px] font-extrabold transition whitespace-nowrap" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
+<div class="inline-flex items-center rounded-full border border-gray-200 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="home-updates-filter">
+<button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
 <span data-i18n="updates_filter_all">All updates</span>
 </button>
-<button class="flex-1 sm:flex-none px-3 py-2 sm:px-2.5 sm:py-1 rounded-full text-[12px] sm:text-[11px] font-extrabold transition whitespace-nowrap" id="upd-filter-followed" onclick="setHomeUpdatesFilter('followed')" type="button">
+<button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-followed" onclick="setHomeUpdatesFilter('followed')" type="button">
 <span data-i18n="updates_filter_followed">Only followed</span>
 </button>
 </div>
@@ -5248,18 +5239,9 @@ async function fetchHomeUpdates() {
 
     
     // Auth (for follow UI + followed filter)
-    // iOS/Safari bazen auth çağrısında bekleyebiliyor; updates feed'i bloklamasın diye timeout ekliyoruz.
-    let user = null;
-    try {
-      user = await Promise.race([
-        _getAuthUserSafe(),
-        new Promise(resolve => setTimeout(() => resolve(null), 1500))
-      ]);
-    } catch(e) {}
+    const user = await _getAuthUserSafe();
     __authUserId = user?.id || null;
-    if (__authUserId) {
-      try { await _ensureHomeFollowSet(__authUserId); } catch(e) {}
-    }
+    if (__authUserId) await _ensureHomeFollowSet(__authUserId);
 
     let followedIds = null;
 
@@ -5294,27 +5276,11 @@ async function fetchHomeUpdates() {
       q = q.in("company_id", followedIds);
     }
 
-    const { data, error } = await Promise.race([
-      q,
-      new Promise(resolve => setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 7000))
-    ]);
+    const { data, error } = await q;
 
     if (error) {
       console.warn("Updates fetch error:", error);
-      // Timeout olursa skeleton kalmasın; boş state göster.
-      try { renderHomeUpdates([]); } catch(e) {}
-      // Tek seferlik uyarı (spam olmasın)
-      try {
-        const nowTs = Date.now();
-        if (error?.message === "timeout") {
-          if (!window.__btonUpdatesTimeoutAt || (nowTs - window.__btonUpdatesTimeoutAt) > 20000) {
-            window.__btonUpdatesTimeoutAt = nowTs;
-            showToast((currentLang === "tr") ? "Bağlantı yavaş" : "Slow connection",
-                     (currentLang === "tr") ? "Güncellemeler yüklenemedi. Tekrar deneniyor..." : "Updates couldn\'t load. Retrying...",
-                     "info");
-          }
-        }
-      } catch(e) {}
+      renderHomeUpdates([]);
       return;
     }
 
@@ -5383,23 +5349,6 @@ function subscribeHomeUpdatesRealtime() {
 
 /* ---------- POST MODAL FLOW ---------- */
 let __updArea = "general";
-
-/* --- HOME UPDATES POLLER (iOS realtime fallback) --- */
-let homeUpdatesPollTimer = null;
-function startHomeUpdatesPoller(){
-  if (homeUpdatesPollTimer) return;
-  homeUpdatesPollTimer = setInterval(() => {
-    try {
-      if (document.hidden) return;
-      fetchHomeUpdates();
-    } catch(e) {}
-  }, 12000);
-}
-function stopHomeUpdatesPoller(){
-  try { if (homeUpdatesPollTimer) clearInterval(homeUpdatesPollTimer); } catch(e) {}
-  homeUpdatesPollTimer = null;
-}
-
 
 async function _getAuthUserSafe() {
   // Robust auth check (works even if network is flaky):
@@ -10135,7 +10084,48 @@ function toggleLangMenu(forceOpen) {
     btn && btn.setAttribute("aria-expanded", "false");
   }
 }
+
 function closeLangMenu() { toggleLangMenu(false); }
+
+/* --- Mobile Nav Menu (Hamburger) --- */
+function toggleMobileNavMenu(ev, forceOpen) {
+  if (ev && typeof ev.stopPropagation === "function") ev.stopPropagation();
+  const dd = document.getElementById("mobile-nav-menu");
+  const btn = document.getElementById("mobile-nav-toggle");
+  if (!dd) return;
+
+  const isOpen = !dd.classList.contains("hidden");
+  const next = (typeof forceOpen === "boolean") ? forceOpen : !isOpen;
+
+  if (next) {
+    dd.classList.remove("hidden");
+    dd.classList.add("bton-open");
+    btn && btn.setAttribute("aria-expanded", "true");
+  } else {
+    dd.classList.add("hidden");
+    dd.classList.remove("bton-open");
+    btn && btn.setAttribute("aria-expanded", "false");
+  }
+}
+function closeMobileNavMenu() { toggleMobileNavMenu(null, false); }
+
+function initMobileNavMenuOnce() {
+  const dd = document.getElementById("mobile-nav-menu");
+  const btn = document.getElementById("mobile-nav-toggle");
+  if (!dd || !btn) return;
+
+  document.addEventListener("click", (e) => {
+    if (dd.classList.contains("hidden")) return;
+    if (btn.contains(e.target) || dd.contains(e.target)) return;
+    closeMobileNavMenu();
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 768) closeMobileNavMenu();
+  });
+}
+document.addEventListener("DOMContentLoaded", initMobileNavMenuOnce);
+
 
 function initLangMenuOnce() {
   if (window.__bton_langmenu_inited) return;
@@ -10963,17 +10953,25 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   const { data: { session } } = await supabaseClient.auth.getSession();
   
   // Grupları Seç
-  const guestGroup = document.getElementById("guest-actions"); 
+  const guestGroup = document.getElementById("guest-actions");
   const userGroup = document.getElementById("user-actions");
-
+  const mobileGuestGroup = document.getElementById("mobile-guest-actions");
+  const mobileUserGroup = document.getElementById("mobile-user-actions");
+  const mobileQuickCompany = document.getElementById("mobile-quick-my-company");
   // 2. UI'I ANINDA GÜNCELLE
   if (!session) {
     if(guestGroup) { guestGroup.classList.remove("hidden"); guestGroup.classList.add("flex"); }
     if(userGroup) { userGroup.classList.add("hidden"); userGroup.classList.remove("flex"); }
+    if(mobileGuestGroup) { mobileGuestGroup.classList.remove("hidden"); mobileGuestGroup.classList.add("flex"); }
+    if(mobileUserGroup) { mobileUserGroup.classList.add("hidden"); mobileUserGroup.classList.remove("flex"); }
+    if(mobileQuickCompany) { mobileQuickCompany.classList.add("hidden"); }
     return; 
   } else {
     if(guestGroup) { guestGroup.classList.add("hidden"); guestGroup.classList.remove("flex"); }
     if(userGroup) { userGroup.classList.remove("hidden"); userGroup.classList.add("flex"); }
+    if(mobileGuestGroup) { mobileGuestGroup.classList.add("hidden"); mobileGuestGroup.classList.remove("flex"); }
+    if(mobileUserGroup) { mobileUserGroup.classList.remove("hidden"); mobileUserGroup.classList.add("flex"); }
+    if(mobileQuickCompany) { mobileQuickCompany.classList.remove("hidden"); }
     
     fetchInboxMessages();
     subscribeToMessages();
@@ -11195,7 +11193,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   _setHomeUpdatesFilterUI(homeUpdatesFilter);
   fetchHomeUpdates();
   subscribeHomeUpdatesRealtime();
-  try { startHomeUpdatesPoller(); } catch(e) {}
 
 
   // 2) Fetch public profiles (can run after correct view is already visible)
@@ -13484,6 +13481,8 @@ function renderInboxItems() {
 function updateBadges(count) {
   const badgeNav = document.getElementById("nav-badge");
   const badgeHeader = document.getElementById("inbox-badge-count");
+  const mobileNavBadge = document.getElementById("mobile-nav-badge");
+  const mobileInboxBadge = document.getElementById("mobile-inbox-badge");
 
   if(badgeNav) {
       if(count > 0) {
@@ -13493,6 +13492,23 @@ function updateBadges(count) {
           badgeNav.classList.add("hidden");
       }
   }
+  if(mobileNavBadge) {
+      if(count > 0) {
+          mobileNavBadge.textContent = count;
+          mobileNavBadge.classList.remove("hidden");
+      } else {
+          mobileNavBadge.classList.add("hidden");
+      }
+  }
+  if(mobileInboxBadge) {
+      if(count > 0) {
+          mobileInboxBadge.textContent = String(count);
+          mobileInboxBadge.classList.remove("hidden");
+      } else {
+          mobileInboxBadge.classList.add("hidden");
+      }
+  }
+
   if(badgeHeader) {
       if(count > 0) {
         badgeHeader.textContent = `${count} NEW`;
@@ -15377,7 +15393,7 @@ function scrollToResults() {
     const el = document.getElementById("live-showcase");
     if (!el) return;
 
-    const offset = btonNavOffset(22); // header + breathing space (mobile/desktop)
+    const offset = btonNavOffset(22); // header + breathing space (mobile/desktop aware)
     const y = el.getBoundingClientRect().top + window.pageYOffset;
 
     window.scrollTo({
@@ -18072,169 +18088,4 @@ function sortProjectsUI(mode){
   });
 })();
 </script>
-<!-- Mobile Menu Sheet -->
-<div id="mobile-sheet-backdrop" aria-hidden="true"></div>
-
-<div id="mobile-nav-menu" role="menu" aria-label="Menu">
-  <div class="pt-3 pb-1 flex justify-center">
-    <div class="w-10 h-1.5 rounded-full bg-slate-200"></div>
-  </div>
-
-  <div class="px-4 py-3 border-b border-slate-100">
-    <div class="text-[11px] font-black tracking-wider text-slate-600">MENU</div>
-  </div>
-
-  <div class="p-2">
-    <!-- Guest -->
-    <div id="mobile-guest-actions" class="flex flex-col gap-1">
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof openLoginModal==='function') openLoginModal();">
-        <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center"><i class="fa-solid fa-key"></i></span>
-        <span class="font-semibold text-slate-800">Login</span>
-      </button>
-
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof openJoinModal==='function') openJoinModal('free');">
-        <span class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-700 grid place-items-center"><i class="fa-solid fa-paper-plane"></i></span>
-        <span class="font-semibold text-slate-800">Join Network</span>
-      </button>
-    </div>
-
-    <!-- Authed -->
-    <div id="mobile-user-actions" class="hidden flex flex-col gap-1">
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof openMyCompanyIfExists==='function') openMyCompanyIfExists();">
-        <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center"><i class="fa-regular fa-building"></i></span>
-        <span class="font-semibold text-slate-800">My Company</span>
-      </button>
-
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof toggleInboxPanel==='function') toggleInboxPanel();">
-        <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center relative">
-          <i class="fa-regular fa-envelope"></i>
-        </span>
-        <span class="font-semibold text-slate-800">Inbox</span>
-      </button>
-
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof toggleSavedPanel==='function') toggleSavedPanel();">
-        <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center"><i class="fa-regular fa-bookmark"></i></span>
-        <span class="font-semibold text-slate-800">My Lists</span>
-      </button>
-
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof openUpgradeModal==='function') openUpgradeModal();">
-        <span class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-700 grid place-items-center"><i class="fa-solid fa-crown"></i></span>
-        <span class="font-semibold text-slate-800">Upgrade</span>
-      </button>
-
-      <div class="h-px bg-slate-100 my-2"></div>
-
-      <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-rose-50 transition"
-              onclick="closeMobileNavMenu(); if (typeof signOut==='function') signOut();">
-        <span class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 grid place-items-center"><i class="fa-solid fa-right-from-bracket"></i></span>
-        <span class="font-semibold text-rose-700">Logout</span>
-      </button>
-    </div>
-
-    <div class="px-2 pt-2 pb-3 text-[11px] text-slate-500">
-      Tip: Tap outside to close.
-    </div>
-  </div>
-</div>
-
-<script>
-(function(){
-  const $ = (id)=>document.getElementById(id);
-
-  function openMenu(){
-    const bd=$("mobile-sheet-backdrop"), menu=$("mobile-nav-menu");
-    if (!bd || !menu) return;
-    bd.classList.add("bton-open");
-    menu.classList.add("bton-open");
-    document.documentElement.classList.add("bton-lock");
-    document.body.classList.add("bton-lock");
-  }
-  function closeMenu(){
-    const bd=$("mobile-sheet-backdrop"), menu=$("mobile-nav-menu");
-    if (!bd || !menu) return;
-    bd.classList.remove("bton-open");
-    menu.classList.remove("bton-open");
-    document.documentElement.classList.remove("bton-lock");
-    document.body.classList.remove("bton-lock");
-  }
-
-  window.closeMobileNavMenu = closeMenu;
-
-  function syncAuthUI(isAuthed){
-    const guest=$("mobile-guest-actions");
-    const user=$("mobile-user-actions");
-    const quick=$("mobile-quick-my-company");
-    if (guest) guest.classList.toggle("hidden", !!isAuthed);
-    if (user) user.classList.toggle("hidden", !isAuthed);
-    if (quick) quick.classList.toggle("hidden", !isAuthed);
-  }
-
-  async function checkAuthOnce(){
-    try{
-      // Supabase client exists in your page
-      if (!window.supabaseClient || !window.supabaseClient.auth) { syncAuthUI(false); return; }
-      const { data } = await window.supabaseClient.auth.getUser();
-      syncAuthUI(!!data?.user?.id);
-    }catch(e){
-      syncAuthUI(false);
-    }
-  }
-
-  // Toggle button
-  document.addEventListener("DOMContentLoaded", ()=>{
-    const toggle=$("mobile-nav-toggle");
-    const bd=$("mobile-sheet-backdrop");
-    if (toggle) toggle.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); openMenu(); });
-    if (bd) bd.addEventListener("click", closeMenu);
-
-    document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeMenu(); });
-
-    // Close when clicking a link/button inside menu that doesn't already close it
-    const menu=$("mobile-nav-menu");
-    if (menu) menu.addEventListener("click", (e)=>{
-      // If user taps blank area, do nothing
-      // Buttons explicitly call closeMobileNavMenu() already
-    });
-
-    // Initial auth sync
-    checkAuthOnce();
-
-    // Keep in sync on auth changes if available
-    try{
-      if (window.supabaseClient && window.supabaseClient.auth && window.supabaseClient.auth.onAuthStateChange){
-        window.supabaseClient.auth.onAuthStateChange((event, session)=>{
-          const authed = !!(session && session.user && session.user.id);
-          syncAuthUI(authed);
-        });
-      }
-    }catch(e){}
-  });
-
-  // Badge sync: piggyback existing unread badge if present
-  function syncBadge(){
-    try{
-      const src = document.getElementById("nav-badge");
-      const dst = document.getElementById("mobile-inbox-badge");
-      if (!dst) return;
-      const n = parseInt(src?.textContent || "0", 10) || 0;
-      if (n > 0){
-        dst.textContent = String(n);
-        dst.classList.remove("hidden");
-      } else {
-        dst.classList.add("hidden");
-      }
-    }catch(e){}
-  }
-  window.__btonSyncMobileBadge = syncBadge;
-  // run periodically (lightweight)
-  setInterval(syncBadge, 1500);
-})();
-</script>
-
 </body></html>
