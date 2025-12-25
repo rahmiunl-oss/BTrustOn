@@ -147,29 +147,69 @@
     font-weight: 500 !important;
   }
   #hero-search-wrap .bton-apple-search-btn{
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
     background: linear-gradient(180deg, rgba(6,182,212,.92), rgba(8,145,178,.92)) !important;
     border: 1px solid rgba(255,255,255,.18) !important;
     color: rgba(255,255,255,.98) !important;
     border-radius: 9999px !important;
     box-shadow: 0 10px 26px rgba(6,182,212,.28), 0 1px 0 rgba(255,255,255,.18) inset !important;
     transition: filter .18s ease, transform .18s ease, box-shadow .18s ease;
+    will-change: transform, box-shadow, filter;
+  }
+  #hero-search-wrap .bton-apple-search-btn::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.24), rgba(255,255,255,0) 55%);
+    opacity:0;
+    transition: opacity .18s ease;
+    pointer-events:none;
+  }
+  #hero-search-wrap .bton-apple-search-btn::after{
+    content:"";
+    position:absolute;
+    top:-60%;
+    left:-65%;
+    width:45%;
+    height:220%;
+    transform: rotate(20deg) translateX(-40%);
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.38), rgba(255,255,255,0));
+    opacity:0;
+    transition: transform .65s ease, opacity .22s ease;
+    pointer-events:none;
   }
   #hero-search-wrap .bton-apple-search-btn:hover{
-    filter: brightness(1.05) saturate(1.06);
-    box-shadow: 0 14px 32px rgba(6,182,212,.34), 0 1px 0 rgba(255,255,255,.20) inset !important;
+    filter: brightness(1.06) saturate(1.08);
+    box-shadow: 0 16px 36px rgba(6,182,212,.38), 0 1px 0 rgba(255,255,255,.20) inset !important;
     transform: translateY(-1px);
   }
+  #hero-search-wrap .bton-apple-search-btn:hover::before{ opacity:1; }
+  #hero-search-wrap .bton-apple-search-btn:hover::after{
+    opacity:1;
+    transform: rotate(20deg) translateX(260%);
+  }
   #hero-search-wrap .bton-apple-search-btn:active{
-    transform: translateY(0);
-    filter: brightness(.98);
-    box-shadow: 0 10px 24px rgba(6,182,212,.26), 0 1px 0 rgba(255,255,255,.14) inset !important;
+    transform: translateY(0) scale(.985);
+    filter: brightness(.98) saturate(1.02);
+    box-shadow: 0 10px 22px rgba(6,182,212,.26), 0 1px 0 rgba(255,255,255,.14) inset !important;
   }
   #hero-search-wrap .bton-apple-search-btn:focus-visible{
     outline: none !important;
     box-shadow: 0 0 0 4px rgba(6,182,212,.22), 0 10px 26px rgba(6,182,212,.28), 0 1px 0 rgba(255,255,255,.18) inset !important;
   }
+  @media (pointer: coarse){
+    /* Avoid "sticky hover" on touch devices */
+    #hero-search-wrap .bton-apple-search-btn:hover{ transform: none; }
+    #hero-search-wrap .bton-apple-search-btn:hover::after{
+      opacity:0;
+      transform: rotate(20deg) translateX(-40%);
+    }
+  }
 
-  #hero-title{
+#hero-title{
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
     letter-spacing: -0.035em;
     color: var(--bton-apple-text) !important;
