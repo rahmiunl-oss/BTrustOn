@@ -511,6 +511,46 @@ document.addEventListener("DOMContentLoaded", () => {
       background-clip: text;
       color: transparent;
     }
+
+    /* Hero title lockup (B2B emphasized) */
+    .bton-hero-h1{
+      display:inline-flex;
+      align-items:baseline;
+      justify-content:center;
+      gap:.45rem;
+      flex-wrap:wrap;
+    }
+    .bton-hero-h1-b2b{
+      position:relative;
+      background: linear-gradient(90deg, rgba(6,182,212,1) 0%, rgba(8,145,178,1) 62%, rgba(15,23,42,1) 155%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color: transparent;
+    }
+    .bton-hero-h1-b2b::after{
+      content:'';
+      position:absolute;
+      left:.08em; right:.08em;
+      bottom:-.16em;
+      height:3px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(6,182,212,.85), rgba(8,145,178,.55));
+      opacity:.55;
+    }
+    .bton-hero-h1-rest{
+      color: rgba(15,23,42,.92);
+    }
+    .bton-hero-h1-sep{
+      color: rgba(15,23,42,.38);
+      font-weight: 800;
+      margin: 0 .08rem;
+    }
+    .bton-hero-h1-action{
+      background: linear-gradient(90deg, rgba(15,23,42,1) 0%, rgba(8,145,178,.96) 110%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color: transparent;
+    }
 /* --- Profile Tabs: unified premium typography --- */
     .bton-tab-head{
       display:flex;
@@ -1577,7 +1617,7 @@ html{ scroll-padding-top: 118px; }
   </div>
 </div>
 
-<h1 class="text-3xl md:text-5xl font-header font-extrabold bton-hero-title-grad mb-3 leading-[1.05] tracking-tight drop-shadow-sm py-1 max-w-4xl mx-auto" id="hero-title"></h1>
+<h1 class="text-3xl md:text-5xl font-header font-extrabold mb-3 leading-[1.05] tracking-tight drop-shadow-sm py-1 max-w-4xl mx-auto" id="hero-title"></h1>
 <p class="text-lg md:text-xl text-slate-600 mb-6 max-w-3xl mx-auto font-normal leading-relaxed" id="hero-desc"></p>
 <div class="flex flex-col md:flex-row items-center justify-center gap-3 mb-2" id="hero-cta">
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-6 py-3 rounded-full font-extrabold text-xs md:text-sm shadow-sm" id="hero-btn-join" onclick="openJoinModal('free')" type="button">
@@ -4113,8 +4153,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated28",
-  tr: "i18n/tr.json?v=updated28",
+  en: "i18n/en.json?v=updated29",
+  tr: "i18n/tr.json?v=updated29",
 };
 
 const __i18nLoad = { en: null, tr: null };
