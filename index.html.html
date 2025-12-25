@@ -1900,6 +1900,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="bton-nav-mini-ic bton-cta-ic"><i class="fa-solid fa-paper-plane"></i></span>
 <span data-i18n="hero_cta_join">Join as a Company</span>
 </button>
+<button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-6 py-3 rounded-full font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition"
+        id="hero-btn-profile"
+        onclick="openMyCompanyIfExists()"
+        type="button"
+        style="display:none">
+  <span class="bton-nav-mini-ic bton-cta-ic"><i class="fa-solid fa-user-pen"></i></span>
+  <span data-i18n="hero_cta_profile">Improve Profile</span>
+</button>
 <button class="inline-flex items-center gap-2 bg-BTrustOn-primary text-white px-6 py-3 rounded-full font-extrabold text-xs md:text-sm shadow-lg shadow-blue-900/20 hover:bg-BTrustOn-accent transition" id="hero-btn-post" onclick="openPostUpdateModal()" style="display:none" type="button">
 <i class="fa-solid fa-pen-to-square" id="hero-post-icon"></i>
 <span data-i18n="hero_cta_post" id="hero-post-label">Post an Update</span>
@@ -6181,46 +6189,47 @@ async function refreshHeroCTA() {
     const joinBtn = document.getElementById("hero-btn-join");
     const howBtn = document.getElementById("hero-btn-how");
     const postBtn = document.getElementById("hero-btn-post");
+    const profileBtn = document.getElementById("hero-btn-profile");
+
+    const heroDesc = document.getElementById("hero-desc");
+    const heroProof = document.getElementById("hero-proof");
     const howSection = document.getElementById("how-section");
-    if (!joinBtn || !howBtn || !postBtn) return;
 
     let user = null;
     try { user = await _getAuthUserSafe(); } catch(e) { user = null; }
+    const signedIn = !!(user && user.id);
 
-    if (!user || !user.id) {
-      joinBtn.style.display = "";
-      howBtn.style.display = "";
-      postBtn.style.display = "none";
+    // Used by applyTranslations() to pick the right hero title key.
+    window.__btonHeroMode = signedIn ? "signed_in" : "guest";
+
+    if (!signedIn) {
+      if (joinBtn) joinBtn.style.display = "";
+      if (howBtn) howBtn.style.display = "";
+      if (postBtn) postBtn.style.display = "none";
+      if (profileBtn) profileBtn.style.display = "none";
+
+      if (heroDesc) heroDesc.style.display = "";
+      if (heroProof) heroProof.style.display = "";
       if (howSection) howSection.style.display = "";
+
+      if (typeof applyTranslations === "function") applyTranslations();
       return;
     }
 
-    let profile = null;
-    try { profile = await _fetchMyCompanyProfile(user.id); } catch(e) { profile = null; }
-    const hasProfile = !!profile;
+    // ✅ Logged-in hero must stay minimal (title + "Improve Profile" button only)
+    if (joinBtn) joinBtn.style.display = "none";
+    if (howBtn) howBtn.style.display = "none";
+    if (postBtn) postBtn.style.display = "none";
+    if (profileBtn) profileBtn.style.display = "";
 
-    if (hasProfile) {
-      joinBtn.style.display = "none";
-      howBtn.style.display = "none";
-      postBtn.style.display = "";
-      if (howSection) howSection.style.display = "none";
+    if (heroDesc) heroDesc.style.display = "none";
+    if (heroProof) heroProof.style.display = "none";
+    if (howSection) howSection.style.display = "none";
 
-      // ✅ Pro gate for posting updates (keep CTA visible but show lock if not Pro)
-      const canPost = (typeof _isProForPosting === "function") ? _isProForPosting(profile) : true;
-      const icon = document.getElementById("hero-post-icon");
-      const label = document.getElementById("hero-post-label");
-
-      if (icon) icon.className = canPost ? "fa-solid fa-pen-to-square" : "fa-solid fa-lock";
-      if (label) label.setAttribute("data-i18n", canPost ? "hero_cta_post" : "hero_cta_post_pro");
-      if (typeof applyTranslations === "function") applyTranslations();
-    } else {
-      joinBtn.style.display = "";
-      howBtn.style.display = "";
-      postBtn.style.display = "none";
-      if (howSection) howSection.style.display = "";
-    }
+    if (typeof applyTranslations === "function") applyTranslations();
   } catch(e) {}
 }
+
 
 /* =========================
    PRICING (FREE vs PRO)
@@ -7542,9 +7551,11 @@ function getCompanyTypeBadge(rawType) {
       });
 const heroTitle = document.getElementById("hero-title");
       const heroDesc = document.getElementById("hero-desc");
+      const heroMode = (window && window.__btonHeroMode) ? window.__btonHeroMode : "guest";
 
       if (heroTitle) {
-        const v = t("hero_title");
+        const key = (heroMode === "signed_in") ? "hero_title_signed_in" : "hero_title";
+        const v = t(key);
         if (v) heroTitle.innerHTML = v;
       }
       if (heroDesc) {
