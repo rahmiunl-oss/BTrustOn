@@ -737,5 +737,11 @@
   "msg_asset_removed": "Varlık başarıyla silindi.",
   "msg_project_removed": "Proje başarıyla silindi.",
   "msg_certificate_removed": "Sertifika başarıyla silindi.",
-  "msg_logo_removed": "Logo başarıyla kaldırıldı."
+  "msg_logo_removed": "Logo başarıyla kaldırıldı.",
+  "ui_save_company": "Şirketi kaydet",
+  "ui_saved_company": "Kaydedildi",
+  "msg_asset_saved": "Varlık başarıyla kaydedildi.",
+  "msg_project_saved": "Proje kaydedildi.",
+  "msg_certificate_saved": "Sertifika kaydedildi.",
+  "ui_open_document": "Belgeyi aç"
 }
