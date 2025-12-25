@@ -1359,7 +1359,13 @@ html{ scroll-padding-top: 118px; }
 
   /* Single source of header height (safe-area aware) */
   :root{ --bton-nav-h: calc(96px + env(safe-area-inset-top)); }
-  @media (max-width: 640px){ :root{ --bton-nav-h: calc(80px + env(safe-area-inset-top)); } }
+  @media (max-width: 640px){
+    /* Updates meta tidy */
+    #home-updates-meta{ width: 100% !important; }
+    #home-updates-meta > span[data-i18n="updates_sub"]{ line-height: 1.2 !important; }
+    #home-updates-filter{ width: 100% !important; }
+    #home-updates-active-wrap, #home-updates-dot{ display: none !important; }
+ :root{ --bton-nav-h: calc(80px + env(safe-area-inset-top)); } }
 
   /* Enforce nav height */
   #bton-nav{ height: var(--bton-nav-h) !important; }
@@ -1810,19 +1816,19 @@ html{ scroll-padding-top: 118px; }
 <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
 <div class="flex flex-col gap-4 mb-5 border-b border-gray-200/50 pb-4">
 <div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
-<div class="flex items-start justify-between gap-3 mb-3">
+<div id="home-updates-header" class="flex items-start justify-between gap-3 mb-3">
 <div class="min-w-0">
 <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
 <i class="fa-solid fa-bolt text-cyan-500"></i>
 <span data-i18n="updates_title">Company Updates</span>
 </h3>
-<div class="flex items-center gap-2 mt-1">
+<div id="home-updates-meta" class="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
 <span class="text-[11px] text-gray-400" data-i18n="updates_sub">Last 7 days • posted by companies</span>
-<div class="inline-flex items-center rounded-full border border-gray-200 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="home-updates-filter">
-<button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
+<div class="inline-flex w-full sm:w-auto items-center rounded-full border border-gray-200/80 bg-white/70 px-1 py-1 shadow-sm overflow-hidden" id="home-updates-filter">
+<button class="flex-1 sm:flex-none px-3 py-2 sm:px-2.5 sm:py-1 rounded-full text-[12px] sm:text-[11px] font-extrabold transition whitespace-nowrap" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
 <span data-i18n="updates_filter_all">All updates</span>
 </button>
-<button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-followed" onclick="setHomeUpdatesFilter('followed')" type="button">
+<button class="flex-1 sm:flex-none px-3 py-2 sm:px-2.5 sm:py-1 rounded-full text-[12px] sm:text-[11px] font-extrabold transition whitespace-nowrap" id="upd-filter-followed" onclick="setHomeUpdatesFilter('followed')" type="button">
 <span data-i18n="updates_filter_followed">Only followed</span>
 </button>
 </div>
@@ -5242,9 +5248,18 @@ async function fetchHomeUpdates() {
 
     
     // Auth (for follow UI + followed filter)
-    const user = await _getAuthUserSafe();
+    // iOS/Safari bazen auth çağrısında bekleyebiliyor; updates feed'i bloklamasın diye timeout ekliyoruz.
+    let user = null;
+    try {
+      user = await Promise.race([
+        _getAuthUserSafe(),
+        new Promise(resolve => setTimeout(() => resolve(null), 1500))
+      ]);
+    } catch(e) {}
     __authUserId = user?.id || null;
-    if (__authUserId) await _ensureHomeFollowSet(__authUserId);
+    if (__authUserId) {
+      try { await _ensureHomeFollowSet(__authUserId); } catch(e) {}
+    }
 
     let followedIds = null;
 
@@ -5279,11 +5294,27 @@ async function fetchHomeUpdates() {
       q = q.in("company_id", followedIds);
     }
 
-    const { data, error } = await q;
+    const { data, error } = await Promise.race([
+      q,
+      new Promise(resolve => setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 7000))
+    ]);
 
     if (error) {
       console.warn("Updates fetch error:", error);
-      renderHomeUpdates([]);
+      // Timeout olursa skeleton kalmasın; boş state göster.
+      try { renderHomeUpdates([]); } catch(e) {}
+      // Tek seferlik uyarı (spam olmasın)
+      try {
+        const nowTs = Date.now();
+        if (error?.message === "timeout") {
+          if (!window.__btonUpdatesTimeoutAt || (nowTs - window.__btonUpdatesTimeoutAt) > 20000) {
+            window.__btonUpdatesTimeoutAt = nowTs;
+            showToast((currentLang === "tr") ? "Bağlantı yavaş" : "Slow connection",
+                     (currentLang === "tr") ? "Güncellemeler yüklenemedi. Tekrar deneniyor..." : "Updates couldn\'t load. Retrying...",
+                     "info");
+          }
+        }
+      } catch(e) {}
       return;
     }
 
@@ -5352,6 +5383,23 @@ function subscribeHomeUpdatesRealtime() {
 
 /* ---------- POST MODAL FLOW ---------- */
 let __updArea = "general";
+
+/* --- HOME UPDATES POLLER (iOS realtime fallback) --- */
+let homeUpdatesPollTimer = null;
+function startHomeUpdatesPoller(){
+  if (homeUpdatesPollTimer) return;
+  homeUpdatesPollTimer = setInterval(() => {
+    try {
+      if (document.hidden) return;
+      fetchHomeUpdates();
+    } catch(e) {}
+  }, 12000);
+}
+function stopHomeUpdatesPoller(){
+  try { if (homeUpdatesPollTimer) clearInterval(homeUpdatesPollTimer); } catch(e) {}
+  homeUpdatesPollTimer = null;
+}
+
 
 async function _getAuthUserSafe() {
   // Robust auth check (works even if network is flaky):
@@ -11147,6 +11195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   _setHomeUpdatesFilterUI(homeUpdatesFilter);
   fetchHomeUpdates();
   subscribeHomeUpdatesRealtime();
+  try { startHomeUpdatesPoller(); } catch(e) {}
 
 
   // 2) Fetch public profiles (can run after correct view is already visible)
