@@ -746,5 +746,6 @@
   "ui_open_document": "Belgeyi aç",
   "toast_registration_success": "Kayıt başarılı. Profil oluşturuldu.",
   "hero_title_signed_in": "BTrustOn ile Doğru İş Ortaklarıyla Büyüyün",
-  "hero_cta_profile": "Profilini Geliştir"
+  "hero_cta_profile": "Profilini Geliştir",
+  "btn_upgrade_to_post": "Paylaşmak için Yükselt"
 }
