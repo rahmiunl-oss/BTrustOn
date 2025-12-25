@@ -616,7 +616,7 @@
   "ui_technical_document_26b178": "Teknik Doküman",
   "ui_the_platform_is_provided_as_is_a_27ebcb": "The platform is provided “as is” and “as available”. We disclaim warranties to the maximum extent permitted by law, including fitness for a particular purpose and non-infringement.",
   "ui_these_terms_are_governed_by_the_4e4761": "These Terms are governed by the laws of the Republic of Turkey. Disputes shall be resolved in the courts of Istanbul (Çağlayan), unless mandatory law requires otherwise.",
-  "ui_this_company_hasn_t_listed_any_a_410cda": "This company hasn’t listed any assets yet.",
+  "ui_this_company_hasn_t_listed_any_a_410cda": "Bu şirket henüz herhangi bir envanter eklemedi.",
   "ui_tip_add_services_as_tags_a9d576": "İpucu: Hizmetleri etiket olarak ekleyin.",
   "ui_tip_choose_a_clear_image_we_ll_c_d09c5d": "Tip: Choose a clear image. We'll crop it to fit.",
   "ui_tip_click_the_document_button_to_8bfdfb": "Tip: Click the document button to open the attached file (PDF, Excel, etc.).",
@@ -700,5 +700,8 @@
   "ui_no_sent_messages_83b1fd": "Gönderilmiş mesaj yok.",
   "ui_upgrade_to_pro": "Pro'ya Yükselt",
   "ui_placeholder_official_address_full_7c2a1a": "Merkez adresi (Cadde/Sokak, No, İlçe...)",
-  "ui_placeholder_describe_company_3f91b2": "Şirketinizin temel yetkinliklerini kısaca açıklayın..."
+  "ui_placeholder_describe_company_3f91b2": "Şirketinizin temel yetkinliklerini kısaca açıklayın...",
+  "ui_profile_strength_strong_fill_missing_100_6b2b57": "Güçlü profil. %100’e ulaşmak için eksik bilgileri tamamlayın.",
+  "ui_profile_strength_need_more_proof_add_projects_assets_5b07c1": "Profiliniz daha fazla kanıta ihtiyaç duyuyor. Görünürlüğü artırmak için proje ve envanter ekleyin.",
+  "ui_add_services_btn_3d0ce2": "Hizmet ekle"
 }
