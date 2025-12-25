@@ -113,36 +113,61 @@
     margin-bottom: 12px !important;
   }
 
-  /* Apple-minimal signed-in CTA */
-  #hero-btn-profile{
-    background: rgba(255,255,255,.74) !important;
-    border: 1px solid rgba(15,23,42,.14) !important;
-    color: var(--bton-apple-text) !important;
-    box-shadow: 0 16px 36px -26px rgba(15,23,42,.60) !important;
-    padding: 10px 16px !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.01em !important;
+
+  /* Apple-style hero search bar */
+  #hero-search-wrap .bton-apple-search-halo{
+    opacity: .22 !important;
+    filter: blur(18px) !important;
   }
-  #hero-btn-profile:hover{
-    background: rgba(255,255,255,.92) !important;
-    border-color: rgba(15,23,42,.22) !important;
+  #hero-search-wrap .bton-apple-search{
+    background: rgba(255,255,255,.72) !important;
+    border: 1px solid rgba(15,23,42,.10) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 14px 34px -26px rgba(15,23,42,.55) !important;
+    backdrop-filter: blur(18px) !important;
+    transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+  }
+  #hero-search-wrap .bton-apple-search:focus-within{
+    border-color: rgba(14,165,233,.35) !important;
+    box-shadow: 0 18px 44px -28px rgba(14,165,233,.55) !important;
     transform: translateY(-1px);
   }
-  #hero-btn-profile:active{ transform: translateY(0); }
-
-  #hero-btn-profile .bton-nav-mini-ic{
-    width: 30px;
-    height: 30px;
-    background: rgba(245,245,247,.80);
-    border-color: rgba(15,23,42,.10);
-    box-shadow: none;
+  #hero-search-wrap .bton-apple-search i{
+    animation: none !important;
+    opacity: .72 !important;
+    filter: none !important;
   }
-  #hero-btn-profile .bton-nav-mini-ic i{
-    font-size: 13px;
-    color: rgba(29,29,31,.82) !important;
-    filter: none;
+  #hero-search-wrap .bton-apple-search-input{
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    color: rgba(15,23,42,.92) !important;
   }
-  #hero-btn-profile .bton-cta-ic{ width: 30px !important; height: 30px !important; }
+  #hero-search-wrap .bton-apple-search-input::placeholder{
+    color: rgba(15,23,42,.45) !important;
+    font-weight: 500 !important;
+  }
+  #hero-search-wrap .bton-apple-search-btn{
+    background: linear-gradient(180deg, rgba(6,182,212,.92), rgba(8,145,178,.92)) !important;
+    border: 1px solid rgba(255,255,255,.18) !important;
+    color: rgba(255,255,255,.98) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 10px 26px rgba(6,182,212,.28), 0 1px 0 rgba(255,255,255,.18) inset !important;
+    transition: filter .18s ease, transform .18s ease, box-shadow .18s ease;
+  }
+  #hero-search-wrap .bton-apple-search-btn:hover{
+    filter: brightness(1.05) saturate(1.06);
+    box-shadow: 0 14px 32px rgba(6,182,212,.34), 0 1px 0 rgba(255,255,255,.20) inset !important;
+    transform: translateY(-1px);
+  }
+  #hero-search-wrap .bton-apple-search-btn:active{
+    transform: translateY(0);
+    filter: brightness(.98);
+    box-shadow: 0 10px 24px rgba(6,182,212,.26), 0 1px 0 rgba(255,255,255,.14) inset !important;
+  }
+  #hero-search-wrap .bton-apple-search-btn:focus-visible{
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(6,182,212,.22), 0 10px 26px rgba(6,182,212,.28), 0 1px 0 rgba(255,255,255,.18) inset !important;
+  }
 
   #hero-title{
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
@@ -1952,14 +1977,6 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="bton-nav-mini-ic bton-cta-ic"><i class="fa-solid fa-paper-plane"></i></span>
 <span data-i18n="hero_cta_join">Join as a Company</span>
 </button>
-<button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-6 py-3 rounded-full font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition"
-        id="hero-btn-profile"
-        onclick="openMyCompanyIfExists()"
-        type="button"
-        style="display:none">
-  <span class="bton-nav-mini-ic bton-cta-ic"><i class="fa-solid fa-user-pen"></i></span>
-  <span data-i18n="hero_cta_profile">Improve Profile</span>
-</button>
 <button class="inline-flex items-center gap-2 bg-BTrustOn-primary text-white px-6 py-3 rounded-full font-extrabold text-xs md:text-sm shadow-lg shadow-blue-900/20 hover:bg-BTrustOn-accent transition" id="hero-btn-post" onclick="openPostUpdateModal()" style="display:none" type="button">
 <i class="fa-solid fa-pen-to-square" id="hero-post-icon"></i>
 <span data-i18n="hero_cta_post" id="hero-post-label">Post an Update</span>
@@ -1972,13 +1989,13 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span data-i18n="hero_proof">Show proof, not promises. Verified badge after review.</span>
 </p>
 <div id="hero-search-wrap" class="w-[95%] md:max-w-3xl mx-auto relative mb-6 z-20 transition-all duration-300">
-<div class="absolute inset-0 bg-BTrustOn-accent/12 blur-xl rounded-full opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
-<div class="relative bg-white/90 backdrop-blur-xl p-1.5 md:p-2 rounded-full shadow-2xl flex items-center border border-white/80 ring-4 ring-transparent focus-within:ring-cyan-50/50 focus-within:scale-[1.02] transition-all duration-300">
+<div class="bton-apple-search-halo absolute inset-0 bg-BTrustOn-accent/12 blur-xl rounded-full opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+<div class="bton-apple-search relative bg-white/90 backdrop-blur-xl p-1.5 md:p-2 rounded-full shadow-2xl flex items-center border border-white/80 ring-4 ring-transparent focus-within:ring-cyan-50/50 focus-within:scale-[1.02] transition-all duration-300">
 <div class="pl-4 pr-3 text-BTrustOn-accent shrink-0">
 <i class="fa-solid fa-magnifying-glass text-lg md:text-xl animate-pulse"></i>
 </div>
-<input class="w-full bg-transparent outline-none text-gray-700 text-sm md:text-base placeholder:text-[12px] md:placeholder:text-sm placeholder-gray-400 font-light h-10 md:h-12" id="search-input" onkeydown="if(event.key === 'Enter') { event.preventDefault(); handleSearchInput(this.value); scrollToResults(); }" onkeyup="handleSearchInput(this.value)" data-i18n-placeholder="search_ph" placeholder="" type="text"/>
-<button class="shrink-0 inline-flex items-center justify-center gap-2 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-10 h-10 md:w-auto md:h-12 md:px-6 font-bold transition shadow-lg shadow-cyan-500/30 group" onclick="handleSearchInput(document.getElementById('search-input')?.value || ''); scrollToResults();">
+<input class="bton-apple-search-input w-full bg-transparent outline-none text-gray-700 text-sm md:text-base placeholder:text-[12px] md:placeholder:text-sm placeholder-gray-400 font-light h-10 md:h-12" id="search-input" onkeydown="if(event.key === 'Enter') { event.preventDefault(); handleSearchInput(this.value); scrollToResults(); }" onkeyup="handleSearchInput(this.value)" data-i18n-placeholder="search_ph" placeholder="" type="text"/>
+<button class="bton-apple-search-btn shrink-0 inline-flex items-center justify-center gap-2 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-full w-10 h-10 md:w-auto md:h-12 md:px-6 font-bold transition shadow-lg shadow-cyan-500/30 group" onclick="handleSearchInput(document.getElementById('search-input')?.value || ''); scrollToResults();">
 <span class="hidden md:inline whitespace-nowrap" data-i18n="btn_discover">DISCOVER</span>
 <i class="fa-solid fa-compass text-lg group-hover:rotate-45 transition-transform duration-300"></i>
 </button>
@@ -6241,8 +6258,7 @@ async function refreshHeroCTA() {
     const joinBtn = document.getElementById("hero-btn-join");
     const howBtn = document.getElementById("hero-btn-how");
     const postBtn = document.getElementById("hero-btn-post");
-    const profileBtn = document.getElementById("hero-btn-profile");
-
+    const heroCta = document.getElementById("hero-cta");
     const heroDesc = document.getElementById("hero-desc");
     const heroProof = document.getElementById("hero-proof");
     const howSection = document.getElementById("how-section");
@@ -6260,8 +6276,7 @@ async function refreshHeroCTA() {
       if (joinBtn) joinBtn.style.display = "";
       if (howBtn) howBtn.style.display = "";
       if (postBtn) postBtn.style.display = "none";
-      if (profileBtn) profileBtn.style.display = "none";
-
+      if (heroCta) heroCta.style.display = "";
       if (heroDesc) heroDesc.style.display = "";
       if (heroProof) heroProof.style.display = "";
       if (howSection) howSection.style.display = "";
@@ -6273,12 +6288,11 @@ async function refreshHeroCTA() {
       return;
     }
 
-    // ✅ Logged-in hero must stay minimal (title + "Improve Profile" button only)
+    // ✅ Logged-in hero must stay minimal (title only)
     if (joinBtn) joinBtn.style.display = "none";
     if (howBtn) howBtn.style.display = "none";
     if (postBtn) postBtn.style.display = "none";
-    if (profileBtn) profileBtn.style.display = "";
-
+    if (heroCta) heroCta.style.display = "none";
     if (heroDesc) heroDesc.style.display = "none";
     if (heroProof) heroProof.style.display = "none";
     if (howSection) howSection.style.display = "none";
