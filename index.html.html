@@ -2774,7 +2774,7 @@ html{ scroll-padding-top: 118px; }
 </input></div>
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_email">Email</label><span data-i18n="ui_cedf8d">&gt;</span><input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-email" required="" type="email">
+<label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_email">Email</label><input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-email" required="" type="email">
 </input></div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_password">Password</label>
@@ -4113,8 +4113,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated26",
-  tr: "i18n/tr.json?v=updated26",
+  en: "i18n/en.json?v=updated27",
+  tr: "i18n/tr.json?v=updated27",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -10541,7 +10541,7 @@ async function handleJoin() {
     try { if (typeof __joinIntent !== "undefined") __joinIntent = "free"; } catch(_) {}
 
     toggleModal('modal-join');
-    showToast("Welcome!", "Registration successful. Profile created.", "success");
+    showToast(tt('toast_welcome', (currentLang === 'tr' ? 'Hoş geldiniz!' : 'Welcome!')), tt('toast_registration_success', (currentLang === 'tr' ? 'Kayıt başarılı. Profil oluşturuldu.' : 'Registration successful. Profile created.')), 'success');
     checkUserAndOpenProfile();
     if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
     // If user joined from the Pro pricing CTA, start Pro trial immediately
