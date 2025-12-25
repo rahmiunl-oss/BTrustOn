@@ -4113,8 +4113,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated27",
-  tr: "i18n/tr.json?v=updated27",
+  en: "i18n/en.json?v=updated28",
+  tr: "i18n/tr.json?v=updated28",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -4635,7 +4635,10 @@ function renderHomeUpdates(list) {
     const companyName = _safeText(u.company_name || u.company_title || "Company");
     const logo = u.company_logo_url || u.logo_url || "";
     const area = u.area || u.entity_area || "projects";
-    const entityTitle = _safeText(u.entity_title || u.item_title || "—");
+    const areaLower = String(area || "").toLowerCase();
+    const entityTitle = (areaLower === "general")
+      ? (t("post_area_general") || (currentLang === "tr" ? "Genel" : "General"))
+      : _safeText(u.entity_title || u.item_title || "—");
     const templateCode = u.template_code || u.update_code || "";
     const label = _templateLabel(area, templateCode) || _safeText(u.template_label || "");
     const noteRaw = String(u.note || u.message || "");
@@ -5576,8 +5579,9 @@ async function submitCompanyUpdate() {
 
     if (String(__updArea || "").toLowerCase() === "general") {
       // For General updates, entity_id must be NULL (avoids UUID/type errors)
+      // Store NULL title and localize on render (so TR/EN always matches current UI language)
       entityIdOut = null;
-      entityTitle = (currentLang === "tr") ? "Genel" : "General";
+      entityTitle = "";
     } else {
       const list = _getAreaList(__updArea);
       const picked = list.find(it => String(it.id ?? "") === String(entityId)) || list[Number(entityId)] || null;
