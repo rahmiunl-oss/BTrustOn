@@ -1078,6 +1078,40 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       .bton-badge{ animation: none !important; }
     }
 
+
+
+  /* ==============================
+     MOBILE NAV (HAMBURGER MENU)
+     ============================== */
+  @media (max-width: 640px){
+    /* Hide crowded top actions on mobile; use hamburger instead */
+    #guest-actions, #user-actions { display: none !important; }
+    #nav-right { gap: 10px !important; }
+  }
+
+  /* Hamburger dropdown animation */
+  #mobile-nav-menu { transform-origin: top right; }
+  #mobile-nav-menu.bton-open { animation: btonMenuIn 0.14s ease-out both; }
+  @keyframes btonMenuIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Tiny badge on hamburger */
+  #mobile-nav-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+  }
+
+  /* Extra-compact logo on very small phones */
+  @media (max-width: 420px){
+    #nav-left img{
+      max-width: 128px !important;
+      height: 34px !important;
+    }
+  }
+
 </style>
 
 <!-- Supabase Auth client -->
@@ -1551,9 +1585,113 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     </button>
 
     <div class="px-3 py-2 text-[11px] text-slate-500" data-i18n="lang_more_soon">More languages soon</div>
+  
+</div>
+</div>
+
+<!-- Mobile quick (authed) -->
+<button id="mobile-quick-my-company"
+        type="button"
+        class="hidden md:hidden bton-nav-icon w-10 h-10 rounded-full grid place-items-center"
+        aria-label="My Company"
+        title="My Company"
+        onclick="openMyCompanyIfExists()">
+  <i class="fa-regular fa-building text-lg text-slate-700 hover:text-BTrustOn-primary transition"></i>
+</button>
+
+<!-- Mobile Menu (Hamburger) -->
+<div class="relative md:hidden" id="mobile-nav">
+  <button id="mobile-nav-toggle"
+          type="button"
+          class="bton-nav-icon w-10 h-10 rounded-full grid place-items-center relative"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-label="Menu"
+          title="Menu"
+          onclick="toggleMobileNavMenu(event)">
+    <i class="fa-solid fa-bars text-lg text-slate-700 hover:text-BTrustOn-primary transition"></i>
+    <span class="bton-badge hidden" id="mobile-nav-badge">0</span>
+  </button>
+
+  <div class="hidden absolute right-0 mt-2 w-72 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden z-[80]"
+       id="mobile-nav-menu"
+       role="menu"
+       aria-label="Menu">
+    <div class="px-4 py-3 border-b border-slate-100">
+      <div class="text-[11px] font-black tracking-wider text-slate-600">MENU</div>
+    </div>
+
+    <div class="p-2">
+      <!-- Guest -->
+      <div id="mobile-guest-actions" class="flex flex-col gap-1">
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openLoginModal();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-solid fa-key"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="login_title">Login</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openJoinModal('free');">
+          <span class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-700 grid place-items-center">
+            <i class="fa-solid fa-paper-plane"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="join">JOIN NETWORK</span>
+        </button>
+      </div>
+
+      <!-- Logged in -->
+      <div id="mobile-user-actions" class="hidden flex-col gap-1">
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openMyCompanyIfExists();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-regular fa-building"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="nav_my_company">MY COMPANY</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); toggleInbox();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-solid fa-bell"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="ui_inbox_7e3342">INBOX</span>
+          <span class="ml-auto text-[11px] font-black px-2 py-1 rounded-full bg-slate-900/5 text-slate-700 hidden" id="mobile-inbox-badge">0</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openSavedPanel();">
+          <span class="w-9 h-9 rounded-xl bg-slate-900/5 text-slate-700 grid place-items-center">
+            <i class="fa-regular fa-bookmark"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="nav_lists">LISTS</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
+                onclick="closeMobileNavMenu(); openUpgradeModal();">
+          <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 grid place-items-center">
+            <i class="fa-solid fa-gem"></i>
+          </span>
+          <span class="font-extrabold text-slate-800" data-i18n="btn_upgrade_pro">Upgrade to Pro</span>
+        </button>
+
+        <div class="h-px my-1 bg-slate-100"></div>
+
+        <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 transition"
+                onclick="closeMobileNavMenu(); partnerLogout();">
+          <span class="w-9 h-9 rounded-xl bg-red-50 text-red-700 grid place-items-center">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </span>
+          <span class="font-extrabold text-red-700">Logout</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
+
 <div class="flex items-center gap-2 md:gap-3" id="guest-actions">
+
 <button aria-label="Login" class="bton-nav-pill bton-pill-muted inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" data-i18n-aria="login_title" id="btn-partner-login" onclick="openLoginModal()">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-key"></i></span>
 <span class="hidden sm:inline" data-i18n="login_title">Login</span>
@@ -9946,7 +10084,48 @@ function toggleLangMenu(forceOpen) {
     btn && btn.setAttribute("aria-expanded", "false");
   }
 }
+
 function closeLangMenu() { toggleLangMenu(false); }
+
+/* --- Mobile Nav Menu (Hamburger) --- */
+function toggleMobileNavMenu(ev, forceOpen) {
+  if (ev && typeof ev.stopPropagation === "function") ev.stopPropagation();
+  const dd = document.getElementById("mobile-nav-menu");
+  const btn = document.getElementById("mobile-nav-toggle");
+  if (!dd) return;
+
+  const isOpen = !dd.classList.contains("hidden");
+  const next = (typeof forceOpen === "boolean") ? forceOpen : !isOpen;
+
+  if (next) {
+    dd.classList.remove("hidden");
+    dd.classList.add("bton-open");
+    btn && btn.setAttribute("aria-expanded", "true");
+  } else {
+    dd.classList.add("hidden");
+    dd.classList.remove("bton-open");
+    btn && btn.setAttribute("aria-expanded", "false");
+  }
+}
+function closeMobileNavMenu() { toggleMobileNavMenu(null, false); }
+
+function initMobileNavMenuOnce() {
+  const dd = document.getElementById("mobile-nav-menu");
+  const btn = document.getElementById("mobile-nav-toggle");
+  if (!dd || !btn) return;
+
+  document.addEventListener("click", (e) => {
+    if (dd.classList.contains("hidden")) return;
+    if (btn.contains(e.target) || dd.contains(e.target)) return;
+    closeMobileNavMenu();
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 768) closeMobileNavMenu();
+  });
+}
+document.addEventListener("DOMContentLoaded", initMobileNavMenuOnce);
+
 
 function initLangMenuOnce() {
   if (window.__bton_langmenu_inited) return;
@@ -10774,17 +10953,25 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   const { data: { session } } = await supabaseClient.auth.getSession();
   
   // Grupları Seç
-  const guestGroup = document.getElementById("guest-actions"); 
+  const guestGroup = document.getElementById("guest-actions");
   const userGroup = document.getElementById("user-actions");
-
+  const mobileGuestGroup = document.getElementById("mobile-guest-actions");
+  const mobileUserGroup = document.getElementById("mobile-user-actions");
+  const mobileQuickCompany = document.getElementById("mobile-quick-my-company");
   // 2. UI'I ANINDA GÜNCELLE
   if (!session) {
     if(guestGroup) { guestGroup.classList.remove("hidden"); guestGroup.classList.add("flex"); }
     if(userGroup) { userGroup.classList.add("hidden"); userGroup.classList.remove("flex"); }
+    if(mobileGuestGroup) { mobileGuestGroup.classList.remove("hidden"); mobileGuestGroup.classList.add("flex"); }
+    if(mobileUserGroup) { mobileUserGroup.classList.add("hidden"); mobileUserGroup.classList.remove("flex"); }
+    if(mobileQuickCompany) { mobileQuickCompany.classList.add("hidden"); }
     return; 
   } else {
     if(guestGroup) { guestGroup.classList.add("hidden"); guestGroup.classList.remove("flex"); }
     if(userGroup) { userGroup.classList.remove("hidden"); userGroup.classList.add("flex"); }
+    if(mobileGuestGroup) { mobileGuestGroup.classList.add("hidden"); mobileGuestGroup.classList.remove("flex"); }
+    if(mobileUserGroup) { mobileUserGroup.classList.remove("hidden"); mobileUserGroup.classList.add("flex"); }
+    if(mobileQuickCompany) { mobileQuickCompany.classList.remove("hidden"); }
     
     fetchInboxMessages();
     subscribeToMessages();
@@ -13294,6 +13481,8 @@ function renderInboxItems() {
 function updateBadges(count) {
   const badgeNav = document.getElementById("nav-badge");
   const badgeHeader = document.getElementById("inbox-badge-count");
+  const mobileNavBadge = document.getElementById("mobile-nav-badge");
+  const mobileInboxBadge = document.getElementById("mobile-inbox-badge");
 
   if(badgeNav) {
       if(count > 0) {
@@ -13303,6 +13492,23 @@ function updateBadges(count) {
           badgeNav.classList.add("hidden");
       }
   }
+  if(mobileNavBadge) {
+      if(count > 0) {
+          mobileNavBadge.textContent = count;
+          mobileNavBadge.classList.remove("hidden");
+      } else {
+          mobileNavBadge.classList.add("hidden");
+      }
+  }
+  if(mobileInboxBadge) {
+      if(count > 0) {
+          mobileInboxBadge.textContent = String(count);
+          mobileInboxBadge.classList.remove("hidden");
+      } else {
+          mobileInboxBadge.classList.add("hidden");
+      }
+  }
+
   if(badgeHeader) {
       if(count > 0) {
         badgeHeader.textContent = `${count} NEW`;
