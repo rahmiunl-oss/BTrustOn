@@ -16904,6 +16904,24 @@ function __attachmentKind(url, fileName){
   }catch(e){ return "other"; }
 }
 
+async function __isDisplayableImage(url){
+  return new Promise((resolve) => {
+    try{
+      const img = new Image();
+      let done = false;
+      const finish = (v) => { if(done) return; done = true; resolve(v); };
+      const timer = setTimeout(() => finish(false), 1200);
+      img.onload = () => { clearTimeout(timer); finish(true); };
+      img.onerror = () => { clearTimeout(timer); finish(false); };
+      // Do not set crossOrigin; we only need displayability
+      img.src = url;
+    }catch(e){
+      resolve(false);
+    }
+  });
+}
+
+
 
 // --- Robust attachment kind probing (handles URLs without extensions) ---
 const __attachmentKindCache = new Map();
@@ -16911,40 +16929,61 @@ async function __probeAttachmentKind(url){
   try{
     const u = String(url || "");
     if(!u) return "other";
+
+    // Cache only strong classifications (avoid caching transient failures)
     if(__attachmentKindCache.has(u)) return __attachmentKindCache.get(u);
+
+    const fetchWithTimeout = async (input, init, ms) => {
+      const ac = new AbortController();
+      const t = setTimeout(() => { try{ ac.abort(); }catch(e){} }, ms);
+      try{
+        return await fetch(input, { ...(init||{}), signal: ac.signal });
+      } finally {
+        clearTimeout(t);
+      }
+    };
 
     let kind = "other";
 
-    // 1) Try HEAD (fastest) to read Content-Type
+    // 1) Try HEAD to read Content-Type quickly
     try{
-      const head = await fetch(u, { method: "HEAD" });
+      const head = await fetchWithTimeout(u, { method: "HEAD" }, 1500);
       const ct = (head.headers.get("content-type") || "").toLowerCase();
-      if(ct.includes("pdf")) kind = "pdf";
+      if(ct.includes("application/pdf") || ct.includes("pdf")) kind = "pdf";
       else if(ct.startsWith("image/")) kind = "image";
     }catch(e){ /* ignore */ }
 
-    // 2) If still unknown, try GET headers + tiny signature sniff (no full download)
+    // 2) If still unknown, try a tiny GET + signature sniff (no full download)
     if(kind === "other"){
       try{
-        const res = await fetch(u, { method: "GET" });
-        const ct = (res.headers.get("content-type") || "").toLowerCase();
-        if(ct.includes("pdf")) kind = "pdf";
-        else if(ct.startsWith("image/")) kind = "image";
-        else if(res.body && res.body.getReader){
+        const res = await fetchWithTimeout(u, { method: "GET" }, 2500);
+        const ct2 = (res.headers.get("content-type") || "").toLowerCase();
+        if(ct2.includes("application/pdf") || ct2.includes("pdf")) kind = "pdf";
+        else if(ct2.startsWith("image/")) kind = "image";
+
+        if(kind === "other" && res.body && res.body.getReader){
           const reader = res.body.getReader();
-          const { value } = await reader.read(); // first chunk
+          const { value } = await reader.read();
           try{ await reader.cancel(); }catch(e){}
           if(value && value.length){
-            // %PDF- => 25 50 44 46 2D
+            // PDF: %PDF-
             if(value.length >= 5 && value[0]===0x25 && value[1]===0x50 && value[2]===0x44 && value[3]===0x46 && value[4]===0x2D){
               kind = "pdf";
             }
-            // PNG => 89 50 4E 47 0D 0A 1A 0A
+            // PNG
             else if(value.length >= 8 && value[0]===0x89 && value[1]===0x50 && value[2]===0x4E && value[3]===0x47 && value[4]===0x0D && value[5]===0x0A && value[6]===0x1A && value[7]===0x0A){
               kind = "image";
             }
-            // JPEG => FF D8 FF
+            // JPEG
             else if(value.length >= 3 && value[0]===0xFF && value[1]===0xD8 && value[2]===0xFF){
+              kind = "image";
+            }
+            // GIF
+            else if(value.length >= 3 && value[0]===0x47 && value[1]===0x49 && value[2]===0x46){
+              kind = "image";
+            }
+            // WEBP: "RIFF"...."WEBP"
+            else if(value.length >= 12 && value[0]===0x52 && value[1]===0x49 && value[2]===0x46 && value[3]===0x46 && value[8]===0x57 && value[9]===0x45 && value[10]===0x42 && value[11]===0x50){
               kind = "image";
             }
           }
@@ -16952,7 +16991,10 @@ async function __probeAttachmentKind(url){
       }catch(e){ /* ignore */ }
     }
 
-    __attachmentKindCache.set(u, kind);
+    // Cache only when confident
+    if(kind !== "other"){
+      __attachmentKindCache.set(u, kind);
+    }
     return kind;
   }catch(e){
     return "other";
@@ -17140,6 +17182,11 @@ async function openAttachmentViewer(url, title, fileName){
       // Many Supabase object URLs don't carry .pdf/.jpg extensions
       kind = await __probeAttachmentKind(url);
     }
+    // Last resort: try to decide by attempting to load as an image (works even when fetch/CORS is blocked)
+    if(kind === "other"){
+      const isImg = await __isDisplayableImage(url);
+      kind = isImg ? "image" : "pdf";
+    }
     __att.kind = kind;
 
     const t = document.getElementById("attachment-title");
@@ -17164,7 +17211,22 @@ async function openAttachmentViewer(url, title, fileName){
       if(stage) stage.style.overflow = "hidden";
       if(frame){
         frame.classList.remove("hidden");
+
+        // Avoid showing the fallback message prematurely — many PDFs just need a moment to load.
+        if(fb) fb.classList.add("hidden");
+
+        let loaded = false;
+        const onLoad = () => { loaded = true; try{ if(fb) fb.classList.add("hidden"); }catch(e){} };
+        frame.addEventListener("load", onLoad, { once: true });
+
         frame.src = url;
+
+        // If iframe doesn't load (blocked inline preview / attachment headers), show the fallback after a short delay.
+        setTimeout(() => {
+          try{
+            if(!loaded && fb) fb.classList.remove("hidden");
+          }catch(e){}
+        }, 1800);
       }else{
         window.open(url, "_blank", "noopener");
       }
