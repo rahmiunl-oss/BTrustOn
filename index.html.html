@@ -4153,8 +4153,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated31",
-  tr: "i18n/tr.json?v=updated31",
+  en: "i18n/en.json?v=updated32",
+  tr: "i18n/tr.json?v=updated32",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -6998,6 +6998,7 @@ function getCompanyTypeBadge(rawType) {
     function applyTranslations() {
       // Text / HTML
       document.querySelectorAll("[data-i18n]").forEach((el) => {
+        if (el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n");
         if (!key) return;
         const value = t(key);
@@ -7006,6 +7007,7 @@ function getCompanyTypeBadge(rawType) {
 
       // Placeholders
       document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        if (el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n-placeholder");
         if (!key) return;
         const value = t(key);
@@ -7014,6 +7016,7 @@ function getCompanyTypeBadge(rawType) {
 
       // Titles / tooltips
       document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+        if (el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n-title");
         if (!key) return;
         const value = t(key);
@@ -7024,6 +7027,7 @@ function getCompanyTypeBadge(rawType) {
 
       // Aria labels (accessibility)
       document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+        if (el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n-aria");
         if (!key) return;
         const value = t(key);
@@ -7060,6 +7064,7 @@ const heroTitle = document.getElementById("hero-title");
 
       // Text / HTML
       scope.querySelectorAll && scope.querySelectorAll("[data-i18n]").forEach((el) => {
+        if (el.hasAttribute && el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n");
         if (!key) return;
         const value = t(key);
@@ -7068,6 +7073,7 @@ const heroTitle = document.getElementById("hero-title");
 
       // Placeholders
       scope.querySelectorAll && scope.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        if (el.hasAttribute && el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n-placeholder");
         if (!key) return;
         const value = t(key);
@@ -7076,6 +7082,7 @@ const heroTitle = document.getElementById("hero-title");
 
       // Titles / tooltips
       scope.querySelectorAll && scope.querySelectorAll("[data-i18n-title]").forEach((el) => {
+        if (el.hasAttribute && el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n-title");
         if (!key) return;
         const value = t(key);
@@ -7084,6 +7091,7 @@ const heroTitle = document.getElementById("hero-title");
 
       // Aria labels (accessibility)
       scope.querySelectorAll && scope.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+        if (el.hasAttribute && el.hasAttribute("data-i18n-skip")) return;
         const key = el.getAttribute("data-i18n-aria");
         if (!key) return;
         const value = t(key);
@@ -14650,6 +14658,9 @@ function deleteAllInbox() {
 
         // Başlık ve Sayı Güncelleme
         if (resultCount) {
+            // result-count is dynamic; prevent i18n engine from overwriting it later
+            try { resultCount.setAttribute("data-i18n-skip","1"); resultCount.removeAttribute("data-i18n"); } catch(e) {}
+
             if (mode === "search") {
                 resultCount.innerHTML = `
                     <span class="text-sm text-gray-500 font-normal">${t("results_search_label") || "Search Results:"}</span> 
