@@ -3866,8 +3866,8 @@ html{ scroll-padding-top: 118px; }
 <div class="flex gap-3">
 <button class="flex-1 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-extrabold hover:bg-slate-50 transition" data-i18n="upgrade_btn_not_now" onclick="toggleModal('modal-upgrade')">NOT NOW</button>
 <button class="flex-1 py-3 rounded-xl bg-BTrustOn-accent text-white text-xs font-extrabold hover:bg-BTrustOn-darkAccent transition flex items-center justify-center gap-2" onclick="handleUpgradeCTA()">
-<i class="fa-solid fa-gem text-[12px] text-white/90"></i>
-<span data-i18n="btn_start_trial" id="upgrade-cta-label">START FREE TRIAL</span>
+<i class="fa-solid fa-gem text-[12px] leading-none -mt-px text-white/90"></i>
+<span class="text-center leading-tight" data-i18n="btn_start_trial" id="upgrade-cta-label">START FREE TRIAL</span>
 </button>
 </div>
 </div>
@@ -7916,7 +7916,7 @@ function renderCertificates(company) {
       ? `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400">
            <i class="fa-regular fa-calendar"></i>
            Exp: <span class="font-bold text-gray-600">${date}</span>
-           ${typeof daysLeft === "number" ? `<span class="text-gray-300">•</span><span class="font-bold ${daysLeft < 0 ? "text-red-600" : (daysLeft <= 30 ? "text-amber-700" : "text-emerald-700")}">${Math.abs(daysLeft)}d ${daysLeft < 0 ? "ago" : "left"}</span>` : ``}
+           ${typeof daysLeft === "number" ? `<span class="text-gray-300">•</span><span class="font-bold ${daysLeft < 0 ? "text-red-600" : (daysLeft <= 30 ? "text-amber-700" : "text-emerald-700")}">${(daysLeft < 0 ? (t("ui_days_ago") || "{n}d ago") : (t("ui_days_left") || "{n}d left")).replace("{n}", Math.abs(daysLeft))}</span>` : ``}
          </span>`
       : `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400"><i class="fa-regular fa-calendar"></i> ${t("ui_expiry") || "Expiry"}: <span class="font-bold text-gray-600">${t("ui_not_provided") || "Not provided"}</span></span>`;
 
@@ -8944,7 +8944,7 @@ if (servicesGrid) {
       } else {
           projectsArr.forEach(p => {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
-              const cover = p.cover_url || "https://placehold.co/800x450/f1f5f9/94a3b8?text=Project+Image";
+              const cover = p.cover_url || "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22800%22%20height=%22450%22%20viewBox=%220%200%20800%20450%22%3E%0A%3Crect%20width=%22800%22%20height=%22450%22%20fill=%22#f1f5f9%22/%3E%0A%3Ccircle%20cx=%22310%22%20cy=%22170%22%20r=%2226%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M210%20330%20L320%20220%20L430%20330%20Z%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M360%20330%20L470%20245%20L590%20330%20Z%22%20fill=%22#e2e8f0%22/%3E%0A%3C/svg%3E";
               // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
               let cardClickAction = `onclick="openProjectViewer(${p.id})"`;
               let cursorClass = "cursor-pointer";
@@ -17271,7 +17271,7 @@ function openProjectViewer(projectId){
   const title = p.title || "Project";
   const loc = p.loc || "";
   const desc = (p.desc && String(p.desc).trim()) ? p.desc : "No description provided.";
-  const cover = p.cover_url || "https://placehold.co/1200x675/f1f5f9/94a3b8?text=Project+Image";
+  const cover = p.cover_url || "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22800%22%20height=%22450%22%20viewBox=%220%200%20800%20450%22%3E%0A%3Crect%20width=%22800%22%20height=%22450%22%20fill=%22#f1f5f9%22/%3E%0A%3Ccircle%20cx=%22310%22%20cy=%22170%22%20r=%2226%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M210%20330%20L320%20220%20L430%20330%20Z%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M360%20330%20L470%20245%20L590%20330%20Z%22%20fill=%22#e2e8f0%22/%3E%0A%3C/svg%3E";
   const urls = Array.isArray(p.gallery_urls) ? p.gallery_urls : [];
 
   const tEl = document.getElementById("pv-title");
@@ -17294,8 +17294,8 @@ function openProjectViewer(projectId){
   if(dEl) dEl.textContent = desc;
   if(cEl) cEl.src = cover;
 
-  if(infoEl) infoEl.textContent = urls.length ? `${urls.length} images` : "No gallery images.";
-  if(btnGal){
+  if(infoEl) infoEl.textContent = urls.length ? ( (t("ui_gallery_images_n") || "{n} images").replace("{n}", urls.length) ) : (t("ui_no_gallery_images") || "No gallery images.");
+if(btnGal){
     if(urls.length) btnGal.classList.remove("hidden");
     else btnGal.classList.add("hidden");
   }
