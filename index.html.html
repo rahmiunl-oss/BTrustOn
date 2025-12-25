@@ -11828,32 +11828,42 @@ notificationsUnreadCount = 0;
 /* --- MY COMPANY BUTONU DÜZELTME --- */
 
 // Eski fonksiyonu bununla değiştiriyoruz/eziyoruz:
-function openMyCompanyIfExists() {
-  // 1. LocalStorage'dan ID'yi al
-  const myId = localStorage.getItem("BTrustOn_my_company_id");
-  
-  if (!myId) {
-    console.warn("Kayıtlı şirket ID'si bulunamadı, oturum kontrol ediliyor...");
-    checkUserAndOpenProfile(); // ID yoksa tekrar giriş kontrolü yap
-    return;
-  }
+async function openMyCompanyIfExists() {
+  try {
+    // 0) Session check (mobile'de localStorage bazen boş gelebiliyor)
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session || !session.user) {
+      showToast("Login required", "Please sign in to open your company profile.", "brand");
+      try { toggleModal("modal-login"); } catch(e) {}
+      return;
+    }
 
-  console.log("Şirket profili açılıyor, ID:", myId);
+    // 1) Prefer stored company id; fallback to authed user id
+    let myId = null;
+    try { myId = localStorage.getItem("BTrustOn_my_company_id"); } catch(e) {}
+    if (!myId) myId = session.user.id;
 
-  // 2. Eğer bu şirket veritabanı listemizde yoksa (Sayfa yenilendiyse kaybolmuş olabilir)
-  // Önce listeye ekleyip sonra açmamız gerekebilir.
-  // Ama checkUserAndOpenProfile zaten çalışıp eklemiş olmalı.
-  
-  const companyExists = typeof database !== 'undefined' && database.find(c => c.id == myId);
+    // 2) Persist snapshot for future quick access
+    try { localStorage.setItem("BTrustOn_my_company_id", String(myId)); } catch(e) {}
 
-  if (companyExists) {
-    // Şirket listede var, direkt aç
+    // 3) If our in-memory list isn't ready (or company not in list), fetch+open reliably
+    const hasDb = (typeof database !== "undefined") && Array.isArray(database);
+    const existsInDb = hasDb && database.some(c => String(c?.id) === String(myId));
+
+    if (!existsInDb) {
+      // forceOpen -> checkUserAndOpenProfile will map profile + call openProfile(profile.id)
+      await checkUserAndOpenProfile(true);
+      return;
+    }
+
+    // 4) Open directly
     openProfile(myId);
-  } else {
-    // Şirket listede yoksa, verileri tekrar çekip açması için checkUser'ı tetikle
-    checkUserAndOpenProfile();
+  } catch (err) {
+    console.error("openMyCompanyIfExists error:", err);
+    showToast("Error", "Couldn’t open your company profile. Please try again.", "danger");
   }
 }
+
 
 /* --- PROFİL DÜZENLEME FONKSİYONLARI --- */
 /* =========================================
