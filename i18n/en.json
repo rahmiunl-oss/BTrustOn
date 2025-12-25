@@ -743,5 +743,6 @@
   "msg_asset_saved": "Asset saved successfully.",
   "msg_project_saved": "Project saved!",
   "msg_certificate_saved": "Certificate saved!",
-  "ui_open_document": "Open document"
+  "ui_open_document": "Open document",
+  "toast_registration_success": "Registration successful. Profile created."
 }
