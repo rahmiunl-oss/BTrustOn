@@ -737,5 +737,11 @@
   "msg_asset_removed": "Asset removed successfully.",
   "msg_project_removed": "Project removed successfully.",
   "msg_certificate_removed": "Certificate removed successfully.",
-  "msg_logo_removed": "Logo removed successfully."
+  "msg_logo_removed": "Logo removed successfully.",
+  "ui_save_company": "Save company",
+  "ui_saved_company": "Saved company",
+  "msg_asset_saved": "Asset saved successfully.",
+  "msg_project_saved": "Project saved!",
+  "msg_certificate_saved": "Certificate saved!",
+  "ui_open_document": "Open document"
 }
