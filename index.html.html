@@ -235,8 +235,22 @@
 
   /* --- MOBILE: hide "live showcase" until search (clean feed-first UX) --- */
 @media (max-width: 768px){
-  /* Always hide the "live showcase" header/filters on mobile (too dense) */
-  #live-showcase{ display:none !important; }
+  /* Mobile: feed-first. Show filters + results only after search becomes active */
+  body:not(.bton-mobile-search-active) #live-showcase{
+    display:none !important;
+  }
+  body.bton-mobile-search-active #live-showcase{
+    display:flex !important;
+    flex-direction:column;
+    gap:10px;
+    margin-top:12px !important;
+    padding:10px 12px;
+    border-radius:16px;
+    background: rgba(255,255,255,.62);
+    border: 1px solid rgba(15,23,42,.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
 
   /* Hide company cards by default; show only after user searches */
   body:not(.bton-mobile-search-active) #card-container{
@@ -247,6 +261,32 @@
   body.bton-mobile-search-active #card-container{
     margin-top: 10px !important;
     margin-bottom: 18px !important;
+  }
+
+  /* Mobile filter layout: bigger tap targets, less cramping */
+  #live-showcase > div:first-child{
+    font-size: 14px;
+    line-height: 1.2;
+    opacity: .9;
+  }
+  #live-showcase .flex.flex-wrap{
+    display:grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    width:100%;
+  }
+  @media (max-width: 420px){
+    #live-showcase .flex.flex-wrap{
+      grid-template-columns: 1fr;
+    }
+  }
+  #live-showcase select{
+    width:100% !important;
+    min-height:44px;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-radius:14px !important;
+    font-size:14px !important;
   }
 }
 
