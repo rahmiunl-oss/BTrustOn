@@ -7654,7 +7654,7 @@ function openAssetViewer(assetId){
   document.getElementById("av-status").innerHTML = getStatusBadge(a.status);
   document.getElementById("av-spec").textContent = _assetSpec(a) || "No specs provided.";
   document.getElementById("av-qty").textContent = (a.qty ?? "-");
-  document.getElementById("av-updated").textContent = a.updated_at ? new Date(a.updated_at).toLocaleString() : "-";
+  document.getElementById("av-updated").textContent = a.updated_at ? new Date(a.updated_at).toLocaleString((currentLang === "tr") ? "tr-TR" : "en-US", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) : "-";
 
   const fileWrap = document.getElementById("av-file");
   if (fileWrap) {
@@ -8944,7 +8944,8 @@ if (servicesGrid) {
       } else {
           projectsArr.forEach(p => {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
-              const cover = p.cover_url || "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22800%22%20height=%22450%22%20viewBox=%220%200%20800%20450%22%3E%0A%3Crect%20width=%22800%22%20height=%22450%22%20fill=%22#f1f5f9%22/%3E%0A%3Ccircle%20cx=%22310%22%20cy=%22170%22%20r=%2226%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M210%20330%20L320%20220%20L430%20330%20Z%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M360%20330%20L470%20245%20L590%20330%20Z%22%20fill=%22#e2e8f0%22/%3E%0A%3C/svg%3E";
+              const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
+  const cover = p.cover_url || coverPlaceholder;
               // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
               let cardClickAction = `onclick="openProjectViewer(${p.id})"`;
               let cursorClass = "cursor-pointer";
@@ -10133,7 +10134,7 @@ function deleteAsset(assetId) {
 
             openProfile(user.id, { preserveScroll: true, preserveTab: true });
             switchProfileTab('assets');
-            showToast("Deleted", "Asset removed successfully.", "success");
+            showToast("Deleted", (t("msg_asset_removed") || ((currentLang==="tr") ? "Varlık başarıyla silindi." : "Asset removed successfully.")), "success");
 
         } catch (error) {
             showToast("Error", error.message, "error");
@@ -10352,7 +10353,7 @@ function deleteProject(projectId) {
 
             openProfile(user.id, { preserveScroll: true, preserveTab: true });
             switchProfileTab('projects');
-            showToast("Deleted", "Project removed successfully.", "success");
+            showToast("Deleted", (t("msg_project_removed") || ((currentLang==="tr") ? "Proje başarıyla silindi." : "Project removed successfully.")), "success");
 
         } catch (error) {
             showToast("Error", error.message, "error");
@@ -10388,7 +10389,7 @@ function deleteCert(certId, certName) {
             if(localRef) localRef.certificates = currentCerts;
 
             openProfile(user.id, { preserveScroll: true, preserveTab: true });
-            showToast("Deleted", "Certificate removed successfully.", "success");
+            showToast("Deleted", (t("msg_certificate_removed") || ((currentLang==="tr") ? "Sertifika başarıyla silindi." : "Certificate removed successfully.")), "success");
             
         } catch (error) {
             showToast("Error", "Delete failed: " + error.message, "error");
@@ -10411,7 +10412,7 @@ function deleteCert(certId, certName) {
 </div>
 <div class="p-5">
 <button class="w-full rounded-xl overflow-hidden border border-gray-200 bg-slate-50 focus:outline-none" id="pv-cover-btn">
-<img alt="Project cover" class="w-full h-[320px] object-cover" id="pv-cover"/>
+<img alt="" class="w-full h-[320px] object-cover" id="pv-cover"/>
 </button>
 <div class="text-sm text-gray-600 mt-4 whitespace-pre-wrap" id="pv-desc"></div>
 <div class="mt-4 flex items-center justify-between">
@@ -14329,7 +14330,7 @@ function deleteCert(certId, certName) {
             if(localRef) localRef.certificates = currentCerts;
 
             openProfile(user.id, { preserveScroll: true, preserveTab: true });
-            showToast("Deleted", "Certificate removed successfully.", "success");
+            showToast("Deleted", (t("msg_certificate_removed") || ((currentLang==="tr") ? "Sertifika başarıyla silindi." : "Certificate removed successfully.")), "success");
             
         } catch (error) {
             showToast("Error", "Delete failed: " + error.message, "error");
@@ -17237,7 +17238,7 @@ async function deleteLogo() {
         const localC = database.find(c => c.id == user.id);
         if(localC) localC.logo_url = null;
         
-        showToast("Removed", "Logo removed successfully.", "success");
+        showToast("Removed", (t("msg_logo_removed") || ((currentLang==="tr") ? "Logo başarıyla kaldırıldı." : "Logo removed successfully.")), "success");
 
     } catch(e) {
         console.error(e);
@@ -17292,10 +17293,11 @@ function openProjectViewer(projectId){
 
   __pvProject = p;
 
-  const title = p.title || "Project";
+  const title = p.title || (t("ui_project") || "Project");
   const loc = p.loc || "";
-  const desc = (p.desc && String(p.desc).trim()) ? p.desc : "No description provided.";
-  const cover = p.cover_url || "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22800%22%20height=%22450%22%20viewBox=%220%200%20800%20450%22%3E%0A%3Crect%20width=%22800%22%20height=%22450%22%20fill=%22#f1f5f9%22/%3E%0A%3Ccircle%20cx=%22310%22%20cy=%22170%22%20r=%2226%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M210%20330%20L320%20220%20L430%20330%20Z%22%20fill=%22#cbd5e1%22/%3E%0A%3Cpath%20d=%22M360%20330%20L470%20245%20L590%20330%20Z%22%20fill=%22#e2e8f0%22/%3E%0A%3C/svg%3E";
+  const desc = (p.desc && String(p.desc).trim()) ? p.desc : (t("ui_no_description") || "No description provided.");
+  const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
+  const cover = p.cover_url || coverPlaceholder;
   const urls = Array.isArray(p.gallery_urls) ? p.gallery_urls : [];
 
   const tEl = document.getElementById("pv-title");
@@ -17316,7 +17318,10 @@ function openProjectViewer(projectId){
     else mEl.textContent = "";
   }
   if(dEl) dEl.textContent = desc;
-  if(cEl) cEl.src = cover;
+  if (cEl) {
+    cEl.onerror = () => { try { cEl.onerror = null; cEl.src = coverPlaceholder; } catch(e){} };
+    cEl.src = cover;
+  }
 
   if(infoEl) infoEl.textContent = urls.length ? ( (t("ui_gallery_images_n") || "{n} images").replace("{n}", urls.length) ) : (t("ui_no_gallery_images") || "No gallery images.");
 if(btnGal){
