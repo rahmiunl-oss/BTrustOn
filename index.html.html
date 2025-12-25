@@ -4153,8 +4153,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated34",
-  tr: "i18n/tr.json?v=updated34",
+  en: "i18n/en.json?v=updated35",
+  tr: "i18n/tr.json?v=updated35",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -7509,16 +7509,21 @@ function buildAssetAttachmentPreview(a){
   const isPdf = fn.endsWith(".pdf") || fn.includes(".pdf?");
   const iconClass = isPdf ? "fa-file-pdf" : _assetFileIconClass(fnRaw);
 
-  const safeUrl = JSON.stringify(a.file_url || "");
-  const safeTitle = JSON.stringify(a.file_name || _assetName(a) || "Attachment");
-  const safeFileName = JSON.stringify(a.file_name || "");
+  // IMPORTANT:
+  // Do NOT inline JSON.stringify(...) inside onclick="" attributes (breaks HTML quoting -> SyntaxError).
+  // Use data-* attributes + a single delegated click listener instead.
+  const urlAttr = _safeText(a.file_url || "");
+  const titleAttr = _safeText(a.file_name || _assetName(a) || (currentLang === "tr" ? "Ek" : "Attachment"));
+  const fileNameAttr = _safeText(a.file_name || "");
 
   if (isImg){
     return `
       <button type="button"
-         onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle}, ${safeFileName});"
-         class="absolute bottom-3 right-3 w-12 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition overflow-hidden opacity-70 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
-         title="View image">
+         class="js-att-open absolute bottom-3 right-3 w-12 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition overflow-hidden opacity-70 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
+         data-att-url="${urlAttr}"
+         data-att-title="${titleAttr}"
+         data-att-filename="${fileNameAttr}"
+         title="${_safeText(t("ui_view_image") || (currentLang === "tr" ? "Görseli görüntüle" : "View image"))}">
         <img src="${a.file_url}" alt="Attachment" class="w-full h-full object-cover filter saturate-75 contrast-95 brightness-95" loading="lazy" />
       </button>
     `;
@@ -7526,12 +7531,33 @@ function buildAssetAttachmentPreview(a){
 
   return `
     <button type="button"
-       onclick="event.preventDefault(); event.stopPropagation(); openAttachmentViewer(${safeUrl}, ${safeTitle}, ${safeFileName});"
-       class="absolute bottom-3 right-3 w-9 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition flex items-center justify-center opacity-75 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
-       title="Open document">
+       class="js-att-open absolute bottom-3 right-3 w-9 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition flex items-center justify-center opacity-75 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
+       data-att-url="${urlAttr}"
+       data-att-title="${titleAttr}"
+       data-att-filename="${fileNameAttr}"
+       title="${_safeText(t("ui_open_document") || (currentLang === "tr" ? "Belgeyi aç" : "Open document"))}">
       <i class="fa-solid ${iconClass} text-[18px] ${isPdf ? "text-rose-400" : "text-slate-600"}"></i>
     </button>
   `;
+}
+
+// Delegated handler for all attachment preview buttons (assets + cards)
+if (!window.__attDelegationBound) {
+  window.__attDelegationBound = true;
+  document.addEventListener("click", (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest(".js-att-open") : null;
+    if (!btn) return;
+    try { e.preventDefault(); e.stopPropagation(); } catch(_){}
+    const url = btn.getAttribute("data-att-url") || "";
+    const title = btn.getAttribute("data-att-title") || "";
+    const fn = btn.getAttribute("data-att-filename") || "";
+    if (!url) return;
+    try { openAttachmentViewer(url, title, fn); }
+    catch (err) {
+      console.error("openAttachmentViewer failed:", err);
+      try { window.open(url, "_blank", "noopener"); } catch(_){}
+    }
+  }, true);
 }
 
 // Keep a few key UI labels in sync even if some parts render async
