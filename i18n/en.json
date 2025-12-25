@@ -732,5 +732,10 @@
   "toast_welcome": "Welcome!",
   "toast_welcome_pro": "Welcome to Pro!",
   "toast_registration_failed": "Registration Failed",
-  "toast_payment_link_missing": "Payment link missing"
+  "toast_payment_link_missing": "Payment link missing",
+  "ui_project": "Project",
+  "msg_asset_removed": "Asset removed successfully.",
+  "msg_project_removed": "Project removed successfully.",
+  "msg_certificate_removed": "Certificate removed successfully.",
+  "msg_logo_removed": "Logo removed successfully."
 }
