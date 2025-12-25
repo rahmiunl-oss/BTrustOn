@@ -132,6 +132,7 @@
   .bton-updates-rail{
     scroll-padding-left: 14px;
     scroll-padding-right: 14px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .bton-updates-nav{
@@ -149,8 +150,12 @@
     border: 1px solid rgba(15,23,42,.10);
     box-shadow: 0 12px 30px -22px rgba(15,23,42,.65);
     backdrop-filter: blur(12px);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform .18s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease;
   }
   .bton-updates-nav:hover{ background: rgba(255,255,255,.92); }
+  .bton-updates-nav:active{ transform: translateY(-50%) scale(.96); }
   .bton-updates-nav:disabled{ opacity:.35; cursor:not-allowed; }
   .bton-updates-nav-left{ left: 6px; }
   .bton-updates-nav-right{ right: 6px; }
@@ -166,9 +171,19 @@
     border-color: rgba(15,23,42,.10) !important;
   }
 
+  
+  /* Auto-flow mode: disable snap & smooth to allow continuous movement */
+  .bton-updates-autoflow{
+    scroll-snap-type: none !important;
+    scroll-behavior: auto !important;
+  }
+
   @media (max-width: 640px){
     header{ padding-top: 18px !important; }
     .bton-updates-wrap::before, .bton-updates-wrap::after{ width: 34px; }
+    .bton-updates-nav{ width:34px; height:34px; }
+    .bton-updates-nav-left{ left: 4px; }
+    .bton-updates-nav-right{ right: 4px; }
   }
 </style>
 
@@ -1940,13 +1955,13 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </button>
 </div>
 <div class="relative bton-updates-wrap">
-  <button type="button" class="bton-updates-nav bton-updates-nav-left hidden md:flex" id="home-updates-left" aria-label="Scroll updates left">
+  <button type="button" class="bton-updates-nav bton-updates-nav-left flex" id="home-updates-left" aria-label="Scroll updates left">
     <i class="fa-solid fa-chevron-left text-xs"></i>
   </button>
-  <button type="button" class="bton-updates-nav bton-updates-nav-right hidden md:flex" id="home-updates-right" aria-label="Scroll updates right">
+  <button type="button" class="bton-updates-nav bton-updates-nav-right flex" id="home-updates-right" aria-label="Scroll updates right">
     <i class="fa-solid fa-chevron-right text-xs"></i>
   </button>
-  <div class="flex items-start gap-4 overflow-x-auto no-scrollbar pb-2 pr-2 scroll-smooth snap-x snap-mandatory bton-updates-rail" id="home-updates"></div>
+  <div class="flex items-start gap-4 overflow-x-auto no-scrollbar pb-2 pr-2 scroll-smooth snap-x snap-proximity bton-updates-rail" id="home-updates"></div>
 <div class="hidden p-5 text-center text-gray-400 text-xs italic bg-white/50 rounded-xl border border-dashed border-gray-200" id="home-updates-empty">
 <span data-i18n="updates_empty">No updates posted in the last 7 days.</span>
 </div>
@@ -4499,10 +4514,17 @@ let existingAssetFileName = null; // Zaten yüklü olan dosyanın adını tutar
    ========================================================= */
 let homeUpdatesData = [];
 let homeUpdatesSub = null;
-let __homeUpdatesScrollInt = null;
 let __homeUpdatesPause = false;
+let __homeUpdatesAutoPos = 0; // float px position for smooth auto-flow
 let __homeUpdatesLoopWidth = 0;
 let __homeUpdatesBaseHTML = "";
+let __homeUpdatesLoopHTML = "";   // 1-cycle HTML (may be repeated if few items)
+let __homeUpdatesRAF = null;
+let __homeUpdatesLastTs = 0;
+let __homeUpdatesHoldUntil = 0;   // pause auto-scroll until this timestamp
+let __homeUpdatesSpeedPx = 22;    // auto-scroll speed (auto-tuned in startHomeUpdatesAutoScroll)
+let __homeUpdatesUserScrollingT = null;
+let __homeUpdatesIgnoreScrollUntil = 0; // ignore auto-triggered scroll events
 let __postCompany = null;
 
 let homeUpdatesFilter = "all"; // all | followed
@@ -4900,35 +4922,123 @@ async function refreshHomeUpdatesCTA() {
   }
 }
 
+
 function startHomeUpdatesAutoScroll() {
-  const el = document.getElementById("home-updates");
-  if (!el) return;
+  const rail = document.getElementById("home-updates");
+  if (!rail) return;
 
-  // Pause on hover
-  el.addEventListener("mouseenter", () => { __homeUpdatesPause = true; }, { passive: true });
-  el.addEventListener("mouseleave", () => { __homeUpdatesPause = false; }, { passive: true });
+  // Respect reduced motion (keep auto-flow, just slower)
+  let __homeUpdatesReducedMotion = false;
+  try {
+    const prm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+    __homeUpdatesReducedMotion = !!(prm && prm.matches);
+  } catch (e) { __homeUpdatesReducedMotion = false; }
 
-  if (__homeUpdatesScrollInt) clearInterval(__homeUpdatesScrollInt);
+  const setAutoMode = (on) => {
+    try { rail.classList.toggle("bton-updates-autoflow", !!on); } catch(e) {}
+  };
 
-  __homeUpdatesScrollInt = btonSetInterval("homeUpdatesScroll", () => {
-    if (document.hidden) return;
-    if (__homeUpdatesPause) return;
+  // Avoid double-bind
+  if (!rail.__btonAutoBound) {
+    rail.__btonAutoBound = true;
 
-    // Seamless loop width = first copy width
+    // Hover / touch pause
+    rail.addEventListener("mouseenter", () => { __homeUpdatesPause = true; setAutoMode(false); }, { passive: true });
+    rail.addEventListener("mouseleave", () => {
+      __homeUpdatesPause = false;
+      __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil, Date.now() + 900);
+      setAutoMode(false);
+    }, { passive: true });
+
+    rail.addEventListener("pointerdown", () => {
+      __homeUpdatesPause = true;
+      __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil, Date.now() + 2200);
+      setAutoMode(false);
+    }, { passive: true });
+
+    const onPointerUp = () => {
+      __homeUpdatesPause = false;
+      __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil, Date.now() + 3200);
+      setAutoMode(false);
+    };
+    rail.addEventListener("pointerup", onPointerUp, { passive: true });
+    rail.addEventListener("pointercancel", onPointerUp, { passive: true });
+
+    // Wheel/touch scrolling: pause auto for a bit
+    rail.addEventListener("wheel", () => {
+      __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil, Date.now() + 3800);
+      setAutoMode(false);
+    }, { passive: true });
+
+    rail.addEventListener("scroll", () => {
+      // Ignore scroll events caused by our own auto-flow (some browsers dispatch scroll async)
+      if (Date.now() < (__homeUpdatesIgnoreScrollUntil || 0)) return;
+
+      __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil, Date.now() + 4200);
+      setAutoMode(false);
+
+      // sync auto position with user scroll
+      try { __homeUpdatesAutoPos = Number(rail.scrollLeft || 0) || 0; } catch(e) {}
+      if (__homeUpdatesUserScrollingT) clearTimeout(__homeUpdatesUserScrollingT);
+      __homeUpdatesUserScrollingT = setTimeout(() => { __homeUpdatesUserScrollingT = null; }, 350);
+    }, { passive: true });
+  }
+
+  // Restart RAF loop
+  try { if (__homeUpdatesRAF) cancelAnimationFrame(__homeUpdatesRAF); } catch (e) {}
+  __homeUpdatesRAF = null;
+  __homeUpdatesLastTs = 0;
+
+  // Premium speed: slow but visible
+  try {
+    const w = window.innerWidth || 1024;
+    __homeUpdatesSpeedPx = __homeUpdatesReducedMotion
+      ? ((w < 420) ? 18 : (w < 640) ? 20 : (w < 900) ? 22 : (w < 1200) ? 24 : 26)
+      : ((w < 420) ? 32 : (w < 640) ? 34 : (w < 900) ? 36 : (w < 1200) ? 38 : 40);
+    // px/sec: premium drift (reduced motion -> slower)
+  } catch(e) {}
+
+
+  // Keep a float position so tiny per-frame deltas still move (some browsers round scrollLeft)
+  try { __homeUpdatesAutoPos = Number(rail.scrollLeft || 0) || 0; } catch(e) { __homeUpdatesAutoPos = 0; }
+
+  const tick = (ts) => {
+    __homeUpdatesRAF = requestAnimationFrame(tick);
+
+    const canAuto = !document.hidden && !__homeUpdatesPause && (Date.now() >= (__homeUpdatesHoldUntil || 0));
+    setAutoMode(canAuto);
+    if (!canAuto) return;
+
     const loopW = (__homeUpdatesLoopWidth && __homeUpdatesLoopWidth > 0)
       ? __homeUpdatesLoopWidth
-      : (el.scrollWidth - el.clientWidth);
+      : Math.max(0, Math.floor((rail.scrollWidth || 0) / 2));
 
-    if (loopW <= 5) return;
+    if (loopW <= 10) return;
 
-    el.scrollLeft += 1;
+    const last = __homeUpdatesLastTs || ts;
+    let dt = ts - last;
+    __homeUpdatesLastTs = ts;
+    if (dt < 0) dt = 0;
+    if (dt > 60) dt = 60; // clamp
 
-    // When we pass the first copy, jump back by exactly one copy (seamless)
-    if (el.scrollLeft >= loopW) {
-      el.scrollLeft = el.scrollLeft - loopW;
-    }
-  }, 30);
+    const px = (__homeUpdatesSpeedPx || 22) * (dt / 1000);
+    if (!px) return;
+
+    // Move (use float position for consistent motion)
+    __homeUpdatesAutoPos += px;
+
+    // Wrap seamlessly inside the first cycle
+    if (__homeUpdatesAutoPos >= loopW) __homeUpdatesAutoPos -= loopW;
+
+    // Prevent our own scroll events from pausing auto-flow
+    __homeUpdatesIgnoreScrollUntil = Date.now() + 220;
+
+    rail.scrollLeft = __homeUpdatesAutoPos;
+  };
+
+  __homeUpdatesRAF = requestAnimationFrame(tick);
 }
+
 
 function setupHomeUpdatesNav() {
   const rail = document.getElementById("home-updates");
@@ -4936,33 +5046,57 @@ function setupHomeUpdatesNav() {
   const btnR = document.getElementById("home-updates-right");
   if (!rail || !btnL || !btnR) return;
 
-  const step = () => Math.min(Math.max(rail.clientWidth * 0.85, 360), 560);
+  // Avoid double-bind
+  if (rail.__btonNavBound) return;
+  rail.__btonNavBound = true;
 
-  btnL.addEventListener("click", () => {
-    try { rail.scrollBy({ left: -step(), behavior: "smooth" }); } catch(e) { rail.scrollLeft -= step(); }
-  });
-  btnR.addEventListener("click", () => {
-    try { rail.scrollBy({ left: step(), behavior: "smooth" }); } catch(e) { rail.scrollLeft += step(); }
-  });
+  const step = () => Math.min(Math.max(rail.clientWidth * 0.88, 360), 620);
+
+  const nudge = (delta) => {
+    __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil, Date.now() + 2600);
+
+    const loopW = (__homeUpdatesLoopWidth && __homeUpdatesLoopWidth > 0)
+      ? __homeUpdatesLoopWidth
+      : Math.max(0, rail.scrollWidth - rail.clientWidth);
+
+    if (loopW > 6) {
+      // If going left beyond 0, jump one cycle forward so smooth scroll works
+      if (delta < 0 && (rail.scrollLeft + delta) < 0) {
+        rail.scrollLeft += loopW;
+      }
+    }
+
+    try { rail.scrollBy({ left: delta, behavior: "smooth" }); } catch(e) { rail.scrollLeft += delta; }
+
+    // Normalize back into the first cycle after the smooth scroll settles
+    if (loopW > 6) {
+      setTimeout(() => {
+        try {
+          if (rail.scrollLeft >= loopW) rail.scrollLeft -= loopW;
+          if (rail.scrollLeft < 0) rail.scrollLeft += loopW;
+          // sync auto position after user nudge
+          __homeUpdatesAutoPos = Number(rail.scrollLeft || 0) || 0;
+        } catch(e) {}
+      }, 420);
+    }
+  };
+
+  btnL.addEventListener("click", () => nudge(-step()));
+  btnR.addEventListener("click", () => nudge(step()));
 
   const sync = () => {
-    const max = Math.max(0, rail.scrollWidth - rail.clientWidth - 2);
-    const x = rail.scrollLeft || 0;
-
-    btnL.disabled = x <= 2;
-    btnR.disabled = x >= max;
-
     const overflow = rail.scrollWidth > (rail.clientWidth + 10);
-    // Only show arrows on desktop AND only when overflow exists
     const show = overflow;
     btnL.style.display = show ? "" : "none";
     btnR.style.display = show ? "" : "none";
+    // Infinite loop behavior: don't disable arrows
+    btnL.disabled = false;
+    btnR.disabled = false;
   };
 
   rail.addEventListener("scroll", () => requestAnimationFrame(sync), { passive: true });
   window.addEventListener("resize", () => requestAnimationFrame(sync), { passive: true });
 
-  // Initial sync after the rail gets content
   setTimeout(() => requestAnimationFrame(sync), 350);
   setTimeout(() => requestAnimationFrame(sync), 1200);
 }
@@ -4985,8 +5119,10 @@ function renderHomeUpdates(list) {
 
     // Build base HTML once
   __homeUpdatesBaseHTML = updates.map(u => {
-    const companyName = _safeText(u.company_name || u.company_title || "Company");
-    const logo = u.company_logo_url || u.logo_url || "";
+    const meta = _resolveUpdateCompanyMeta(u);
+    const companyName = _safeText(meta.name || (u.company_name || u.company_title || "Company"));
+    const letter = (String(companyName || "C").trim().charAt(0) || "C").toUpperCase();
+    const logo = (meta.logo || "");
     const area = u.area || u.entity_area || "projects";
     const areaLower = String(area || "").toLowerCase();
     const entityTitle = (areaLower === "general")
@@ -5001,7 +5137,7 @@ function renderHomeUpdates(list) {
     const notePreview = _safeText(noteIsLong ? (notePlain.slice(0, 160).trimEnd() + "…") : notePlain);
     const createdAt = u.created_at || u.createdAt;
     const age = createdAt ? _timeAgoI18n(createdAt) : "";
-    const verified = !!(u.is_verified || u.verified || u.blue_tick);
+    const verified = !!(meta.verified || u.is_verified || u.verified || u.blue_tick);
 
     const icon = (area === "general")
       ? "fa-bullhorn text-slate-500"
@@ -5028,7 +5164,11 @@ function renderHomeUpdates(list) {
 
         <div class="relative flex items-start gap-3">
           <div class="w-10 h-10 rounded-2xl bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm overflow-hidden shrink-0 grid place-items-center">
-            ${logo ? `<img src="${logo}" class="w-full h-full object-cover" alt="logo">` : `<i class="fa-solid fa-building text-gray-300"></i>`}
+            ${logo ? `
+              <img src="${logo}" class="w-full h-full object-cover" alt="logo" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                onerror="this.classList.add('hidden'); if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
+              <span class="text-sm font-extrabold text-slate-500 hidden">${letter}</span>
+            ` : `<span class="text-sm font-extrabold text-slate-500">${letter}</span>`}
           </div>
 
           <div class="min-w-0 flex-1 flex flex-col">
@@ -5081,31 +5221,40 @@ function renderHomeUpdates(list) {
   // Render base once
   wrap.innerHTML = __homeUpdatesBaseHTML;
 
-  // ✅ Make flow continuous even with few items: duplicate the strip and loop seamlessly
+  // ✅ Continuous flow + arrow nav: build a "cycle" long enough to overflow, then duplicate once for a seamless loop
   requestAnimationFrame(() => {
-    const baseW = wrap.scrollWidth;
-    __homeUpdatesLoopWidth = baseW || 0;
-
-    // If base strip is shorter than container, duplicate multiple times
     const cw = wrap.clientWidth || 0;
-    if (__homeUpdatesBaseHTML && baseW > 0) {
-      if (baseW <= cw + 10) {
-        while (wrap.scrollWidth < (cw * 2)) {
-          wrap.insertAdjacentHTML("beforeend", __homeUpdatesBaseHTML);
-        }
-      } else {
-        // Add one extra copy for seamless wrap
-        wrap.insertAdjacentHTML("beforeend", __homeUpdatesBaseHTML);
-      }
+
+    // If there are very few updates, repeat them inside the 1st cycle until it overflows (so it can actually "flow")
+    let safety = 0;
+    while (__homeUpdatesBaseHTML && wrap.scrollWidth <= (cw + 40) && safety < 10) {
+      wrap.insertAdjacentHTML("beforeend", __homeUpdatesBaseHTML);
+      safety++;
     }
 
+    __homeUpdatesLoopHTML = wrap.innerHTML;
+
+    // Add 1 more full cycle for seamless wrap-around
+    if (__homeUpdatesLoopHTML) {
+      wrap.insertAdjacentHTML("beforeend", __homeUpdatesLoopHTML);
+    }
+
+    // Loop width = width of a single cycle (half of total after duplication)
+    __homeUpdatesLoopWidth = Math.max(0, Math.floor((wrap.scrollWidth || 0) / 2));
+
+    // Start immediately (ignore initial programmatic scroll events)
+    __homeUpdatesHoldUntil = 0;
+    __homeUpdatesIgnoreScrollUntil = Date.now() + 900;
+
     wrap.scrollLeft = 0;
+    try { __homeUpdatesAutoPos = 0; } catch(e) {}
+
+    // Apply translations after final DOM is built
+    try { applyTranslationsWithin(wrap); } catch(e) {}
+    try { const dot = document.getElementById("home-updates-dot"); if (dot) applyTranslationsWithin(dot); } catch(e) {}
+
+    startHomeUpdatesAutoScroll();
   });
-
-  try { applyTranslationsWithin(wrap); } catch(e) {}
-  try { const dot = document.getElementById("home-updates-dot"); if (dot) applyTranslationsWithin(dot); } catch(e) {}
-
-  startHomeUpdatesAutoScroll();
 }
 
 function _setHomeUpdatesFilterUI(mode) {
@@ -5155,9 +5304,54 @@ async function _ensureHomeFollowSet(uid) {
   }
 }
 
+
 function _isCompanyFollowed(companyId) {
   if (!companyId) return false;
   try { return homeFollowSet.has(String(companyId)); } catch { return false; }
+}
+
+function _resolveUpdateCompanyMeta(u){
+  try {
+    const row = u || {};
+    const cid = String(row.company_id || row.profile_id || row.companyId || "").trim();
+
+    const pickLogo = (o) => (o && (o.company_logo_url || o.logo_url || o.logoUrl || o.logo || o.company_logo || o.avatar_url || o.avatarUrl || o.photo_url || o.photoUrl || "")) || "";
+    const pickName = (o) => (o && (o.company_name || o.company_title || o.name || o.legal_name || o.legalName || "")) || "";
+    const pickVerified = (o) => !!(o && (o.is_verified || o.verified || o.blue_tick || (String(o.verification_status||"").toLowerCase()==="approved") || (String(o.verification_status||"").toLowerCase()==="verified")));
+
+    const fromRow = {
+      name: pickName(row),
+      logo: pickLogo(row),
+      verified: pickVerified(row),
+    };
+
+    // Supabase join shapes (optional)
+    const joined = row.profiles || row.profile || row.company || row.companies || null;
+    const fromJoin = joined ? { name: pickName(joined), logo: pickLogo(joined), verified: pickVerified(joined) } : { name:"", logo:"", verified:false };
+
+    // In-memory cache (Discover list)
+    let fromCache = { name:"", logo:"", verified:false };
+    try {
+      if (cid && typeof companiesData !== "undefined" && Array.isArray(companiesData)) {
+        const hit = companiesData.find(x => String(x?.id) === cid);
+        if (hit) {
+          fromCache = {
+            name: pickName(hit),
+            logo: pickLogo(hit),
+            verified: pickVerified(hit),
+          };
+        }
+      }
+    } catch(e){}
+
+    const name = (fromRow.name || fromJoin.name || fromCache.name || "").trim();
+    const logo = (fromRow.logo || fromJoin.logo || fromCache.logo || "").trim();
+    const verified = !!(fromRow.verified || fromJoin.verified || fromCache.verified);
+
+    return { name, logo, verified };
+  } catch(e){
+    return { name: "", logo: "", verified: false };
+  }
 }
 
 function setHomeUpdatesFilter(mode) {
@@ -5924,7 +6118,7 @@ async function submitCompanyUpdate() {
     const c = (__postCompany || selectedCompany) || {};
     const companyId = c.id || "";
     const companyName = c.company_name || c.name || "Company";
-    const companyLogo = c.logo_url || c.company_logo_url || "";
+    const companyLogo = c.logo_url || c.company_logo_url || c.avatar_url || c.logo || c.company_logo || "";
     const isVerified = !!(c.is_verified || c.verified || c.verification_status === "approved" || c.verification_status === "verified");
 
         let entityIdOut = entityId;
