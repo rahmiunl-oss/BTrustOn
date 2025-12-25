@@ -2419,7 +2419,7 @@ html{ scroll-padding-top: 118px; }
 <button class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-gray-200 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_edit_profile_1860fb" id="btn-edit-profile" onclick="editMyProfile()" title="Edit Profile">
 <i class="fa-solid fa-pen"></i>
 </button>
-<button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_save_company_ce1325" id="btn-save-company" onclick="toggleSaveCompany(selectedCompany &amp;&amp; selectedCompany.id)" title="Save company">
+<button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_save_company_ce1325" id="btn-save-company" onclick="toggleSaveCompany(selectedCompany &amp;&amp; selectedCompany.id)" title="Save company" data-i18n-title="ui_save_company">
 <i class="fa-regular fa-bookmark text-BTrustOn-accent" id="icon-save-company"></i>
 </button>
 <button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_follow_company_730ad4" id="btn-follow-company" onclick="toggleCompanyFollow(event, selectedCompany &amp;&amp; selectedCompany.id, selectedCompany &amp;&amp; (selectedCompany.name || selectedCompany.company_name || ''))" title="Follow company">
@@ -4113,8 +4113,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated15",
-  tr: "i18n/tr.json?v=updated15",
+  en: "i18n/en.json?v=updated24",
+  tr: "i18n/tr.json?v=updated24",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -7539,7 +7539,7 @@ function renderAssetsCards(company, isMyProfile){
     const attachmentPreview = buildAssetAttachmentPreview(a);
     const locText = (_assetLoc(a) || "").toString().trim();
     const specRaw = (_assetSpec(a) || "").toString().trim();
-    const specText = specRaw ? specRaw : (t("ui_no_specs_provided") || "No specs provided.");
+    const specText = specRaw ? specRaw : (t("ui_no_specs_provided") || (currentLang === "tr" ? "Özellik belirtilmedi." : "No specs provided."));
 
     const actions = isMyProfile ? `
       <div class="flex gap-2">
@@ -7652,14 +7652,14 @@ function openAssetViewer(assetId){
   document.getElementById("av-title").textContent = _assetName(a) || "Asset";
   document.getElementById("av-meta").textContent = _assetLoc(a) || "";
   document.getElementById("av-status").innerHTML = getStatusBadge(a.status);
-  document.getElementById("av-spec").textContent = _assetSpec(a) || "No specs provided.";
+  document.getElementById("av-spec").textContent = _assetSpec(a) || (t("ui_no_specs_provided") || (currentLang === "tr" ? "Özellik belirtilmedi." : "No specs provided."));
   document.getElementById("av-qty").textContent = (a.qty ?? "-");
   document.getElementById("av-updated").textContent = a.updated_at ? new Date(a.updated_at).toLocaleString((currentLang === "tr") ? "tr-TR" : "en-US", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) : "-";
 
   const fileWrap = document.getElementById("av-file");
   if (fileWrap) {
     if (a.file_url) {
-      const label = a.file_name ? a.file_name : "Open document";
+      const label = a.file_name ? a.file_name : (t("ui_open_document") || (currentLang === "tr" ? "Belgeyi aç" : "Open document"));
       fileWrap.innerHTML = `
         <button type="button" id="av-open-file" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-BTrustOn-primary hover:text-white transition">
           <i class="fa-solid fa-file-arrow-up"></i>
@@ -7671,11 +7671,17 @@ function openAssetViewer(assetId){
         __btn.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} openAttachmentViewer(a.file_url, label); };
       }
     } else {
-      fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">No document attached.</div>`;
+      fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">${t("ui_no_document_attached") || (currentLang === "tr" ? "Ekli belge yok." : "No document attached.")}</div>`;
     }
   }
 
   m.classList.remove("hidden");
+  try { applyTranslations(); } catch(e) {}
+  // Ensure modal labels are localized even if opened after language switch
+  try {
+    const lu = document.querySelector('[data-i18n="ui_last_updated_ffbb33"]');
+    if (lu) lu.textContent = (t("ui_last_updated_ffbb33") || (currentLang === "tr" ? "Son güncelleme" : "Last updated"));
+  } catch(e) {}
 }
 
 function closeAssetViewer(){
@@ -10102,7 +10108,7 @@ async function saveAsset() {
     openProfile(user.id, { preserveScroll: true, preserveTab: true });
             switchProfileTab('assets');
     closeAssetModal();
-    showToast("Success", "Asset saved successfully.", "success");
+    showToast((t("toast_success") || (currentLang === "tr" ? "Başarılı" : "Success")), (t("msg_asset_saved") || (currentLang === "tr" ? "Varlık başarıyla kaydedildi." : "Asset saved successfully.")), "success");
 
   } catch (error) {
     console.error(error);
@@ -10319,7 +10325,7 @@ async function saveProject() {
     openProfile(user.id, { preserveScroll: true, preserveTab: true });
             switchProfileTab('projects');
     closeProjectModal();
-    showToast("Success", "Project saved!", "success");
+    showToast((t("toast_success") || (currentLang === "tr" ? "Başarılı" : "Success")), (t("msg_project_saved") || (currentLang === "tr" ? "Proje kaydedildi." : "Project saved!")), "success");
 
   } catch (error) {
     console.error(error);
@@ -12331,6 +12337,13 @@ function updateSaveButtonsUI() {
     icon.classList.toggle("fa-solid", saved);
     icon.classList.toggle("fa-regular", !saved);
 
+    // Tooltip title (localized)
+    try {
+      btn.setAttribute("title", saved
+        ? (t("ui_saved_company") || (currentLang === "tr" ? "Kaydedildi" : "Saved company"))
+        : (t("ui_save_company") || (currentLang === "tr" ? "Şirketi kaydet" : "Save company"))
+      );
+    } catch(e) {}
   } catch(e) {}
 }
 
@@ -14288,7 +14301,7 @@ async function saveCert() {
     openProfile(user.id, { preserveScroll: true, preserveTab: true });      // Profili yükle
     switchProfileTab('certs'); // HIZLICA SERTİFİKA SEKMESİNE DÖN
     
-    showToast("Success", "Certificate saved!", "success");
+    showToast((t("toast_success") || (currentLang === "tr" ? "Başarılı" : "Success")), (t("msg_certificate_saved") || (currentLang === "tr" ? "Sertifika kaydedildi." : "Certificate saved!")), "success");
     closeCertModal();
 
   } catch (error) {
@@ -14673,7 +14686,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                   ${canSave ? `
                   <button
                   class="w-9 h-9 rounded-full bg-white/80 backdrop-blur border border-slate-200/70 shadow-sm flex items-center justify-center hover:bg-white hover:border-BTrustOn-accent hover:shadow-md transition"
-                  title="Save company"
+                  title="${saved ? (t("ui_saved_company") || (currentLang==="tr" ? 'Kaydedildi' : 'Saved company')) : (t("ui_save_company") || (currentLang==="tr" ? 'Şirketi kaydet' : 'Save company'))}"
                   onclick="event.stopPropagation(); toggleSaveCompany('${company.id}');"
                   >
                   <i class="${saved ? 'fa-solid' : 'fa-regular'} fa-bookmark text-[14px] text-BTrustOn-accent"></i>
