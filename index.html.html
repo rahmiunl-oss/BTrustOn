@@ -4027,7 +4027,117 @@ html{ scroll-padding-top: 118px; }
 #attachment-img{ -webkit-user-drag: none; user-select: none; max-width: none; max-height: none; }
 
 </style>
-<div class="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
+<div class
+    /* ==========================================================
+       MOBILE RESPONSIVENESS PATCH (updated38)
+       Goals:
+       - Eliminate horizontal scrolling on phones
+       - Make fixed side panels + modals fit 100vw
+       - Stack multi-column grids on small screens
+       - Prevent long labels from forcing overflow
+       ========================================================== */
+    html, body{
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    *, *::before, *::after{ box-sizing: border-box; }
+    img, svg, video, canvas, iframe{ max-width: 100%; height: auto; }
+    pre, code{ white-space: pre-wrap; word-break: break-word; }
+    table{ max-width: 100%; }
+
+    /* Prevent flex children from overflowing */
+    .flex{ min-width: 0; }
+    .truncate{
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    @media (max-width: 640px){
+      /* Top nav: allow wrapping instead of forcing horizontal scroll */
+      nav.fixed{
+        height: auto !important;
+      }
+      nav.fixed > div{
+        height: auto !important;
+        flex-wrap: wrap !important;
+        row-gap: 10px !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+      }
+      #nav-left, #nav-right{
+        width: 100% !important;
+      }
+      #nav-left{
+        justify-content: space-between !important;
+      }
+      #nav-right{
+        justify-content: space-between !important;
+        gap: 10px !important;
+        flex-wrap: wrap !important;
+      }
+
+      /* Fixed right panels (Inbox / Saved) should be full width on mobile */
+      #inbox-panel, #saved-panel{
+        width: 100vw !important;
+        left: 0 !important;
+        right: 0 !important;
+        border-left: none !important;
+        border-radius: 0 !important;
+      }
+
+      /* If any table-like content exists, allow swipe without breaking layout */
+      table{
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Stack grids on mobile (utility classes) */
+      .grid-cols-2, .grid-cols-3, .grid-cols-4{
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Remove min-width constraints that can exceed small phones */
+      [class*="min-w-[330px]"],
+      [class*="min-w-[380px]"],
+      [class*="w-[330px]"],
+      [class*="w-[380px]"],
+      [class*="w-[760px]"]{
+        min-width: 0 !important;
+        width: 100% !important;
+      }
+
+      /* Avoid nowrap forcing overflow */
+      .whitespace-nowrap{ white-space: normal !important; }
+
+      /* Ensure any horizontal scrollers feel native */
+      [class*="overflow-x-auto"], [class*="overflow-x-scroll"]{
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @media (max-width: 420px){
+      /* Modals: always fit within viewport */
+      .modal-container{
+        width: calc(100vw - 24px) !important;
+        max-width: none !important;
+        border-radius: 16px !important;
+      }
+      input, select, textarea, button{
+        max-width: 100% !important;
+      }
+
+      /* Toasts: keep them inside the viewport */
+      #toast-container{
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+      }
+    }
+
+="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
 <button class="absolute top-5 right-5 text-white/70 hover:text-white text-3xl z-50" onclick="closeGallery()">
 <i class="fa-solid fa-xmark"></i>
 </button>
