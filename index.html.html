@@ -94,16 +94,23 @@
 
   /* Signed-in HERO: compact (less vertical space) */
   header.bton-hero-compact{
-    padding-top: 16px !important;
-    padding-bottom: 12px !important;
+    /* Signed-in hero: still minimal, but a touch more breathing room */
+    padding-top: 22px !important;
+    padding-bottom: 16px !important;
   }
   header.bton-hero-compact #hero-title{
-    font-size: clamp(1.55rem, 2.2vw, 2.35rem) !important;
+    font-size: clamp(1.65rem, 2.35vw, 2.55rem) !important;
     line-height: 1.12 !important;
+    margin-bottom: 12px !important;
+  }
+  /* Small gap between "Improve Profile" and search */
+  header.bton-hero-compact #hero-cta{
     margin-bottom: 10px !important;
   }
-  header.bton-hero-compact #hero-cta{
-    margin-bottom: 0 !important;
+
+  header.bton-hero-compact #hero-search-wrap{
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
   }
 
   /* Apple-minimal signed-in CTA */
@@ -6276,7 +6283,7 @@ async function refreshHeroCTA() {
     if (heroProof) heroProof.style.display = "none";
     if (howSection) howSection.style.display = "none";
 
-    if (searchWrap) searchWrap.style.display = "none";
+    if (searchWrap) searchWrap.style.display = ""; // keep search visible for signed-in users
     if (heroHeader) heroHeader.classList.add("bton-hero-compact");
 
     if (typeof applyTranslations === "function") applyTranslations();
