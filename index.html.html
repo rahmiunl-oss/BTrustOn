@@ -233,7 +233,24 @@
     box-shadow: 0 14px 30px -18px rgba(15,23,42,.55);
   }
 
-  /* HOME UPDATES rail: looks like an Apple cards shelf */
+  /* --- MOBILE: hide "live showcase" until search (clean feed-first UX) --- */
+@media (max-width: 768px){
+  /* Always hide the "live showcase" header/filters on mobile (too dense) */
+  #live-showcase{ display:none !important; }
+
+  /* Hide company cards by default; show only after user searches */
+  body:not(.bton-mobile-search-active) #card-container{
+    display:none !important;
+  }
+
+  /* When showing results, keep spacing tight & readable */
+  body.bton-mobile-search-active #card-container{
+    margin-top: 10px !important;
+    margin-bottom: 18px !important;
+  }
+}
+
+/* HOME UPDATES rail: looks like an Apple cards shelf */
   .bton-updates-wrap::before,
   .bton-updates-wrap::after{
     content:"";
@@ -15929,7 +15946,8 @@ function scrollToHowSection() {
 
 // Smooth-scroll to results so the "Search results" count is always visible
 function scrollToResults() {
-    const el = document.getElementById("live-showcase");
+    const isMobile = (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+    const el = document.getElementById(isMobile ? "card-container" : "live-showcase");
     if (!el) return;
 
     const offset = btonNavOffset(22); // header + breathing space (mobile/desktop aware)
@@ -15942,7 +15960,18 @@ function scrollToResults() {
 }
 
     // Search input hardening: debounce to reduce re-render thrash while typing
-    let __searchDebounceTimer = null;
+    
+    function btonIsMobile() {
+        try { return window.matchMedia && window.matchMedia("(max-width: 768px)").matches; } catch (e) { return false; }
+    }
+    function btonSetMobileSearchActive(active) {
+        try {
+            if (!btonIsMobile()) return;
+            document.body.classList.toggle("bton-mobile-search-active", !!active);
+        } catch (e) {}
+    }
+
+let __searchDebounceTimer = null;
     let __searchLastQuery = "";
 
     function handleSearchInput(value) {
@@ -15962,11 +15991,15 @@ function scrollToResults() {
                         __searchDebounceTimer = null;
                     }
                 } catch (e) {}
+                /* Mobile: feed-first. No showcase unless user searches. */
+                try { btonSetMobileSearchActive(false); } catch (e) {}
+                if (btonIsMobile()) return;
                 renderShowcase();
                 return;
             }
 
             isSearchActive = true;
+            try { btonSetMobileSearchActive(true); } catch (e) {}
             __searchLastQuery = query;
 
             try { if (__searchDebounceTimer) clearTimeout(__searchDebounceTimer); } catch (e) {}
