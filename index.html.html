@@ -4153,8 +4153,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated30",
-  tr: "i18n/tr.json?v=updated30",
+  en: "i18n/en.json?v=updated31",
+  tr: "i18n/tr.json?v=updated31",
 };
 
 const __i18nLoad = { en: null, tr: null };
@@ -9906,82 +9906,74 @@ function initLangMenuOnce() {
 
 document.addEventListener("DOMContentLoaded", initLangMenuOnce);
 
-function switchLanguage(lang) {
-      currentLang = lang === "tr" ? "tr" : "en";
-      try { localStorage.setItem("bton_lang", currentLang); } catch(e) {}
+async function switchLanguage(lang) {
+  // 1) Persist language
+  currentLang = (lang === "tr") ? "tr" : "en";
+  try { localStorage.setItem("bton_lang", currentLang); } catch(e) {}
 
-      // If translations aren't loaded yet, load and re-render once ready
-      try {
-        const __needsI18n = !(translations && translations[currentLang] && Object.keys(translations[currentLang]).length);
-        if (__needsI18n && typeof loadI18n === "function") {
-          loadI18n(currentLang).then(() => {
-            try {
-              applyTranslations();
-              const searchInput = document.getElementById("search-input");
-              const value = searchInput ? searchInput.value : "";
-              if (typeof renderCards === "function") renderCards(value);
-              if (typeof renderHomeUpdates === "function") renderHomeUpdates(homeUpdatesData);
-              try {
-                const viewProfile = document.getElementById("view-profile");
-                const isProfileVisible = viewProfile && !viewProfile.classList.contains("hidden-view");
-                if (isProfileVisible) {
-                  const cid = (window.__profileActiveCompanyId || (selectedCompany && selectedCompany.id));
-                  if (cid) openProfile(cid, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
-                }
-              } catch(e) {}
-              try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 60); } catch(e) {}
-              try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 300); } catch(e) {}
-            } catch(e) {}
-          });
-        }
-      } catch(e) {}
+  // 2) Ensure translations are loaded (only if missing)
+  try {
+    const __needsI18n = !(translations && translations[currentLang] && Object.keys(translations[currentLang]).length);
+    if (__needsI18n && typeof loadI18n === "function") {
+      await loadI18n(currentLang);
+    }
+  } catch(e) {}
 
-      const btnEn = document.getElementById("lang-en");
-      const btnTr = document.getElementById("lang-tr");
+  // 3) Always apply i18n to the current DOM
+  try { applyTranslations(); } catch(e) {}
 
-      if (btnEn && btnTr) {
-        if (currentLang === "en") {
-          btnEn.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
-          btnEn.classList.remove("text-gray-500");
-          btnTr.classList.remove(
-            "bg-white",
-            "text-BTrustOn-primary",
-            "shadow-sm"
-          );
-          btnTr.classList.add("text-gray-500");
-        } else {
-          btnTr.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
-          btnTr.classList.remove("text-gray-500");
-          btnEn.classList.remove(
-            "bg-white",
-            "text-BTrustOn-primary",
-            "shadow-sm"
-          );
-          btnEn.classList.add("text-gray-500");
-        }
+  // 4) Re-render dynamic lists using the SAME current state (no extra fetch, no scroll jump)
+  try {
+    if (typeof refreshCompanyCardsAfterSavedChange === "function") {
+      refreshCompanyCardsAfterSavedChange(); // respects isSearchActive + current query
+    } else {
+      // fallback
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value : "";
+      if (typeof isSearchActive !== "undefined" && isSearchActive && typeof renderSearchResults === "function") {
+        renderSearchResults(q);
+      } else if (typeof renderShowcase === "function") {
+        renderShowcase();
+      } else if (typeof renderCards === "function") {
+        renderCards(q);
       }
+    }
+  } catch(e) {}
 
-      applyTranslations();
-      try { syncLocaleUIBits(); } catch(e) {}
-const searchInput = document.getElementById("search-input");
-      const value = searchInput ? searchInput.value : "";
-      renderCards(value);
+  // Home updates (if any)
+  try { if (typeof renderHomeUpdates === "function") renderHomeUpdates(homeUpdatesData); } catch(e) {}
 
-              renderHomeUpdates(homeUpdatesData);
-// Şu an profil ekranında mıyız, kontrol et
-  const viewProfile = document.getElementById("view-profile");
-  const isProfileVisible =
-    viewProfile && !viewProfile.classList.contains("hidden-view");
+  // If profile view is open, re-open (preserve scroll & tab) so dynamic labels update
+  try {
+    const viewProfile = document.getElementById("view-profile");
+    const isProfileVisible = viewProfile && !viewProfile.classList.contains("hidden-view");
+    if (isProfileVisible) {
+      const cid = (window.__profileActiveCompanyId || (typeof selectedCompany !== "undefined" && selectedCompany && selectedCompany.id));
+      if (cid && typeof openProfile === "function") {
+        openProfile(cid, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || "overview") });
+      }
+    }
+  } catch(e) {}
 
-  // Sadece profil ekranındaysak ilgili şirket profilini yeniden çiz (dinamik metinler + rozetler güncellensin)
-  if (isProfileVisible) {
-    const cid = (window.__profileActiveCompanyId || (selectedCompany && selectedCompany.id));
-    if (cid) openProfile(cid, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
+  // Some sections render async; re-apply i18n shortly after (cheap + safe)
+  try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 80); } catch(e) {}
+  try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 320); } catch(e) {}
+
+  // Update lang switcher UI states
+  const btnEn = document.getElementById("lang-en");
+  const btnTr = document.getElementById("lang-tr");
+  if (btnEn && btnTr) {
+    if (currentLang === "en") {
+      btnEn.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
+      btnEn.classList.remove("text-gray-500");
+      btnTr.classList.remove("bg-white", "text-BTrustOn-primary", "shadow-sm");
+      btnTr.classList.add("text-gray-500");
+    } else {
+      btnTr.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
+      btnTr.classList.remove("text-gray-500");
+      btnEn.classList.remove("bg-white", "text-BTrustOn-primary", "shadow-sm");
+      btnEn.classList.add("text-gray-500");
+    }
   }
-
-  // Bazı içerikler async render ile geliyorsa, i18n'i kısa aralıklarla tekrar uygula
-  try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 60); } catch(e) {}
-  try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 300); } catch(e) {}
 
   // Refresh country dropdown labels (localized)
   try { if (typeof populateCountryFilter === "function") populateCountryFilter(); } catch(e) {}
@@ -9995,8 +9987,8 @@ const searchInput = document.getElementById("search-input");
       renderServiceTags();
     }
   } catch(e) {}
+}
 
-    }
       
     /* --- Skeleton helpers (Top Companies + Result Count) --- */
 function renderTopCompaniesSkeleton(n = 6) {
