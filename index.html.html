@@ -1,7 +1,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>BtrustOn</title>
 <!-- UX STABILITY FIXES (prevents horizontal jump on refresh / scroll lock) -->
 <style id="ux-stability-fixes">
@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
 /* TOAST NOTIFICATION STYLES */
     #toast-container {
       position: fixed;
-      top: 20px;
+      top: max(20px, calc(var(--bton-nav-h) + 12px));
       right: 20px;
       z-index: 99999;
       display: flex;
@@ -349,6 +349,17 @@ document.addEventListener("DOMContentLoaded", () => {
       opacity: 0;
       transform: translateX(100%);
     }
+
+    /* --- Mobile polish: toast + panels + iOS input zoom --- */
+    @media (max-width: 420px){
+      #toast-container{ left: 12px; right: 12px; }
+      .toast{ min-width: 0 !important; width: 100% !important; border-radius: 14px; }
+    }
+    @media (max-width: 640px){
+      #inbox-panel, #saved-panel{ width: 100vw !important; max-width: 100vw !important; height: 100dvh !important; border-radius: 0 !important; }
+      input, textarea, select{ font-size: 16px !important; }
+    }
+
 
     .toast.success { border-color: #10b981; } /* Yeşil */
     .toast.error { border-color: #ef4444; }   /* Kırmızı */
@@ -894,8 +905,8 @@ document.addEventListener("DOMContentLoaded", () => {
   color: #67e8f9;
 }
 /* Search results scroll alignment */
-#live-showcase{ scroll-margin-top: 118px; }
-html{ scroll-padding-top: 118px; }
+#live-showcase{ scroll-margin-top: calc(var(--bton-nav-h) + 22px); }
+html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 
 /* Overlay: darker + cleaner cinematic feel */
     #inbox-overlay, #saved-overlay{
@@ -1086,7 +1097,12 @@ html{ scroll-padding-top: 118px; }
 <!-- Boot overlay: prevents dashboard flash on refresh -->
 <style>
     /* ===== APP SHELL (LinkedIn-like) ===== */
-    :root { --bton-nav-h: 96px; }
+    :root{ --bton-nav-h: calc(96px + env(safe-area-inset-top)); }
+    @media (max-width: 640px){
+      :root{ --bton-nav-h: calc(80px + env(safe-area-inset-top)); }
+    }
+    #bton-nav{ height: var(--bton-nav-h) !important; box-sizing: border-box; padding-top: env(safe-area-inset-top); }
+
     /* Ensure anchor scrolling accounts for the fixed header */
     #how-section { scroll-margin-top: calc(var(--bton-nav-h) + 18px); }
 
@@ -1478,7 +1494,7 @@ html{ scroll-padding-top: 118px; }
 </div>
 <div class="fixed top-0 left-0 right-0 h-[820px] md:h-[740px] z-[-1] dot-map-bg opacity-[0.14] pointer-events-none"></div>
 <div class="fixed top-0 left-0 right-0 h-[820px] md:h-[740px] z-[-2] bton-hero-aura pointer-events-none"></div>
-<nav class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/50 h-24">
+<nav id="bton-nav" class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/50 h-24">
 <div class="max-w-7xl mx-auto px-4 h-full flex items-center gap-3 flex-nowrap">
 <div class="flex items-center gap-3 shrink-0" id="nav-left">
 <button class="hidden hidden-view inline-flex items-center gap-2 pr-4 mr-1 border-r border-gray-200/80 text-gray-500 hover:text-BTrustOn-primary transition px-3 py-2 rounded-lg hover:bg-gray-100" id="back-btn" onclick="showMainView()">
@@ -1545,7 +1561,8 @@ html{ scroll-padding-top: 118px; }
 </button>
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" id="btn-join-network" onclick="openJoinModal('free')">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-paper-plane"></i></span>
-<span class="bton-pill-label" data-i18n="join">JOIN NETWORK</span>
+<span class="bton-pill-label hidden sm:inline" data-i18n="join">JOIN NETWORK</span>
+            <span class="bton-pill-label sm:hidden">JOIN</span>
 </button>
 </div>
 <div class="hidden flex items-center gap-3" id="user-actions">
@@ -15170,7 +15187,7 @@ function scrollToResults() {
     const el = document.getElementById("live-showcase");
     if (!el) return;
 
-    const offset = 118; // navbar + breathing space
+    const offset = btonNavOffset(22); // header + breathing space (mobile/desktop aware)
     const y = el.getBoundingClientRect().top + window.pageYOffset;
 
     window.scrollTo({
