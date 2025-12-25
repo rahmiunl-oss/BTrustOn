@@ -700,5 +700,8 @@
   "ui_no_sent_messages_83b1fd": "No sent messages.",
   "ui_placeholder_official_address_full_7c2a1a": "Headquarters full address (Street, No, District...)",
   "ui_placeholder_describe_company_3f91b2": "Describe your company's core capabilities...",
-  "ui_upgrade_to_pro": "Upgrade to Pro"
+  "ui_upgrade_to_pro": "Upgrade to Pro",
+  "ui_profile_strength_strong_fill_missing_100_6b2b57": "Strong profile. Fill missing info to reach 100%.",
+  "ui_profile_strength_need_more_proof_add_projects_assets_5b07c1": "Your profile needs more proof. Add projects & assets to improve visibility.",
+  "ui_add_services_btn_3d0ce2": "Add services"
 }
