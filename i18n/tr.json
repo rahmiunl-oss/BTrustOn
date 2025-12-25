@@ -732,5 +732,10 @@
   "toast_welcome": "Hoş geldiniz!",
   "toast_welcome_pro": "Pro’ya hoş geldiniz!",
   "toast_registration_failed": "Kayıt başarısız",
-  "toast_payment_link_missing": "Ödeme bağlantısı yok"
+  "toast_payment_link_missing": "Ödeme bağlantısı yok",
+  "ui_project": "Proje",
+  "msg_asset_removed": "Varlık başarıyla silindi.",
+  "msg_project_removed": "Proje başarıyla silindi.",
+  "msg_certificate_removed": "Sertifika başarıyla silindi.",
+  "msg_logo_removed": "Logo başarıyla kaldırıldı."
 }
