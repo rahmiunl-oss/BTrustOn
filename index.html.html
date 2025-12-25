@@ -1491,6 +1491,52 @@ html{ scroll-padding-top: 118px; }
 </div>
 </div>
 <div class="ml-auto flex items-center gap-3 text-sm font-medium flex-nowrap" id="nav-right">
+
+<div class="relative" id="lang-menu">
+  <button id="lang-menu-toggle"
+          type="button"
+          class="bton-nav-icon w-10 h-10 rounded-full grid place-items-center"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-label="Language"
+          data-i18n-aria="lang_menu"
+          title="Language"
+          data-i18n-title="lang_menu"
+          onclick="toggleLangMenu()">
+    <i class="fa-solid fa-globe text-lg text-slate-700 hover:text-BTrustOn-primary transition"></i>
+  </button>
+
+  <div id="lang-menu-dropdown"
+       class="hidden absolute right-0 mt-2 min-w-[180px] bg-white/95 backdrop-blur-xl border border-white/70 shadow-xl rounded-2xl p-1 overflow-hidden z-[80]">
+    <button id="lang-en"
+            type="button"
+            class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold tracking-wide text-gray-600 hover:bg-slate-50 transition"
+            onclick="switchLanguage('en'); closeLangMenu();">
+      <span class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-900/5 text-slate-700">
+          <i class="fa-solid fa-language"></i>
+        </span>
+        <span>English</span>
+      </span>
+      <span class="text-[11px] font-black text-slate-500">EN</span>
+    </button>
+
+    <button id="lang-tr"
+            type="button"
+            class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold tracking-wide text-gray-600 hover:bg-slate-50 transition"
+            onclick="switchLanguage('tr'); closeLangMenu();">
+      <span class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-900/5 text-slate-700">
+          <i class="fa-solid fa-language"></i>
+        </span>
+        <span>Türkçe</span>
+      </span>
+      <span class="text-[11px] font-black text-slate-500">TR</span>
+    </button>
+
+    <div class="px-3 py-2 text-[11px] text-slate-500" data-i18n="lang_more_soon">More languages soon</div>
+  </div>
+</div>
 <div class="flex items-center gap-2 md:gap-3" id="guest-actions">
 <button aria-label="Login" class="bton-nav-pill bton-pill-muted inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[11px] md:text-xs font-extrabold uppercase tracking-[.12em]" data-i18n-aria="login_title" id="btn-partner-login" onclick="openLoginModal()">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-key"></i></span>
@@ -1569,53 +1615,7 @@ html{ scroll-padding-top: 118px; }
 <div class="bton-hero-gradient"></div>
 
 <div class="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-28 w-[760px] h-[760px] bg-gradient-to-br from-cyan-200/45 via-blue-200/25 to-purple-200/15 blur-3xl rounded-full"></div>
-<!-- Language switcher -->
-<!-- Global language menu -->
-<div class="absolute top-4 right-4 z-30" id="lang-menu">
-  <button id="lang-menu-toggle"
-          type="button"
-          class="group inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 backdrop-blur-md border border-white/60 shadow-sm transition"
-          aria-haspopup="menu"
-          aria-expanded="false"
-          aria-label="Language"
-          data-i18n-aria="lang_menu"
-          title="Language"
-          data-i18n-title="lang_menu"
-          onclick="toggleLangMenu()">
-    <i class="fa-solid fa-globe text-slate-700 group-hover:text-BTrustOn-primary transition"></i>
-  </button>
 
-  <div id="lang-menu-dropdown"
-       class="hidden absolute right-0 mt-2 min-w-[180px] bg-white/90 backdrop-blur-xl border border-white/60 shadow-xl rounded-2xl p-1 overflow-hidden">
-    <button id="lang-en"
-            type="button"
-            class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold tracking-wide text-gray-500 hover:bg-white/70 transition"
-            onclick="switchLanguage('en'); closeLangMenu();">
-      <span class="flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-900/5 text-slate-700">
-          <i class="fa-solid fa-language"></i>
-        </span>
-        <span>English</span>
-      </span>
-      <span class="text-[11px] font-black text-slate-500">EN</span>
-    </button>
-
-    <button id="lang-tr"
-            type="button"
-            class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold tracking-wide text-gray-500 hover:bg-white/70 transition"
-            onclick="switchLanguage('tr'); closeLangMenu();">
-      <span class="flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-900/5 text-slate-700">
-          <i class="fa-solid fa-language"></i>
-        </span>
-        <span>Türkçe</span>
-      </span>
-      <span class="text-[11px] font-black text-slate-500">TR</span>
-    </button>
-
-    <div class="px-3 py-2 text-[11px] text-slate-500" data-i18n="lang_more_soon">More languages soon</div>
-  </div>
-</div>
 
 <h1 class="text-3xl md:text-5xl font-header font-extrabold mb-3 leading-[1.05] tracking-tight drop-shadow-sm py-1 max-w-4xl mx-auto" id="hero-title"></h1>
 <p class="text-lg md:text-xl text-slate-600 mb-6 max-w-3xl mx-auto font-normal leading-relaxed" id="hero-desc"></p>
@@ -4153,8 +4153,8 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated29",
-  tr: "i18n/tr.json?v=updated29",
+  en: "i18n/en.json?v=updated30",
+  tr: "i18n/tr.json?v=updated30",
 };
 
 const __i18nLoad = { en: null, tr: null };
