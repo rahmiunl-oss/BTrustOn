@@ -704,4 +704,8 @@
   "ui_profile_strength_strong_fill_missing_100_6b2b57": "Strong profile. Fill missing info to reach 100%.",
   "ui_profile_strength_need_more_proof_add_projects_assets_5b07c1": "Your profile needs more proof. Add projects & assets to improve visibility.",
   "ui_add_services_btn_3d0ce2": "Add services"
+  "ui_no_gallery_images": "No gallery images.",
+  "ui_gallery_images_n": "{n} images",
+  "ui_days_ago": "{n}d ago",
+  "ui_days_left": "{n}d left"
 }
