@@ -306,7 +306,61 @@
     .bton-updates-nav{ width:34px; height:34px; }
     .bton-updates-nav-left{ left: 4px; }
     .bton-updates-nav-right{ right: 4px; }
-  }
+  
+/* Company Updates – mobile touch optimization */
+#home-updates-head{
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-bottom: 10px !important;
+}
+/* Filter pills */
+#home-updates-filter{
+  width: 100% !important;
+  display: flex !important;
+  gap: 6px !important;
+  padding: 4px !important;
+  border-radius: 9999px !important;
+}
+#home-updates-filter button{
+  flex: 1 1 0% !important;
+  min-height: 42px !important; /* bigger tap target */
+  padding: 10px 12px !important;
+  font-size: 12.5px !important;
+  line-height: 1 !important;
+  border-radius: 9999px !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Post Update button (if visible) */
+#btn-open-post-update{
+  width: 100% !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  letter-spacing: .01em !important;
+}
+
+/* Updates shelf: bigger cards, easier swipe */
+#home-updates{
+  gap: 12px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  scroll-padding-left: 12px !important;
+  scroll-padding-right: 12px !important;
+}
+#home-updates .bton-upd-card{
+  min-width: 86vw !important;
+  max-width: 86vw !important;
+}
+
+/* On mobile, rely on swipe (avoid accidental taps on arrows) */
+#home-updates-left, #home-updates-right{
+  display: none !important;
+}
+}
 </style>
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -2050,7 +2104,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
 <div class="flex flex-col gap-4 mb-5 border-b border-gray-200/50 pb-4">
 <div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
-<div class="flex items-start justify-between gap-3 mb-3">
+<div id="home-updates-head" class="flex items-start justify-between gap-3 mb-3">
 <div class="min-w-0">
 <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
 <i class="fa-solid fa-bolt text-cyan-500"></i>
