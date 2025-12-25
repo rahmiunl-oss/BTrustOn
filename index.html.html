@@ -9000,7 +9000,7 @@ if (servicesGrid) {
                             </span>
                             <span class="inline-flex items-center gap-1.5">
                               <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
-                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
+                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : "en-US"),{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
                             </span>
                         </div>
                     </div>
@@ -11223,6 +11223,43 @@ function showToast(title, message, type = 'success', onClick = null) {
     }
   }
 
+
+  // ✅ i18n: normalize common toast titles (Success/Deleted/Error...)
+  try {
+    const raw = String(title || "").trim();
+    const key = raw.toLowerCase();
+    const tt = (k, fallback) => (typeof window.t === "function" ? (t(k) || fallback) : fallback);
+    const map = {
+      "success": tt("toast_success", (currentLang === "tr" ? "Başarılı" : "Success")),
+      "deleted": tt("toast_deleted", (currentLang === "tr" ? "Silindi" : "Deleted")),
+      "removed": tt("toast_removed", (currentLang === "tr" ? "Kaldırıldı" : "Removed")),
+      "saved": tt("toast_saved", (currentLang === "tr" ? "Kaydedildi" : "Saved")),
+      "error": tt("toast_error", (currentLang === "tr" ? "Hata" : "Error")),
+      "warning": tt("toast_warning", (currentLang === "tr" ? "Uyarı" : "Warning")),
+      "cleared": tt("toast_cleared", (currentLang === "tr" ? "Temizlendi" : "Cleared")),
+      "loading...": tt("toast_loading", (currentLang === "tr" ? "Yükleniyor..." : "Loading...")),
+      "uploading...": tt("toast_uploading", (currentLang === "tr" ? "Yükleniyor..." : "Uploading...")),
+      "downloading...": tt("toast_downloading", (currentLang === "tr" ? "İndiriliyor..." : "Downloading...")),
+      "processing...": tt("toast_processing", (currentLang === "tr" ? "İşleniyor..." : "Processing...")),
+      "ready": tt("toast_ready", (currentLang === "tr" ? "Hazır" : "Ready")),
+      "limit reached": tt("toast_limit_reached", (currentLang === "tr" ? "Sınır aşıldı" : "Limit Reached")),
+      "missing info": tt("toast_missing_info", (currentLang === "tr" ? "Eksik bilgi" : "Missing Info")),
+      "login required": tt("toast_login_required", (currentLang === "tr" ? "Giriş gerekli" : "Login required")),
+      "not allowed": tt("toast_not_allowed", (currentLang === "tr" ? "İzin yok" : "Not allowed")),
+      "unavailable": tt("toast_unavailable", (currentLang === "tr" ? "Kullanılamıyor" : "Unavailable")),
+      "file too large": tt("toast_file_too_large", (currentLang === "tr" ? "Dosya çok büyük" : "File too large")),
+      "too large": tt("toast_too_large", (currentLang === "tr" ? "Çok büyük" : "Too Large")),
+      "image cropped": tt("toast_image_cropped", (currentLang === "tr" ? "Görsel kırpıldı" : "Image Cropped")),
+      "marked unread": tt("toast_marked_unread", (currentLang === "tr" ? "Okunmadı olarak işaretlendi" : "Marked Unread")),
+      "up to date": tt("toast_up_to_date", (currentLang === "tr" ? "Güncel" : "Up to date")),
+      "welcome!": tt("toast_welcome", (currentLang === "tr" ? "Hoş geldiniz!" : "Welcome!")),
+      "welcome to pro!": tt("toast_welcome_pro", (currentLang === "tr" ? "Pro’ya hoş geldiniz!" : "Welcome to Pro!")),
+      "registration failed": tt("toast_registration_failed", (currentLang === "tr" ? "Kayıt başarısız" : "Registration Failed")),
+      "payment link missing": tt("toast_payment_link_missing", (currentLang === "tr" ? "Ödeme bağlantısı yok" : "Payment link missing"))
+    };
+    if (map[key]) title = map[key];
+  } catch(e) {}
+
   const container = document.getElementById('toast-container');
   if (!container) return;
 
@@ -12349,22 +12386,9 @@ function updateFollowButtonsUI() {
 
 // Tarih formatlayıcı (Örn: "2 hours ago" yazar)
 function timeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = nowDate();
-    const seconds = Math.floor((now - date) / 1000);
-    
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " years ago";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " months ago";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " days ago";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " hours ago";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " mins ago";
-    return "Just now";
+  return _timeAgoI18n(dateString);
 }
+
 /* --- GÜNCELLENMİŞ: fetchInboxMessages (Kesin Filtreleme) --- */
 async function fetchInboxMessages() {
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -17285,7 +17309,7 @@ function openProjectViewer(projectId){
 
   if(tEl) tEl.textContent = title;
   if(mEl) {
-    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'2-digit'}) : "");
+    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : "en-US"),{year:'numeric',month:'short',day:'2-digit'}) : "");
     if (loc && nice) mEl.textContent = `📍 ${loc}  •  📅 ${nice}`;
     else if (loc) mEl.textContent = `📍 ${loc}`;
     else if (nice) mEl.textContent = `📅 ${nice}`;
