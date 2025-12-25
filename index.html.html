@@ -1756,6 +1756,60 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       }catch(e){}
     })();
   </script>
+
+<style id="bton-mobile-pricing-minimal">
+@media (max-width: 640px){
+  /* ---- MOBILE: make Free/Pro payment info cards more minimal ---- */
+  #pricing-plans-wrap{ gap: 14px !important; }
+  #pricing-plans-wrap > div{
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+  #pricing-plans-wrap .text-4xl{ font-size: 32px !important; line-height: 1.05 !important; }
+  #pricing-plans-wrap .mb-6{ margin-bottom: 14px !important; }
+  #pricing-plans-wrap .mb-5{ margin-bottom: 12px !important; }
+  #pricing-plans-wrap .space-y-3 > :not([hidden]) ~ :not([hidden]){ margin-top: 10px !important; }
+  #pricing-plans-wrap li{ gap: 10px !important; }
+  #pricing-plans-wrap li > div:first-child{
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 14px !important;
+  }
+  #pricing-plans-wrap button{
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Pro active status (when already Pro) */
+  #pricing-pro-state > div{
+    padding: 14px !important;
+    border-radius: 20px !important;
+  }
+  #pricing-pro-state .w-11, #pricing-pro-state .h-11{
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Upgrade modal (payment explanation) compact */
+  #modal-upgrade .px-6{ padding-left: 16px !important; padding-right: 16px !important; }
+  #modal-upgrade .pt-6{ padding-top: 16px !important; }
+  #modal-upgrade .pb-5{ padding-bottom: 14px !important; }
+  #modal-upgrade .p-6{ padding: 16px !important; }
+  #modal-upgrade .p-5{ padding: 14px !important; }
+  #modal-upgrade .w-12, #modal-upgrade .h-12{
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 16px !important;
+  }
+  #modal-upgrade h3.text-base{ font-size: 15px !important; }
+  #modal-upgrade .rounded-3xl{ border-radius: 22px !important; }
+  #modal-upgrade .rounded-2xl{ border-radius: 20px !important; }
+  #modal-upgrade ul.grid{ gap: 10px !important; }
+}
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
