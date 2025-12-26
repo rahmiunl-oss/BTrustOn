@@ -72,28 +72,30 @@
 
 
 
-    /* --- Mobile: Edit button next to company name (Option A) --- */
-    /* Default: label hidden (icon-only looks cleaner and prevents confusion on mobile) */
-    #btn-edit-profile .bton-edit-label{ display:none; }
-    @media (max-width: 640px){
-      #p-name-row{ width:100%; }
-      #p-name-row #btn-edit-profile{ margin-left:auto; }
+    /* --- Mobile: Edit button under location/sector chips (icon-only, avoids name wrap issues) --- */
+#btn-edit-profile .bton-edit-label{ display:none; }
+#p-edit-mobile-slot:empty{ display:none; }
+@media (max-width: 640px){
+  #p-edit-mobile-slot{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    margin-top: 14px;
+  }
+  #btn-edit-profile.bton-edit-pill{
+    width:42px !important;
+    height:42px !important;
+    padding:0 !important;
+    border-radius:9999px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:0 !important;
+  }
+  #btn-edit-profile.bton-edit-pill .bton-edit-label{ display:none !important; }
+}
 
-      /* Mobile: keep it as a chic icon-only button (pen) */
-      #btn-edit-profile.bton-edit-pill{
-        width:42px !important;
-        height:42px !important;
-        padding:0 !important;
-        border-radius:9999px !important;
-        display:inline-flex !important;
-        align-items:center !important;
-        justify-content:center !important;
-        gap:0 !important;
-      }
-      #btn-edit-profile.bton-edit-pill .bton-edit-label{ display:none !important; }
-    }
-
-    /* --- Mobile: Profile tabs 2x2 grid (no horizontal scroll) --- */
+/* --- Mobile: Profile tabs 2x2 grid (no horizontal scroll) --- */
     @media (max-width: 640px){
       .bton-profile-tabbar{
         display:grid !important;
@@ -3058,7 +3060,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <p class="bton-overview-desc mb-5 max-w-3xl whitespace-pre-line break-words" id="p-desc">
   Description
 </p>
-<div class="flex flex-wrap gap-4 text-sm">
+<div class="flex flex-wrap gap-4 text-sm" id="p-chips-row">
 <span class="bton-chip-soft">
 <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
 <span class="font-semibold text-gray-700" id="p-city">City</span>
@@ -3068,6 +3070,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="capitalize font-semibold text-gray-700" id="p-sector">Sector</span>
 </span>
 </div>
+<div id="p-edit-mobile-slot" class="mt-4 flex justify-end"></div>
 </div>
 <div class="flex items-center gap-3 shrink-0 relative z-20">
 <button class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-gray-200 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_edit_profile_1860fb" id="btn-edit-profile" onclick="editMyProfile()" title="Edit Profile">
@@ -9880,29 +9883,29 @@ if (servicesGrid) {
   }
 
 
-  // Mobile: move "Edit Profile" next to company name (Option A)
-  try {
-    const nameRow = document.getElementById("p-name-row");
-    if (btnEdit) {
-      if (!window.__btonBtnEditHome) window.__btonBtnEditHome = btnEdit.parentElement;
+  
+// Mobile: move "Edit Profile" under location/sector chips (prevents ugly wrap when name is long)
+try {
+  const slot = document.getElementById("p-edit-mobile-slot");
+  if (btnEdit) {
+    if (!window.__btonBtnEditHome) window.__btonBtnEditHome = btnEdit.parentElement;
 
-      const isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+    const isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
 
-      // reset
-      btnEdit.classList.remove("bton-edit-pill");
-      btnEdit.onclick = (e) => { if (e) e.stopPropagation(); editMyProfile(); };
+    // reset
+    btnEdit.classList.remove("bton-edit-pill");
+    btnEdit.onclick = (e) => { if (e) e.stopPropagation(); editMyProfile(); };
 
-      if (isMyProfile && isMobile && nameRow) {
-        nameRow.appendChild(btnEdit);
-        btnEdit.classList.add("bton-edit-pill");
-      } else if (window.__btonBtnEditHome) {
-        window.__btonBtnEditHome.appendChild(btnEdit);
-      }
+    if (isMyProfile && isMobile && slot) {
+      slot.appendChild(btnEdit);
+      btnEdit.classList.add("bton-edit-pill");
+    } else if (window.__btonBtnEditHome) {
+      window.__btonBtnEditHome.appendChild(btnEdit);
     }
-  } catch (e) {}
+  }
+} catch (e) {}
 
-
-  // Keep current tab when re-opening the same company (e.g., viewing a certificate/doc)
+// Keep current tab when re-opening the same company (e.g., viewing a certificate/doc)
   const sameCompany = window.__profileActiveCompanyId && String(window.__profileActiveCompanyId) === String(company.id);
   const desiredTab = (__tabRequested ? __tabRequested : ((sameCompany && window.__profileActiveTab) ? window.__profileActiveTab : "overview"));
   switchProfileTab(desiredTab);
