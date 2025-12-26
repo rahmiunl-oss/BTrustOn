@@ -12018,21 +12018,37 @@ async function openMyCompanyIfExists() {
     // 2) Persist snapshot for future quick access
     try { localStorage.setItem("BTrustOn_my_company_id", String(myId)); } catch(e) {}
 
-    // 3) If our in-memory list isn't ready (or company not in list), fetch+open reliably
-    const hasDb = (typeof database !== "undefined") && Array.isArray(database);
-    const existsInDb = hasDb && database.some(c => String(c?.id) === String(myId));
+    // 3) Ensure we can actually open
+    const opener = (typeof window.openProfile === "function") ? window.openProfile : null;
 
-    if (!existsInDb) {
-      // forceOpen -> checkUserAndOpenProfile will map profile + call openProfile(profile.id)
-      await checkUserAndOpenProfile(true);
-      return;
+    const hasDb = (typeof window.database !== "undefined") && Array.isArray(window.database);
+    const existsInDb = hasDb && window.database.some(c => String(c?.id) === String(myId));
+
+    // If DB isn't ready, or openProfile missing, fall back to the most reliable path
+    if (!opener || !existsInDb) {
+      if (typeof window.checkUserAndOpenProfile === "function") {
+        await window.checkUserAndOpenProfile(true);
+        return;
+      }
+      // last resort
+      if (opener) { opener(myId); return; }
+      throw new Error("openProfile not available");
     }
 
-    // 4) Open directly
-    openProfile(myId);
+    // 4) Open directly (support sync or async openProfile)
+    try {
+      await Promise.resolve(opener(myId));
+    } catch(e) {
+      // fallback if anything goes wrong
+      if (typeof window.checkUserAndOpenProfile === "function") {
+        await window.checkUserAndOpenProfile(true);
+        return;
+      }
+      throw e;
+    }
   } catch (err) {
     console.error("openMyCompanyIfExists error:", err);
-    showToast("Error", "Couldn’t open your company profile. Please try again.", "danger");
+    try { showToast("Error", "Couldn’t open your company profile. Please try again.", "danger"); } catch(_) {}
   }
 }
 
@@ -18874,6 +18890,13 @@ function sortProjectsUI(mode){
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
     const hdr = ensureHeaderWrap();
 
+    // ✅ Visibility: never show Edit button when viewing another company
+    const mine = await isMyProfileNow();
+    try {
+      btn.style.display = mine ? "" : "none";
+      btn.setAttribute("aria-hidden", mine ? "false" : "true");
+    } catch(e) {}
+
     // Always clean old classes
     btn.classList.remove("bton-edit-on-avatar", "bton-edit-float-mobile");
 
@@ -18881,8 +18904,6 @@ function sortProjectsUI(mode){
       if (ph && ph.parentNode) ph.parentNode.insertBefore(btn, ph.nextSibling);
       return;
     }
-
-    const mine = await isMyProfileNow();
 
     if (mine && hdr) {
       if (btn.parentNode !== hdr) hdr.appendChild(btn);
@@ -18906,9 +18927,16 @@ function sortProjectsUI(mode){
   try{
     const _orig = window.openProfile;
     if (typeof _orig === "function" && !_orig.__bton_wrapped) {
-      const wrapped = async function(){
-        const res = await _orig.apply(this, arguments);
-        setTimeout(placeEditBtn, 40);
+      const wrapped = function(){
+        let res;
+        try {
+          res = _orig.apply(this, arguments);
+        } catch (e) {
+          // keep behavior same as original, but still re-place button
+          setTimeout(placeEditBtn, 40);
+          throw e;
+        }
+        Promise.resolve(res).finally(() => setTimeout(placeEditBtn, 40));
         return res;
       };
       wrapped.__bton_wrapped = true;
