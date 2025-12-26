@@ -1810,68 +1810,6 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 }
 </style>
 
-
-<style id="bton-mobile-company-profile-tweaks">
-/* ===== Mobile: My Company profile tweaks ===== */
-@media (max-width: 640px){
-
-  /* Mobile: float Edit button near avatar but separate on the right */
-  #bton-profile-header-wrap{ position: relative !important; }
-  #btn-edit-profile.bton-edit-float-mobile{
-    position: absolute !important;
-    /* align with avatar row but stay OUTSIDE avatar */
-    top: 86px !important;
-    right: 16px !important;
-    transform: translateY(-50%) !important;
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 9999px !important;
-    display: grid !important;
-    place-items: center !important;
-    background: rgba(255,255,255,.88) !important;
-    border: 1px solid rgba(15,23,42,.12) !important;
-    box-shadow: 0 10px 24px rgba(2,8,23,.12) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    z-index: 40 !important;
-}
-
-  #btn-edit-profile.bton-edit-float-mobile i{ font-size: 16px !important; }
-
-  /* Always hide when hidden-view present (prevents showing on other profiles) */
-  #btn-edit-profile.hidden-view{ display:none !important; }
-
-/* Make tabs (Overview/Projects/Certs/Assets) not require horizontal swipe */
-  #profile-tabs{
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-    overflow: visible !important;
-    border-bottom: none !important;
-    padding-bottom: 4px !important;
-  }
-  #profile-tabs button{
-    width: 100% !important;
-    justify-content: center !important;
-    padding: 12px 10px !important;
-    border-radius: 16px !important;
-    background: rgba(255,255,255,.72) !important;
-    border: 1px solid rgba(148,163,184,.30) !important;
-    white-space: normal !important;
-    line-height: 1.1 !important;
-  }
-  /* Tailwind 'border-transparent' would remove the border; keep a subtle border on mobile */
-  #profile-tabs button.border-transparent{
-    border-color: rgba(148,163,184,.30) !important;
-  }
-  /* Active tab (JS adds border-BTrustOn-accent + bg-cyan-50/50) */
-  #profile-tabs button.border-BTrustOn-accent{
-    border-color: var(--BTrustOn-accent, #06b6d4) !important;
-    box-shadow: 0 10px 26px rgba(2,132,199,.14) !important;
-  }
-}
-</style>
-
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -3039,7 +2977,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="bg-gradient-to-r from-slate-50 via-white to-cyan-50/60 border-b border-BTrustOn-border pb-12 pt-12 relative overflow-hidden backdrop-blur-xl">
-<div id="bton-profile-header-wrap" class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
+<div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
 <div class="bton-avatar-premium w-32 h-32 rounded-2xl border border-transparent shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative transition-all" id="p-logo-container">
 <i class="fa-solid fa-building text-5xl text-gray-300" id="p-default-icon"></i>
 <img alt="Company Logo" class="hidden w-full h-full object-cover" id="p-logo-image">
@@ -3105,7 +3043,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-12 gap-8">
 <div class="sm:col-span-8 space-y-8">
-<div id="profile-tabs" class="border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
+<div class="border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-cyan-50/50 transition whitespace-nowrap" id="tab-overview" onclick="switchProfileTab('overview')">
 <i class="fa-solid fa-building text-[11px]"></i>
 <span data-i18n="tab_overview">OVERVIEW</span>
@@ -9830,15 +9768,9 @@ if (servicesGrid) {
       }
   }
 
-  // Yetki Kontrolü (✅ mobile + multi-device güvenli)
-  let myCurrentId = null;
-  // Prefer live auth id if available (prevents stale localStorage editing)
-  try { if (typeof __authUserId === "string" && __authUserId) myCurrentId = __authUserId; } catch(e) {}
-  // Fallback to localStorage
-  if (!myCurrentId) { try { myCurrentId = localStorage.getItem("BTrustOn_my_company_id"); } catch(e) {} }
+  // Yetki Kontrolü
+  const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
-  // Keep local storage in sync for quick opens
-  if (isMyProfile) { try { localStorage.setItem("BTrustOn_my_company_id", String(myCurrentId)); } catch(e) {} }
   
   const btnEdit = document.getElementById("btn-edit-profile");
   const btnAddAsset = document.getElementById("btn-add-asset");
@@ -11920,7 +11852,6 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
     // Giriş yapıldıysa
     if (typeof closeLoginModal === "function") closeLoginModal();
-    try { __authUserId = session?.user?.id || null; } catch(e) { __authUserId = null; }
     
     // 1. Önce Admin mi diye bak (Bunu ekleyin)
     if (typeof checkAdminAccess === "function") checkAdminAccess();
@@ -12026,37 +11957,21 @@ async function openMyCompanyIfExists() {
     // 2) Persist snapshot for future quick access
     try { localStorage.setItem("BTrustOn_my_company_id", String(myId)); } catch(e) {}
 
-    // 3) Ensure we can actually open
-    const opener = (typeof window.openProfile === "function") ? window.openProfile : null;
+    // 3) If our in-memory list isn't ready (or company not in list), fetch+open reliably
+    const hasDb = (typeof database !== "undefined") && Array.isArray(database);
+    const existsInDb = hasDb && database.some(c => String(c?.id) === String(myId));
 
-    const hasDb = (typeof window.database !== "undefined") && Array.isArray(window.database);
-    const existsInDb = hasDb && window.database.some(c => String(c?.id) === String(myId));
-
-    // If DB isn't ready, or openProfile missing, fall back to the most reliable path
-    if (!opener || !existsInDb) {
-      if (typeof window.checkUserAndOpenProfile === "function") {
-        await window.checkUserAndOpenProfile(true);
-        return;
-      }
-      // last resort
-      if (opener) { opener(myId); return; }
-      throw new Error("openProfile not available");
+    if (!existsInDb) {
+      // forceOpen -> checkUserAndOpenProfile will map profile + call openProfile(profile.id)
+      await checkUserAndOpenProfile(true);
+      return;
     }
 
-    // 4) Open directly (support sync or async openProfile)
-    try {
-      await Promise.resolve(opener(myId));
-    } catch(e) {
-      // fallback if anything goes wrong
-      if (typeof window.checkUserAndOpenProfile === "function") {
-        await window.checkUserAndOpenProfile(true);
-        return;
-      }
-      throw e;
-    }
+    // 4) Open directly
+    openProfile(myId);
   } catch (err) {
     console.error("openMyCompanyIfExists error:", err);
-    try { showToast("Error", "Couldn’t open your company profile. Please try again.", "danger"); } catch(_) {}
+    showToast("Error", "Couldn’t open your company profile. Please try again.", "danger");
   }
 }
 
@@ -12070,27 +11985,8 @@ async function openMyCompanyIfExists() {
    ========================================= */
 /* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL) --- */
 /* --- GÜNCELLENMİŞ: editMyProfile (ÜLKE VE ŞEHİR DESTEKLİ) --- */
-async function editMyProfile(targetSectionId) {
+function editMyProfile(targetSectionId) {
   if (!selectedCompany) return;
-
-
-  // ✅ Permission guard: only your own company can be edited
-  try {
-    const _t = (typeof t === "function") ? t : (() => null);
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      showToast(_t("toast_login_required") || "Login required", _t("toast_login_required_msg") || "Please sign in to edit your profile.", "brand");
-      return;
-    }
-    if (!selectedCompany || String(selectedCompany.id) !== String(user.id)) {
-      showToast(_t("toast_not_allowed") || "Not allowed", _t("toast_not_allowed_edit") || "You can only edit your own company profile.", "warn");
-      return;
-    }
-  } catch(e) {
-    try { showToast("Error", "Permission check failed.", "error"); } catch(_) {}
-    return;
-  }
-
   targetSectionId = targetSectionId || null;
 
   // 1. Mevcut verileri kutulara doldur
@@ -18858,122 +18754,4 @@ function sortProjectsUI(mode){
   });
 })();
 </script>
-
-<script id="bton-mobile-edit-btn-relocate">
-/* ===== Mobile: move Edit button near avatar (only for your own company) ===== */
-(function(){
-  const PLACEHOLDER_ID = "btn-edit-profile-placeholder";
-
-  function ensureHeaderWrap(){
-    try{
-      const wrap = document.querySelector("#view-profile .bg-gradient-to-r > .max-w-7xl");
-      if (wrap && !wrap.id) wrap.id = "bton-profile-header-wrap";
-      return wrap || null;
-    } catch(e){ return null; }
-  }
-
-  async function isMyProfileNow(){
-    try{
-      if (!window.supabaseClient || typeof window.supabaseClient.auth?.getUser !== "function") return false;
-      const { data: { user } } = await window.supabaseClient.auth.getUser();
-      if (!user) return false;
-      if (!window.selectedCompany || !window.selectedCompany.id) return false;
-      return String(window.selectedCompany.id) === String(user.id);
-    } catch(e){ return false; }
-  }
-
-  async function placeEditBtn(){
-    const btn = document.getElementById("btn-edit-profile");
-    if(!btn) return;
-
-    // placeholder to restore original position on desktop
-    let ph = document.getElementById(PLACEHOLDER_ID);
-    if(!ph && btn.parentNode){
-      ph = document.createElement("span");
-      ph.id = PLACEHOLDER_ID;
-      ph.style.display = "none";
-      btn.parentNode.insertBefore(ph, btn);
-    }
-
-    const isMobile = window.matchMedia("(max-width: 640px)").matches;
-    const hdr = ensureHeaderWrap();
-    // Position relative to avatar container for stable alignment
-    try{
-      if (hdr && window.matchMedia("(max-width: 640px)").matches){
-        const logo = document.getElementById("p-logo-container");
-        if (logo){
-          const rLogo = logo.getBoundingClientRect();
-          const rHdr  = hdr.getBoundingClientRect();
-          const topPx = (rLogo.top - rHdr.top) + (rLogo.height/2);
-          // Inline style overrides CSS default; keep it inside header wrap
-          btn.style.top = Math.max(24, topPx) + "px";
-        } else {
-          // fallback
-          btn.style.top = "86px";
-        }
-      }
-    } catch(e) {}
-
-
-    // ✅ Visibility: never show Edit button when viewing another company
-    const mine = await isMyProfileNow();
-    try {
-      if (mine) { btn.classList.remove("hidden"); btn.style.display = ""; } else { btn.classList.add("hidden"); btn.style.display = "none"; }
-      if (!mine) { try{ btn.classList.remove("bton-edit-float-mobile"); }catch(e){} return; }
-      btn.setAttribute("aria-hidden", mine ? "false" : "true");
-    } catch(e) {}
-
-    // Always clean old classes
-    btn.classList.remove("bton-edit-on-avatar", "bton-edit-float-mobile");
-
-    if (!isMobile) {
-      if (ph && ph.parentNode) ph.parentNode.insertBefore(btn, ph.nextSibling);
-      return;
-    }
-
-    if (mine && hdr) {
-      if (btn.parentNode !== hdr) hdr.appendChild(btn);
-      btn.classList.add("bton-edit-float-mobile");
-    } else {
-      // not my profile: restore and keep hidden-view effective
-      if (ph && ph.parentNode) ph.parentNode.insertBefore(btn, ph.nextSibling);
-      btn.classList.remove("bton-edit-float-mobile");
-    }
-  }
-
-  function debouncePlace(){
-    clearTimeout(window.__btonRelocEditBtnT);
-    window.__btonRelocEditBtnT = setTimeout(placeEditBtn, 150);
-  }
-
-  document.addEventListener("DOMContentLoaded", placeEditBtn);
-  window.addEventListener("resize", debouncePlace);
-
-  // Re-run after profile opens (important for switching between companies on mobile)
-  try{
-    const _orig = window.openProfile;
-    if (typeof _orig === "function" && !_orig.__bton_wrapped) {
-      const wrapped = function(){
-        let res;
-        try {
-          res = _orig.apply(this, arguments);
-        } catch (e) {
-          // keep behavior same as original, but still re-place button
-          setTimeout(placeEditBtn, 40);
-          throw e;
-        }
-        Promise.resolve(res).finally(() => setTimeout(placeEditBtn, 40));
-        return res;
-      };
-      wrapped.__bton_wrapped = true;
-      window.openProfile = wrapped;
-    }
-  } catch(e){}
-
-  window.__btonRelocateEditBtn = placeEditBtn;
-  setTimeout(placeEditBtn, 700);
-  setTimeout(placeEditBtn, 1400);
-})();
-</script>
-
 </body></html>
