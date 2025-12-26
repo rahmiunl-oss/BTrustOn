@@ -1819,22 +1819,23 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   #bton-profile-header-wrap{ position: relative !important; }
   #btn-edit-profile.bton-edit-float-mobile{
     position: absolute !important;
-    top: 72px !important;
+    /* align with avatar row but stay OUTSIDE avatar */
+    top: 86px !important;
     right: 16px !important;
     transform: translateY(-50%) !important;
     width: 44px !important;
     height: 44px !important;
-    border-radius: 999px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: rgba(255,255,255,.92) !important;
-    border: 1px solid rgba(148,163,184,.35) !important;
-    box-shadow: 0 14px 40px rgba(2,132,199,.18), 0 6px 18px rgba(15,23,42,.12) !important;
+    border-radius: 9999px !important;
+    display: grid !important;
+    place-items: center !important;
+    background: rgba(255,255,255,.88) !important;
+    border: 1px solid rgba(15,23,42,.12) !important;
+    box-shadow: 0 10px 24px rgba(2,8,23,.12) !important;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     z-index: 40 !important;
-  }
+}
+
   #btn-edit-profile.bton-edit-float-mobile i{ font-size: 16px !important; }
 
   /* Always hide when hidden-view present (prevents showing on other profiles) */
@@ -3038,7 +3039,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="bg-gradient-to-r from-slate-50 via-white to-cyan-50/60 border-b border-BTrustOn-border pb-12 pt-12 relative overflow-hidden backdrop-blur-xl">
-<div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
+<div id="bton-profile-header-wrap" class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
 <div class="bton-avatar-premium w-32 h-32 rounded-2xl border border-transparent shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative transition-all" id="p-logo-container">
 <i class="fa-solid fa-building text-5xl text-gray-300" id="p-default-icon"></i>
 <img alt="Company Logo" class="hidden w-full h-full object-cover" id="p-logo-image">
@@ -9829,9 +9830,15 @@ if (servicesGrid) {
       }
   }
 
-  // Yetki Kontrolü
-  const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
+  // Yetki Kontrolü (✅ mobile + multi-device güvenli)
+  let myCurrentId = null;
+  // Prefer live auth id if available (prevents stale localStorage editing)
+  try { if (typeof __authUserId === "string" && __authUserId) myCurrentId = __authUserId; } catch(e) {}
+  // Fallback to localStorage
+  if (!myCurrentId) { try { myCurrentId = localStorage.getItem("BTrustOn_my_company_id"); } catch(e) {} }
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
+  // Keep local storage in sync for quick opens
+  if (isMyProfile) { try { localStorage.setItem("BTrustOn_my_company_id", String(myCurrentId)); } catch(e) {} }
   
   const btnEdit = document.getElementById("btn-edit-profile");
   const btnAddAsset = document.getElementById("btn-add-asset");
@@ -11913,6 +11920,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
     // Giriş yapıldıysa
     if (typeof closeLoginModal === "function") closeLoginModal();
+    try { __authUserId = session?.user?.id || null; } catch(e) { __authUserId = null; }
     
     // 1. Önce Admin mi diye bak (Bunu ekleyin)
     if (typeof checkAdminAccess === "function") checkAdminAccess();
@@ -18889,11 +18897,29 @@ function sortProjectsUI(mode){
 
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
     const hdr = ensureHeaderWrap();
+    // Position relative to avatar container for stable alignment
+    try{
+      if (hdr && window.matchMedia("(max-width: 640px)").matches){
+        const logo = document.getElementById("p-logo-container");
+        if (logo){
+          const rLogo = logo.getBoundingClientRect();
+          const rHdr  = hdr.getBoundingClientRect();
+          const topPx = (rLogo.top - rHdr.top) + (rLogo.height/2);
+          // Inline style overrides CSS default; keep it inside header wrap
+          btn.style.top = Math.max(24, topPx) + "px";
+        } else {
+          // fallback
+          btn.style.top = "86px";
+        }
+      }
+    } catch(e) {}
+
 
     // ✅ Visibility: never show Edit button when viewing another company
     const mine = await isMyProfileNow();
     try {
-      btn.style.display = mine ? "" : "none";
+      if (mine) { btn.classList.remove("hidden"); btn.style.display = ""; } else { btn.classList.add("hidden"); btn.style.display = "none"; }
+      if (!mine) { try{ btn.classList.remove("bton-edit-float-mobile"); }catch(e){} return; }
       btn.setAttribute("aria-hidden", mine ? "false" : "true");
     } catch(e) {}
 
