@@ -80,7 +80,7 @@
     display:flex;
     justify-content:flex-end;
     align-items:center;
-    margin-top: 14px;
+    margin-top: 8px;
   }
   #btn-edit-profile.bton-edit-pill{
     width:42px !important;
@@ -92,7 +92,10 @@
     justify-content:center !important;
     gap:0 !important;
   }
-  #btn-edit-profile.bton-edit-pill .bton-edit-label{ display:none !important; }
+    /* tighten vertical space under the mobile edit icon */
+  #profile-header-wrap{ padding-bottom: 24px !important; }
+  #profile-header-wrap + main{ padding-top: 20px !important; }
+#btn-edit-profile.bton-edit-pill .bton-edit-label{ display:none !important; }
 }
 
 /* --- Mobile: Profile tabs 2x2 grid (no horizontal scroll) --- */
@@ -3023,7 +3026,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 </div>
-<div class="bg-gradient-to-r from-slate-50 via-white to-cyan-50/60 border-b border-BTrustOn-border pb-12 pt-12 relative overflow-hidden backdrop-blur-xl">
+<div id="profile-header-wrap" class="bg-gradient-to-r from-slate-50 via-white to-cyan-50/60 border-b border-BTrustOn-border pb-12 pt-12 relative overflow-hidden backdrop-blur-xl">
 <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
 <div class="bton-avatar-premium w-32 h-32 rounded-2xl border border-transparent shadow-xl flex items-center justify-center bg-white/90 shrink-0 overflow-hidden relative transition-all" id="p-logo-container">
 <i class="fa-solid fa-building text-5xl text-gray-300" id="p-default-icon"></i>
@@ -3070,7 +3073,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="capitalize font-semibold text-gray-700" id="p-sector">Sector</span>
 </span>
 </div>
-<div id="p-edit-mobile-slot" class="mt-4 flex justify-end"></div>
+<div id="p-edit-mobile-slot" class="flex justify-end"></div>
 </div>
 <div class="flex items-center gap-3 shrink-0 relative z-20">
 <button class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-gray-200 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_edit_profile_1860fb" id="btn-edit-profile" onclick="editMyProfile()" title="Edit Profile">
