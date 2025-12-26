@@ -1810,6 +1810,63 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 }
 </style>
 
+
+<style id="bton-mobile-company-profile-tweaks">
+/* ===== Mobile: My Company profile tweaks ===== */
+@media (max-width: 640px){
+
+  /* Move Edit button near the company logo (avatar) */
+  #p-logo-container { position: relative !important; }
+  #btn-edit-profile.bton-edit-on-avatar{
+    position: absolute !important;
+    right: -10px !important;
+    bottom: -10px !important;
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255,255,255,.92) !important;
+    border: 1px solid rgba(148,163,184,.35) !important;
+    box-shadow: 0 14px 40px rgba(2,132,199,.18), 0 6px 18px rgba(15,23,42,.12) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 40 !important;
+  }
+  #btn-edit-profile.bton-edit-on-avatar i{ font-size: 16px !important; }
+
+  /* Make tabs (Overview/Projects/Certs/Assets) not require horizontal swipe */
+  #profile-tabs{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    border-bottom: none !important;
+    padding-bottom: 4px !important;
+  }
+  #profile-tabs button{
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px 10px !important;
+    border-radius: 16px !important;
+    background: rgba(255,255,255,.72) !important;
+    border: 1px solid rgba(148,163,184,.30) !important;
+    white-space: normal !important;
+    line-height: 1.1 !important;
+  }
+  /* Tailwind 'border-transparent' would remove the border; keep a subtle border on mobile */
+  #profile-tabs button.border-transparent{
+    border-color: rgba(148,163,184,.30) !important;
+  }
+  /* Active tab (JS adds border-BTrustOn-accent + bg-cyan-50/50) */
+  #profile-tabs button.border-BTrustOn-accent{
+    border-color: var(--BTrustOn-accent, #06b6d4) !important;
+    box-shadow: 0 10px 26px rgba(2,132,199,.14) !important;
+  }
+}
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -3043,7 +3100,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-12 gap-8">
 <div class="sm:col-span-8 space-y-8">
-<div class="border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
+<div id="profile-tabs" class="border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-cyan-50/50 transition whitespace-nowrap" id="tab-overview" onclick="switchProfileTab('overview')">
 <i class="fa-solid fa-building text-[11px]"></i>
 <span data-i18n="tab_overview">OVERVIEW</span>
@@ -18754,4 +18811,51 @@ function sortProjectsUI(mode){
   });
 })();
 </script>
+
+<script id="bton-mobile-edit-btn-relocate">
+/* ===== Mobile: relocate My Company Edit button onto avatar ===== */
+(function(){
+  const PLACEHOLDER_ID = "btn-edit-profile-placeholder";
+
+  function relocateEditBtn(){
+    const btn = document.getElementById("btn-edit-profile");
+    const logo = document.getElementById("p-logo-container");
+    if(!btn || !logo) return;
+
+    // Create a placeholder so we can restore the button on desktop
+    let ph = document.getElementById(PLACEHOLDER_ID);
+    if(!ph && btn.parentNode){
+      ph = document.createElement("span");
+      ph.id = PLACEHOLDER_ID;
+      ph.style.display = "none";
+      btn.parentNode.insertBefore(ph, btn);
+    }
+
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+
+    if(isMobile){
+      if(btn.parentNode !== logo){
+        logo.appendChild(btn);
+      }
+      btn.classList.add("bton-edit-on-avatar");
+    } else {
+      if(ph && ph.parentNode){
+        ph.parentNode.insertBefore(btn, ph.nextSibling);
+      }
+      btn.classList.remove("bton-edit-on-avatar");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", relocateEditBtn);
+  window.addEventListener("resize", function(){
+    clearTimeout(window.__btonRelocEditBtnT);
+    window.__btonRelocEditBtnT = setTimeout(relocateEditBtn, 140);
+  });
+
+  window.__btonRelocateEditBtn = relocateEditBtn;
+  setTimeout(relocateEditBtn, 700);
+  setTimeout(relocateEditBtn, 1400);
+})();
+</script>
+
 </body></html>
