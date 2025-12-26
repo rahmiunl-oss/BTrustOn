@@ -91,6 +91,29 @@
       }
       #btn-edit-profile .bton-edit-label{ display:inline; }
     }
+
+    /* --- Mobile: Profile tabs 2x2 grid (no horizontal scroll) --- */
+    @media (max-width: 640px){
+      .bton-profile-tabbar{
+        display:grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap:12px !important;
+        overflow: visible !important;
+        border-bottom: 0 !important;
+        padding-bottom: 10px;
+      }
+      .bton-profile-tabbar > button{
+        width:100% !important;
+        justify-content:center !important;
+        border-radius:9999px !important;
+        border: 1px solid rgba(0,0,0,.10) !important;
+        border-bottom-width:1px !important;
+      }
+      .bton-profile-tabbar > button[class*="border-BTrustOn-accent"]{
+        border-color: var(--BTrustOn-accent, #0ea5e9) !important;
+      }
+    }
+
 </style>
 <style id="bton-apple-premium-skin">
   :root{
@@ -3065,7 +3088,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-12 gap-8">
 <div class="sm:col-span-8 space-y-8">
-<div class="border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
+<div class="bton-profile-tabbar border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-cyan-50/50 transition whitespace-nowrap" id="tab-overview" onclick="switchProfileTab('overview')">
 <i class="fa-solid fa-building text-[11px]"></i>
 <span data-i18n="tab_overview">OVERVIEW</span>
