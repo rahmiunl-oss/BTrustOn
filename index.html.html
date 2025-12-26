@@ -1815,15 +1815,16 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 /* ===== Mobile: My Company profile tweaks ===== */
 @media (max-width: 640px){
 
-  /* Move Edit button near the company logo (avatar) */
-  #p-logo-container { position: relative !important; }
-  #btn-edit-profile.bton-edit-on-avatar{
+  /* Mobile: float Edit button near avatar but separate on the right */
+  #bton-profile-header-wrap{ position: relative !important; }
+  #btn-edit-profile.bton-edit-float-mobile{
     position: absolute !important;
-    right: -10px !important;
-    bottom: -10px !important;
+    top: 72px !important;
+    right: 16px !important;
+    transform: translateY(-50%) !important;
     width: 44px !important;
     height: 44px !important;
-    border-radius: 16px !important;
+    border-radius: 999px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1834,9 +1835,12 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     -webkit-backdrop-filter: blur(10px);
     z-index: 40 !important;
   }
-  #btn-edit-profile.bton-edit-on-avatar i{ font-size: 16px !important; }
+  #btn-edit-profile.bton-edit-float-mobile i{ font-size: 16px !important; }
 
-  /* Make tabs (Overview/Projects/Certs/Assets) not require horizontal swipe */
+  /* Always hide when hidden-view present (prevents showing on other profiles) */
+  #btn-edit-profile.hidden-view{ display:none !important; }
+
+/* Make tabs (Overview/Projects/Certs/Assets) not require horizontal swipe */
   #profile-tabs{
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -12042,8 +12046,27 @@ async function openMyCompanyIfExists() {
    ========================================= */
 /* --- A. EDİTÖRÜ DOLDURMA (GÜNCEL) --- */
 /* --- GÜNCELLENMİŞ: editMyProfile (ÜLKE VE ŞEHİR DESTEKLİ) --- */
-function editMyProfile(targetSectionId) {
+async function editMyProfile(targetSectionId) {
   if (!selectedCompany) return;
+
+
+  // ✅ Permission guard: only your own company can be edited
+  try {
+    const _t = (typeof t === "function") ? t : (() => null);
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+      showToast(_t("toast_login_required") || "Login required", _t("toast_login_required_msg") || "Please sign in to edit your profile.", "brand");
+      return;
+    }
+    if (!selectedCompany || String(selectedCompany.id) !== String(user.id)) {
+      showToast(_t("toast_not_allowed") || "Not allowed", _t("toast_not_allowed_edit") || "You can only edit your own company profile.", "warn");
+      return;
+    }
+  } catch(e) {
+    try { showToast("Error", "Permission check failed.", "error"); } catch(_) {}
+    return;
+  }
+
   targetSectionId = targetSectionId || null;
 
   // 1. Mevcut verileri kutulara doldur
@@ -18813,16 +18836,33 @@ function sortProjectsUI(mode){
 </script>
 
 <script id="bton-mobile-edit-btn-relocate">
-/* ===== Mobile: relocate My Company Edit button onto avatar ===== */
+/* ===== Mobile: move Edit button near avatar (only for your own company) ===== */
 (function(){
   const PLACEHOLDER_ID = "btn-edit-profile-placeholder";
 
-  function relocateEditBtn(){
-    const btn = document.getElementById("btn-edit-profile");
-    const logo = document.getElementById("p-logo-container");
-    if(!btn || !logo) return;
+  function ensureHeaderWrap(){
+    try{
+      const wrap = document.querySelector("#view-profile .bg-gradient-to-r > .max-w-7xl");
+      if (wrap && !wrap.id) wrap.id = "bton-profile-header-wrap";
+      return wrap || null;
+    } catch(e){ return null; }
+  }
 
-    // Create a placeholder so we can restore the button on desktop
+  async function isMyProfileNow(){
+    try{
+      if (!window.supabaseClient || typeof window.supabaseClient.auth?.getUser !== "function") return false;
+      const { data: { user } } = await window.supabaseClient.auth.getUser();
+      if (!user) return false;
+      if (!window.selectedCompany || !window.selectedCompany.id) return false;
+      return String(window.selectedCompany.id) === String(user.id);
+    } catch(e){ return false; }
+  }
+
+  async function placeEditBtn(){
+    const btn = document.getElementById("btn-edit-profile");
+    if(!btn) return;
+
+    // placeholder to restore original position on desktop
     let ph = document.getElementById(PLACEHOLDER_ID);
     if(!ph && btn.parentNode){
       ph = document.createElement("span");
@@ -18832,29 +18872,53 @@ function sortProjectsUI(mode){
     }
 
     const isMobile = window.matchMedia("(max-width: 640px)").matches;
+    const hdr = ensureHeaderWrap();
 
-    if(isMobile){
-      if(btn.parentNode !== logo){
-        logo.appendChild(btn);
-      }
-      btn.classList.add("bton-edit-on-avatar");
+    // Always clean old classes
+    btn.classList.remove("bton-edit-on-avatar", "bton-edit-float-mobile");
+
+    if (!isMobile) {
+      if (ph && ph.parentNode) ph.parentNode.insertBefore(btn, ph.nextSibling);
+      return;
+    }
+
+    const mine = await isMyProfileNow();
+
+    if (mine && hdr) {
+      if (btn.parentNode !== hdr) hdr.appendChild(btn);
+      btn.classList.add("bton-edit-float-mobile");
     } else {
-      if(ph && ph.parentNode){
-        ph.parentNode.insertBefore(btn, ph.nextSibling);
-      }
-      btn.classList.remove("bton-edit-on-avatar");
+      // not my profile: restore and keep hidden-view effective
+      if (ph && ph.parentNode) ph.parentNode.insertBefore(btn, ph.nextSibling);
+      btn.classList.remove("bton-edit-float-mobile");
     }
   }
 
-  document.addEventListener("DOMContentLoaded", relocateEditBtn);
-  window.addEventListener("resize", function(){
+  function debouncePlace(){
     clearTimeout(window.__btonRelocEditBtnT);
-    window.__btonRelocEditBtnT = setTimeout(relocateEditBtn, 140);
-  });
+    window.__btonRelocEditBtnT = setTimeout(placeEditBtn, 150);
+  }
 
-  window.__btonRelocateEditBtn = relocateEditBtn;
-  setTimeout(relocateEditBtn, 700);
-  setTimeout(relocateEditBtn, 1400);
+  document.addEventListener("DOMContentLoaded", placeEditBtn);
+  window.addEventListener("resize", debouncePlace);
+
+  // Re-run after profile opens (important for switching between companies on mobile)
+  try{
+    const _orig = window.openProfile;
+    if (typeof _orig === "function" && !_orig.__bton_wrapped) {
+      const wrapped = async function(){
+        const res = await _orig.apply(this, arguments);
+        setTimeout(placeEditBtn, 40);
+        return res;
+      };
+      wrapped.__bton_wrapped = true;
+      window.openProfile = wrapped;
+    }
+  } catch(e){}
+
+  window.__btonRelocateEditBtn = placeEditBtn;
+  setTimeout(placeEditBtn, 700);
+  setTimeout(placeEditBtn, 1400);
 })();
 </script>
 
