@@ -748,4 +748,9 @@
   "hero_title_signed_in": "Grow with the Right Business Partners on BTrustOn",
   "hero_cta_profile": "Improve Profile",
   "btn_upgrade_to_post": "Upgrade to Post"
+  "notif_follow_update_title": "Update from a company you follow",
+  "notif_follow_update_msg": "{company} posted a new update.",
+  "notif_profile_view_title": "Profile viewed",
+  "notif_profile_view_msg_company": "{company} viewed your profile.",
+  "notif_profile_view_msg_guest": "A guest viewed your profile."
 }
