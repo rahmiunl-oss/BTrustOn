@@ -4690,24 +4690,23 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 #attachment-img{ -webkit-user-drag: none; user-select: none; max-width: none; max-height: none; }
 
 </style>
-<div class
-  /* ==============================
-     MOBILE INBOX TABS (PREVENT TRUNCATION)
-     ============================== */
-  @media (max-width: 420px){
-    .bton-inbox-tabs-bar{
-      gap: 10px !important;
-      flex-wrap: wrap !important;
-      row-gap: 8px !important;
-    }
-    #btn-tab-inbox, #btn-tab-sent, #btn-tab-notif{
-      font-size: 11px !important;
-      padding-bottom: 10px !important;
-      white-space: nowrap !important;
-    }
+<style id="mobile-inbox-tabs-wrap">
+/* MOBILE INBOX TABS (TR: Bildirimler tabı kırpılmasın) */
+@media (max-width: 520px){
+  .bton-inbox-tabs-bar{
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    row-gap: 10px !important;
   }
-
-="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
+  #btn-tab-inbox, #btn-tab-sent, #btn-tab-notif{
+    font-size: 11px !important;
+    padding: 7px 10px !important;
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+  }
+}
+</style>
+<div class="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
 <button class="absolute top-5 right-5 text-white/70 hover:text-white text-3xl z-50" onclick="closeGallery()">
 <i class="fa-solid fa-xmark"></i>
 </button>
