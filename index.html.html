@@ -11881,57 +11881,115 @@ function escapeHtml(v){
           .replace(/'/g,"&#39;");
 }
 
+// i18n-safe translator helper (never throws)
+function TT(key, fallback){
+  try {
+    return (typeof window.t === "function") ? (t(key) || fallback) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
 // GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
 /* --- GÜNCELLENMİŞ handleJoin (Toast'lı) --- */
 async function handleJoin() {
   const btn = document.querySelector("#join-form button");
   const originalText = btn.textContent;
-  btn.textContent = "Processing...";
+
+  // ✅ never throw if i18n isn't ready
+  btn.textContent = TT("toast_processing", (currentLang === "tr" ? "İşleniyor..." : "Processing..."));
   btn.disabled = true;
 
+  let authData = null;
+
   try {
-    const email = document.getElementById("join-email").value;
-    const password = document.getElementById("join-password").value;
-    const companyName = document.getElementById("join-companyName").value;
-    const sector = document.getElementById("join-sector").value;
-    const typeVal = document.getElementById("join-type").value;
-    const city = document.getElementById("join-city").value;
-    const country = document.getElementById("join-country").value; // YENİ
-    const services = document.getElementById("join-services").value;
+    const email = (document.getElementById("join-email")?.value || "").trim();
+    const password = (document.getElementById("join-password")?.value || "").trim();
+    const companyName = (document.getElementById("join-companyName")?.value || "").trim();
+    const sector = (document.getElementById("join-sector")?.value || "").trim();
+    const typeVal = (document.getElementById("join-type")?.value || "").trim();
+    const city = (document.getElementById("join-city")?.value || "").trim();
+    const country = (document.getElementById("join-country")?.value || "").trim();
+    const services = (document.getElementById("join-services")?.value || "").trim();
+
     const errEl = document.getElementById("join-error");
+    if (errEl) errEl.classList.add("hidden");
 
-    if(errEl) errEl.classList.add("hidden");
+    // ---------------------------------------------------------
+    // Stage 1: AUTH + DB (only these failures should show "failed")
+    // ---------------------------------------------------------
+    try {
+      const signRes = await supabaseClient.auth.signUp({ email, password });
+      authData = signRes?.data || null;
+      if (signRes?.error) throw signRes.error;
 
-    const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
-    if (authError) throw authError;
+      const uid = authData?.user?.id;
+      if (!uid) {
+        // Some setups require email confirmation; user may not be returned immediately.
+        throw new Error(currentLang === "tr"
+          ? "Kayıt oluşturuldu ancak kullanıcı bilgisi alınamadı. Lütfen e-postanızı doğrulayın ve tekrar giriş yapın."
+          : "Signup created, but user info was not returned. Please verify your email and login.");
+      }
 
-    const { error: dbError } = await supabaseClient.from('profiles').insert([
-      {
-        id: authData.user.id,
-        email: email,
+      const insRes = await supabaseClient.from("profiles").insert([{
+        id: uid,
+        email,
         company_name: companyName,
-        sector: sector,
+        sector,
         company_type: typeVal,
-        city: city,
-        country: country, // YENİ SÜTUN
-        services: services,
+        city,
+        country,
+        services,
         description: "",
         size: "1-10",
         subscription_tier: "free",
         subscription_status: "free"
+      }]);
+
+      if (insRes?.error) throw insRes.error;
+    } catch (error) {
+      const errEl2 = document.getElementById("join-error");
+      if (errEl2) {
+        errEl2.textContent = (currentLang === "tr" ? "Hata: " : "Error: ") + (error?.message || error);
+        errEl2.classList.remove("hidden");
       }
-    ]);
 
-    if (dbError) throw dbError;
+      showToast(
+        TT("toast_registration_failed", (currentLang === "tr" ? "Kayıt başarısız" : "Registration Failed")),
+        (error?.message || (currentLang === "tr" ? "Lütfen bilgileri kontrol edin." : "Please check details.")),
+        "error"
+      );
+      return;
+    }
 
+    // ---------------------------------------------------------
+    // Stage 2: UI (never block join even if something fails)
+    // ---------------------------------------------------------
     const __intent = (typeof __joinIntent !== "undefined") ? String(__joinIntent) : "free";
     try { if (typeof __joinIntent !== "undefined") __joinIntent = "free"; } catch(_) {}
 
-    toggleModal('modal-join');
-    showToast(tt('toast_welcome', (currentLang === 'tr' ? 'Hoş geldiniz!' : 'Welcome!')), tt('toast_registration_success', (currentLang === 'tr' ? 'Kayıt başarılı. Profil oluşturuldu.' : 'Registration successful. Profile created.')), 'success');
-    checkUserAndOpenProfile();
-    if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
+    try { toggleModal("modal-join"); } catch(e) {}
+    try {
+      showToast(
+        TT("toast_welcome", (currentLang === "tr" ? "Hoş geldiniz!" : "Welcome!")),
+        TT("toast_registration_success", (currentLang === "tr" ? "Kayıt başarılı. Profil oluşturuldu." : "Registration successful. Profile created.")),
+        "success"
+      );
+    } catch(e) {
+      try {
+        showToast(
+          (currentLang === "tr" ? "Hoş geldiniz!" : "Welcome!"),
+          (currentLang === "tr" ? "Kayıt başarılı." : "Registration successful."),
+          "success"
+        );
+      } catch(_) {}
+    }
+
+    try { checkUserAndOpenProfile(); } catch(e) { console.warn("checkUserAndOpenProfile(after join):", e); }
+    try { if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120); } catch(e) {}
+
     // If user joined from the Pro pricing CTA, start Pro trial immediately
     if (__intent.toLowerCase() === "pro") {
       setTimeout(async () => {
@@ -11952,19 +12010,22 @@ async function handleJoin() {
       }, 550);
     }
 
-    // Saved companies (for KOBI MVP) - defer until script fully loaded (avoids TDZ)
+    // Saved companies
     setTimeout(() => {
       try {
-        if (typeof fetchSavedCompanies === 'function') {
-          fetchSavedCompanies().then(() => { try { updateSaveButtonsUI(); try{ updateFollowButtonsUI(); }catch(e){} refreshCompanyCardsAfterSavedChange(); } catch(e) {} });
+        if (typeof fetchSavedCompanies === "function") {
+          fetchSavedCompanies().then(() => {
+            try {
+              updateSaveButtonsUI();
+              try { updateFollowButtonsUI(); } catch(e) {}
+              refreshCompanyCardsAfterSavedChange();
+            } catch(e) {}
+          });
         }
       } catch(e) {}
     }, 0);
 
-
-  
-
-    // Follow list (for Only followed filter + follow buttons)
+    // Follow list
     setTimeout(async () => {
       try {
         const u = await _getAuthUserSafe();
@@ -11973,18 +12034,13 @@ async function handleJoin() {
         try { updateFollowButtonsUI(); } catch(e) {}
       } catch(e) {}
     }, 0);
-} catch (error) {
-    const errEl = document.getElementById("join-error");
-    if(errEl) {
-      errEl.textContent = "Error: " + (error.message || error);
-      errEl.classList.remove("hidden");
-    }
-    showToast("Registration Failed", error.message || "Please check details.", "error");
+
   } finally {
     btn.textContent = originalText;
     btn.disabled = false;
   }
 }
+
 // --- YENİ EKLENECEK FONKSİYON BAŞLANGIÇ ---
 async function fetchAllPublicProfiles() {
   // 1. Supabase'den profilleri çek
