@@ -4848,6 +4848,7 @@ async function partnerLogout() {
     
     // 2. Hafızayı temizle
     localStorage.removeItem("BTrustOn_my_company_id");
+    try { __myProForEngagement = false; } catch(e) {}
     if(typeof selectedCompany !== 'undefined') selectedCompany = null;
 
     // 3. Bildirim göstermeden direkt ana sayfaya dön
@@ -4970,6 +4971,7 @@ let homeUpdatesFilter = "all"; // all | followed
 let homeFollowSet = new Set();
 let homeFollowLoadedFor = null;
 let __authUserId = null;
+let __myProForEngagement = false;
 
 
 const HOME_UPDATE_TEMPLATES = {
@@ -6218,7 +6220,7 @@ async function _maybeNotifyFollowedUpdate(row) {
       "notif_follow_update_title",
       "notif_follow_update_msg",
       { company: row.company_name || "A company you follow", company_id: cid },
-      "OPEN_PROFILE"
+      "OPEN_HOME_FOLLOWED"
     );
   } catch (e) {}
 }
@@ -6269,6 +6271,10 @@ async function syncFollowedUpdateNotifications() {
 }
 
 function _isProActiveForEngagement() {
+  try {
+    // Use cached "my plan" so it keeps working even if selectedCompany changes while browsing
+    if (typeof __myProForEngagement === "boolean") return __myProForEngagement;
+  } catch(e) {}
   try { return (typeof _isProForPosting === "function") ? _isProForPosting(selectedCompany) : false; } catch(e) { return false; }
 }
 
@@ -12077,6 +12083,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   const mobileQuickCompany = document.getElementById("mobile-quick-my-company");
   // 2. UI'I ANINDA GÜNCELLE
   if (!session) {
+    try { __myProForEngagement = false; } catch(e) {}
     if(guestGroup) { guestGroup.classList.remove("hidden"); guestGroup.classList.add("flex"); }
     if(userGroup) { userGroup.classList.add("hidden"); userGroup.classList.remove("flex"); }
     if(mobileGuestGroup) { mobileGuestGroup.classList.remove("hidden"); mobileGuestGroup.classList.add("flex"); }
@@ -12107,6 +12114,13 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 
   // ✅ Enforce Pro lifecycle (expiry + reminder notifications)
   try { profile = await enforceProLifecycle(profile); } catch(e) {}
+
+  // ✅ Cache my Pro status for engagement notifications (independent of selectedCompany)
+  try {
+    const __tier = String(profile.subscription_tier || "").toLowerCase();
+    const __status = String(profile.subscription_status || "").toLowerCase();
+    __myProForEngagement = (__tier === "pro") && (__status === "active_paid" || __status === "active_trial" || __status === "active" || __status === "pro");
+  } catch(e) { __myProForEngagement = false; }
 
   // 4. VERİYİ FORMATLA
   const mappedProfile = {
@@ -12378,6 +12392,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   else if (event === 'SIGNED_OUT') {
     // Çıkış yapıldıysa temizle + ana sayfaya dön (deploy path bağımsız)
     try { localStorage.removeItem("BTrustOn_my_company_id"); } catch(e) {}
+    try { __myProForEngagement = false; } catch(e) {}
 
     // Teardown realtime channels / intervals (deferred to avoid TDZ)
     setTimeout(() => {
@@ -14527,6 +14542,18 @@ function renderInboxItems() {
           try {
             const cid = notifParams.company_id || notifParams.companyId || notifParams.cid || notifParams.profile_id || notifParams.profileId;
             if (cid && typeof openProfile === "function") openProfile(cid);
+          } catch(e) {}
+        }
+        if (action === 'OPEN_HOME_FOLLOWED') {
+          try {
+            if (typeof showMainView === "function") showMainView();
+            if (typeof setHomeUpdatesFilter === "function") setHomeUpdatesFilter('followed');
+            setTimeout(() => {
+              try {
+                const el = document.getElementById("home-updates-head") || document.getElementById("home-updates");
+                if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              } catch(e) {}
+            }, 80);
           } catch(e) {}
         }
         if (action === 'OPEN_ANALYTICS') {
