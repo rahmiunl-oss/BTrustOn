@@ -1860,6 +1860,49 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 }
 </style>
 
+<style id="bton-pro-apple-style">
+/* Apple-like Pro styling: lighter, premium, glassy (replaces dark Pro gradient) */
+:root{
+  --bton-pro-appleA: #0A84FF;
+  --bton-pro-appleB: #64D2FF;
+}
+.bton-pro-card{
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(10,132,255,.16);
+  box-shadow: 0 18px 60px rgba(15,23,42,.10);
+  backdrop-filter: blur(10px);
+}
+.bton-pro-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(80% 60% at 10% 0%, rgba(10,132,255,.18), rgba(10,132,255,0) 60%),
+    radial-gradient(70% 60% at 95% 20%, rgba(100,210,255,.20), rgba(100,210,255,0) 55%),
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.84));
+  pointer-events:none;
+}
+.bton-pro-card > *{ position:relative; z-index:1; }
+
+.bton-pro-muted{ color: rgba(15,23,42,.60) !important; }
+.bton-pro-pill-apple{
+  background: rgba(10,132,255,.10);
+  border: 1px solid rgba(10,132,255,.20);
+  color: var(--bton-pro-appleA);
+}
+.bton-pro-iconbox{
+  background: rgba(10,132,255,.08);
+  border: 1px solid rgba(10,132,255,.16);
+}
+.bton-pro-icon{ color: var(--bton-pro-appleA) !important; }
+
+.bton-pro-cta{
+  background: linear-gradient(135deg, var(--bton-pro-appleA), var(--bton-pro-appleB));
+  box-shadow: 0 14px 34px rgba(10,132,255,.22);
+}
+</style>
+
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -2608,71 +2651,71 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <button class="mt-auto w-full border border-slate-200 bg-white text-xs font-extrabold text-slate-800 py-3 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition" data-i18n="btn_join_free" id="btn-pricing-free" onclick="pricingChooseFree()">JOIN FREE</button>
 </div>
 <!-- PRO -->
-<div class="relative rounded-3xl p-7 shadow-float overflow-hidden flex flex-col text-white border border-white/10">
-<div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-BTrustOn-primary to-cyan-800 opacity-90"></div>
+<div class="relative rounded-3xl p-7 overflow-hidden flex flex-col bton-pro-card">
+
 <div class="relative z-10 flex items-start justify-between gap-3 mb-5">
 <div>
 <div class="flex items-center gap-2">
 <h3 class="text-sm font-extrabold mb-0" data-i18n="pricing_plan_pro">Pro</h3>
 <span class="text-[10px] font-extrabold bg-amber-400 text-slate-900 px-2 py-1 rounded-full" data-i18n="badge_trial">3-MO FREE</span>
 </div>
-<p class="text-xs text-cyan-100/90 mt-1" data-i18n="price_pro_tag">For suppliers who want to win more work.</p>
+<p class="text-xs bton-pro-muted mt-1" data-i18n="price_pro_tag">For suppliers who want to win more work.</p>
 </div>
-<span class="text-[10px] font-extrabold bg-white/10 border border-white/15 text-white px-2 py-1 rounded-full" data-i18n="badge_popular">MOST POPULAR</span>
+<span class="text-[10px] font-extrabold bton-pro-pill-apple px-2 py-1 rounded-full" data-i18n="badge_popular">MOST POPULAR</span>
 </div>
 <div class="relative z-10 mb-5">
 <div class="flex items-end gap-2">
 <span class="text-4xl font-header font-bold" data-i18n="pricing_price_19">$19</span>
-<span class="text-xs text-cyan-100/90 mb-1" data-i18n="price_month">/month</span>
+<span class="text-xs bton-pro-muted mb-1" data-i18n="price_month">/month</span>
 </div>
-<div class="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3 py-1.5">
-<i class="fa-solid fa-lock text-[10px] text-cyan-50/90"></i>
-<span class="text-[11px] text-cyan-50/90">
+<div class="mt-2 inline-flex items-center gap-2 rounded-full bton-pro-pill-apple px-3 py-1.5">
+<i class="fa-solid fa-lock text-[10px] bton-pro-icon"></i>
+<span class="text-[11px] bton-pro-muted">
 <span data-i18n="price_trial_note">3 months free trial</span>
-<span class="text-cyan-100/60" data-i18n="ui_53fe08"> • </span>
+<span class="opacity-50" data-i18n="ui_53fe08"> • </span>
 <span data-i18n="price_no_card">No card required</span>
 </span>
 </div>
 </div>
-<ul class="relative z-10 text-xs text-cyan-50 space-y-3 mb-6">
+<ul class="relative z-10 text-xs text-slate-700 space-y-3 mb-6">
 <li class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center shrink-0">
-<i class="fa-solid fa-circle-check text-cyan-100 text-[12px] leading-none"></i>
+<div class="w-8 h-8 rounded-xl bton-pro-iconbox grid place-items-center shrink-0">
+<i class="fa-solid fa-circle-check bton-pro-icon text-[12px] leading-none"></i>
 </div>
 <span class="leading-tight" data-i18n="price_pro_1">Verified badge after approval</span>
 </li>
 <li class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center shrink-0">
-<i class="fa-solid fa-infinity text-cyan-100 text-[12px] leading-none"></i>
+<div class="w-8 h-8 rounded-xl bton-pro-iconbox grid place-items-center shrink-0">
+<i class="fa-solid fa-infinity bton-pro-icon text-[12px] leading-none"></i>
 </div>
 <span class="leading-tight" data-i18n="price_pro_2">Unlimited projects, certificates &amp; assets</span>
 </li>
 <li class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center shrink-0">
-<i class="fa-solid fa-bullhorn text-cyan-100 text-[12px] leading-none"></i>
+<div class="w-8 h-8 rounded-xl bton-pro-iconbox grid place-items-center shrink-0">
+<i class="fa-solid fa-bullhorn bton-pro-icon text-[12px] leading-none"></i>
 </div>
 <span class="leading-tight" data-i18n="price_pro_3">Post Company Updates</span>
 </li>
 <li class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center shrink-0">
-<i class="fa-solid fa-images text-cyan-100 text-[12px] leading-none"></i>
+<div class="w-8 h-8 rounded-xl bton-pro-iconbox grid place-items-center shrink-0">
+<i class="fa-solid fa-images bton-pro-icon text-[12px] leading-none"></i>
 </div>
 <span class="leading-tight" data-i18n="price_pro_4">Albums (galleries) for projects &amp; assets</span>
 </li>
 <li class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center shrink-0">
-<i class="fa-solid fa-arrow-up-right-dots text-cyan-100 text-[12px] leading-none"></i>
+<div class="w-8 h-8 rounded-xl bton-pro-iconbox grid place-items-center shrink-0">
+<i class="fa-solid fa-arrow-up-right-dots bton-pro-icon text-[12px] leading-none"></i>
 </div>
 <span class="leading-tight" data-i18n="price_pro_5">Priority visibility in search</span>
 </li>
 <li class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-xl bg-white/10 border border-white/15 grid place-items-center shrink-0">
-<i class="fa-solid fa-bolt text-cyan-100 text-[12px] leading-none"></i>
+<div class="w-8 h-8 rounded-xl bton-pro-iconbox grid place-items-center shrink-0">
+<i class="fa-solid fa-bolt bton-pro-icon text-[12px] leading-none"></i>
 </div>
 <span class="leading-tight" data-i18n="price_pro_6">Easier access for buyers after verification</span>
 </li>
 </ul>
-<button class="relative z-10 mt-auto w-full bg-white text-slate-900 text-xs font-extrabold py-3 rounded-xl hover:bg-white/90 transition" data-i18n="btn_start_trial" id="btn-pricing-pro" onclick="pricingChoosePro()">START FREE TRIAL</button>
+<button class="relative z-10 mt-auto w-full bton-pro-cta text-white text-xs font-extrabold py-3 rounded-xl hover:brightness-[0.98] transition" data-i18n="btn_start_trial" id="btn-pricing-pro" onclick="pricingChoosePro()">START FREE TRIAL</button>
 </div>
 </div>
 </section>
@@ -10874,6 +10917,18 @@ async function switchLanguage(lang) {
 
   // 3) Always apply i18n to the current DOM
   try { applyTranslations(); } catch(e) {}
+
+
+  // 3b) Refresh dynamic plan/upgrade labels in header & menus (no refresh needed)
+  try {
+    const __c = (typeof __postCompany !== "undefined" && __postCompany)
+      ? __postCompany
+      : ((typeof selectedCompany !== "undefined") ? selectedCompany : null);
+    if (typeof renderNavPlanButton === "function") renderNavPlanButton(__c);
+  } catch(e) {}
+  try { if (typeof refreshAnalyticsPlanUI === "function") refreshAnalyticsPlanUI(); } catch(e) {}
+  try { if (typeof refreshHomeUpdatesCTA === "function") refreshHomeUpdatesCTA(); } catch(e) {}
+  try { if (typeof refreshPricingSection === "function") refreshPricingSection(); } catch(e) {}
 
   // 4) Re-render dynamic lists using the SAME current state (no extra fetch, no scroll jump)
   try {
