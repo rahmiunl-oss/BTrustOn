@@ -12266,6 +12266,11 @@ async function restoreInitialRoute() {
     try {
       await openProfile(companyId, { tab: (companyFromHash ? tabFromHash : null), focus: (companyFromHash ? focusFromHash : null), __fromRestore: true });
       try { window.__BTON_BOOT_OPENED_COMPANY = true; } catch(e) {}
+    } catch (err) {
+      console.error("restoreInitialRoute openProfile failed:", err);
+      try { localStorage.removeItem("BTrustOn_last_route"); } catch(_) {}
+      try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch(_) {}
+      try { showMainView(); } catch(_) {}
     } finally {
       window.__routeRestoring = false;
     }
@@ -12313,56 +12318,107 @@ function finishBoot() {
   } catch(e) {}
 }
 
+/* --- BOOT SAFETY NET (prevents mobile refresh brick on unexpected errors) --- */
+if (!window.__BTON_BOOT_SAFETY_NET) {
+  window.__BTON_BOOT_SAFETY_NET = true;
+
+  window.addEventListener("unhandledrejection", (e) => {
+    try { console.error("Unhandled promise:", (e && e.reason) ? e.reason : e); } catch(_) {}
+    try { finishBoot(); } catch(_) {}
+  });
+
+  window.addEventListener("error", (e) => {
+    try { console.error("Window error:", (e && e.error) ? e.error : e); } catch(_) {}
+    try { finishBoot(); } catch(_) {}
+  });
+
+  // Watchdog: even if something goes wrong, never leave the UI hidden
+  setTimeout(() => {
+    try {
+      const stillBoot = document.documentElement.classList.contains("booting") || document.getElementById("boot-overlay");
+      if (stillBoot) finishBoot();
+    } catch(_) {}
+  }, 3500);
+}
+
+
 document.addEventListener("DOMContentLoaded", async () => {
-  // Boot guard (prevents accidental double-init)
+  // ✅ Guard: prevent double-run on iOS Safari (DOMContentLoaded + INITIAL_SESSION can fire back-to-back)
   if (window.__BTON_MAIN_BOOTED) return;
   window.__BTON_MAIN_BOOTED = true;
 
-  populateCountrySelects(); // Country dropdowns
+  let __bootOk = false;
 
-  // Apply language before showing UI (prevents EN→TR flash)
-  await bootI18n();
-  // Restore last view after language is ready
-  await restoreInitialRoute();
-  finishBoot();
-  initRealData();
-  // ✅ On company route, postpone showcase animations (reduces iOS Safari refresh crashes)
   try {
-    const __bootHasCompany2 = /^#company=/.test(window.location.hash || "");
-    if (!__bootHasCompany2) initShowcaseSystem();
-    else setTimeout(() => { try { initShowcaseSystem(); } catch(e) {} }, 1600);
-  } catch(e) { try { initShowcaseSystem(); } catch(_) {} }
+    // Country dropdowns (never brick boot)
+    try { populateCountrySelects(); } catch(e){ console.warn("populateCountrySelects:", e); }
 
+    // Apply language before showing UI (prevents EN→TR flash)
+    try { await bootI18n(); } catch(e){ console.error("bootI18n:", e); }
 
-  // Home updates (last 7 days)
-  const __bootHasCompany = /^#company=/.test(window.location.hash || "");
-  if (!__bootHasCompany) {
-    _setHomeUpdatesFilterUI(homeUpdatesFilter);
-    fetchHomeUpdates();
-    subscribeHomeUpdatesRealtime();
-    setupHomeUpdatesNav();
-  } else {
-    // ✅ On company route, postpone Home feed + realtime to reduce iOS Safari load during refresh
-    setTimeout(() => {
+    // Restore last view after language is ready (never brick boot)
+    try {
+      await restoreInitialRoute();
+    } catch (e) {
+      console.error("restoreInitialRoute (boot) failed:", e);
+      // Bad route can brick refresh; clear it and fall back to Home
+      try { localStorage.removeItem("BTrustOn_last_route"); } catch(_) {}
+      try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch(_) {}
+      try { showMainView(); } catch(_) {}
+    }
+
+    // Load data after view is visible (safe)
+    try { initRealData(); } catch(e){ console.error("initRealData:", e); }
+
+    // ✅ On company route, postpone showcase animations (reduces iOS Safari refresh crashes)
+    try {
+      const __bootHasCompany2 = /^#company=/.test(window.location.hash || "");
+      if (!__bootHasCompany2) initShowcaseSystem();
+      else setTimeout(() => { try { initShowcaseSystem(); } catch(e) {} }, 1600);
+    } catch(e) { try { initShowcaseSystem(); } catch(_) {} }
+
+    // Home updates (last 7 days) — postpone on company route
+    try {
+      const __bootHasCompany = /^#company=/.test(window.location.hash || "");
+      if (!__bootHasCompany) {
+        try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
+        try { fetchHomeUpdates(); } catch(e) {}
+        try { subscribeHomeUpdatesRealtime(); } catch(e) {}
+        try { setupHomeUpdatesNav(); } catch(e) {}
+      } else {
+        setTimeout(() => {
+          try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
+          try { fetchHomeUpdates(); } catch(e) {}
+          try { subscribeHomeUpdatesRealtime(); } catch(e) {}
+          try { setupHomeUpdatesNav(); } catch(e) {}
+        }, 1400);
+      }
+    } catch(e) {}
+
+    // Session check (refresh user UI / My Company button etc.)
+    try { checkUserAndOpenProfile(); } catch(e){ console.error("checkUserAndOpenProfile:", e); }
+
+    try { if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120); } catch(e) {}
+    try { if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160); } catch(e) {}
+    try { if (typeof refreshHomeUpdatesCTA === "function") setTimeout(refreshHomeUpdatesCTA, 200); } catch(e) {}
+
+    __bootOk = true;
+  } finally {
+    // ✅ CRITICAL: Always finish boot so page never stays hidden on mobile refresh
+    try { finishBoot(); } catch(e) {
       try {
-        _setHomeUpdatesFilterUI(homeUpdatesFilter);
-        fetchHomeUpdates();
-        subscribeHomeUpdatesRealtime();
-        setupHomeUpdatesNav();
-      } catch(e) {}
-    }, 1400);
+        document.documentElement.classList.remove("booting","route-company","boot-show");
+        document.getElementById("boot-overlay")?.remove();
+      } catch(_) {}
+    }
+
+    if (!__bootOk) {
+      try {
+        const msg = (typeof t === "function" ? (t("ui_try_refresh") || "Bir hata oluştu. Lütfen yenileyin.") : "Bir hata oluştu. Lütfen yenileyin.");
+        if (typeof showToast === "function") showToast("Error", msg, "error");
+      } catch(_) {}
+    }
   }
-
-
-  // 2) Fetch public profiles (can run after correct view is already visible)
-  // fetchAllPublicProfiles(); // disabled (initRealData handles public profiles)
- 
-
-  // 3) User session check (refresh user UI / My Company button etc.)
-  checkUserAndOpenProfile();
-  if (typeof refreshHeroCTA === "function") if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120);
-  if (typeof refreshPricingSection === "function") if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160);
-  setTimeout(refreshHomeUpdatesCTA, 200);
 });
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
