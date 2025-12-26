@@ -1860,44 +1860,71 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </style>
 
 <style id="bton-pro-apple-style">
-/* Apple-like Pro styling: lighter, premium, glassy (replaces dark Pro gradient) */
+/* Pro pricing card: premium + aligned with site palette (BTrustOn primary + turquoise accent) */
 :root{
-  --bton-pro-appleA: #06b6d4;
-  --bton-pro-appleB: #22d3ee;
+  /* Uses the same turquoise family as the site (accent / darkAccent) */
+  --bton-pro-accent: #06b6d4;
+  --bton-pro-accent2:#0891b2;
+  --bton-pro-ink: #0F172A;
 }
+
+/* Card shell (more neutral, “premium paper” + subtle cyan halo) */
 .bton-pro-card{
-  background: rgba(255,255,255,.86);
-  border: 1px solid rgba(6,182,212,.16);
-  box-shadow: 0 18px 60px rgba(15,23,42,.10);
-  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow:
+    0 18px 60px rgba(15,23,42,.12),
+    0 0 0 1px rgba(6,182,212,.10) inset;
+  backdrop-filter: blur(12px);
 }
+
 .bton-pro-card::before{
   content:"";
   position:absolute;
   inset:0;
   background:
-    radial-gradient(80% 60% at 10% 0%, rgba(6,182,212,.18), rgba(6,182,212,0) 60%),
-    radial-gradient(70% 60% at 95% 20%, rgba(100,210,255,.20), rgba(100,210,255,0) 55%),
-    linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.84));
+    radial-gradient(85% 65% at 12% 0%, rgba(6,182,212,.14), rgba(6,182,212,0) 62%),
+    radial-gradient(70% 60% at 98% 18%, rgba(8,145,178,.14), rgba(8,145,178,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.88));
   pointer-events:none;
 }
 .bton-pro-card > *{ position:relative; z-index:1; }
 
+/* Text + pills */
 .bton-pro-muted{ color: rgba(15,23,42,.60) !important; }
+
 .bton-pro-pill-apple{
-  background: rgba(6,182,212,.10);
-  border: 1px solid rgba(6,182,212,.20);
-  color: var(--bton-pro-appleA);
-}
-.bton-pro-iconbox{
   background: rgba(6,182,212,.08);
+  border: 1px solid rgba(6,182,212,.22);
+  color: var(--bton-pro-accent);
+}
+
+/* Feature icons */
+.bton-pro-iconbox{
+  background: rgba(6,182,212,.07);
   border: 1px solid rgba(6,182,212,.16);
 }
-.bton-pro-icon{ color: var(--bton-pro-appleA) !important; }
+.bton-pro-icon{ color: var(--bton-pro-accent) !important; }
 
+/* CTA: black (premium) → turquoise on hover (matches your login button behavior) */
 .bton-pro-cta{
-  background: linear-gradient(135deg, var(--bton-pro-appleA), var(--bton-pro-appleB));
+  background: linear-gradient(180deg, rgba(15,23,42,1), rgba(2,6,23,1));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 14px 34px rgba(15,23,42,.22);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+}
+.bton-pro-cta:hover{
+  background: linear-gradient(135deg, var(--bton-pro-accent), var(--bton-pro-accent2));
   box-shadow: 0 14px 34px rgba(6,182,212,.22);
+  border-color: rgba(6,182,212,.35);
+  transform: translateY(-1px);
+}
+.bton-pro-cta:active{ transform: translateY(0); }
+.bton-pro-cta:focus-visible{
+  outline: none;
+  box-shadow:
+    0 14px 34px rgba(6,182,212,.18),
+    0 0 0 4px rgba(6,182,212,.18);
 }
 </style>
 
@@ -6070,6 +6097,9 @@ function subscribeHomeUpdatesRealtime() {
         const row = payload && payload.new ? payload.new : null;
         if (!row) return;
 
+        // 🔔 Followed-company notification (Free + Pro)
+        try { _maybeNotifyFollowedUpdate(row); } catch(e) {}
+
         // Keep only last 7 days
         const createdAt = new Date(row.created_at || row.createdAt || Date.now());
         const now = new Date();
@@ -6102,6 +6132,284 @@ function subscribeHomeUpdatesRealtime() {
     console.warn("Updates realtime subscribe failed:", e);
   }
 }
+
+/* --- Engagement notifications (Followed updates + Profile views) --- */
+let __BTON_ENG_NOTIF_INIT_FOR = null;
+let profileViewsSub = null;
+let __BTON_NOTIF_REFRESH_TIMER = null;
+
+function _scheduleNotifRefresh() {
+  try {
+    if (__BTON_NOTIF_REFRESH_TIMER) return;
+    __BTON_NOTIF_REFRESH_TIMER = setTimeout(() => {
+      __BTON_NOTIF_REFRESH_TIMER = null;
+      try { if (typeof fetchNotificationsUnread === "function") fetchNotificationsUnread(); } catch(e) {}
+    }, 350);
+  } catch(e) {}
+}
+
+function _makeI18nMarker(key, params = {}) {
+  let s = `[I18N:${key}]`;
+  try {
+    const obj = (params && typeof params === "object") ? params : {};
+    Object.keys(obj).forEach(k => {
+      const v = (obj[k] == null) ? "" : String(obj[k]);
+      s += `[${k}=${v}]`;
+    });
+  } catch(e) {}
+  return s;
+}
+
+async function _notifySelfI18nOnce(key, titleKey, msgKey, params = {}, action = null) {
+  try {
+    const user = await _getAuthUserSafe();
+    if (!user || !user.id || !key) return;
+
+    const keyTag = `[KEY:${key}]`;
+    const title = `[I18N:${titleKey}]`;
+    const msg = `${keyTag}${action ? `[ACTION:${action}]` : ``}${_makeI18nMarker(msgKey, params)}`;
+
+    const baseRow = { recipient_user_id: user.id, title, message: msg, is_read: false };
+
+    // Prefer DB-level dedupe (needs notifications.dedupe_key + unique index)
+    try {
+      const row = Object.assign({}, baseRow, { dedupe_key: key });
+      const { error } = await supabaseClient
+        .from('notifications')
+        .upsert([row], { onConflict: 'recipient_user_id,dedupe_key', ignoreDuplicates: true });
+      if (error) throw error;
+    } catch (e) {
+      // Fallback (no schema change): best-effort dedupe by scanning recent notifications
+      const since = new Date(nowTs() - 30*24*60*60*1000).toISOString();
+      const { data } = await supabaseClient
+        .from('notifications')
+        .select('id,message,created_at')
+        .eq('recipient_user_id', user.id)
+        .gte('created_at', since)
+        .limit(50);
+
+      const already = (data || []).some(n => String(n.message || "").includes(keyTag));
+      if (already) return;
+
+      const { error: err2 } = await supabaseClient.from('notifications').insert([baseRow]);
+      if (err2) throw err2;
+    }
+
+    _scheduleNotifRefresh();
+  } catch (e) {
+    console.warn("Self notification error:", e);
+  }
+}
+
+async function _maybeNotifyFollowedUpdate(row) {
+  try {
+    if (!row || !__authUserId) return;
+    const cid = String(row.company_id || "").trim();
+    if (!cid) return;
+    if (String(cid) === String(__authUserId)) return;
+
+    // ensure follow set is loaded
+    if (homeFollowLoadedFor !== __authUserId) await _ensureHomeFollowSet(__authUserId);
+    if (!_isCompanyFollowed(cid)) return;
+
+    const key = "FOLLOW_UPD_" + String(row.id || row.created_at || nowTs());
+    await _notifySelfI18nOnce(
+      key,
+      "notif_follow_update_title",
+      "notif_follow_update_msg",
+      { company: row.company_name || "A company you follow", company_id: cid },
+      "OPEN_PROFILE"
+    );
+  } catch (e) {}
+}
+
+async function syncFollowedUpdateNotifications() {
+  try {
+    if (!__authUserId) return;
+    if (homeFollowLoadedFor !== __authUserId) await _ensureHomeFollowSet(__authUserId);
+
+    const ids = Array.from(homeFollowSet || []);
+    if (!ids.length) return;
+
+    const lastKey = "BTrustOn_notif_follow_updates_since";
+    const lastIso = (() => { try { return localStorage.getItem(lastKey); } catch(e){ return null; } })();
+    const sinceDate = lastIso ? new Date(lastIso) : new Date(nowTs() - 7*24*60*60*1000);
+    const sinceIso = isNaN(sinceDate.getTime()) ? new Date(nowTs() - 7*24*60*60*1000).toISOString() : sinceDate.toISOString();
+
+    // chunk to avoid "in" limits
+    const chunkSize = 50;
+    let newest = null;
+
+    for (let i=0; i<ids.length; i+=chunkSize) {
+      const chunk = ids.slice(i, i+chunkSize);
+      const { data, error } = await supabaseClient
+        .from("company_updates")
+        .select("id,company_id,company_name,created_at")
+        .in("company_id", chunk)
+        .gt("created_at", sinceIso)
+        .order("created_at", { ascending: true })
+        .limit(50);
+
+      if (error || !data) continue;
+
+      for (const row of data) {
+        newest = row.created_at || newest;
+        await _maybeNotifyFollowedUpdate(row);
+      }
+    }
+
+    if (newest) {
+      try { localStorage.setItem(lastKey, new Date(newest).toISOString()); } catch(e) {}
+    } else {
+      try { localStorage.setItem(lastKey, new Date().toISOString()); } catch(e) {}
+    }
+  } catch (e) {
+    console.warn("Follow update notif sync failed:", e);
+  }
+}
+
+function _isProActiveForEngagement() {
+  try { return (typeof _isProForPosting === "function") ? _isProForPosting(selectedCompany) : false; } catch(e) { return false; }
+}
+
+async function _resolveViewerCompanyNames(viewRows=[]) {
+  const map = new Map();
+  try {
+    const ids = Array.from(new Set((viewRows || []).map(v => v && v.viewer_id ? String(v.viewer_id) : "").filter(Boolean)));
+    if (!ids.length) return map;
+    const { data } = await supabaseClient
+      .from("profiles")
+      .select("id,company_name")
+      .in("id", ids);
+    (data || []).forEach(p => { if (p && p.id) map.set(String(p.id), p.company_name || ""); });
+  } catch(e) {}
+  return map;
+}
+
+async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
+  try {
+    if (!viewRow || !__authUserId) return;
+    if (!_isProActiveForEngagement()) return;
+
+    const viewId = String(viewRow.id || "");
+    const key = "PV_" + (viewId || (String(viewRow.viewer_id || "guest") + "_" + String(viewRow.viewed_at || nowTs())));
+    const viewerId = viewRow.viewer_id ? String(viewRow.viewer_id) : "";
+    const isGuest = !viewerId;
+
+    if (isGuest) {
+      await _notifySelfI18nOnce(key, "notif_profile_view_title", "notif_profile_view_msg_guest", {}, null);
+    } else {
+      const nm = (viewerNameMap && typeof viewerNameMap.get === "function") ? (viewerNameMap.get(viewerId) || "") : "";
+      await _notifySelfI18nOnce(key, "notif_profile_view_title", "notif_profile_view_msg_company", { company: (nm || "A company") }, null);
+    }
+  } catch(e) {}
+}
+
+async function syncProfileViewNotifications() {
+  try {
+    if (!__authUserId) return;
+    if (!_isProActiveForEngagement()) return;
+
+    const lastKey = "BTrustOn_notif_profile_views_since";
+    const lastIso = (() => { try { return localStorage.getItem(lastKey); } catch(e){ return null; } })();
+    const sinceDate = lastIso ? new Date(lastIso) : new Date(nowTs() - 30*24*60*60*1000);
+    const sinceIso = isNaN(sinceDate.getTime()) ? new Date(nowTs() - 30*24*60*60*1000).toISOString() : sinceDate.toISOString();
+
+    let adminProfileId = null;
+    try { if (typeof getAdminProfileId === "function") adminProfileId = await getAdminProfileId(); } catch(e) { adminProfileId = null; }
+
+    const { data: views, error } = await supabaseClient
+      .from("profile_views")
+      .select("id,viewer_id,viewed_at,profile_id")
+      .eq("profile_id", __authUserId)
+      .gt("viewed_at", sinceIso)
+      .order("viewed_at", { ascending: true })
+      .limit(50);
+
+    if (error || !views) return;
+
+    const filtered = (views || []).filter(v => {
+      if (!v) return false;
+      if (adminProfileId && v.viewer_id && String(v.viewer_id) === String(adminProfileId)) return false;
+      return true;
+    });
+
+    const nameMap = await _resolveViewerCompanyNames(filtered);
+    let newest = null;
+
+    for (const v of filtered) {
+      newest = v.viewed_at || newest;
+      await _maybeNotifyProfileView(v, nameMap);
+    }
+
+    if (newest) {
+      try { localStorage.setItem(lastKey, new Date(newest).toISOString()); } catch(e) {}
+    } else {
+      try { localStorage.setItem(lastKey, new Date().toISOString()); } catch(e) {}
+    }
+  } catch(e) {
+    console.warn("Profile view notif sync failed:", e);
+  }
+}
+
+function subscribeProfileViewsRealtime() {
+  try {
+    if (profileViewsSub) {
+      try { supabaseClient.removeChannel(profileViewsSub); } catch(e) {}
+      profileViewsSub = null;
+    }
+    if (!__authUserId) return;
+    if (!_isProActiveForEngagement()) return;
+
+    profileViewsSub = supabaseClient
+      .channel("profile-views")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "profile_views", filter: `profile_id=eq.${__authUserId}` }, async payload => {
+        const row = payload && payload.new ? payload.new : null;
+        if (!row) return;
+
+        // Ignore admin if needed
+        let adminProfileId = null;
+        try { if (typeof getAdminProfileId === "function") adminProfileId = await getAdminProfileId(); } catch(e) {}
+        if (adminProfileId && row.viewer_id && String(row.viewer_id) === String(adminProfileId)) return;
+
+        const nameMap = await _resolveViewerCompanyNames([row]);
+        await _maybeNotifyProfileView(row, nameMap);
+      })
+      .subscribe();
+  } catch(e) {
+    console.warn("Profile views realtime subscribe failed:", e);
+  }
+}
+
+async function btonInitEngagementNotifications() {
+  try {
+    const user = await _getAuthUserSafe();
+    if (!user || !user.id) return;
+
+    if (__BTON_ENG_NOTIF_INIT_FOR === user.id) return;
+    __BTON_ENG_NOTIF_INIT_FOR = user.id;
+
+    // Followed updates (all users)
+    try { await _ensureHomeFollowSet(user.id); } catch(e) {}
+    try { syncFollowedUpdateNotifications(); } catch(e) {}
+
+    // Profile views (Pro only)
+    try { syncProfileViewNotifications(); } catch(e) {}
+    try { subscribeProfileViewsRealtime(); } catch(e) {}
+  } catch(e) {}
+}
+
+function btonTeardownEngagementNotifications() {
+  try {
+    __BTON_ENG_NOTIF_INIT_FOR = null;
+    if (profileViewsSub) {
+      try { supabaseClient.removeChannel(profileViewsSub); } catch(e) {}
+      profileViewsSub = null;
+    }
+  } catch(e) {}
+}
+
+
 
 /* ---------- POST MODAL FLOW ---------- */
 let __updArea = "general";
@@ -11860,7 +12168,10 @@ async function checkUserAndOpenProfile(forceOpen = false) {
         }
       } catch(e) {}
 
-  }
+  
+    // 🔔 Engagement notifications init (followed updates + profile views)
+    try { if (typeof btonInitEngagementNotifications === "function") await btonInitEngagementNotifications(); } catch(e) {}
+}
 
   // Kutlama kontrolü yap
   checkAndTriggerCelebration(mappedProfile);
@@ -12082,6 +12393,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
           try { supabaseClient.removeChannel(messageChannel); } catch(e) {}
           messageChannel = null;
         }
+        try { if (typeof btonTeardownEngagementNotifications === "function") btonTeardownEngagementNotifications(); } catch(e) {}
         // Optional: clear any registered intervals
         try { if (window.__BTON_INTERVALS) { Object.keys(window.__BTON_INTERVALS).forEach(k => btonClearInterval(k)); } } catch(e) {}
       } catch(e) {}
@@ -14188,18 +14500,38 @@ function renderInboxItems() {
 
     list.forEach(n => {
       const isUnread = (n.is_read === false || n.is_read === 0 || n.is_read === null);
-      const title = (n.title || "Notification").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const titleRaw = (n.title || "Notification");
       const msgRaw = (n.message || "");
+
       const action = _extractNotifAction(msgRaw);
-      const msg = _stripNotifMarkers(msgRaw).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const parsedMsg = _parseNotifI18n(msgRaw);
+      const parsedTitle = _parseNotifI18n(titleRaw);
+
+      const titleResolved = (parsedTitle && parsedTitle.key) ? (tP(parsedTitle.key, parsedTitle.params) || titleRaw) : titleRaw;
+      const title = String(titleResolved || "Notification").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const msgResolved = (parsedMsg && parsedMsg.key) ? (tP(parsedMsg.key, parsedMsg.params) || _stripNotifMarkers(msgRaw)) : _stripNotifMarkers(msgRaw);
+      const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
       const when = n.created_at ? timeAgo(n.created_at) : "";
       const nidSafe = String(n.id).replace(/'/g, "\\'");
+      const notifParams = (parsedMsg && parsedMsg.params) ? parsedMsg.params : {};
 
       const card = document.createElement("div");
       card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-gray-200 transition-all duration-200 cursor-pointer group`;
       card.onclick = () => {
         if (isUnread) markNotificationRead(n.id);
         if (action === 'UPGRADE') { try { openUpgradeModal(); } catch(e) {} }
+        if (action === 'OPEN_PROFILE') {
+          try {
+            const cid = notifParams.company_id || notifParams.companyId || notifParams.cid || notifParams.profile_id || notifParams.profileId;
+            if (cid && typeof openProfile === "function") openProfile(cid);
+          } catch(e) {}
+        }
+        if (action === 'OPEN_ANALYTICS') {
+          try { if (typeof openProfile === "function" && __authUserId) openProfile(__authUserId, { tab:"overview", focus:"profile-analytics" }); } catch(e) {}
+        }
       };
 
       card.innerHTML = `
@@ -17242,7 +17574,8 @@ const PRO_PAYMENT_URL = "https://buy.stripe.com/REPLACE_ME"; // ✅ replace with
 
 function _stripNotifMarkers(text="") {
   return String(text)
-    .replace(/\[(ACTION|KEY):[^\]]+\]/g, "")
+    .replace(/\[(ACTION|KEY|I18N):[^\]]+\]/g, "")
+    .replace(/\[(?!ACTION:|KEY:|I18N:)([a-zA-Z0-9_]+)=([^\]]*)\]/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -17253,6 +17586,42 @@ function _extractNotifAction(text="") {
 function _hasNotifKey(text="", key="") {
   return String(text).includes(`[KEY:${key}]`);
 }
+
+/* --- Notification i18n (render-time) --- */
+function tP(key, params = {}) {
+  let s = t(key) || "";
+  try {
+    const obj = (params && typeof params === "object") ? params : {};
+    Object.keys(obj).forEach(k => {
+      const v = (obj[k] == null) ? "" : String(obj[k]);
+      s = s.split(`{${k}}`).join(v);
+    });
+  } catch(e) {}
+  return s;
+}
+
+function _parseNotifI18n(text="") {
+  const raw = String(text || "");
+  const keyMatch = raw.match(/\[I18N:([^\]]+)\]/);
+  const key = keyMatch ? keyMatch[1] : null;
+  const params = {};
+  raw.replace(/\[(?!ACTION:|KEY:|I18N:)([a-zA-Z0-9_]+)=([^\]]*)\]/g, (m, k, v) => {
+    params[k] = v;
+    return m;
+  });
+  return { key, params };
+}
+
+function _renderNotifI18n(text="", fallback="") {
+  const raw = String(text || "");
+  const parsed = _parseNotifI18n(raw);
+  if (parsed && parsed.key) {
+    const out = tP(parsed.key, parsed.params);
+    if (out) return out;
+  }
+  return fallback || "";
+}
+
 
 function computeProTrialEnd(nowDate, createdAtISO=null) {
   // ✅ Current pricing: everyone gets a 3-month free Pro trial (no card required).
