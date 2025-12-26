@@ -4973,6 +4973,86 @@ let homeFollowLoadedFor = null;
 let __authUserId = null;
 let __myProForEngagement = false;
 
+// --- FOLLOW START TIMES (prevent backfill notifications on first follow) ---
+const BTON_FOLLOW_START_MAP_KEY = "BTrustOn_follow_started_at_map";
+let __btonFollowStartMapCache = null;
+
+function _btonGetFollowStartMap() {
+  try {
+    if (__btonFollowStartMapCache && typeof __btonFollowStartMapCache === "object") return __btonFollowStartMapCache;
+  } catch(e) {}
+  let m = {};
+  try {
+    const raw = localStorage.getItem(BTON_FOLLOW_START_MAP_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") m = parsed;
+    }
+  } catch(e) { m = {}; }
+  __btonFollowStartMapCache = m;
+  return m;
+}
+
+function _btonPersistFollowStartMap(m) {
+  try {
+    __btonFollowStartMapCache = m;
+    localStorage.setItem(BTON_FOLLOW_START_MAP_KEY, JSON.stringify(m || {}));
+  } catch(e) {}
+}
+
+function _btonGetFollowStartIso(cid) {
+  try {
+    cid = String(cid || "").trim();
+    if (!cid) return null;
+    const m = _btonGetFollowStartMap();
+    return m && m[cid] ? String(m[cid]) : null;
+  } catch(e) { return null; }
+}
+
+function _btonSetFollowStart(cid, iso) {
+  try {
+    cid = String(cid || "").trim();
+    if (!cid) return;
+    const m = _btonGetFollowStartMap();
+    m[cid] = iso || new Date().toISOString();
+    _btonPersistFollowStartMap(m);
+  } catch(e) {}
+}
+
+function _btonRemoveFollowStart(cid) {
+  try {
+    cid = String(cid || "").trim();
+    if (!cid) return;
+    const m = _btonGetFollowStartMap();
+    if (m && Object.prototype.hasOwnProperty.call(m, cid)) {
+      delete m[cid];
+      _btonPersistFollowStartMap(m);
+    }
+  } catch(e) {}
+}
+
+function _btonEnsureFollowStart(cid) {
+  try {
+    cid = String(cid || "").trim();
+    if (!cid) return;
+    const cur = _btonGetFollowStartIso(cid);
+    if (!cur) _btonSetFollowStart(cid, new Date().toISOString());
+  } catch(e) {}
+}
+
+function _btonIsAfterFollowStart(cid, createdAtIso) {
+  try {
+    const fs = _btonGetFollowStartIso(cid);
+    if (!fs) return true; // if unknown, allow (but we set it on follow list load)
+    const a = new Date(createdAtIso || Date.now()).getTime();
+    const b = new Date(fs).getTime();
+    if (isNaN(a) || isNaN(b)) return true;
+    return a > b;
+  } catch(e) { return true; }
+}
+// --- END FOLLOW START TIMES ---
+
+
 
 const HOME_UPDATE_TEMPLATES = {
   projects: [
@@ -5738,7 +5818,11 @@ async function _ensureHomeFollowSet(uid) {
       return;
     }
     (data || []).forEach(r => {
-      if (r?.company_id) homeFollowSet.add(String(r.company_id));
+      if (r?.company_id) {
+        const __cid = String(r.company_id);
+        homeFollowSet.add(__cid);
+        try { _btonEnsureFollowStart(__cid); } catch(e) {}
+      }
     });
   } catch (e) {
     console.warn("Follow list fetch failed:", e);
@@ -5923,6 +6007,7 @@ try {
       }
 
       if (homeFollowSet) homeFollowSet.delete(cid);
+      try { _btonRemoveFollowStart(cid); } catch(e) {}
       showToast(t("updates_follow") || "Follow", `${snapName} ${(currentLang === "tr") ? "takipten çıkarıldı" : "unfollowed"}`, "brand");
 
       if (homeUpdatesFilter === "followed") {
@@ -5972,6 +6057,7 @@ try {
 
       if (!homeFollowSet) homeFollowSet = new Set();
       homeFollowSet.add(cid);
+      try { _btonSetFollowStart(cid, new Date().toISOString()); } catch(e) {}
       showToast(t("updates_following") || "Following", `${snapName}`, "success");
     }
 
@@ -6213,6 +6299,7 @@ async function _maybeNotifyFollowedUpdate(row) {
     // ensure follow set is loaded
     if (homeFollowLoadedFor !== __authUserId) await _ensureHomeFollowSet(__authUserId);
     if (!_isCompanyFollowed(cid)) return;
+    if (!_btonIsAfterFollowStart(cid, row.created_at)) return;
 
     const key = "FOLLOW_UPD_" + String(row.id || row.created_at || nowTs());
     await _notifySelfI18nOnce(
@@ -9724,7 +9811,10 @@ try {
 
   selectedCompany = company;
 
-  try { if (typeof updateSaveButtonsUI === 'function') updateSaveButtonsUI(); try{ updateFollowButtonsUI(); }catch(e){} } catch(e) {}
+  try { if (typeof updateSaveButtonsUI === 'function') updateSaveButtonsUI(); try{ updateFollowButtonsUI();
+  // BTON_FOLLOW_UI_DELAY_REFRESH: auth/follow set may arrive slightly later on mobile
+  try { setTimeout(() => { try { updateFollowButtonsUI(); } catch(e) {} }, 220); } catch(e) {}
+ }catch(e){} } catch(e) {}
 
 
   // 3. EKRAN GEÇİŞLERİ
@@ -12275,6 +12365,16 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   // Keep a reliable "my company" snapshot for plan UI + pro gates
   try { __postCompany = mappedProfile; } catch(e) {}
   try { renderNavPlanButton(mappedProfile); } catch(e) {}
+
+  /* __BTON_SYNC_AUTH_FOLLOW_UI__: keep follow button consistent on first profile open (mobile refresh safe) */
+  try {
+    __authUserId = session?.user?.id || null;
+  } catch(e) {}
+  try {
+    if (__authUserId) await _ensureHomeFollowSet(__authUserId);
+  } catch(e) {}
+  try { updateFollowButtonsUI(); } catch(e) {}
+
 }
 // 3. SAYFA YÜKLENİNCE ÇALIŞTIR
 /* --- SAYFA BAŞLANGIÇ AYARLARI (GECİKMESİZ) --- */
@@ -12484,7 +12584,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     // Giriş yapıldıysa
     if (typeof closeLoginModal === "function") closeLoginModal();
     
-    // 1. Önce Admin mi diye bak (Bunu ekleyin)
+    
+    // ✅ Keep auth id + follow UI in sync
+    try { __authUserId = session?.user?.id || null; } catch(e) { try { __authUserId = null; } catch(_) {} }
+    try { if (__authUserId) _ensureHomeFollowSet(__authUserId); } catch(e) {}
+    try { updateFollowButtonsUI(); } catch(e) {}
+// 1. Önce Admin mi diye bak (Bunu ekleyin)
     if (typeof checkAdminAccess === "function") checkAdminAccess();
 
     // 2. Sonra profili çek
@@ -12506,7 +12611,13 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     try { localStorage.removeItem("BTrustOn_my_company_id"); } catch(e) {}
     try { __myProForEngagement = false; } catch(e) {}
 
-    // Teardown realtime channels / intervals (deferred to avoid TDZ)
+    
+    // ✅ Clear auth id + follow cache
+    try { __authUserId = null; } catch(e) {}
+    try { if (typeof homeFollowSet !== "undefined" && homeFollowSet && homeFollowSet.clear) homeFollowSet.clear(); } catch(e) {}
+    try { homeFollowLoadedFor = null; } catch(e) {}
+    try { updateFollowButtonsUI(); } catch(e) {}
+// Teardown realtime channels / intervals (deferred to avoid TDZ)
     setTimeout(() => {
       try {
         if (typeof notifChannel !== "undefined" && notifChannel) {
@@ -13978,17 +14089,18 @@ function updateFollowButtonsUI() {
   try {
     // Update all follow buttons on company cards
     document.querySelectorAll(".company-follow-btn[data-company-id]").forEach(btn => {
-      const cid = btn.getAttribute("data-company-id");
-      const on = _isCompanyFollowed(cid);
+      const cid = (btn.getAttribute("data-company-id") || "").trim();
+      if (!cid) return;
+      const on = (() => { try { return _isCompanyFollowed(cid); } catch(e){ return false; } })();
       btn.setAttribute("aria-pressed", on ? "true" : "false");
       const icon = btn.querySelector("i");
-      if (icon) {
-        icon.classList.toggle("opacity-40", !on);
-      }
+      if (icon) icon.classList.toggle("opacity-40", !on);
       btn.setAttribute("title", on ? (t("updates_following") || "Following") : (t("updates_follow") || "Follow"));
     });
+  } catch(e) {}
 
-    // Profile header follow button
+  try {
+    // Profile header follow button (must be stable/always visible when applicable)
     const btn = document.getElementById("btn-follow-company");
     const icon = document.getElementById("icon-follow-company");
     if (!btn || !icon) return;
@@ -13998,26 +14110,38 @@ function updateFollowButtonsUI() {
       return;
     }
 
-    // must be logged in
-    if (!__authUserId) {
-      btn.classList.add("hidden");
-      return;
-    }
-
-    // hide for own company
+    // Hide on my own company profile
     const myIdRaw = (typeof getMyCompanyId === "function") ? getMyCompanyId() : null;
-    const myId = (myIdRaw && (typeof isUuid === "function") && isUuid(myIdRaw)) ? myIdRaw : null;
-    if (myId && String(selectedCompany.id) === String(myId)) {
+    const myId = (myIdRaw != null) ? String(myIdRaw) : null;
+    if (myId && String(selectedCompany.id) === myId) {
       btn.classList.add("hidden");
       return;
     }
 
+    // ✅ Always show (no “sometimes missing”)
     btn.classList.remove("hidden");
-    const on = _isCompanyFollowed(selectedCompany.id);
+    try { btn.disabled = false; btn.removeAttribute("aria-busy"); } catch(e) {}
 
+    // State (may be false until follow set loads)
+    const on = (() => { try { return _isCompanyFollowed(String(selectedCompany.id)); } catch(e){ return false; } })();
     icon.classList.toggle("opacity-40", !on);
-
     btn.setAttribute("title", on ? (t("updates_following") || "Following") : (t("updates_follow") || "Follow"));
+
+    // If auth/follow set not ready, resolve silently but don't hide UI
+    if (!__authUserId && !window.__BTON_FOLLOW_UID_LOADING) {
+      window.__BTON_FOLLOW_UID_LOADING = true;
+      Promise.resolve()
+        .then(() => _getAuthUserSafe())
+        .then(u => {
+          __authUserId = u?.id || null;
+          if (__authUserId) return _ensureHomeFollowSet(__authUserId);
+        })
+        .catch(() => {})
+        .finally(() => {
+          window.__BTON_FOLLOW_UID_LOADING = false;
+          try { updateFollowButtonsUI(); } catch(e) {}
+        });
+    }
   } catch(e) {}
 }
 
