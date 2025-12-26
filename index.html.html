@@ -11663,6 +11663,16 @@ if (profile.email === ADMIN_EMAIL) {
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
 /* --- DÜZELTİLMİŞ: checkUserAndOpenProfile --- */
 async function checkUserAndOpenProfile(forceOpen = false) {
+  // ✅ Guard: prevent double-run on iOS Safari (DOMContentLoaded + INITIAL_SESSION can fire back-to-back)
+  // This page is heavy; running this twice can crash Safari and show “page had a problem repeatedly”.
+  if (!forceOpen) {
+    try {
+      if (window.__BTON_CHECKUSER_LOCK) return;
+      window.__BTON_CHECKUSER_LOCK = true;
+      setTimeout(() => { try { window.__BTON_CHECKUSER_LOCK = false; } catch(e) {} }, 1200);
+    } catch(e) {}
+  }
+
   // 1. Oturumu Kontrol Et
   const { data: { session } } = await supabaseClient.auth.getSession();
   
@@ -11757,10 +11767,11 @@ async function checkUserAndOpenProfile(forceOpen = false) {
       try {
         const vp = document.getElementById("view-profile");
         const isProfileOpen = vp && !vp.classList.contains("hidden-view");
-        if (forceOpen !== true && isProfileOpen && typeof selectedCompany !== 'undefined' && selectedCompany && String(selectedCompany.id) === String(profile.id)) {
+        const bootSame = (window.__BTON_BOOT_OPENED_COMPANY === true && String(window.__BTON_BOOT_COMPANY_ID || "") === String(profile.id));
+        if (forceOpen !== true && isProfileOpen && typeof selectedCompany !== 'undefined' && selectedCompany && String(selectedCompany.id) === String(profile.id) && !bootSame) {
           const fresh = (typeof database !== 'undefined' && database) ? database.find(c => String(c.id) === String(profile.id)) : null;
           selectedCompany = fresh || mappedProfile;
-          await openProfile(profile.id);
+          await openProfile(profile.id, { preserveTab: true, preserveScroll: true });
         }
       } catch(e) {}
 
@@ -11837,10 +11848,14 @@ async function restoreInitialRoute() {
   const focusFromHash = _getCompanyFocusFromHash();
   const companyId = companyFromHash || _getCompanyIdFromLastRoute();
   if (companyId) {
+    // ✅ Boot route flags (avoid double-render + iOS reload crash)
+    try { window.__BTON_BOOT_COMPANY_ID = String(companyId); window.__BTON_BOOT_OPENED_COMPANY = false; } catch(e) {}
+
     // Don't wait: openProfile will load data; we just avoid homepage flash
     window.__routeRestoring = true;
     try {
-      await openProfile(companyId, { tab: (companyFromHash ? tabFromHash : null), focus: (companyFromHash ? focusFromHash : null) });
+      await openProfile(companyId, { tab: (companyFromHash ? tabFromHash : null), focus: (companyFromHash ? focusFromHash : null), __fromRestore: true });
+      try { window.__BTON_BOOT_OPENED_COMPANY = true; } catch(e) {}
     } finally {
       window.__routeRestoring = false;
     }
@@ -11901,13 +11916,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   await restoreInitialRoute();
   finishBoot();
   initRealData();
-  initShowcaseSystem();
+  // ✅ On company route, postpone showcase animations (reduces iOS Safari refresh crashes)
+  try {
+    const __bootHasCompany2 = /^#company=/.test(window.location.hash || "");
+    if (!__bootHasCompany2) initShowcaseSystem();
+    else setTimeout(() => { try { initShowcaseSystem(); } catch(e) {} }, 1600);
+  } catch(e) { try { initShowcaseSystem(); } catch(_) {} }
+
 
   // Home updates (last 7 days)
-  _setHomeUpdatesFilterUI(homeUpdatesFilter);
-  fetchHomeUpdates();
-  subscribeHomeUpdatesRealtime();
-  setupHomeUpdatesNav();
+  const __bootHasCompany = /^#company=/.test(window.location.hash || "");
+  if (!__bootHasCompany) {
+    _setHomeUpdatesFilterUI(homeUpdatesFilter);
+    fetchHomeUpdates();
+    subscribeHomeUpdatesRealtime();
+    setupHomeUpdatesNav();
+  } else {
+    // ✅ On company route, postpone Home feed + realtime to reduce iOS Safari load during refresh
+    setTimeout(() => {
+      try {
+        _setHomeUpdatesFilterUI(homeUpdatesFilter);
+        fetchHomeUpdates();
+        subscribeHomeUpdatesRealtime();
+        setupHomeUpdatesNav();
+      } catch(e) {}
+    }, 1400);
+  }
 
 
   // 2) Fetch public profiles (can run after correct view is already visible)
@@ -13651,6 +13685,13 @@ function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
 let messageChannel = null;
 /* --- GÜNCELLENMİŞ: subscribeToMessages (Canlı Kırmızı Işık) --- */
 function subscribeToMessages() {
+  // ✅ Guard against rapid double-subscribe (can happen on INITIAL_SESSION + DOMContentLoaded)
+  try {
+    if (window.__BTON_MSG_SUB_LOCK) return;
+    window.__BTON_MSG_SUB_LOCK = true;
+    setTimeout(() => { try { window.__BTON_MSG_SUB_LOCK = false; } catch(e) {} }, 800);
+  } catch(e) {}
+
   if (messageChannel) { supabaseClient.removeChannel(messageChannel); messageChannel = null; }
 
   messageChannel = supabaseClient
@@ -13725,6 +13766,13 @@ async function fetchNotificationsUnread() {
 }
 
 function subscribeNotifications() {
+  // ✅ Guard against concurrent double-subscribe (iOS can fire INITIAL_SESSION + DOMContentLoaded quickly)
+  try {
+    if (window.__BTON_NOTIF_SUB_LOCK) return;
+    window.__BTON_NOTIF_SUB_LOCK = true;
+    setTimeout(() => { try { window.__BTON_NOTIF_SUB_LOCK = false; } catch(e) {} }, 800);
+  } catch(e) {}
+
   // Robust dedupe: one realtime channel per logged-in user
   supabaseClient.auth.getUser().then(({ data: { user } }) => {
     try {
