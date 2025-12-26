@@ -747,5 +747,10 @@
   "toast_registration_success": "Kayıt başarılı. Profil oluşturuldu.",
   "hero_title_signed_in": "BTrustOn ile Doğru İş Ortaklarıyla Büyüyün",
   "hero_cta_profile": "Profilini Geliştir",
-  "btn_upgrade_to_post": "Paylaşmak için Yükselt"
+  "btn_upgrade_to_post": "Paylaşmak için Yükselt",
+  "notif_follow_update_title": "Takip ettiğiniz bir şirketten güncelleme",
+  "notif_follow_update_msg": "{company} yeni bir güncelleme paylaştı.",
+  "notif_profile_view_title": "Profil görüntüleme",
+  "notif_profile_view_msg_company": "{company} profilinizi inceledi.",
+  "notif_profile_view_msg_guest": "Kayıtlı olmayan bir ziyaretçi (guest) profilinizi inceledi."
 }
