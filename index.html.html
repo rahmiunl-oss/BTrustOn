@@ -4691,18 +4691,33 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 
 </style>
 <style id="mobile-inbox-tabs-wrap">
-/* MOBILE INBOX TABS (TR: Bildirimler tabı kırpılmasın) */
+/* MOBILE INBOX TABS (clean, 1-row, text-only) */
 @media (max-width: 520px){
   .bton-inbox-tabs-bar{
-    gap: 10px !important;
-    flex-wrap: wrap !important;
-    row-gap: 10px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    align-items: center !important;
   }
   #btn-tab-inbox, #btn-tab-sent, #btn-tab-notif{
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 8px 8px !important;
     font-size: 11px !important;
-    padding: 7px 10px !important;
+    line-height: 1.05 !important;
     white-space: nowrap !important;
-    flex: 0 0 auto !important;
+  }
+  /* remove extra icons on mobile for a cleaner look */
+  #btn-tab-sent i,
+  #btn-tab-notif i{
+    display: none !important;
+  }
+  /* remove flex gaps when icons are hidden */
+  #btn-tab-inbox, #btn-tab-sent, #btn-tab-notif{
+    gap: 0 !important;
+  }
+  #btn-tab-notif #notif-tab-badge{
+    margin-left: 6px !important;
   }
 }
 </style>
@@ -18916,6 +18931,46 @@ function sortProjectsUI(mode){
 </div>
 </div>
 </div>
+
+
+<script>
+/* MOBILE: keep inbox tabs on one row; shorten INBOX label in Turkish */
+(function(){
+  const mq = window.matchMedia && window.matchMedia('(max-width: 520px)');
+  function getLang(){
+    try{
+      if (typeof currentLang !== "undefined" && currentLang) return currentLang;
+      return localStorage.getItem("bton_lang") || localStorage.getItem("lang") || "en";
+    }catch(e){ return "en"; }
+  }
+  function apply(){
+    const btn = document.getElementById("btn-tab-inbox");
+    if(!btn) return;
+
+    // store the original (desktop) label once
+    if(!btn.dataset.fullLabel) btn.dataset.fullLabel = (btn.textContent || "").trim();
+
+    const isMobile = mq ? mq.matches : (window.innerWidth <= 520);
+    if(isMobile){
+      const lang = getLang();
+      // only TR needs shortening ("Gelen Kutusu" -> "Gelen")
+      btn.textContent = (lang === "tr") ? "GELEN" : (btn.dataset.fullLabel || "INBOX");
+    }else{
+      btn.textContent = btn.dataset.fullLabel || btn.textContent;
+    }
+  }
+
+  // run now + on resize
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", apply, { once:true });
+  } else apply();
+
+  window.addEventListener("resize", apply);
+  if(mq){
+    try{ mq.addEventListener("change", apply); } catch(e){ try{ mq.addListener(apply); }catch(_e){} }
+  }
+})();
+</script>
 
 <script>
 /* =========================
