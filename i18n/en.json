@@ -830,5 +830,7 @@
   "ui_loading_5f02f0": "Loading…",
   "attr_close_d3d2e6": "Close",
   "action_unfollow": "Unfollow",
-  "badge_verified": "Verified"
+  "badge_verified": "Verified",
+  "toast_removed": "Removed",
+  "saved_company_removed": "Company removed."
 }
