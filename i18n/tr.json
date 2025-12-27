@@ -830,5 +830,7 @@
   "ui_loading_5f02f0": "Yükleniyor…",
   "attr_close_d3d2e6": "Kapat",
   "action_unfollow": "Takibi Bırak",
-  "badge_verified": "Doğrulandı"
+  "badge_verified": "Doğrulandı",
+  "toast_removed": "Kaldırıldı",
+  "saved_company_removed": "Şirket kaydedilenlerden çıkarıldı."
 }
