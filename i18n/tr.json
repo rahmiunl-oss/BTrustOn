@@ -421,7 +421,7 @@
   "results_label": "Sonuç",
   "results_live_showcase": "Canlı Vitrin:",
   "results_none_found": "Kriterlerinize uyan şirket bulunamadı.",
-  "results_refreshing_5s": "(5 sn’de bir yenilenir)",
+  "results_refreshing_5s": "(10 sn’de bir yenilenir)",
   "results_search_label": "Arama Sonuçları:",
   "results_showcase_note_free": "Doğrulanmış şirketler burada döner — Güncellemeleri görünür kılmak için Pro’ya geç.",
   "results_showcase_note_pro": "Doğrulanmış şirketler burada döner.",
