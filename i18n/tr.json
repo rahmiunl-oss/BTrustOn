@@ -832,5 +832,7 @@
   "action_unfollow": "Takibi Bırak",
   "badge_verified": "Doğrulandı",
   "toast_removed": "Kaldırıldı",
-  "saved_company_removed": "Şirket kaydedilenlerden çıkarıldı."
+  "saved_company_removed": "Şirket kaydedilenlerden çıkarıldı.",
+  "toast_saved": "Kaydedildi",
+  "saved_company_added": "Şirket kaydedilenlere eklendi."
 }
