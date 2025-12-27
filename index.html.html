@@ -13276,7 +13276,7 @@ async function toggleSaveCompany(targetCompanyId) {
     refreshCompanyCardsAfterSavedChange();
     if (document.getElementById("saved-panel")?.classList.contains("open")) renderSavedCompanies();
 
-    showToast("Saved", "Company added to Saved.", "success");
+    showToast(t("toast_saved"), t("saved_company_added"), "success");
 
   } catch (e) {
     console.warn("toggleSaveCompany exception:", e);
