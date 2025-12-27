@@ -499,6 +499,36 @@ function nowTs() {
 function nowDate() { return new Date(nowTs()); }
 function nowISO() { return nowDate().toISOString(); }
 
+
+function getUILang() {
+  try {
+    return (window.currentLang || localStorage.getItem("bton_lang") || localStorage.getItem("lang") || document.documentElement.lang || "en");
+  } catch (e) { return "en"; }
+}
+function formatMsgClock(dateLike) {
+  const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+  const lang = (getUILang() || "en").toLowerCase();
+  const isTR = lang.startsWith("tr");
+  // For Turkish we still show 12h with ÖÖ/ÖS as requested (AM/PM in Turkish)
+  const opts = { hour: "2-digit", minute: "2-digit", hour12: true };
+  let s = d.toLocaleTimeString(isTR ? "tr-TR" : undefined, opts);
+  if (isTR) s = s.replace(/\bAM\b/i, "ÖÖ").replace(/\bPM\b/i, "ÖS");
+  return s;
+}
+
+function formatDateTimeMeridiemTR(dateLike){
+  try {
+    const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+    if (isNaN(d.getTime())) return "";
+    const lang = (getUILang() || currentLang || "en").toLowerCase();
+    const isTR = lang.startsWith("tr");
+    const datePart = d.toLocaleDateString(isTR ? "tr-TR" : undefined);
+    return datePart + " " + formatMsgClock(d);
+  } catch(e){ return ""; }
+}
+
+
+
 // ==== TIME TRAVEL: Console helpers + visible badge ====
 try {
   window.__STRABON_nowISO = nowISO;
@@ -1962,7 +1992,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="relative z-10 mt-3 pb-5">
 <div class="bg-white/10 border border-white/15 rounded-2xl px-3 py-2 flex items-center gap-2">
 <i class="fa-solid fa-magnifying-glass text-white/70 text-sm"></i>
-<input class="w-full bg-transparent outline-none text-sm placeholder:text-white/60" data-i18n-placeholder="ph_saved_search" id="saved-search" oninput="renderSavedPanelActive()" placeholder="Search..."/>
+<input class="w-full bg-transparent outline-none text-sm placeholder:text-white/60" data-i18n-placeholder="ph_saved_search" id="saved-search" oninput="renderSavedPanelActive()" data-i18n-placeholder="saved_search_ph" placeholder=""/>
 </div>
 </div>
 </div>
@@ -2262,13 +2292,13 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 </div>
-<button aria-label="Messages" class="bton-nav-icon w-10 h-10 rounded-full grid place-items-center" data-i18n-aria="attr_messages_41de6d" data-i18n-title="attr_messages_41de6d" id="btn-inbox" onclick="toggleInbox()" title="Messages">
+<button data-i18n-aria="nav_messages_aria" aria-label="" class="bton-nav-icon w-10 h-10 rounded-full grid place-items-center" data-i18n-aria="attr_messages_41de6d" data-i18n-title="attr_messages_41de6d" id="btn-inbox" onclick="toggleInbox()" data-i18n-title="nav_messages_title" title="">
 <i class="fa-solid fa-bell text-lg group-hover:animate-swing"></i>
 <span class="bton-badge hidden" id="nav-badge">
         0
       </span>
 </button>
-<button aria-label="My Lists" class="bton-nav-pill relative flex items-center gap-2 px-3 py-2 rounded-full" data-i18n-aria="nav_lists" data-i18n-title="nav_lists" id="btn-saved-companies" onclick="toggleSavedPanel()" title="My Lists">
+<button data-i18n-aria="nav_lists_aria" aria-label="" class="bton-nav-pill relative flex items-center gap-2 px-3 py-2 rounded-full" data-i18n-aria="nav_lists" data-i18n-title="nav_lists" id="btn-saved-companies" onclick="toggleSavedPanel()" data-i18n-title="nav_lists_title" title="">
 <i class="fa-regular fa-bookmark text-BTrustOn-accent"></i>
 <span class="hidden md:inline" data-i18n="nav_lists">LISTS</span>
 <span class="bton-badge hidden" id="saved-badge">
@@ -3898,7 +3928,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 </div>
-<div class="fixed inset-0 z-[20000] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" id="delete-modal">
+<div class="fixed inset-0 z-[110000] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" id="delete-modal">
 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
 <div class="bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl z-20 overflow-hidden transform transition-all scale-95" id="delete-modal-content">
 <div class="p-6 text-center">
@@ -3972,10 +4002,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="flex gap-2 shrink-0">
-<button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" data-i18n-title="attr_mark_unread_94324c" onclick="markAsUnreadCurrentMessage()" title="Mark Unread">
+<button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" data-i18n-title="attr_mark_unread_94324c" onclick="markAsUnreadCurrentMessage()" title="Mark Unread" data-i18n-title="inbox_mark_unread">
 <i class="fa-solid fa-envelope-open text-sm"></i>
 </button>
-<button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" data-i18n-title="attr_delete_conversation_90dd01" onclick="deleteCurrentMessage()" title="Delete Conversation">
+<button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" data-i18n-title="attr_delete_conversation_90dd01" onclick="deleteCurrentMessage()" title="Delete Conversation" data-i18n-title="inbox_delete_conversation">
 <i class="fa-solid fa-trash-can text-sm"></i>
 </button>
 </div>
@@ -4005,7 +4035,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <button class="h-10 w-10 md:w-12 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center border border-gray-200 shrink-0" onclick="document.getElementById('reply-file-input').click()" type="button">
 <i class="fa-solid fa-paperclip text-lg"></i>
 </button>
-<textarea class="flex-1 bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:bg-white focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition resize-none max-h-32 min-h-[44px]" id="reply-input" placeholder="Type a message..." rows="1"></textarea>
+<textarea class="flex-1 bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:bg-white focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition resize-none max-h-32 min-h-[44px]" id="reply-input" data-i18n-placeholder="inbox_type_message" placeholder="" rows="1"></textarea>
 <button class="h-10 px-4 md:px-6 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-xl font-bold text-xs tracking-wide transition shadow-lg shadow-cyan-500/20 shrink-0 flex items-center gap-2" onclick="sendReply()">
 <span data-i18n="ui_send_548e51">SEND</span>
 <i class="fa-solid fa-paper-plane"></i>
@@ -4748,7 +4778,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   }
 }
 </style>
-<div class="modal opacity-0 pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
+<div class="modal opacity-0 pointer-events-none fixed inset-0 z-[120000] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
 <button class="absolute top-5 right-5 text-white/70 hover:text-white text-3xl z-50" onclick="closeGallery()">
 <i class="fa-solid fa-xmark"></i>
 </button>
@@ -8106,7 +8136,94 @@ function populateCountrySelects() {
       return v;
     }
 
-    function translateCompanySize(sizeRaw) {
+    
+    function translateCountryName(countryRaw, countryCodeRaw="") {
+      const lang = __normLangCode(currentLang);
+      const v = (countryRaw || "").trim();
+      const code = (countryCodeRaw || "").trim().toUpperCase();
+      if (!v && !code) return "";
+      const desiredLocale = (lang === "tr") ? "tr-TR" : "en-US";
+
+      // Prefer ISO-2 code if available
+      if (code && code.length === 2 && typeof Intl !== "undefined" && Intl.DisplayNames) {
+        try {
+          const dn = new Intl.DisplayNames([desiredLocale], { type: "region" });
+          const n = dn.of(code);
+          if (n) return n;
+        } catch (e) {}
+      }
+
+      if (lang === "tr") {
+        const key = v.toLowerCase();
+        const map = {
+          "turkey": "Türkiye",
+          "türkiye": "Türkiye",
+          "turkiye": "Türkiye",
+          "united states": "ABD",
+          "united states of america": "ABD",
+          "usa": "ABD",
+          "germany": "Almanya",
+          "united kingdom": "Birleşik Krallık",
+          "uk": "Birleşik Krallık",
+          "saudi arabia": "Suudi Arabistan",
+          "united arab emirates": "Birleşik Arap Emirlikleri",
+          "uae": "Birleşik Arap Emirlikleri",
+          "russia": "Rusya",
+          "china": "Çin",
+          "france": "Fransa",
+          "italy": "İtalya",
+          "spain": "İspanya",
+          "netherlands": "Hollanda",
+          "switzerland": "İsviçre",
+          "austria": "Avusturya",
+          "belgium": "Belçika",
+          "sweden": "İsveç",
+          "norway": "Norveç",
+          "finland": "Finlandiya",
+          "denmark": "Danimarka",
+          "japan": "Japonya",
+          "south korea": "Güney Kore",
+          "korea, republic of": "Güney Kore",
+          "india": "Hindistan",
+          "brazil": "Brezilya",
+          "israel": "İsrail",
+          "qatar": "Katar",
+          "kuwait": "Kuveyt",
+          "oman": "Umman",
+          "egypt": "Mısır",
+          "iran": "İran",
+          "iraq": "Irak",
+          "syria": "Suriye",
+          "azerbaijan": "Azerbaycan",
+          "georgia": "Gürcistan",
+          "greece": "Yunanistan",
+          "bulgaria": "Bulgaristan",
+          "romania": "Romanya",
+          "serbia": "Sırbistan",
+          "croatia": "Hırvatistan",
+          "hungary": "Macaristan",
+          "poland": "Polonya",
+          "ukraine": "Ukrayna",
+          "kazakhstan": "Kazakistan",
+          "uzbekistan": "Özbekistan",
+          "kyrgyzstan": "Kırgızistan",
+          "turkmenistan": "Türkmenistan",
+          "mongolia": "Moğolistan",
+          "canada": "Kanada",
+          "australia": "Avustralya",
+          "new zealand": "Yeni Zelanda",
+          "south africa": "Güney Afrika",
+          "nigeria": "Nijerya",
+          "morocco": "Fas",
+          "algeria": "Cezayir",
+          "tunisia": "Tunus"
+        };
+        return map[key] || v;
+      }
+      return v || code;
+    }
+
+function translateCompanySize(sizeRaw) {
       const v = (sizeRaw || "").trim();
       if (!v) return "";
       if (currentLang === "tr") {
@@ -13660,13 +13777,15 @@ function renderSavedCompanies() {
       : `<div class="w-10 h-10 rounded-xl bg-cyan-50 border border-gray-200 grid place-items-center font-bold text-[12px] text-cyan-900">${initials}</div>`;
 
     const missingBadge = c._missing
-      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">Unavailable</span>`
+      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">${_i18n("saved_unavailable", "Unavailable")}</span>`
       : "";
 
     const metaCity = c.city || "—";
-    const metaCountry = c.country || "—";
+    const metaCountryRaw = (c.country || "").trim();
+    const metaCountryCode = (c.country_code || c.countryCode || c.country_iso2 || c.country_iso || "").trim();
+    const metaCountry = metaCountryRaw ? translateCountryName(metaCountryRaw, metaCountryCode) : "—";
     const metaTypeRaw = c.business_type || c.company_type || c.type || "";
-    const metaType = (metaTypeRaw && String(metaTypeRaw).trim().toLowerCase() !== "company") ? metaTypeRaw : "—";
+    const metaType = (metaTypeRaw && String(metaTypeRaw).trim().toLowerCase() !== "company") ? translateCompanyType(metaTypeRaw) : "—";
 
     return `
       <div class="saved-item rounded-2xl p-3 bg-white border border-gray-200 shadow-sm">
@@ -13698,10 +13817,10 @@ function renderSavedCompanies() {
             </div>
 
             <div class="mt-2">
-              <label class="sr-only">Note</label>
+              <label class="sr-only">${_i18n("saved_note_label", "Note")}</label>
               <textarea
                 class="w-full min-h-[44px] rounded-xl border border-gray-200 bg-white/80 text-[12px] p-2 leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-300"
-                placeholder="Note (optional)…"
+                placeholder="${_i18n("saved_note_optional_ph", "Note (optional)…")}"
                 onkeydown="event.stopPropagation()"
                 onclick="event.stopPropagation()"
                 onblur="updateSavedNote('${item.rowId}', this.value)"
@@ -14041,10 +14160,12 @@ const logo = logoUrl
   : `<div class="w-10 h-10 rounded-xl bg-cyan-50 border border-gray-200 grid place-items-center font-bold text-[12px] text-cyan-900">${initials}</div>`;
 
 const metaTypeRaw = (c.business_type || c.company_type || c.type || "").trim() || (rc.business_type || "").trim();
-const metaType = (metaTypeRaw && metaTypeRaw.toLowerCase() !== "company") ? metaTypeRaw : "—";
+const metaType = (metaTypeRaw && metaTypeRaw.toLowerCase() !== "company") ? translateCompanyType(metaTypeRaw) : "—";
 
 const metaCity = (c.city || "").trim() || (rc.city || "").trim();
-const metaCountry = (c.country || "").trim() || (rc.country || "").trim();
+const metaCountryRaw = ((c.country || "").trim() || (rc.country || "").trim());
+const metaCountryCode = ((c.country_code || c.countryCode || rc.country_code || rc.countryCode || "").trim());
+const metaCountry = metaCountryRaw ? translateCountryName(metaCountryRaw, metaCountryCode) : "";
 const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
     const locHtml = loc ? `<span class=\"text-gray-400\">•</span><span class=\"truncate\">${escapeHtml(loc)}</span>` : "";
 
@@ -14053,7 +14174,7 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
       : "";
 
     const missingBadge = c._missing
-      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-black">Unavailable</span>`
+      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-black">${_i18n("saved_unavailable", "Unavailable")}</span>`
       : "";
 
     return `
@@ -14229,7 +14350,7 @@ async function fetchInboxMessages() {
     // 👇 messages.forEach bloğunu tamamen bununla değiştirin 👇
     messages.forEach(msg => {
         // Konu başlığını temizle (Re: kısımlarını at)
-        const cleanSubject = msg.subject ? msg.subject.replace(/^(Re:\s*)+/i, '').trim() : "No Subject";
+        const cleanSubject = msg.subject ? msg.subject.replace(/^(Re:\s*)+/i, '').trim() : (t("inbox_no_subject") || "No Subject");
         const isMeSender = (msg.sender_id === user.id);
         
         // ✅ DEĞİŞİKLİK 1: Eğer sender_id yoksa (Misafir), partnerId'yi string 'null' yap
@@ -14238,12 +14359,12 @@ async function fetchInboxMessages() {
         const groupKey = cleanSubject + "_" + partnerId;
 
         if (!groupedMap.has(groupKey)) {
-            let displayCompany = "Loading...";
+            let displayCompany = (t("ui_loading") || ((getUILang()||"en").toLowerCase().startsWith("tr") ? "Yükleniyor..." : "Loading..."));
             let logoChar = "P";
 
             // ✅ DEĞİŞİKLİK 2: MİSAFİR KONTROLÜ
             if (partnerId === 'null') {
-                displayCompany = "Guest User";
+                displayCompany = (t("inbox_guest_user") || "Guest User");
                 logoChar = "G";
 
                 // Eğer mesajda "Ahmet (Guest)" gibi bir isim saklıysa onu al
@@ -15105,7 +15226,7 @@ async function openMessage(itemId) {
         // KAYITLI ŞİRKET İSE: Tıklanabilir Profil Linki (Eski hali)
         companyHeaderHtml = `
             <div class="flex flex-col">
-                <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">Conversation with</span>
+                <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">${_i18n("inbox_conversation_with", (currentLang==="tr" ? "Sohbet" : "Conversation with"))}</span>
                 <button onclick="openProfile('${currentPartnerId}')" 
                         class="text-left font-bold text-BTrustOn-accent hover:text-blue-700 hover:underline transition text-sm flex items-center gap-1.5">
                     <i class="fa-solid fa-building-user"></i>
@@ -15188,7 +15309,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if(!user) return;
 
-    let fixedPartnerName = "Partner";
+    let fixedPartnerName = (t("inbox_partner") || "Partner");
     
     // Partner ismini bulmaya çalış (Misafir ise 'Guest User' kalır veya related_company_name'den gelir)
     if (partnerId && partnerId !== 'null') {
@@ -15229,7 +15350,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
     container.innerHTML = ""; 
 
     if(!thread || thread.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-xs text-center italic mt-10">Start the conversation...</p>';
+        container.innerHTML = `<p class="text-gray-400 text-xs text-center italic mt-10">${t("inbox_start_conversation") || "Start the conversation..."}</p>`;
         return;
     }
 
@@ -15244,7 +15365,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
         }
 
         let displayNameHtml = isMe 
-            ? `<span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>`
+            ? `<span class="text-[10px] font-bold text-BTrustOn-accent">${(t("inbox_me_label") || "ME")}</span>`
             : `<span class="text-[10px] font-bold text-gray-600 uppercase tracking-wide cursor-default">${senderDisplayName}</span>`;
             // Misafir olduğu için isme tıklama (cursor-default) özelliği verdik
 
@@ -15293,7 +15414,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
             <div class="max-w-[85%] ${isMe ? 'bg-cyan-50 border border-cyan-100 rounded-tr-none' : 'bg-white border border-gray-200 rounded-tl-none'} p-4 rounded-xl shadow-sm">
                 <div class="flex justify-between items-center mb-1 gap-4">
                     ${displayNameHtml}
-                    <span class="text-[9px] text-gray-400">${new Date(m.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span class="text-[9px] text-gray-400">${formatMsgClock(m.created_at)}</span>
                 </div>
                 <div class="text-sm text-gray-700 leading-relaxed break-words">
                     ${cleanContent}
@@ -17374,10 +17495,10 @@ function appendLocalMessage(content) {
     if (!container) return;
 
     // Eğer "Start conversation..." yazısı varsa temizle
-    if (container.innerHTML.includes("Start the conversation")) container.innerHTML = "";
+    if ((container.innerHTML.includes("Start the conversation") || container.innerHTML.includes(t("inbox_start_conversation") || "Start the conversation"))) container.innerHTML = "";
 
     // Tarih
-    const time = nowDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = formatMsgClock(nowDate());
 
     // Satır başlarını <br> yap
     let cleanContent = content.replace(/\n/g, '<br>');
@@ -17395,7 +17516,7 @@ function appendLocalMessage(content) {
     bubble.innerHTML = `
         <div class="max-w-[85%] bg-cyan-50 border border-cyan-100 rounded-tr-none p-4 rounded-xl shadow-sm">
             <div class="flex justify-between items-center mb-1 gap-4">
-                <span class="text-[10px] font-bold text-BTrustOn-accent">ME</span>
+                <span class="text-[10px] font-bold text-BTrustOn-accent">${(t("inbox_me_label") || "ME")}</span>
                 <span class="text-[9px] text-gray-400">${time}</span>
             </div>
             <div class="text-sm text-gray-700 leading-relaxed break-words">
@@ -17780,7 +17901,7 @@ async function loadAdminData() {
              docLink = `<span class="text-xs text-gray-500">DUNS: ${req.duns_number}</span>`;
         }
 
-        const dateStr = new Date(req.updated_at).toLocaleDateString() + " " + new Date(req.updated_at).toLocaleTimeString();
+        const dateStr = formatDateTimeMeridiemTR(req.updated_at) || "";
 
         const row = document.createElement("tr");
         row.className = "hover:bg-slate-50 transition";
@@ -19530,7 +19651,7 @@ function sortProjectsUI(mode){
        ATTACHMENT VIEWER MODAL
        (Assets + Certificates)
   ========================== -->
-<div class="hidden fixed inset-0 z-[99999]" id="modal-attachment-viewer">
+<div class="hidden fixed inset-0 z-[120000]" id="modal-attachment-viewer">
 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAttachmentViewer()"></div>
 <div class="relative mx-auto w-[95vw] max-w-5xl h-[86vh] mt-[6vh] bg-white rounded-2xl shadow-2xl border border-white/40 overflow-hidden flex flex-col">
 <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-white/90">
@@ -19586,7 +19707,7 @@ function sortProjectsUI(mode){
 </div>
 </div>
 <!-- Confirm Modal -->
-<div class="hidden fixed inset-0 z-[9999] items-center justify-center" id="confirm-modal">
+<div class="hidden fixed inset-0 z-[120000] items-center justify-center" id="confirm-modal">
 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="confirm-overlay"></div>
 <div class="relative w-[92%] max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5">
 <div class="flex items-start justify-between gap-3">
