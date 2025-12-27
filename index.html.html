@@ -8789,7 +8789,8 @@ function renderTopCompanies() {
         // Mobilde ve PC'de düzgün durması için genişlik ayarı
         card.className =
           "min-w-[260px] bg-slate-900 text-white rounded-xl px-4 py-3 flex flex-col justify-between shadow-md hover:shadow-lg hover:-translate-y-0.5 transition transform border border-slate-700/50";
-        card.onclick = () => openProfile(company.id);
+                    try { card.classList.add("bton-company-card"); card.setAttribute("data-company-id", String(company.id)); } catch(e) {}
+card.onclick = () => openProfile(company.id);
 
         card.innerHTML = `
           <div class="flex items-center justify-between mb-1.5">
@@ -10770,6 +10771,7 @@ try {
               try{ card.id = _btonEntityDomId('project', p.id); }catch(e){}
               card.className = "group relative bg-white/80 backdrop-blur border border-[rgba(15,23,42,.08)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full";
               
+            try { card.classList.add("bton-company-card"); card.setAttribute("data-company-id", String(company.id)); } catch(e) {}
               const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
               card.dataset.hay = hay;
               card.dataset.pid = String(p.id || "");
@@ -11055,6 +11057,31 @@ async function saveProfileData() {
             owner_photo_url: finalOwnerPhotoUrl
         });
     }
+
+    // ✅ Ensure Live Showcase / Discover / Saved / Following update immediately (no refresh)
+    try {
+      if (typeof _applyLiveProfileMetaToHomeUpdates === "function") {
+        _applyLiveProfileMetaToHomeUpdates(user.id, {
+          id: user.id,
+          company_name: name,
+          company_logo_url: finalLogoUrl,
+          logo_url: finalLogoUrl,
+          is_verified: (selectedCompany && (selectedCompany.is_verified || selectedCompany.verified)) ? true : undefined,
+          verification_status: (selectedCompany && (selectedCompany.verification_status || selectedCompany.verificationStatus)) || undefined
+        });
+      }
+    } catch(e) {}
+
+    // Force a safe rerender of cards (showcase or search) so "Live Showcase" reflects the new name/logo immediately
+    try {
+      const q = (document.getElementById("search")?.value || document.getElementById("search-input")?.value || "").trim();
+      if (typeof renderSearchResults === "function" && ((typeof isSearchActive !== "undefined" && isSearchActive) || q)) {
+        renderSearchResults(q);
+      } else {
+        if (typeof renderShowcase === "function") renderShowcase();
+        if (typeof startShowcaseTimer === "function") startShowcaseTimer();
+      }
+    } catch(e) {}
 
     openProfile(user.id, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
     
@@ -16746,6 +16773,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
             const card = document.createElement("div");
             card.className = "group relative bg-white/80 backdrop-blur border border-slate-200/70 rounded-3xl p-5 shadow-sm flex flex-col h-full hover:border-BTrustOn-accent hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer fade-in overflow-hidden";
             
+            try { card.classList.add("bton-company-card"); card.setAttribute("data-company-id", String(company.id)); } catch(e) {}
             card.onclick = () => openProfile(company.id);
 
             card.innerHTML = `
