@@ -13196,9 +13196,9 @@ function openDeleteModal(message, actionCallback, opts = {}) {
   // Use the same confirmation UI used in Company Updates (uiConfirm)
   // Backward compatible with existing call sites that pass (message, callback)
   uiConfirm(String(message || ""), {
-    title: opts.title || ((currentLang === "tr") ? "Onay" : "Confirm"),
-    okText: opts.okText || ((currentLang === "tr") ? "Sil" : "Delete"),
-    cancelText: opts.cancelText || ((currentLang === "tr") ? "Vazgeç" : "Cancel"),
+    title: opts.title || (t("ui_confirm_title") || ((currentLang === "tr") ? "Onay" : "Confirm")),
+    okText: opts.okText || (t("ui_delete") || ((currentLang === "tr") ? "Sil" : "Delete")),
+    cancelText: opts.cancelText || (t("ui_cancel") || ((currentLang === "tr") ? "Vazgeç" : "Cancel")),
     variant: opts.variant || "danger"
   }).then(async (ok) => {
     if (!ok) return;
@@ -14508,7 +14508,7 @@ function subscribeNotifications() {
             if (!Array.isArray(notificationsData)) notificationsData = [];
             notificationsData.unshift({
               id: n.id,
-              title: n.title || "Notification",
+              title: n.title || (t("ui_notification") || "Notification"),
               message: n.message || "",
               created_at: n.created_at || nowDate().toISOString(),
               is_read: n.is_read
@@ -14571,11 +14571,11 @@ async function markNotificationRead(notifId) {
 async function markAllNotificationsRead() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Login required");
+    if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
     const unreadExists = (notificationsData || []).some(n => (n.is_read === false || n.is_read === 0 || n.is_read === null));
     if (!unreadExists) {
-      showToast("Up to date", "All notifications are already read.", "info");
+      showToast("Up to date", (t("inbox_all_notifications_already_read") || "All notifications are already read."), "info");
       return;
     }
 
@@ -14590,10 +14590,10 @@ async function markAllNotificationsRead() {
     (notificationsData || []).forEach(n => n.is_read = true);
     notificationsUnreadCount = 0;
     renderInboxItems();
-    showToast("Success", "All notifications marked as read.", "success");
+    showToast("Success", (t("inbox_all_notifications_marked_read") || "All notifications marked as read."), "success");
   } catch (e) {
     console.error("Mark all notifications read error:", e);
-    showToast("Error", "Could not update notifications.", "error");
+    showToast("Error", (t("inbox_could_not_update_notifications") || "Could not update notifications."), "error");
   }
 }
 
@@ -14656,10 +14656,10 @@ function _dismissNotifIdLocal(id) {
 
 /* --- Single notification delete (with fallback) --- */
 function deleteNotification(notifId) {
-  openDeleteModal("Delete this notification?", async () => {
+  openDeleteModal((t("inbox_confirm_delete_notification") || "Delete this notification?"), async () => {
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) throw new Error("Login required");
+      if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
       // Optimistic UI remove
       const before = Array.isArray(notificationsData) ? notificationsData : [];
@@ -14685,10 +14685,10 @@ function deleteNotification(notifId) {
         _dismissNotifIdLocal(notifId);
       }
 
-      showToast("Deleted", "Notification removed.", "success");
+      showToast("Deleted", (t("inbox_notification_removed") || "Notification removed."), "success");
     } catch (e) {
       console.error("Delete notification error:", e);
-      showToast("Error", "Failed to delete notification.", "error");
+      showToast("Error", (t("inbox_failed_delete_notification") || "Failed to delete notification."), "error");
       // In case of error, re-fetch to recover UI
       try { await fetchNotificationsUnread(); } catch {}
     }
@@ -14697,10 +14697,10 @@ function deleteNotification(notifId) {
 
 
 function deleteAllNotifications() {
-  openDeleteModal((currentLang==="tr") ? "Tüm bildirimleri silmek istiyor musun?" : "Delete all notifications?", async () => {
+  openDeleteModal((t("inbox_confirm_delete_all_notifications") || "Delete all notifications?"), async () => {
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) throw new Error("Login required");
+      if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
       // Try DB delete first (may be blocked by RLS and return 0 rows without error)
       const { data: deletedRows, error } = await supabaseClient
@@ -14724,10 +14724,10 @@ function deleteAllNotifications() {
       notificationsData = [];
       notificationsUnreadCount = 0;
       renderInboxItems();
-      showToast("Cleared", "All notifications removed.", "success");
+      showToast("Cleared", (t("inbox_all_notifications_removed") || "All notifications removed."), "success");
     } catch (e) {
       console.error("Delete notifications error:", e);
-      showToast("Error", "Failed to delete notifications.", "error");
+      showToast("Error", (t("inbox_failed_delete_notifications") || "Failed to delete notifications."), "error");
     }
   });
 }
@@ -14792,7 +14792,7 @@ function renderInboxItems() {
     list.forEach(n => {
       const isUnread = (n.is_read === false || n.is_read === 0 || n.is_read === null);
 
-      const titleRaw = (n.title || "Notification");
+      const titleRaw = (n.title || (t("ui_notification") || "Notification"));
       const msgRaw = (n.message || "");
 
       const action = _extractNotifAction(msgRaw);
@@ -14800,7 +14800,7 @@ function renderInboxItems() {
       const parsedTitle = _parseNotifI18n(titleRaw);
 
       const titleResolved = (parsedTitle && parsedTitle.key) ? (tP(parsedTitle.key, parsedTitle.params) || titleRaw) : titleRaw;
-      const title = String(titleResolved || "Notification").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const title = String(titleResolved || (t("ui_notification") || "Notification")).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
       const msgResolved = (parsedMsg && parsedMsg.key) ? (tP(parsedMsg.key, parsedMsg.params) || _stripNotifMarkers(msgRaw)) : _stripNotifMarkers(msgRaw);
       const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -15324,16 +15324,16 @@ async function sendReply() {
     const btn = document.querySelector("#view-message button[onclick='sendReply()']") || document.querySelector("button[onclick='sendReply()']");
 
     if (!content && !currentAttachmentFile) {
-        showToast("Warning", "Please write a message.", "error");
+        showToast("Warning", (t("inbox_please_write_message") || "Please write a message."), "error");
         return;
     }
 
     if (!currentPartnerId || !currentSubject) {
-        showToast("Error", "Chat connection lost.", "error");
+        showToast("Error", (t("inbox_chat_connection_lost") || "Chat connection lost."), "error");
         return;
     }
 
-    const originalText = btn ? btn.innerHTML : "SEND";
+    const originalText = btn ? btn.innerHTML : (t("ui_send") || "SEND");
     if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btn.disabled = true; }
 
     try {
@@ -15381,13 +15381,13 @@ async function sendReply() {
 
         if (error) {
             // Hata olursa kullanıcıyı uyar (Çok nadir olur)
-            showToast("Error", "Message failed to send!", "error");
+            showToast("Error", (t("inbox_message_failed_to_send") || "Message failed to send!"), "error");
             console.error(error);
         }
 
     } catch (error) {
         console.error(error);
-        showToast("Error", "Failed to send: " + error.message, "error");
+        showToast("Error", (t("inbox_failed_to_send_prefix") || "Failed to send: ") + error.message, "error");
     } finally {
         if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
     }
@@ -15405,7 +15405,7 @@ async function sendReply() {
 function deleteCurrentMessage() {
     if (!currentOpenMessageId) return;
 
-    openDeleteModal("Remove this conversation from your view?", async () => {
+    openDeleteModal((t("inbox_confirm_remove_conversation") || "Remove this conversation from your view?"), async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             // Bu mesajın detayını bul (Gönderen ben miyim alıcı mı?)
@@ -15429,7 +15429,7 @@ function deleteCurrentMessage() {
 
         } catch (error) {
             console.error("Delete error:", error);
-            showToast("Error", "Could not delete.", "error");
+            showToast("Error", (t("inbox_could_not_delete") || "Could not delete."), "error");
         }
     });
 }
@@ -15463,11 +15463,11 @@ async function markAsUnreadCurrentMessage() {
         // Mesaj ekranını kapatıp listeye dön (Kullanıcı değişimi görsün diye)
         closeMessageView();
         
-        showToast("Marked Unread", "Conversation marked as unread.", "success");
+        showToast("Marked Unread", (t("inbox_conversation_marked_unread") || "Conversation marked as unread."), "success");
 
     } catch (e) {
         console.error("Unread error:", e);
-        showToast("Error", "Failed to update status.", "error");
+        showToast("Error", (t("inbox_failed_update_status") || "Failed to update status."), "error");
     }
 }
 /* --- DOSYA EKLEME YÖNETİMİ --- */
@@ -15784,11 +15784,11 @@ async function confirmCropper() {
   const mime = (ctx.kind === "logo") ? "image/png" : "image/jpeg";
   const ext = (ctx.kind === "logo") ? "png" : "jpg";
 
-  showToast("Processing...", "Preparing your image...", "info");
+  showToast("Processing...", (t("ui_preparing_image") || "Preparing your image..."), "info");
 
   canvas.toBlob(async (blob) => {
     try {
-      if (!blob) throw new Error("Could not crop image.");
+      if (!blob) throw new Error((t("ui_could_not_crop_image") || "Could not crop image."));
       const croppedFile = new File([blob], `${ctx.kind}-${nowTs()}.${ext}`, { type: mime });
 
       // Close cropper first (feels faster)
@@ -15806,7 +15806,7 @@ async function confirmCropper() {
           const icon = document.getElementById("edit-logo-icon");
           if (img) { img.src = url; img.classList.remove("hidden"); }
           if (icon) icon.classList.add("hidden");
-          showToast("Ready", "Logo prepared. Click Save & Preview to publish.", "success");
+          showToast("Ready", (t("ui_logo_prepared_publish") || "Logo prepared. Click Save & Preview to publish."), "success");
         }
       } else if (ctx.kind === "owner") {
         const mode = ctx.mode || "edit";
@@ -15820,7 +15820,7 @@ async function confirmCropper() {
           const icon = document.getElementById("icon-owner-img");
           if (img) { img.src = url; img.classList.remove("hidden"); }
           if (icon) icon.classList.add("hidden");
-          showToast("Ready", "Photo prepared. Click Save & Preview to publish.", "success");
+          showToast("Ready", (t("ui_photo_prepared_publish") || "Photo prepared. Click Save & Preview to publish."), "success");
         }
       }
 
@@ -15838,7 +15838,7 @@ async function confirmCropper() {
               <i class="fa-solid fa-trash mr-1"></i> Remove
             </button>`;
         }
-        showToast("Ready", "Cover prepared. Click Save to publish this project.", "success");
+        showToast("Ready", (t("ui_cover_prepared_publish_project") || "Cover prepared. Click Save to publish this project."), "success");
       }
 
     } catch (err) {
@@ -15902,11 +15902,11 @@ async function uploadLogoDirectFile(file) {
   if (pImg) { pImg.src = previewUrl; pImg.classList.remove("hidden"); }
   if (pIcon) pIcon.classList.add("hidden");
 
-  showToast("Uploading...", "Updating your logo...", "info");
+  showToast("Uploading...", (t("ui_updating_logo") || "Updating your logo..."), "info");
 
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Login required");
+    if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
     const fileExt = (file.name.split('.').pop() || "png").toLowerCase();
     const fileName = `${user.id}-logo-${nowTs()}.${fileExt}`;
@@ -15968,11 +15968,11 @@ async function uploadOwnerPhotoDirectFile(file) {
   if (eImg) { eImg.src = previewUrl; eImg.classList.remove("hidden"); }
   if (eIcon) eIcon.classList.add("hidden");
 
-  showToast("Uploading...", "Updating contact photo...", "info");
+  showToast("Uploading...", (t("ui_updating_contact_photo") || "Updating contact photo..."), "info");
 
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Login required");
+    if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
     const fileExt = (file.name.split('.').pop() || "jpg").toLowerCase();
     const fileName = `${user.id}-owner-${nowTs()}.${fileExt}`;
@@ -16094,7 +16094,7 @@ async function saveCert() {
     const issuer = document.getElementById("cert-issuer").value.trim();
     const date = document.getElementById("cert-date").value;
 
-    if (!name) { showToast("Missing Info", "Certificate name required.", "error"); return; }
+    if (!name) { showToast("Missing Info", (t("ui_certificate_name_required") || "Certificate name required."), "error"); return; }
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Session expired.");
@@ -16311,7 +16311,7 @@ async function markAllInboxRead() {
   if (!unreadExists) {
       // Eğer hepsi zaten okunmuşsa, boşuna sunucuya gitme ve "Success" deme.
       // Sadece kullanıcıya bilgi ver ve fonksiyondan çık.
-      showToast("Up to date", "All messages are already read.", "info");
+      showToast("Up to date", (t("inbox_all_messages_already_read") || "All messages are already read."), "info");
       return; 
   }
 
@@ -16320,7 +16320,7 @@ async function markAllInboxRead() {
 
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Login required");
+    if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
     // 1. Veritabanını Güncelle
     const { error } = await supabaseClient
@@ -16336,11 +16336,11 @@ async function markAllInboxRead() {
     renderInboxItems();
 
     // 3. Başarılı Mesajı (Sadece gerçekten bir şeyler değiştiyse çıkar)
-    showToast("Success", "All messages marked as read.", "success");
+    showToast("Success", (t("inbox_all_messages_marked_read") || "All messages marked as read."), "success");
 
   } catch (e) {
     console.error("Mark all read error:", e);
-    showToast("Error", "Could not update status.", "error");
+    showToast("Error", (t("inbox_could_not_update_status") || "Could not update status."), "error");
   } finally {
     if(btn) btn.disabled = false;
   }
@@ -16356,13 +16356,16 @@ function deleteAllInbox() {
 
     // 1. Hangi kutuda olduğumuzu kontrol et
     const isInbox = currentInboxView === 'inbox';
-    const label = isInbox ? "received messages" : "sent messages";
 
     // 2. Onay Modalı Aç
-    openDeleteModal((currentLang==="tr") ? `Tüm ${isInbox ? "gelen mesajları" : "gönderilen mesajları"} silmek istiyor musun?` : `Delete all ${label}?`, async () => {
+    openDeleteModal(
+        isInbox
+          ? (t("inbox_confirm_delete_all_received") || "Delete all received messages?")
+          : (t("inbox_confirm_delete_all_sent") || "Delete all sent messages?"),
+        async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) throw new Error("Login required");
+            if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
             // 3. Veritabanı İşlemi (Soft Delete)
             let query = supabaseClient.from('messages');
@@ -16390,11 +16393,11 @@ function deleteAllInbox() {
 
             // 5. Ekranı Yenile
             renderInboxItems();
-            showToast("Cleared", `All ${label} deleted successfully.`, "success");
+            showToast("Cleared", (isInbox ? (t("inbox_all_received_deleted_success") || "All received messages deleted successfully.") : (t("inbox_all_sent_deleted_success") || "All sent messages deleted successfully.")), "success");
 
         } catch (error) {
             console.error("Delete All Error:", error);
-            showToast("Error", "Failed to delete: " + error.message, "error");
+            showToast("Error", (t("inbox_failed_to_delete_prefix") || "Failed to delete: ") + error.message, "error");
         }
     });
 }
@@ -17256,10 +17259,10 @@ async function handleQuoteSubmit() {
 function deleteThread(msgId, title, partnerId, event) {
     if(event) { event.stopPropagation(); event.preventDefault(); }
 
-    openDeleteModal("Remove this conversation view?", async () => {
+    openDeleteModal((t("inbox_confirm_remove_conversation") || "Remove this conversation view?"), async () => {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) throw new Error("Login required");
+            if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
             const cleanSearchTitle = title.replace(/^(Re:\s*)+/i, '').trim();
 
