@@ -832,5 +832,7 @@
   "action_unfollow": "Unfollow",
   "badge_verified": "Verified",
   "toast_removed": "Removed",
-  "saved_company_removed": "Company removed."
+  "saved_company_removed": "Company removed.",
+  "toast_saved": "Saved",
+  "saved_company_added": "Company added to Saved."
 }
