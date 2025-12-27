@@ -3993,7 +3993,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
                 A
             </div>
 <div class="min-w-0">
-<h1 class="text-sm md:text-base font-bold text-gray-800 truncate" data-i18n="lbl_quote_subject" id="msg-subject">Subject</h1>
+<h1 class="text-sm md:text-base font-bold text-gray-800 truncate" id="msg-subject">—</h1>
 <div class="flex items-center gap-2 text-xs text-gray-500">
 <span class="truncate font-medium" id="msg-company">—</span>
 <span class="w-1 h-1 rounded-full bg-gray-300"></span>
@@ -14170,7 +14170,7 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
     const locHtml = loc ? `<span class=\"text-gray-400\">•</span><span class=\"truncate\">${escapeHtml(loc)}</span>` : "";
 
     const ver = c.is_verified
-      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black">Verified</span>`
+      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black">${_i18n("badge_verified","Verified")}</span>`
       : "";
 
     const missingBadge = c._missing
@@ -14192,8 +14192,8 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
               </div>
               <button class="text-xs font-black px-3 py-1.5 rounded-full border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition"
                 onclick="toggleCompanyFollow(event, '${c.id}', '${escapeHtml((c.name||'') + '')}')"
-                title="Unfollow">
-                <i class="fa-solid fa-tower-broadcast mr-1"></i> Unfollow
+                title="${_i18n("action_unfollow","Unfollow")}">
+                <i class="fa-solid fa-tower-broadcast mr-1"></i> ${_i18n("action_unfollow","Unfollow")}
               </button>
             </div>
             <div class="mt-1 text-[10px] text-gray-500 flex flex-wrap items-center gap-2">
@@ -15215,7 +15215,7 @@ async function openMessage(itemId) {
         // MİSAFİR İSE: Tıklanamayan düz yazı ve 'Guest User' etiketi
         companyHeaderHtml = `
             <div class="flex flex-col">
-                <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">Guest User</span>
+                <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">${_i18n("inbox_guest_user","Guest User")}</span>
                 <span class="text-left font-bold text-gray-800 text-sm flex items-center gap-1.5 cursor-default">
                     <i class="fa-solid fa-user-clock text-amber-500"></i>
                     ${fixedHeaderName} 
