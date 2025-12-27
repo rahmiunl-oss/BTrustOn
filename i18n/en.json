@@ -828,5 +828,7 @@
   "ui_no_followed_companies_yet_use_th_bfe54b": "No followed companies yet. Use",
   "ui_icon_on_company_cards_or_profile_808d3c": "icon on company cards or profiles.",
   "ui_loading_5f02f0": "Loading…",
-  "attr_close_d3d2e6": "Close"
+  "attr_close_d3d2e6": "Close",
+  "action_unfollow": "Unfollow",
+  "badge_verified": "Verified"
 }
