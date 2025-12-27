@@ -828,6 +828,7 @@
   "ui_no_followed_companies_yet_use_th_bfe54b": "Henüz takip ettiğiniz şirket yok. Takip etmek için",
   "ui_icon_on_company_cards_or_profile_808d3c": "ikonunu şirket kartlarında veya profillerde kullanın.",
   "ui_loading_5f02f0": "Yükleniyor…",
-  "attr_close_d3d2e6": "Kapat"
-
+  "attr_close_d3d2e6": "Kapat",
+  "action_unfollow": "Takibi Bırak",
+  "badge_verified": "Doğrulandı"
 }
