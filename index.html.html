@@ -4954,6 +4954,7 @@ let existingAssetFileName = null; // Zaten yüklü olan dosyanın adını tutar
    ========================================================= */
 let homeUpdatesData = [];
 let homeUpdatesSub = null;
+let profilesMetaSub = null;
 let __homeUpdatesPause = false;
 let __homeUpdatesAutoPos = 0; // float px position for smooth auto-flow
 let __homeUpdatesLoopWidth = 0;
@@ -5676,7 +5677,7 @@ function renderHomeUpdates(list) {
     const safeFocusId = _safeText(focusId);
 
     return `
-      <button onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
+      <button data-home-upd-company="${safeCompanyId}" onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
         class="bton-upd-card group relative snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] px-4 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
 
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
@@ -5685,19 +5686,18 @@ function renderHomeUpdates(list) {
 
         <div class="relative flex items-start gap-3">
           <div class="w-10 h-10 rounded-2xl bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm overflow-hidden shrink-0 grid place-items-center">
-            ${logo ? `
-              <img src="${logo}" class="w-full h-full object-cover" alt="logo" loading="lazy" decoding="async" referrerpolicy="no-referrer"
-                onerror="this.classList.add('hidden'); if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
-              <span class="text-sm font-extrabold text-slate-500 hidden">${letter}</span>
-            ` : `<span class="text-sm font-extrabold text-slate-500">${letter}</span>`}
+            
+              <img data-role="company-logo" src="${logo}" class="w-full h-full object-cover ${logo ? "" : "hidden"}" alt="logo" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                onerror="this.classList.add('hidden'); const sib=this.nextElementSibling; if(sib) sib.classList.remove('hidden');">
+              <span data-role="company-letter" class="text-sm font-extrabold text-slate-500 ${logo ? "hidden" : ""}">${letter}</span>
           </div>
 
           <div class="min-w-0 flex-1 flex flex-col">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="text-sm font-extrabold text-BTrustOn-primary truncate">${companyName}</div>
-                  ${verified ? `<i class="fa-solid fa-circle-check text-cyan-500 text-sm" title="Verified"></i>` : ``}
+                  <div class="text-sm font-extrabold text-BTrustOn-primary truncate" data-role="company-name">${companyName}</div>
+                  <i class="fa-solid fa-circle-check text-cyan-500 text-sm ${verified ? "" : "hidden"}" data-role="company-verified" title="Verified"></i>
                 </div>
 
                 <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
@@ -5869,9 +5869,20 @@ function _resolveUpdateCompanyMeta(u){
       }
     } catch(e){}
 
-    const name = (fromRow.name || fromJoin.name || fromCache.name || "").trim();
-    const logo = (fromRow.logo || fromJoin.logo || fromCache.logo || "").trim();
-    const verified = !!(fromRow.verified || fromJoin.verified || fromCache.verified);
+    // Prefetched profile meta for updates feed (current name/logo should win over historical snapshot)
+let fromPrefetch = { name:"", logo:"", verified:false };
+try {
+  if (cid && typeof window !== "undefined" && window.__updatesProfileMeta && window.__updatesProfileMeta[cid]) {
+    const hit = window.__updatesProfileMeta[cid];
+    fromPrefetch = { name: pickName(hit), logo: pickLogo(hit), verified: pickVerified(hit) };
+  }
+} catch(e){}
+
+// Prefer live profile meta (join/prefetch/cache) over stored snapshot in the update row
+const name = (fromJoin.name || fromPrefetch.name || fromCache.name || fromRow.name || "").trim();
+const logo = (fromJoin.logo || fromPrefetch.logo || fromCache.logo || fromRow.logo || "").trim();
+const verified = !!(fromJoin.verified || fromPrefetch.verified || fromCache.verified || fromRow.verified);
+
 
     return { name, logo, verified };
   } catch(e){
@@ -6094,6 +6105,56 @@ try {
 
 
 
+/* --- Updates feed: live profile meta (so renamed companies show current name/logo) --- */
+try { window.__updatesProfileMeta = window.__updatesProfileMeta || {}; } catch(e) {}
+
+async function _primeProfilesMeta(ids){
+  try{
+    const list = Array.isArray(ids) ? ids : [];
+    const filtered = [];
+    const seen = new Set();
+    for (const id of list){
+      const cid = String(id || "").trim();
+      if (!cid || seen.has(cid)) continue;
+      seen.add(cid);
+      try { if (window.__updatesProfileMeta && window.__updatesProfileMeta[cid]) continue; } catch(e) {}
+      filtered.push(cid);
+      if (filtered.length >= 60) break;
+    }
+    if (filtered.length === 0) return;
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("id, company_name, company_logo_url, is_verified, verification_status")
+      .in("id", filtered);
+
+    if (error) return; // RLS may block public reads in some setups; fail silently
+    (data || []).forEach(p => {
+      if (!p || !p.id) return;
+      try { window.__updatesProfileMeta[p.id] = p; } catch(e) {}
+    });
+  } catch(e) {}
+}
+
+async function _primeUpdatesProfileMetaFromUpdates(updates){
+  try{
+    const arr = Array.isArray(updates) ? updates : [];
+    const ids = [];
+    const seen = new Set();
+    for (const u of arr){
+      const cid = String(u?.company_id || u?.profile_id || "").trim();
+      if (!cid || seen.has(cid)) continue;
+      seen.add(cid);
+      try { if (window.__updatesProfileMeta && window.__updatesProfileMeta[cid]) continue; } catch(e) {}
+      ids.push(cid);
+      if (ids.length >= 60) break;
+    }
+    if (ids.length === 0) return;
+    await _primeProfilesMeta(ids);
+  } catch(e) {}
+}
+
 async function fetchHomeUpdates() {
   try {
     const wrap = document.getElementById("home-updates");
@@ -6156,6 +6217,8 @@ async function fetchHomeUpdates() {
     }
 
     homeUpdatesData = (data || []);
+    try { await _primeUpdatesProfileMetaFromUpdates(homeUpdatesData); } catch(e) {}
+
     _updateHomeUpdatesActiveCount(homeUpdatesData);
     renderHomeUpdates(homeUpdatesData);
 
@@ -6473,6 +6536,248 @@ function subscribeProfileViewsRealtime() {
     console.warn("Profile views realtime subscribe failed:", e);
   }
 }
+
+function _cssEscapeForSel(v){
+  try { return CSS && CSS.escape ? CSS.escape(String(v)) : String(v).replace(/["\\]/g, "\\$&"); } catch(e){ return String(v).replace(/["\\]/g, "\\$&"); }
+}
+
+function _applyLiveProfileMetaToHomeUpdates(companyId, metaRow){
+  try{
+    const cid = String(companyId || "").trim();
+    if (!cid) return;
+
+    // Merge into updates profile meta cache
+    try {
+      window.__updatesProfileMeta = window.__updatesProfileMeta || {};
+      const prev = window.__updatesProfileMeta[cid] || {};
+      window.__updatesProfileMeta[cid] = Object.assign({}, prev, metaRow || {});
+    } catch(e) {}
+
+    const name = (metaRow && (metaRow.company_name || metaRow.name || metaRow.legal_name || metaRow.legalName)) || "";
+    const logo = (metaRow && (metaRow.company_logo_url || metaRow.logo_url || metaRow.logoUrl || metaRow.logo || metaRow.company_logo)) || "";
+    const verified = !!(metaRow && (metaRow.is_verified || metaRow.verified || String(metaRow.verification_status||"").toLowerCase()==="verified"));
+
+    const sel = `[data-home-upd-company="${_cssEscapeForSel(cid)}"]`;
+    const cards = document.querySelectorAll(sel);
+    if (!cards || !cards.length) return;
+
+    cards.forEach(card => {
+      try{
+        const nameEl = card.querySelector('[data-role="company-name"]');
+        if (nameEl && name) nameEl.textContent = name;
+
+        const img = card.querySelector('img[data-role="company-logo"]');
+        const letterEl = card.querySelector('[data-role="company-letter"]');
+
+        const finalName = (nameEl ? nameEl.textContent : name) || name || "C";
+        const letter = (String(finalName).trim().charAt(0) || "C").toUpperCase();
+
+        if (img){
+          if (logo) {
+            if (img.getAttribute("src") !== logo) img.setAttribute("src", logo);
+            img.classList.remove("hidden");
+          } else {
+            img.classList.add("hidden");
+          }
+        }
+        if (letterEl){
+          letterEl.textContent = letter;
+          if (logo) letterEl.classList.add("hidden");
+          else letterEl.classList.remove("hidden");
+        }
+
+        const tick = card.querySelector('[data-role="company-verified"]');
+        if (tick){
+          if (verified) tick.classList.remove("hidden");
+          else tick.classList.add("hidden");
+        }
+      } catch(e){}
+    });
+
+
+    // -------- Live profile meta: propagate to ALL UI (Discover / Saved / Following / Profile header) --------
+    try {
+      // Update currently-open profile header instantly (if viewing this company)
+      try {
+        if (typeof selectedCompany !== "undefined" && selectedCompany && String(selectedCompany.id || "") === cid) {
+          if (name) { selectedCompany.name = name; selectedCompany.company_name = name; }
+          // logo can be empty string: treat as "no logo"
+          selectedCompany.logo_url = logo || "";
+          selectedCompany.company_logo_url = logo || "";
+          selectedCompany.logo = logo || "";
+          if (typeof verified !== "undefined") {
+            selectedCompany.is_verified = !!verified;
+            try { selectedCompany.verification_status = verified ? "verified" : (selectedCompany.verification_status || ""); } catch(e) {}
+          }
+        }
+
+        const pNameEl = document.getElementById("p-name");
+        if (pNameEl && typeof selectedCompany !== "undefined" && selectedCompany && String(selectedCompany.id || "") === cid && name) {
+          pNameEl.textContent = name;
+        }
+
+        const pImg = document.getElementById("p-logo-image");
+        const pLetter = document.getElementById("p-default-icon");
+        if (pImg && typeof selectedCompany !== "undefined" && selectedCompany && String(selectedCompany.id || "") === cid) {
+          if (logo) {
+            if (pImg.getAttribute("src") !== logo) pImg.setAttribute("src", logo);
+            pImg.classList.remove("hidden");
+            if (pLetter) pLetter.classList.add("hidden");
+          } else {
+            pImg.classList.add("hidden");
+            if (pLetter) {
+              pLetter.classList.remove("hidden");
+              pLetter.textContent = (name || "C").trim().slice(0, 1).toUpperCase();
+            }
+          }
+        }
+      } catch(e) {}
+
+      // Update Discover/Search dataset (database)
+      try {
+        if (typeof database !== "undefined" && Array.isArray(database)) {
+          const obj = database.find(x => String(x?.id || "") === cid);
+          if (obj) {
+            if (name) { obj.name = name; obj.company_name = name; }
+            obj.logo_url = logo || "";
+            obj.company_logo_url = logo || "";
+            obj.logo = logo || "";
+            if (typeof verified !== "undefined") {
+              obj.is_verified = !!verified;
+              try { obj.verification_status = verified ? "verified" : (obj.verification_status || ""); } catch(e) {}
+            }
+            if (obj.company && typeof obj.company === "object") {
+              if (name) { obj.company.name = name; obj.company.company_name = name; }
+              obj.company.logo_url = logo || "";
+              obj.company.company_logo_url = logo || "";
+            }
+          }
+        }
+      } catch(e) {}
+
+      // Update Saved list snapshot data
+      try {
+        if (typeof savedCompaniesData !== "undefined" && Array.isArray(savedCompaniesData)) {
+          savedCompaniesData.forEach(it => {
+            const c = it?.company;
+            if (!c || String(c.id || "") !== cid) return;
+            if (name) { c.name = name; c.company_name = name; }
+            c.logo_url = logo || "";
+            c.company_logo_url = logo || "";
+            if (typeof verified !== "undefined") {
+              c.is_verified = !!verified;
+              try { c.verification_status = verified ? "verified" : (c.verification_status || ""); } catch(e) {}
+            }
+          });
+        }
+      } catch(e) {}
+
+      // Update Following list snapshot data
+      try {
+        if (typeof followingCompaniesData !== "undefined" && Array.isArray(followingCompaniesData)) {
+          followingCompaniesData.forEach(it => {
+            const c = it?.company;
+            if (!c || String(c.id || "") !== cid) return;
+            if (name) { c.name = name; c.company_name = name; }
+            c.logo_url = logo || "";
+            c.company_logo_url = logo || "";
+            if (typeof verified !== "undefined") {
+              c.is_verified = !!verified;
+              try { c.verification_status = verified ? "verified" : (c.verification_status || ""); } catch(e) {}
+            }
+          });
+        }
+      } catch(e) {}
+
+      // Update saved snapshot cache (used when building saved/following UI payloads)
+      try {
+        if (typeof companySnapshotById !== "undefined" && companySnapshotById && typeof companySnapshotById === "object") {
+          const snap = companySnapshotById[cid];
+          if (snap && typeof snap === "object") {
+            if (name) { snap.name = name; snap.company_name = name; }
+            snap.logo_url = logo || "";
+            snap.company_logo_url = logo || "";
+            if (typeof verified !== "undefined") {
+              snap.is_verified = !!verified;
+              try { snap.verification_status = verified ? "verified" : (snap.verification_status || ""); } catch(e) {}
+            }
+          }
+        }
+      } catch(e) {}
+
+      // Throttled rerender so every place updates live without flicker
+      try {
+        window.__bton_profile_meta_rerender = window.__bton_profile_meta_rerender || {};
+        if (!window.__bton_profile_meta_rerender.t) {
+          window.__bton_profile_meta_rerender.t = setTimeout(() => {
+            try { window.__bton_profile_meta_rerender.t = null; } catch(e) {}
+
+            // Discover (showcase) + search results
+            try {
+              const q = (document.getElementById("search")?.value || document.getElementById("search-input")?.value || "").trim();
+              if (typeof renderSearchResults === "function" && (typeof isSearchActive !== "undefined" && isSearchActive || q)) {
+                renderSearchResults(q);
+              }
+            } catch(e) {}
+            try { if (typeof renderShowcase === "function") renderShowcase(); } catch(e) {}
+
+            // Saved / Following panels (only if panel is open)
+            try {
+              const sp = document.getElementById("saved-panel");
+              const open = !!(sp && sp.classList.contains("open"));
+              if (open) {
+                if (typeof renderSavedCompanies === "function") renderSavedCompanies();
+                if (typeof renderFollowingCompanies === "function") renderFollowingCompanies();
+              }
+            } catch(e) {}
+
+            // Follow buttons can include embedded names/logos
+            try { if (typeof updateFollowButtonsUI === "function") updateFollowButtonsUI(); } catch(e) {}
+          }, 140);
+        }
+      } catch(e) {}
+    } catch(e) {}
+
+    // Ensure cached base HTML won't reintroduce old name/logo on loop rebuild
+    try { __homeUpdatesBaseHTML = ""; __homeUpdatesLoopHTML = ""; __homeUpdatesLoopWidth = 0; } catch(e) {}
+  } catch(e){}
+}
+
+function subscribeProfilesMetaRealtime(){
+  try{
+    if (profilesMetaSub) {
+      try { supabaseClient.removeChannel(profilesMetaSub); } catch(e) {}
+      profilesMetaSub = null;
+    }
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+
+    profilesMetaSub = supabaseClient
+      .channel("profiles-meta")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, async (payload) => {
+        const row = payload && payload.new ? payload.new : null;
+        if (!row || !row.id) return;
+
+        // Apply immediately from payload
+        try { _applyLiveProfileMetaToHomeUpdates(row.id, row); } catch(e) {}
+
+        // Optional: refresh from DB (respects RLS) to keep only allowed fields accurate
+        try {
+          const { data, error } = await supabaseClient
+            .from("profiles")
+            .select("id, company_name, company_logo_url, is_verified, verification_status")
+            .eq("id", row.id)
+            .maybeSingle();
+          if (!error && data && data.id) {
+            try { _applyLiveProfileMetaToHomeUpdates(data.id, data); } catch(e) {}
+          }
+        } catch(e) {}
+      })
+      .subscribe();
+  } catch(e){
+    console.warn("Profiles meta realtime subscribe failed:", e);
+  }
+}
+
 
 async function btonInitEngagementNotifications() {
   try {
@@ -12540,12 +12845,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
         try { fetchHomeUpdates(); } catch(e) {}
         try { subscribeHomeUpdatesRealtime(); } catch(e) {}
+        try { subscribeProfilesMetaRealtime(); } catch(e) {}
         try { setupHomeUpdatesNav(); } catch(e) {}
       } else {
         setTimeout(() => {
           try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
           try { fetchHomeUpdates(); } catch(e) {}
           try { subscribeHomeUpdatesRealtime(); } catch(e) {}
+        try { subscribeProfilesMetaRealtime(); } catch(e) {}
           try { setupHomeUpdatesNav(); } catch(e) {}
         }, 1400);
       }
