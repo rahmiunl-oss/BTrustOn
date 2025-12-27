@@ -421,7 +421,7 @@
   "results_label": "Results",
   "results_live_showcase": "Live Showcase:",
   "results_none_found": "No companies found matching your criteria.",
-  "results_refreshing_5s": "(Refreshing every 5s)",
+  "results_refreshing_5s": "(Refreshing every 10s)",
   "results_search_label": "Search Results:",
   "results_showcase_note_free": "Verified companies rotate here — Go Pro to unlock updates visibility.",
   "results_showcase_note_pro": "Verified companies rotate here.",
