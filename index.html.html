@@ -14962,7 +14962,7 @@ try {
                         <i class="fa-solid fa-user-clock text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">${(t("guest_user_title") || "Guest User")}</p>
+                        <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">${(t("inbox_guest_user") || t("guest_user_title") || "Guest User")}</p>
                         <p class="text-[11px] text-amber-700 mt-0.5">
                             ${(t("guest_unregistered_cant_reply") || "This request is from an unregistered guest. You cannot reply via chat.")}
                             <br>${(t("guest_reply_via_email") || "Please reply via email using the contact details above.")}
@@ -17058,7 +17058,7 @@ async function handleQuoteSubmit() {
         // 2. MİSAFİR LOGIC'İ (GUEST)
         // İletişim bilgilerini mesaja ekle
         finalContent = `${(t("guest_request_header") || "--- GUEST REQUEST ---")}\n${(t("guest_label_name") || "Name")}: ${senderName}\n${(t("guest_label_email") || "Email")}: ${senderEmail}\n---------------------\n\n${messageRaw}`;
-        displaySenderName = `${senderName} (${(t("guest_tag") || "Guest")})`;
+        displaySenderName = `${senderName} (${(t("guest_tag") || t("label_guest") || "Guest")})`;
         
         // Misafir email girmemişse uyar
         if(!senderEmail) {
