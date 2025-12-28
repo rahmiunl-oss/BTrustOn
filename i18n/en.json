@@ -859,5 +859,6 @@
   "ui_file_attachment_skipped_login_required": "File attachment skipped - Login required to attach files",
   "ui_sending": "Sending",
   "guest_unregistered_cant_reply": "This request is from an unregistered guest. You cannot reply via chat.",
-  "guest_reply_via_email": "Please reply via email using the contact details above."  
+  "guest_reply_via_email": "Please reply via email using the contact details above.",
+  "inbox_conversation_removed": "Conversation removed."
 }
