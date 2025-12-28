@@ -851,5 +851,13 @@
   "label_guest": "Misafir",
   "ui_guests_4229e0": "Misafirler",
   "guest_user_title": "Misafir Kullanıcı",
-  "section_contact_info": "İLETİŞİM BİLGİLERİ"
+  "section_contact_info": "İLETİŞİM BİLGİLERİ",
+  "ui_attach_requires_join_tpl": "Dosya eklemek için lütfen {link}.",
+  "ui_attach_requires_join_link": "katılın",
+  "ui_login_required_to_attach_files": "Dosya eklemek için giriş yapmalısınız",
+  "ui_attaching_file": "Dosyanız ekleniyor...",
+  "ui_file_attachment_skipped_login_required": "Dosya eki atlandı - Dosya eklemek için giriş yapmalısınız",
+  "ui_sending": "Gönderiliyor",
+  "guest_unregistered_cant_reply": "Bu talep kayıtlı olmayan bir misafir kullanıcıdan geldi. Sohbet üzerinden yanıt veremezsiniz.",
+  "guest_reply_via_email": "Lütfen yukarıdaki iletişim bilgilerini kullanarak e-posta ile yanıt verin."
 }
