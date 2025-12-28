@@ -844,5 +844,6 @@
   "guest_label_name": "Name",
   "guest_label_email": "Email",
   "guest_tag": "Guest",
-  "guest_email_required": "Please enter your email so they can reply."
+  "guest_email_required": "Please enter your email so they can reply.",
+  "label_new": "NEW"
 }
