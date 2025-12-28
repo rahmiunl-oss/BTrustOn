@@ -836,5 +836,13 @@
   "toast_saved": "Kaydedildi",
   "saved_company_added": "Şirket kaydedilenlere eklendi.",
   "ui_no_message_selected": "Mesaj seçilmedi.",
-  "toast_marked_unread": "Okunmadı"
+  "toast_marked_unread": "Okunmadı",
+  "guest_user_title": "Misafir Kullanıcı",
+  "guest_unregistered_cant_reply": "Bu talep kayıtlı olmayan bir misafir kullanıcıdan geldi. Sohbet üzerinden yanıt veremezsiniz.",
+  "guest_reply_via_email": "Lütfen yukarıdaki iletişim bilgilerini kullanarak e-posta ile yanıt verin.",
+  "guest_request_header": "--- MİSAFİR TALEBİ ---",
+  "guest_label_name": "Ad",
+  "guest_label_email": "E-posta",
+  "guest_tag": "Misafir",
+  "guest_email_required": "Lütfen e-posta adresinizi girin ki size dönüş yapabilsinler."
 }
