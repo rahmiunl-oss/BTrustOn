@@ -14964,8 +14964,8 @@ try {
                     <div>
                         <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">${(t("inbox_guest_user") || t("guest_user_title") || "Guest User")}</p>
                         <p class="text-[11px] text-amber-700 mt-0.5">
-                            ${(t("guest_unregistered_cant_reply") || "This request is from an unregistered guest. You cannot reply via chat.")}
-                            <br>${(t("guest_reply_via_email") || "Please reply via email using the contact details above.")}
+                            ${(t("guest_unregistered_cant_reply") || (currentLang === "tr" ? "Bu talep kayıtlı olmayan bir misafir kullanıcıdan geldi. Sohbet üzerinden yanıt veremezsiniz." : "This request is from an unregistered guest. You cannot reply via chat."))}
+                            <br>${(t("guest_reply_via_email") || (currentLang === "tr" ? "Lütfen yukarıdaki iletişim bilgilerini kullanarak e-posta ile yanıt verin." : "Please reply via email using the contact details above."))}
                         </p>
                     </div>
                 </div>
@@ -16983,7 +16983,10 @@ async function openQuoteModal(companyId, companyName) {
       warningMsg.id = "guest-file-warning";
       warningMsg.className = "text-[10px] text-amber-600 font-bold ml-2 hidden items-center gap-1";
       // Tıklayınca önce Quote modalını kapatır, sonra Join modalını açar
-      warningMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Please <a href="javascript:void(0)" onclick="toggleModal(\'modal-quote\'); setTimeout(() => toggleModal(\'modal-join\'), 200)" class="underline hover:text-amber-800">join to attach files</a>.';
+      const __joinTpl = (t("ui_attach_requires_join_tpl") || "Please {link}.");
+      const __joinLinkText = (t("ui_attach_requires_join_link") || "join to attach files");
+      const __joinLink = `<a href="javascript:void(0)" onclick="toggleModal('modal-quote'); setTimeout(() => toggleModal('modal-join'), 200)" class="underline hover:text-amber-800">${__joinLinkText}</a>`;
+      warningMsg.innerHTML = `<i class="fa-solid fa-lock"></i> ${__joinTpl.replace("{link}", __joinLink)}`;
       container.appendChild(warningMsg);
   }
 
@@ -17008,7 +17011,7 @@ async function openQuoteModal(companyId, companyName) {
       // Görseli pasif (gri) hale getir
       fileLabel.classList.add("opacity-50", "cursor-not-allowed", "bg-gray-100");
       fileLabel.classList.remove("cursor-pointer", "hover:bg-gray-50");
-      fileLabel.title = "Login required to attach files"; 
+      fileLabel.title = (t("ui_login_required_to_attach_files") || "Login required to attach files"); 
       
       // Uyarıyı göster ve dosya ismini gizle
       warningMsg.classList.remove("hidden");
@@ -17023,7 +17026,7 @@ async function openQuoteModal(companyId, companyName) {
 async function handleQuoteSubmit() {
   const btn = document.querySelector("#modal-quote button[type='submit']");
   const originalText = btn.textContent;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${(t("ui_sending") || "Sending")}...`;
   btn.disabled = true;
 
   try {
@@ -17073,11 +17076,11 @@ async function handleQuoteSubmit() {
         // *Güvenlik notu: Misafir upload'u için storage bucket policy'sini de 'public insert' yapmak gerekir.
         // Şimdilik sadece user varsa yüklesin diyebiliriz veya bucket ayarını açmalısınız.
         if(user) {
-            showToast("Uploading...", "Attaching your file...", "info");
+            showToast((t("toast_uploading") || "Uploading..."), (t("ui_attaching_file") || "Attaching your file..."), "info");
             const publicUrl = await uploadFileToSupabase(fileInput.files[0], 'quotes');
             finalContent += `\n\n[FILE_ATTACHMENT|${fileInput.files[0].name}|${publicUrl}]`;
         } else {
-             finalContent += `\n\n(File attachment skipped - Login required to attach files)`;
+             finalContent += `\n\n(${t("ui_file_attachment_skipped_login_required") || "File attachment skipped - Login required to attach files"})`;
         }
     }
 
@@ -17181,7 +17184,7 @@ function deleteThread(msgId, title, partnerId, event) {
             });
             
             renderInboxItems();
-            showToast("Removed", "Conversation removed.", "success");
+            showToast((t("toast_removed") || "Removed"), (t("inbox_conversation_removed") || (currentLang==="tr" ? "Konuşma kaldırıldı." : "Conversation removed.")), "success");
 
         } catch (error) {
             console.error("Delete Error Details:", error);
