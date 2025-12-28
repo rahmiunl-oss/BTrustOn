@@ -851,5 +851,13 @@
   "label_guest": "Guest",
   "ui_guests_4229e0": "Guests",
   "guest_user_title": "Guest User",
-  "section_contact_info": "Contact Information"
+  "section_contact_info": "Contact Information",
+  "ui_attach_requires_join_tpl": "Please {link}.",
+  "ui_attach_requires_join_link": "join to attach files",
+  "ui_login_required_to_attach_files": "Login required to attach files",
+  "ui_attaching_file": "Attaching your file...",
+  "ui_file_attachment_skipped_login_required": "File attachment skipped - Login required to attach files",
+  "ui_sending": "Sending",
+  "guest_unregistered_cant_reply": "This request is from an unregistered guest. You cannot reply via chat.",
+  "guest_reply_via_email": "Please reply via email using the contact details above."  
 }
