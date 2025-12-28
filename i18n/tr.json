@@ -859,5 +859,6 @@
   "ui_file_attachment_skipped_login_required": "Dosya eki atlandı - Dosya eklemek için giriş yapmalısınız",
   "ui_sending": "Gönderiliyor",
   "guest_unregistered_cant_reply": "Bu talep kayıtlı olmayan bir misafir kullanıcıdan geldi. Sohbet üzerinden yanıt veremezsiniz.",
-  "guest_reply_via_email": "Lütfen yukarıdaki iletişim bilgilerini kullanarak e-posta ile yanıt verin."
+  "guest_reply_via_email": "Lütfen yukarıdaki iletişim bilgilerini kullanarak e-posta ile yanıt verin.",
+   "inbox_conversation_removed": "Konuşma kaldırıldı."
 }
