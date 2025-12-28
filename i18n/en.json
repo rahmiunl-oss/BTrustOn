@@ -845,5 +845,10 @@
   "guest_label_email": "Email",
   "guest_tag": "Guest",
   "guest_email_required": "Please enter your email so they can reply.",
-  "label_new": "NEW"
+  "label_new": "NEW",
+  "inbox_guest_user": "Guest User",
+  "guest_tag": "Guest",
+  "label_guest": "Guest",
+  "ui_guests_4229e0": "Guests",
+  "guest_user_title": "Guest User"
 }
