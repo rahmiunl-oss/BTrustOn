@@ -1450,7 +1450,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     }
 
     /* Tab counts – crisp */
-    #saved-panel-count, #saved-tab-count, #following-tab-count, #inbox-badge-count, #notif-tab-badge{
+    #saved-panel-count, #saved-tab-count, #following-tab-count, #inbox-badge-count, #notif-tab-badge, #inbox-tab-badge, #sent-tab-badge{
       border-radius: 9999px !important;
       border: 1px solid rgba(255,255,255,.18) !important;
       background: rgba(255,255,255,.14) !important;
@@ -3964,10 +3964,13 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </button>
 </div>
 <div class="flex items-center gap-6 relative z-10 text-xs font-bold text-white/50 bton-inbox-tabs-bar">
-<button class="pb-3 border-b-2 border-BTrustOn-accent text-white transition-all flex items-center gap-2" data-i18n="ui_inbox_7e3342" id="btn-tab-inbox" onclick="switchInboxView('inbox')">
-                INBOX
+<button class="pb-3 border-b-2 border-BTrustOn-accent text-white transition-all flex items-center gap-2" id="btn-tab-inbox" onclick="switchInboxView('inbox')">
+                <span data-i18n="ui_inbox_7e3342">INBOX</span>
+                <i class="fa-solid fa-inbox text-[10px]"></i>
+                <span class="ml-1 hidden min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center" id="inbox-tab-badge">0</span>
             </button>
 <button class="pb-3 border-b-2 border-transparent hover:text-white transition-all flex items-center gap-2" id="btn-tab-sent" onclick="switchInboxView('sent')"><span data-i18n="ui_sent_145d63">SENT</span><i class="fa-solid fa-paper-plane text-[10px]"></i>
+<span class="ml-1 hidden min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center" id="sent-tab-badge">0</span>
 </button>
 <button class="pb-3 border-b-2 border-transparent hover:text-white transition-all flex items-center gap-2" id="btn-tab-notif" onclick="switchInboxView('notifications')"><span data-i18n="ui_notifications_222037">NOTIFICATIONS</span><i class="fa-solid fa-bell text-[10px]"></i>
 <span class="ml-1 hidden min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center" id="notif-tab-badge">0</span>
@@ -12994,6 +12997,8 @@ let inboxData = [];
 let notificationsUnreadCount = 0;
 let notificationsData = [];
 let messagesUnreadCount = 0;
+let inboxUnreadCount = 0;
+let sentUnreadCount = 0;
 let _notifSubscribed = false;
 let notifChannel = null;
 let notifUserId = null;
@@ -14007,6 +14012,7 @@ async function fetchInboxMessages() {
                 desc: isMeSender ? `You: ${msg.content}` : msg.content,
                 time: timeAgo(msg.created_at),
                 unread: !msg.is_read && !isMeSender,
+                sent_unread: !msg.is_read && isMeSender,
                 type: msg.msg_type,
                 logo: logoChar,
                 isSentByMe: isMeSender 
@@ -14015,6 +14021,7 @@ async function fetchInboxMessages() {
             const existing = groupedMap.get(groupKey);
             existing.count += 1;
             if (!msg.is_read && !isMeSender) existing.unread = true;
+            if (!msg.is_read && isMeSender) existing.sent_unread = true;
         }
     });
     // 👆 messages.forEach bloğu burada bitiyor 👆
@@ -14072,6 +14079,7 @@ function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
         desc: "You: " + content, // "You" ekledik ki Sent formatına uysun
         time: "Just now",
         unread: false,
+        sent_unread: true,
         type: isQuote ? 'quote' : 'message',
         logo: partnerName.charAt(0).toUpperCase(),
         isSentByMe: true // Kilit nokta: SENT kutusunda görünmesini sağlar
@@ -14170,7 +14178,7 @@ async function fetchNotificationsUnread() {
     if (typeof renderInboxItems === "function") {
       renderInboxItems();
     } else if (typeof updateBadges === "function") {
-      updateBadges(messagesUnreadCount + notificationsUnreadCount);
+      updateBadges((inboxUnreadCount||0) + (notificationsUnreadCount||0));
     }
   } catch (e) {
     console.warn('Notifications fetch exception:', e);
@@ -14241,7 +14249,7 @@ function subscribeNotifications() {
             if (typeof renderInboxItems === "function") {
               renderInboxItems();
             } else if (typeof updateBadges === "function") {
-              updateBadges(messagesUnreadCount, notificationsUnreadCount);
+              updateBadges((inboxUnreadCount||0) + (notificationsUnreadCount||0));
             }
 
             // Update bell dot if exists
@@ -14492,12 +14500,22 @@ function renderInboxItems() {
   if (!container) return;
   container.innerHTML = "";
 
-  // 1. TOPLAM OKUNMAMIŞ SAYISI
-  let totalUnreadCount = 0;
-  // messagesUnreadCount will be set after counting
+  // 1. OKUNMAMIŞ SAYILARI (INBOX / SENT / NOTIFICATIONS)
+  inboxUnreadCount = 0;
+  sentUnreadCount = 0;
 
-  inboxData.forEach(item => { if(item.unread) totalUnreadCount++; });
-  messagesUnreadCount = totalUnreadCount;
+  (inboxData || []).forEach(item => {
+    if (!item) return;
+    if (item.isSentByMe) {
+      if (item.sent_unread) sentUnreadCount++;
+    } else {
+      if (item.unread) inboxUnreadCount++;
+    }
+  });
+
+  messagesUnreadCount = inboxUnreadCount + sentUnreadCount;
+  const totalUnreadAll = messagesUnreadCount + notificationsUnreadCount;
+  const totalUnreadNav = inboxUnreadCount + notificationsUnreadCount;
 
   // 1.5 NOTIFICATIONS VIEW
   if (currentInboxView === 'notifications') {
@@ -14509,7 +14527,7 @@ function renderInboxItems() {
             <i class="fa-solid fa-bell text-4xl mb-3 opacity-20"></i>
             <p class="text-xs">${t("ui_no_notifications_2ef213") || "No notifications."}</p>
         </div>`;
-      updateBadges(messagesUnreadCount + notificationsUnreadCount);
+      updateBadges((inboxUnreadCount||0) + (notificationsUnreadCount||0));
       return;
     }
 
@@ -14585,7 +14603,7 @@ function renderInboxItems() {
       container.appendChild(card);
     });
 
-    updateBadges(messagesUnreadCount + notificationsUnreadCount);
+    updateBadges((inboxUnreadCount||0) + (notificationsUnreadCount||0));
     return;
   }
 
@@ -14608,7 +14626,7 @@ function renderInboxItems() {
             <p class="text-xs">${msg}</p>
         </div>`;
       
-      updateBadges(totalUnreadCount + notificationsUnreadCount);
+      updateBadges(totalUnreadNav);
       return;
   }
 
@@ -14700,7 +14718,7 @@ function renderInboxItems() {
     container.appendChild(card);
   });
 
-  updateBadges(totalUnreadCount + notificationsUnreadCount);
+  updateBadges(totalUnreadNav);
 }
 // Yardımcı Badge Fonksiyonu (Eğer yoksa bunu da ekle, varsa gerek yok)
 function updateBadges(count) {
@@ -14742,6 +14760,28 @@ function updateBadges(count) {
         badgeHeader.classList.add("hidden");
       }
   }
+
+  // Inbox/Sent tab badges (messages)
+  const inboxTabBadge = document.getElementById("inbox-tab-badge");
+  if (inboxTabBadge) {
+      if (inboxUnreadCount > 0) {
+          inboxTabBadge.textContent = String(inboxUnreadCount);
+          inboxTabBadge.classList.remove("hidden");
+      } else {
+          inboxTabBadge.classList.add("hidden");
+      }
+  }
+
+  const sentTabBadge = document.getElementById("sent-tab-badge");
+  if (sentTabBadge) {
+      if (sentUnreadCount > 0) {
+          sentTabBadge.textContent = String(sentUnreadCount);
+          sentTabBadge.classList.remove("hidden");
+      } else {
+          sentTabBadge.classList.add("hidden");
+      }
+  }
+
 
   // Notifications tab badge (shows only notifications unread)
   const notifTabBadge = document.getElementById("notif-tab-badge");
