@@ -836,5 +836,13 @@
   "toast_saved": "Saved",
   "saved_company_added": "Company added to Saved.",
   "ui_no_message_selected": "No message selected.",
-  "toast_marked_unread": "Marked Unread"
+  "toast_marked_unread": "Marked Unread",
+  "guest_user_title": "Guest User",
+  "guest_unregistered_cant_reply": "This request is from an unregistered guest. You cannot reply via chat.",
+  "guest_reply_via_email": "Please reply via email using the contact details above.",
+  "guest_request_header": "--- GUEST REQUEST ---",
+  "guest_label_name": "Name",
+  "guest_label_email": "Email",
+  "guest_tag": "Guest",
+  "guest_email_required": "Please enter your email so they can reply."
 }
