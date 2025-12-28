@@ -3625,9 +3625,9 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_your_name">Your Name</label>
 <input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="name" required="" type="text">
 </input></div>
-<div>
+<div id="quote-email-row">
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="join_field_email">Email</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="email" required="" type="email">
+<input id="quote-email-input" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="email" required="" type="email">
 </input></div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="lbl_quote_subject">Subject</label>
@@ -16935,6 +16935,29 @@ async function openQuoteModal(companyId, companyName) {
 
   // 2. KULLANICI KONTROLÜ VE DOSYA KUTUSU AYARI
   const { data: { session } } = await supabaseClient.auth.getSession();
+
+  // EMAIL: ÜYE İSE EMAIL İSTEME, MİSAFİRSE ZORUNLU
+  const quoteEmailInput = document.getElementById("quote-email-input") || document.querySelector("#modal-quote input[name='email']");
+  const quoteEmailRow = document.getElementById("quote-email-row") || (quoteEmailInput ? quoteEmailInput.closest("div") : null);
+
+  if (quoteEmailInput) {
+    if (session && session.user) {
+      const autoEmail = String(session.user.email || "").trim();
+      if (autoEmail) quoteEmailInput.value = autoEmail;
+      quoteEmailInput.required = false;
+      quoteEmailInput.readOnly = true;
+      quoteEmailInput.classList.add("opacity-70");
+      // İstersen tamamen gizlemek için:
+      // if (quoteEmailRow) quoteEmailRow.classList.add("hidden");
+    } else {
+      quoteEmailInput.readOnly = false;
+      quoteEmailInput.required = true;
+      quoteEmailInput.classList.remove("opacity-70");
+      // if (quoteEmailRow) quoteEmailRow.classList.remove("hidden");
+    }
+  }
+
+
   
   const fileInput = document.getElementById("quote-file");
   const fileLabel = fileInput.closest("label"); // "Select File" butonu
@@ -17000,7 +17023,9 @@ async function handleQuoteSubmit() {
     const targetId = document.getElementById("input-target-id").value;
     const targetName = document.getElementById("input-target-company").value;
     const senderName = document.querySelector("#modal-quote input[name='name']").value.trim(); 
-    const senderEmail = document.querySelector("#modal-quote input[name='email']").value.trim(); // Email inputu HTML'de var varsayıyorum
+    let senderEmail = document.querySelector("#modal-quote input[name='email']").value.trim(); // Email inputu HTML'de var varsayıyorum
+    // Üye ise: emaili oturumdan al (formdan istemiyoruz)
+    if (user && user.email) senderEmail = String(user.email).trim();
     const subjectRaw = document.getElementById("quote-subject").value.trim();
     const messageRaw = document.querySelector("#modal-quote textarea[name='message']").value;
     const fileInput = document.getElementById("quote-file");
@@ -19433,41 +19458,59 @@ function sortProjectsUI(mode){
 
 
 <script>
-/* MOBILE: keep inbox tabs on one row; shorten INBOX label in Turkish */
+/* MOBILE: keep inbox tabs on one row; shorten INBOX label in Turkish (SAFE: does NOT remove badges/icons) */
 (function(){
   const mq = window.matchMedia && window.matchMedia('(max-width: 520px)');
+
   function getLang(){
     try{
-      if (typeof currentLang !== "undefined" && currentLang) return currentLang;
-      return localStorage.getItem("bton_lang") || localStorage.getItem("lang") || "en";
+      if (typeof currentLang !== "undefined" && currentLang) return String(currentLang).toLowerCase();
+      return String(localStorage.getItem("bton_lang") || localStorage.getItem("lang") || "en").toLowerCase();
     }catch(e){ return "en"; }
   }
+
   function apply(){
     const btn = document.getElementById("btn-tab-inbox");
     if(!btn) return;
 
-    // store the original (desktop) label once
-    if(!btn.dataset.fullLabel) btn.dataset.fullLabel = (btn.textContent || "").trim();
+    // only touch the label span; keep icons + badges intact
+    const label = btn.querySelector('span[data-i18n]') || btn.querySelector('span');
+    if(!label) return;
+
+    // remember desktop label once (after i18n applied, if any)
+    if(!label.dataset.desktopLabel) label.dataset.desktopLabel = (label.textContent || "").trim();
 
     const isMobile = mq ? mq.matches : (window.innerWidth <= 520);
-    if(isMobile){
-      const lang = getLang();
-      // only TR needs shortening ("Gelen Kutusu" -> "Gelen")
-      btn.textContent = (lang === "tr") ? "GELEN" : (btn.dataset.fullLabel || "INBOX");
-    }else{
-      btn.textContent = btn.dataset.fullLabel || btn.textContent;
+    const lang = getLang();
+
+    if(isMobile && (lang === "tr" || lang.startsWith("tr-"))){
+      label.textContent = "GELEN";
+    } else {
+      label.textContent = label.dataset.desktopLabel || label.textContent;
     }
   }
 
   // run now + on resize
   if (document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", apply, { once:true });
-  } else apply();
+    document.addEventListener("DOMContentLoaded", () => setTimeout(apply, 0), { once:true });
+  } else {
+    setTimeout(apply, 0);
+  }
 
   window.addEventListener("resize", apply);
   if(mq){
     try{ mq.addEventListener("change", apply); } catch(e){ try{ mq.addListener(apply); }catch(_e){} }
   }
+
+  // if your i18n code reruns dynamically, allow it to re-apply the desktop label baseline
+  window.addEventListener("bton:i18n_applied", () => {
+    try {
+      const btn = document.getElementById("btn-tab-inbox");
+      const label = btn && (btn.querySelector('span[data-i18n]') || btn.querySelector('span'));
+      if(label) label.dataset.desktopLabel = (label.textContent || "").trim();
+    } catch(e){}
+    apply();
+  });
 })();
 </script>
 
