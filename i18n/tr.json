@@ -845,5 +845,10 @@
   "guest_label_email": "E-posta",
   "guest_tag": "Misafir",
   "guest_email_required": "Lütfen e-posta adresinizi girin ki size dönüş yapabilsinler.",
-   "label_new": "YENİ"
+  "label_new": "YENİ",
+  "inbox_guest_user": "Misafir Kullanıcı",
+  "guest_tag": "Misafir",
+  "label_guest": "Misafir",
+  "ui_guests_4229e0": "Misafirler",
+  "guest_user_title": "Misafir Kullanıcı"
 }
