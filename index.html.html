@@ -12992,6 +12992,40 @@ function switchInboxView(view) {
 
 // Inbox verisini artık canlı tutacağız, demo veriyi sildik, boş başlattık.
 let inboxData = [];
+// --- Manual Unread Thread Flags (for "Mark Unread" UX) ---
+// Stores a lightweight per-user map in localStorage so "Mark Unread" immediately affects counts
+// even if there are no unread DB rows in that thread.
+function __btonNormalizeSubject(s) { return String(s||"").replace(/^(Re:\s*)+/i,'').trim(); }
+function __btonThreadKey(partnerId, subject) { return String(partnerId||"").trim()+"::"+__btonNormalizeSubject(subject).toLowerCase(); }
+function __btonManualUnreadStorageKey(uid) { return "bton_manual_unread_threads:" + String(uid || window.__authUserId || "anon"); }
+function __btonReadManualUnread(uid) {
+  try { return JSON.parse(localStorage.getItem(__btonManualUnreadStorageKey(uid)) || "{}") || {}; } catch(e){ return {}; }
+}
+function __btonWriteManualUnread(uid, obj) {
+  try { localStorage.setItem(__btonManualUnreadStorageKey(uid), JSON.stringify(obj||{})); } catch(e){}
+}
+function __btonSetManualUnread(uid, partnerId, subject, on) {
+  const key = __btonThreadKey(partnerId, subject);
+  const map = __btonReadManualUnread(uid);
+  if (on) map[key] = Date.now();
+  else delete map[key];
+  __btonWriteManualUnread(uid, map);
+}
+function __btonApplyManualUnreadToInbox(uid) {
+  try {
+    const map = __btonReadManualUnread(uid);
+    (inboxData||[]).forEach(it => {
+      const k = __btonThreadKey(it.partner_id, it.title);
+      if (map && map[k]) { it.unread = true; it.manual_unread = true; }
+    });
+  } catch(e){}
+}
+function __btonClearManualUnreadForThread(uid, partnerId, subject) {
+  try { __btonSetManualUnread(uid, partnerId, subject, false); } catch(e){}
+}
+function __btonClearAllManualUnread(uid){
+  try { __btonWriteManualUnread(uid, {}); } catch(e){}
+}
 
 // --- Notifications (for admin reject/approve updates) ---
 let notificationsUnreadCount = 0;
@@ -14045,6 +14079,7 @@ async function fetchInboxMessages() {
     }
 
     inboxData = Array.from(groupedMap.values());
+    try { __btonApplyManualUnreadToInbox(user.id); } catch(e) {}
     renderInboxItems();
 }
 /* --- YENİ YARDIMCI: Anlık Liste Güncelleyici (Gecikmeyi Önler) --- */
@@ -14506,11 +14541,12 @@ function renderInboxItems() {
 
   (inboxData || []).forEach(item => {
     if (!item) return;
-    if (item.isSentByMe) {
-      if (item.sent_unread) sentUnreadCount++;
-    } else {
-      if (item.unread) inboxUnreadCount++;
-    }
+
+    // Gelen (kendi okunmamışların): son mesaj kimden gelmiş olursa olsun "unread" true ise Inbox sayacına girsin
+    if (item.unread) inboxUnreadCount++;
+
+    // Gönderilen (karşı taraf okumadı): sadece sent sekmesiyle uyumlu olsun diye "isSentByMe" olan konuşmalarda say
+    if (item.isSentByMe && item.sent_unread) sentUnreadCount++;
   });
 
   messagesUnreadCount = inboxUnreadCount + sentUnreadCount;
@@ -14611,9 +14647,11 @@ function renderInboxItems() {
   // 2. FİLTRELEME
   const filteredData = inboxData.filter(item => {
       if (currentInboxView === 'inbox') {
-          return item.isSentByMe === false; 
+          // Inbox: Ya gerçekten gelen mesaj (isSentByMe === false) ya da kullanıcı manuel olarak okunmadı yaptı (unread === true)
+          return (item.isSentByMe === false) || (item.unread === true);
       } else {
-          return item.isSentByMe === true; 
+          // Sent: son mesaj benden geldiyse göster; ama kullanıcı manuel okunmadı yaptıysa Inbox'ta görünsün (çift görünmesin)
+          return (item.isSentByMe === true) && (item.unread !== true);
       }
   });
 
@@ -14820,6 +14858,12 @@ async function openMessage(itemId) {
     currentPartnerId = item.partner_id;
     currentSubject = item.title;
     currentOpenMessageId = itemId;
+
+// Clear any manual-unread flag when user opens the conversation
+try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (user) __btonClearManualUnreadForThread(user.id, currentPartnerId, currentSubject);
+} catch(e) {}
 
     // --- KRİTİK DÜZELTME: BAŞLIK İSMİNİ CANLI VERİDEN AL ---
     // Inbox listesindeki isme güvenmek yerine, veritabanı (database) hafızasındaki 
@@ -15202,35 +15246,50 @@ function deleteCurrentMessage() {
 async function markAsUnreadCurrentMessage() {
     // ID kontrolü (Önceki adımda openMessage içinde bunu tanımlamıştık)
     if (!currentOpenMessageId) {
-        showToast("Error", "No message selected.", "error");
+        showToast("Error", (t("ui_no_message_selected") || "No message selected."), "error");
         return;
     }
 
     try {
-        // 1. DB Güncelle: Bu ID'li mesajı 'okunmadı' (false) yap
-        const { error } = await supabaseClient
-            .from("messages")
-            .update({ is_read: false })
-            .eq("id", currentOpenMessageId);
-
-        if (error) throw error;
-
-        // 2. Local Listeyi Güncelle (Kırmızı noktayı geri getir)
-        const item = inboxData.find(m => m.id === currentOpenMessageId);
-        if(item) {
-            item.unread = true;
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+            showToast("Error", (t("auth_login_required") || "Login required."), "error");
+            return;
+        }
+        if (!currentPartnerId || !currentSubject) {
+            showToast("Error", (t("inbox_chat_connection_lost") || "Chat connection lost."), "error");
+            return;
         }
 
-        // 3. Ekranı Yenile
-        renderInboxItems(); // Sol menüdeki kırmızıyı yakar
-        
-        // Mesaj ekranını kapatıp listeye dön (Kullanıcı değişimi görsün diye)
+        // 1) Always mark locally + persist a manual-unread flag (so counts update even if DB has no unread rows)
+        try { __btonSetManualUnread(user.id, currentPartnerId, currentSubject, true); } catch(e) {}
+        try {
+            const it = inboxData.find(m => m.id === currentOpenMessageId) ||
+                       inboxData.find(m => String(m.partner_id) === String(currentPartnerId) && String(m.title||'') === String(currentSubject||''));
+            if (it) { it.unread = true; it.manual_unread = true; }
+        } catch(e) {}
+
+        // 2) Best-effort DB update: mark partner->me messages as unread again (if any)
+        try {
+            const { error } = await supabaseClient
+                .from("messages")
+                .update({ is_read: false })
+                .eq("receiver_id", user.id)
+                .eq("sender_id", currentPartnerId)
+                .ilike("subject", `%${currentSubject}%`);
+            if (error) console.warn("markAsUnread DB update failed (ignored):", error);
+        } catch(e) {
+            console.warn("markAsUnread DB update exception (ignored):", e);
+        }
+
+        // 3) Refresh UI
+        renderInboxItems();
         closeMessageView();
-        
-        showToast("Marked Unread", (t("inbox_conversation_marked_unread") || "Conversation marked as unread."), "success");
+        showToast((t("toast_marked_unread") || "Marked Unread"), (t("inbox_conversation_marked_unread") || "Conversation marked as unread."), "success");
 
     } catch (e) {
         console.error("Unread error:", e);
+        try { renderInboxItems(); } catch(_) {}
         showToast("Error", (t("inbox_failed_update_status") || "Failed to update status."), "error");
     }
 }
@@ -16096,6 +16155,7 @@ async function markAllInboxRead() {
     if (error) throw error;
 
     // 2. Yerel listeyi güncelle
+    try { __btonClearAllManualUnread(user.id); } catch(e) {}
     inboxData.forEach(item => item.unread = false);
     renderInboxItems();
 
