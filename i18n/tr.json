@@ -834,5 +834,6 @@
   "toast_removed": "Kaldırıldı",
   "saved_company_removed": "Şirket kaydedilenlerden çıkarıldı.",
   "toast_saved": "Kaydedildi",
-  "saved_company_added": "Şirket kaydedilenlere eklendi."
+  "saved_company_added": "Şirket kaydedilenlere eklendi.",
+  "ui_no_message_selected": "Mesaj seçilmedi."
 }
