@@ -835,5 +835,6 @@
   "saved_company_removed": "Company removed.",
   "toast_saved": "Saved",
   "saved_company_added": "Company added to Saved.",
-  "ui_no_message_selected": "No message selected."
+  "ui_no_message_selected": "No message selected.",
+  "toast_marked_unread": "Marked Unread"
 }
