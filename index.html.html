@@ -14629,7 +14629,7 @@ function renderInboxItems() {
                 <div class="text-sm font-extrabold text-gray-800 leading-tight break-words">${title}</div>
                 <div class="text-[11px] text-gray-400 mt-0.5">${when}</div>
               </div>
-              ${isUnread ? `<span class="mt-1 inline-flex items-center gap-1 text-[10px] font-extrabold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">NEW</span>` : ``}
+              ${isUnread ? `<span class="mt-1 inline-flex items-center gap-1 text-[10px] font-extrabold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">${t("label_new")}</span>` : ``}
             </div>
             <div class="text-[12px] text-gray-600 mt-2 leading-relaxed whitespace-pre-wrap break-words">${msg}</div>
           </div>
@@ -14792,7 +14792,7 @@ function updateBadges(count) {
 
   if(badgeHeader) {
       if(count > 0) {
-        badgeHeader.textContent = `${count} NEW`;
+        badgeHeader.textContent = `${count} ${t("label_new")}`;
         badgeHeader.classList.remove("hidden");
       } else {
         badgeHeader.classList.add("hidden");
@@ -14962,10 +14962,10 @@ try {
                         <i class="fa-solid fa-user-clock text-xl"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">Guest User</p>
+                        <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">${(t("guest_user_title") || "Guest User")}</p>
                         <p class="text-[11px] text-amber-700 mt-0.5">
-                            This request is from an unregistered guest. You cannot reply via chat.
-                            <br>Please reply via email using the contact details above.
+                            ${(t("guest_unregistered_cant_reply") || "This request is from an unregistered guest. You cannot reply via chat.")}
+                            <br>${(t("guest_reply_via_email") || "Please reply via email using the contact details above.")}
                         </p>
                     </div>
                 </div>
@@ -15057,6 +15057,18 @@ async function loadMessageThread(cleanSubject, partnerId) {
             // Misafir olduğu için isme tıklama (cursor-default) özelliği verdik
 
         let cleanContent = m.content || "";
+        // --- i18n: Localize legacy guest request block (stored as EN/TR text) ---
+        try {
+            if (/^---\s*(GUEST REQUEST|MİSAFİR TALEBİ)\s*---/i.test(cleanContent)) {
+                const __hdr = (t("guest_request_header") || "--- GUEST REQUEST ---");
+                const __nameLbl = (t("guest_label_name") || "Name");
+                const __emailLbl = (t("guest_label_email") || "Email");
+                cleanContent = cleanContent.replace(/^---\s*(GUEST REQUEST|MİSAFİR TALEBİ)\s*---/i, __hdr);
+                cleanContent = cleanContent.replace(/(^|\n)\s*(Name|Ad)\s*:\s*/g, `$1${__nameLbl}: `);
+                cleanContent = cleanContent.replace(/(^|\n)\s*(Email|E-?posta)\s*:\s*/gi, `$1${__emailLbl}: `);
+            }
+        } catch(e) {}
+
 
         // --- DOSYA KARTI OLUŞTURMA (Önceki İndirme Logic'i Korundu) ---
         cleanContent = cleanContent.replace(/\[FILE_ATTACHMENT\|(.*?)\|(.*?)\]/g, function(match, fileName, fileUrl) {
@@ -17045,12 +17057,12 @@ async function handleQuoteSubmit() {
     } else {
         // 2. MİSAFİR LOGIC'İ (GUEST)
         // İletişim bilgilerini mesaja ekle
-        finalContent = `--- GUEST REQUEST ---\nName: ${senderName}\nEmail: ${senderEmail}\n---------------------\n\n${messageRaw}`;
-        displaySenderName = `${senderName} (Guest)`;
+        finalContent = `${(t("guest_request_header") || "--- GUEST REQUEST ---")}\n${(t("guest_label_name") || "Name")}: ${senderName}\n${(t("guest_label_email") || "Email")}: ${senderEmail}\n---------------------\n\n${messageRaw}`;
+        displaySenderName = `${senderName} (${(t("guest_tag") || "Guest")})`;
         
         // Misafir email girmemişse uyar
         if(!senderEmail) {
-            throw new Error("Please enter your email so they can reply.");
+            throw new Error((t("guest_email_required") || "Please enter your email so they can reply."));
         }
     }
 
