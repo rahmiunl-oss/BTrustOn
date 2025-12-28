@@ -844,5 +844,6 @@
   "guest_label_name": "Ad",
   "guest_label_email": "E-posta",
   "guest_tag": "Misafir",
-  "guest_email_required": "Lütfen e-posta adresinizi girin ki size dönüş yapabilsinler."
+  "guest_email_required": "Lütfen e-posta adresinizi girin ki size dönüş yapabilsinler.",
+   "label_new": "YENİ"
 }
