@@ -835,5 +835,6 @@
   "saved_company_removed": "Şirket kaydedilenlerden çıkarıldı.",
   "toast_saved": "Kaydedildi",
   "saved_company_added": "Şirket kaydedilenlere eklendi.",
-  "ui_no_message_selected": "Mesaj seçilmedi."
+  "ui_no_message_selected": "Mesaj seçilmedi.",
+  "toast_marked_unread": "Okunmadı"
 }
