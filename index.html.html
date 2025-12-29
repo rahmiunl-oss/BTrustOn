@@ -8326,6 +8326,7 @@ function renderTopCompanies() {
           company.sector,
           desc,
           ...(services || []),
+          ...(services || []).map(svcDisplayLabel),
         ]
           .join(" ")
           .toLowerCase();
@@ -10610,47 +10611,441 @@ function showEditorView() {
 
 window.__svcEditor = window.__svcEditor || { tags: [], featured: [], dragIndex: null, bound: false };
 
-const SERVICE_SUGGESTIONS = {
-  en: ["EPC", "Engineering Design", "Procurement", "Construction", "Commissioning", "Project Management", "Site Supervision", "Maintenance", "Shutdown Services", "Mining Services", "Drilling", "Blasting", "Earthworks", "Excavation", "Crushing & Screening", "Material Handling", "Conveyors", "Haulage", "Equipment Rental", "OEM Supply", "Spare Parts", "Fabrication", "Process Plant", "Laboratory", "Geology", "Geophysics", "Surveying", "HSE", "Environmental", "Automation", "Instrumentation", "Electrical", "Mechanical", "Civil", "Structural", "Piping", "Welding", "NDT"],
-  tr: ["EPC", "Mühendislik Tasarımı", "Tedarik (Procurement)", "İnşaat", "Devreye Alma", "Proje Yönetimi", "Saha Süpervizyonu", "Bakım", "Kapanış Servisleri", "Madencilik Hizmetleri", "Sondaj", "Patlatma", "Hafriyat", "Kazı", "Kırma-Eleme", "Malzeme Taşıma", "Konveyörler", "Nakliye", "Ekipman Kiralama", "OEM Tedariki", "Yedek Parça", "İmalat/Fabrikasyon", "Proses Tesisi", "Laboratuvar", "Jeoloji", "Jeofizik", "Haritacılık/Ölçüm", "İSG", "Çevre", "Otomasyon", "Enstrümantasyon", "Elektrik", "Mekanik", "İnşaat (Civil)", "Çelik (Structural)", "Boru Hatları (Piping)", "Kaynak", "NDT (Tahribatsız Muayene)"]
-};
+// --- Services taxonomy (i18n-ready) ---
+// Store canonical tokens as "svc:<id>" so labels can be translated via i18n JSON packs.
+const SVC_LIBRARY = [
+  { id: "3d_laser_scanning", fallback: "3D Laser Scanning" },
+  { id: "3pl", fallback: "3PL / Logistics Provider" },
+  { id: "after_sales_service", fallback: "After-sales Service" },
+  { id: "ai_ml", fallback: "AI / Machine Learning" },
+  { id: "air_emissions", fallback: "Air Emissions Monitoring" },
+  { id: "air_freight", fallback: "Air Freight" },
+  { id: "arc_flash", fallback: "Arc Flash Study" },
+  { id: "assaying", fallback: "Assaying" },
+  { id: "asset_management", fallback: "Asset Management" },
+  { id: "atex", fallback: "ATEX Compliance" },
+  { id: "auditing", fallback: "Auditing" },
+  { id: "automation_engineering", fallback: "Automation Engineering" },
+  { id: "mine_backfill", fallback: "Backfill" },
+  { id: "basic_engineering", fallback: "Basic Engineering" },
+  { id: "bearings", fallback: "Bearings" },
+  { id: "bim", fallback: "BIM" },
+  { id: "biodiversity", fallback: "Biodiversity" },
+  { id: "blast_hole_drilling", fallback: "Blast Hole Drilling" },
+  { id: "blasting", fallback: "Blasting" },
+  { id: "boilers", fallback: "Boilers" },
+  { id: "brand_marketing", fallback: "Brand & Marketing" },
+  { id: "bridges", fallback: "Bridges" },
+  { id: "building_construction", fallback: "Building Construction" },
+  { id: "bulk_handling", fallback: "Bulk Material Handling" },
+  { id: "cables", fallback: "Cables" },
+  { id: "calibration", fallback: "Calibration" },
+  { id: "camp_catering", fallback: "Camp & Catering" },
+  { id: "carbon_management", fallback: "Carbon Management" },
+  { id: "ceu_compliance", fallback: "CE / EU Compliance" },
+  { id: "certification_support", fallback: "Certification Support" },
+  { id: "change_management", fallback: "Change Management" },
+  { id: "chemicals_supply", fallback: "Chemicals Supply" },
+  { id: "cip_cil", fallback: "CIP / CIL" },
+  { id: "civil_engineering", fallback: "Civil Engineering" },
+  { id: "civil_works", fallback: "Civil Works" },
+  { id: "cladding", fallback: "Cladding" },
+  { id: "claims_management", fallback: "Claims Management" },
+  { id: "cloud_services", fallback: "Cloud Services" },
+  { id: "coating_painting", fallback: "Coating & Painting" },
+  { id: "commissioning", fallback: "Commissioning" },
+  { id: "compressors", fallback: "Compressors" },
+  { id: "concept_study", fallback: "Concept Study" },
+  { id: "concreting", fallback: "Concreting" },
+  { id: "condition_monitoring", fallback: "Condition Monitoring" },
+  { id: "construction", fallback: "Construction" },
+  { id: "consultancy", fallback: "Consultancy" },
+  { id: "contract_management", fallback: "Contract Management" },
+  { id: "control_panels", fallback: "Control Panels" },
+  { id: "control_room", fallback: "Control Room Design" },
+  { id: "control_system_integration", fallback: "Control System Integration" },
+  { id: "conveyors", fallback: "Conveyors" },
+  { id: "core_drilling", fallback: "Core Drilling" },
+  { id: "cost_control", fallback: "Cost Control" },
+  { id: "cranes_rigging", fallback: "Cranes & Rigging" },
+  { id: "crushing_screening", fallback: "Crushing & Screening" },
+  { id: "customs_brokerage", fallback: "Customs Brokerage" },
+  { id: "cybersecurity", fallback: "Cybersecurity" },
+  { id: "data_analytics", fallback: "Data Analytics" },
+  { id: "dcs", fallback: "DCS" },
+  { id: "demolition", fallback: "Demolition" },
+  { id: "desalination", fallback: "Desalination" },
+  { id: "detailed_engineering", fallback: "Detailed Engineering" },
+  { id: "drainage_dewatering", fallback: "Dewatering" },
+  { id: "digital_transformation", fallback: "Digital Transformation" },
+  { id: "digital_twin", fallback: "Digital Twin" },
+  { id: "distribution_networks", fallback: "Distribution Networks" },
+  { id: "document_control", fallback: "Document Control" },
+  { id: "doors_windows", fallback: "Doors & Windows" },
+  { id: "drill_blast_design", fallback: "Drill & Blast Design" },
+  { id: "drones_photogrammetry", fallback: "Drones & Photogrammetry" },
+  { id: "earthing_grounding", fallback: "Earthing & Grounding" },
+  { id: "earthmoving", fallback: "Earthmoving" },
+  { id: "earthworks", fallback: "Earthworks" },
+  { id: "eia_permitting", fallback: "EIA & Permitting" },
+  { id: "electrical_engineering", fallback: "Electrical Engineering" },
+  { id: "electrical_installation", fallback: "Electrical Installation" },
+  { id: "electrical_panels", fallback: "Electrical Panels" },
+  { id: "electrical_studies", fallback: "Electrical Studies" },
+  { id: "electrical_testing", fallback: "Electrical Testing" },
+  { id: "emergency_response", fallback: "Emergency Response" },
+  { id: "energy_efficiency", fallback: "Energy Efficiency" },
+  { id: "engineering_design", fallback: "Engineering Design" },
+  { id: "engineering_software", fallback: "Engineering Software" },
+  { id: "environment", fallback: "Environment" },
+  { id: "environmental", fallback: "Environmental Consulting" },
+  { id: "epc", fallback: "EPC" },
+  { id: "epcm", fallback: "EPCM" },
+  { id: "equipment_manufacturing", fallback: "Equipment Manufacturing" },
+  { id: "equipment_rental", fallback: "Equipment Rental" },
+  { id: "erp_systems", fallback: "ERP Systems" },
+  { id: "excavation", fallback: "Excavation" },
+  { id: "expediting", fallback: "Expediting" },
+  { id: "exploration", fallback: "Exploration" },
+  { id: "explosives_supply", fallback: "Explosives Supply" },
+  { id: "export_import", fallback: "Export / Import Services" },
+  { id: "fabrication", fallback: "Fabrication" },
+  { id: "facility_management", fallback: "Facility Management" },
+  { id: "fat_sat", fallback: "FAT / SAT" },
+  { id: "feasibility_study", fallback: "Feasibility Study" },
+  { id: "field_service", fallback: "Field Service" },
+  { id: "financial_advisory", fallback: "Financial Advisory" },
+  { id: "finishing_works", fallback: "Finishing Works" },
+  { id: "fire_protection", fallback: "Fire Protection Systems" },
+  { id: "fire_safety", fallback: "Fire Safety Engineering" },
+  { id: "first_aid", fallback: "First Aid" },
+  { id: "fleet_leasing", fallback: "Fleet Leasing" },
+  { id: "fleet_management", fallback: "Fleet Management" },
+  { id: "flooring", fallback: "Flooring" },
+  { id: "flotation", fallback: "Flotation" },
+  { id: "forklifts", fallback: "Forklifts" },
+  { id: "formwork", fallback: "Formwork" },
+  { id: "foundations", fallback: "Foundations" },
+  { id: "freight_forwarding", fallback: "Freight Forwarding" },
+  { id: "fuel_supply", fallback: "Fuel Supply" },
+  { id: "functional_safety", fallback: "Functional Safety (SIL)" },
+  { id: "gearboxes", fallback: "Gearboxes" },
+  { id: "generators", fallback: "Generators" },
+  { id: "geochemistry", fallback: "Geochemistry" },
+  { id: "geology", fallback: "Geology" },
+  { id: "geophysics", fallback: "Geophysics" },
+  { id: "geotechnical", fallback: "Geotechnical Engineering" },
+  { id: "gis_mapping", fallback: "GIS & Mapping" },
+  { id: "grade_control", fallback: "Grade Control" },
+  { id: "grinding_milling", fallback: "Grinding / Milling" },
+  { id: "ground_support", fallback: "Ground Support" },
+  { id: "harmonic_analysis", fallback: "Harmonic Analysis" },
+  { id: "haulage", fallback: "Haulage" },
+  { id: "hazardous_area", fallback: "Hazardous Area Classification" },
+  { id: "hazmat_handling", fallback: "Hazmat Handling" },
+  { id: "hazop", fallback: "HAZOP" },
+  { id: "heap_leach", fallback: "Heap Leach" },
+  { id: "heat_exchangers", fallback: "Heat Exchangers" },
+  { id: "heavy_equipment", fallback: "Heavy Equipment" },
+  { id: "heavy_lift", fallback: "Heavy Lift" },
+  { id: "hse", fallback: "HSE / Safety Management" },
+  { id: "hvac", fallback: "HVAC" },
+  { id: "hydraulics", fallback: "Hydraulics" },
+  { id: "hydrogeology", fallback: "Hydrogeology" },
+  { id: "iiot_sensors", fallback: "IIoT Sensors" },
+  { id: "incoterms_consulting", fallback: "Incoterms Consulting" },
+  { id: "industrial_buildings", fallback: "Industrial Buildings" },
+  { id: "industrial_cleaning", fallback: "Industrial Cleaning" },
+  { id: "industrial_gases", fallback: "Industrial Gases" },
+  { id: "industrial_iot_platform", fallback: "Industrial IoT Platform" },
+  { id: "inspection", fallback: "Inspection" },
+  { id: "instrument_calibration", fallback: "Instrument Calibration" },
+  { id: "instrumentation_controls", fallback: "Instrumentation & Controls" },
+  { id: "instrumentation_engineering", fallback: "Instrumentation Engineering" },
+  { id: "instrumentation_installation", fallback: "Instrumentation Installation" },
+  { id: "instrumentation_panels", fallback: "Instrumentation Panels" },
+  { id: "insulation", fallback: "Insulation" },
+  { id: "insurance_brokering", fallback: "Insurance Brokerage" },
+  { id: "international_shipping", fallback: "International Shipping" },
+  { id: "inventory_management", fallback: "Inventory Management" },
+  { id: "investment_advisory", fallback: "Investment Advisory" },
+  { id: "iso_consulting", fallback: "ISO Consulting" },
+  { id: "it_support", fallback: "IT Support" },
+  { id: "laboratory_services", fallback: "Laboratory Services" },
+  { id: "laboratory_testing", fallback: "Laboratory Testing" },
+  { id: "last_mile_delivery", fallback: "Last-mile Delivery" },
+  { id: "leaching", fallback: "Leaching" },
+  { id: "legal_consulting", fallback: "Legal Consulting" },
+  { id: "lidar_scanning", fallback: "LiDAR Scanning" },
+  { id: "lifting_equipment", fallback: "Lifting Equipment" },
+  { id: "lightning_protection", fallback: "Lightning Protection" },
+  { id: "load_flow", fallback: "Load Flow Study" },
+  { id: "loop_checking", fallback: "Loop Checking" },
+  { id: "lubricants", fallback: "Lubricants" },
+  { id: "lubrication", fallback: "Lubrication Systems" },
+  { id: "machinery_safety", fallback: "Machinery Safety" },
+  { id: "machining", fallback: "Machining" },
+  { id: "maintenance", fallback: "Maintenance" },
+  { id: "management_consulting", fallback: "Management Consulting" },
+  { id: "market_research", fallback: "Market Research" },
+  { id: "materials_handling", fallback: "Material Handling" },
+  { id: "mechanical_design", fallback: "Mechanical Engineering" },
+  { id: "mechanical_installation", fallback: "Mechanical Installation" },
+  { id: "medical_services", fallback: "Medical Services" },
+  { id: "mes_systems", fallback: "MES Systems" },
+  { id: "metallurgy", fallback: "Metallurgy" },
+  { id: "metrology", fallback: "Metrology" },
+  { id: "mine_permitting", fallback: "Mine Permitting" },
+  { id: "mine_planning", fallback: "Mine Planning" },
+  { id: "mine_survey", fallback: "Mine Survey" },
+  { id: "mining_services", fallback: "Mining Services" },
+  { id: "mobile_equipment", fallback: "Mobile Equipment" },
+  { id: "motors_drives", fallback: "Motors & Drives" },
+  { id: "ndt", fallback: "NDT (Non-Destructive Testing)" },
+  { id: "network_infrastructure", fallback: "Network Infrastructure" },
+  { id: "noise_vibration", fallback: "Noise & Vibration" },
+  { id: "oem_supply", fallback: "OEM Supply" },
+  { id: "open_pit_mining", fallback: "Open Pit Mining" },
+  { id: "operations_maintenance", fallback: "Operations & Maintenance" },
+  { id: "overburden_removal", fallback: "Overburden Removal" },
+  { id: "oxygen_nitrogen", fallback: "Oxygen / Nitrogen" },
+  { id: "packaging", fallback: "Packaging" },
+  { id: "painting_finishing", fallback: "Painting" },
+  { id: "paste_backfill", fallback: "Paste Backfill" },
+  { id: "pipe_spools", fallback: "Pipe Spools" },
+  { id: "pipelines", fallback: "Pipelines" },
+  { id: "piping", fallback: "Piping" },
+  { id: "piping_engineering", fallback: "Piping Engineering" },
+  { id: "pit_services", fallback: "Pit Services" },
+  { id: "planning_scheduling", fallback: "Planning & Scheduling" },
+  { id: "plant_maintenance", fallback: "Plant Maintenance" },
+  { id: "plc_automation", fallback: "PLC & Automation" },
+  { id: "pneumatics", fallback: "Pneumatics" },
+  { id: "ports_terminals", fallback: "Ports & Terminals" },
+  { id: "power_generation", fallback: "Power Generation" },
+  { id: "power_quality", fallback: "Power Quality" },
+  { id: "prefeasibility_study", fallback: "Pre-Feasibility Study" },
+  { id: "concrete_precast", fallback: "Precast Concrete" },
+  { id: "predictive_maintenance", fallback: "Predictive Maintenance" },
+  { id: "pressure_vessels", fallback: "Pressure Vessels" },
+  { id: "printing_signage", fallback: "Printing & Signage" },
+  { id: "process_control", fallback: "Process Control" },
+  { id: "process_engineering", fallback: "Process Engineering" },
+  { id: "process_safety", fallback: "Process Safety" },
+  { id: "procurement", fallback: "Procurement" },
+  { id: "procurement_consulting", fallback: "Procurement Consulting" },
+  { id: "product_management", fallback: "Product Management" },
+  { id: "project_management", fallback: "Project Management" },
+  { id: "pumps", fallback: "Pumps" },
+  { id: "qa_qc", fallback: "Quality Assurance / QC" },
+  { id: "radiation_safety", fallback: "Radiation Safety" },
+  { id: "rail_freight", fallback: "Rail Freight" },
+  { id: "raise_boring", fallback: "Raise Boring" },
+  { id: "ram_studies", fallback: "RAM Studies" },
+  { id: "rc_drilling", fallback: "RC Drilling" },
+  { id: "reagents_supply", fallback: "Reagents Supply" },
+  { id: "rebar_fixing", fallback: "Rebar Fixing" },
+  { id: "recruitment_staffing", fallback: "Recruitment / Staffing" },
+  { id: "refractory", fallback: "Refractory" },
+  { id: "rehabilitation_closure", fallback: "Rehabilitation & Closure" },
+  { id: "relay_protection", fallback: "Relay Protection" },
+  { id: "reliability_engineering", fallback: "Reliability Engineering" },
+  { id: "remote_monitoring", fallback: "Remote Monitoring" },
+  { id: "renewable_energy", fallback: "Renewable Energy Integration" },
+  { id: "risk_assessment", fallback: "Risk Assessment" },
+  { id: "road_transport", fallback: "Road Transport" },
+  { id: "roads_infrastructure", fallback: "Roads & Infrastructure" },
+  { id: "roofing", fallback: "Roofing" },
+  { id: "rope_access", fallback: "Rope Access" },
+  { id: "rotating_equipment", fallback: "Rotating Equipment" },
+  { id: "sales_business_dev", fallback: "Sales / Business Development" },
+  { id: "sampling", fallback: "Sampling" },
+  { id: "sandblasting", fallback: "Sandblasting" },
+  { id: "scada", fallback: "SCADA" },
+  { id: "scaffolding", fallback: "Scaffolding" },
+  { id: "sea_freight", fallback: "Sea Freight" },
+  { id: "security_services", fallback: "Security Services" },
+  { id: "short_circuit", fallback: "Short Circuit Study" },
+  { id: "shotcrete", fallback: "Shotcrete" },
+  { id: "shutdown_turnaround", fallback: "Shutdown / Turnaround" },
+  { id: "shutdown_services", fallback: "Shutdown Services" },
+  { id: "site_clinic", fallback: "Site Clinic" },
+  { id: "site_supervision", fallback: "Site Supervision" },
+  { id: "software_development", fallback: "Software Development" },
+  { id: "sop_procedures", fallback: "SOP / Procedures" },
+  { id: "spare_parts", fallback: "Spare Parts" },
+  { id: "spare_parts_supply", fallback: "Spare Parts Supply" },
+  { id: "spares_management", fallback: "Spares Management" },
+  { id: "spill_response", fallback: "Spill Response" },
+  { id: "startup_rampup", fallback: "Startup & Ramp-up" },
+  { id: "steel_erection", fallback: "Steel Erection" },
+  { id: "steel_structures", fallback: "Steel Structures" },
+  { id: "strategy_consulting", fallback: "Strategy Consulting" },
+  { id: "structural_engineering", fallback: "Structural Engineering" },
+  { id: "structural_steel", fallback: "Structural Steel" },
+  { id: "substations", fallback: "Substations" },
+  { id: "supply_chain_consulting", fallback: "Supply Chain Consulting" },
+  { id: "supply_chain_management", fallback: "Supply Chain Management" },
+  { id: "surveying", fallback: "Surveying" },
+  { id: "sustainability_esg", fallback: "Sustainability / ESG" },
+  { id: "switchgear", fallback: "Switchgear" },
+  { id: "system_integration", fallback: "System Integration" },
+  { id: "tailings_filtration", fallback: "Tailings Filtration" },
+  { id: "tailings_management", fallback: "Tailings Management" },
+  { id: "tank_fabrication", fallback: "Tank Fabrication" },
+  { id: "tank_farms", fallback: "Tank Farms" },
+  { id: "tax_finance_consulting", fallback: "Tax & Finance Consulting" },
+  { id: "technical_sales", fallback: "Technical Sales" },
+  { id: "telecom", fallback: "Telecom & Communications" },
+  { id: "temporary_labor", fallback: "Temporary Labor" },
+  { id: "testing_commissioning", fallback: "Testing & Commissioning" },
+  { id: "thickening_filtration", fallback: "Thickening & Filtration" },
+  { id: "third_party_inspection", fallback: "Third-party Inspection" },
+  { id: "training", fallback: "Training" },
+  { id: "transformers", fallback: "Transformers" },
+  { id: "translation_interpretation", fallback: "Translation / Interpretation" },
+  { id: "transmission_lines", fallback: "Transmission Lines" },
+  { id: "transport_logistics", fallback: "Transport & Logistics" },
+  { id: "travel_services", fallback: "Travel Services" },
+  { id: "tyres_tracks", fallback: "Tyres & Tracks" },
+  { id: "ui_ux", fallback: "UI/UX Design" },
+  { id: "underground_mining", fallback: "Underground Mining" },
+  { id: "valves", fallback: "Valves" },
+  { id: "vendor_inspection", fallback: "Vendor Inspection" },
+  { id: "ventilation", fallback: "Ventilation" },
+  { id: "visa_support", fallback: "Visa Support" },
+  { id: "warehousing", fallback: "Warehousing" },
+  { id: "warranty_support", fallback: "Warranty Support" },
+  { id: "waste_management", fallback: "Waste Management" },
+  { id: "waste_oil_management", fallback: "Waste Oil Management" },
+  { id: "wastewater_treatment", fallback: "Wastewater Treatment" },
+  { id: "water_resource_management", fallback: "Water Resource Management" },
+  { id: "water_supply", fallback: "Water Supply" },
+  { id: "water_treatment", fallback: "Water Treatment" },
+  { id: "wear_parts", fallback: "Wear Parts / Liners" },
+  { id: "welding", fallback: "Welding" }
+];
 
-function getServiceSuggestions() {
-  const lang = String(window.currentLang || localStorage.getItem('bton_lang') || 'en').toLowerCase();
-  return SERVICE_SUGGESTIONS[lang] || SERVICE_SUGGESTIONS.en || [];
+const SVC_BY_ID = new Map(SVC_LIBRARY.map(x => [x.id, x]));
+
+function svcI18nKeyFromId(id) {
+  return "svc_tag_" + String(id || "").trim();
+}
+
+function svcLabelById(id) {
+  const it = SVC_BY_ID.get(String(id || "").trim());
+  if (!it) return "";
+  const key = svcI18nKeyFromId(it.id);
+  // Prefer current language pack; fallback to EN; then fallback label.
+  const viaT = (typeof t === "function") ? (t(key) || "") : "";
+  if (viaT) return viaT;
+  try {
+    const enPack = (typeof translations === "object" && translations && translations.en) ? translations.en : null;
+    if (enPack && enPack[key]) return String(enPack[key] || "");
+  } catch (e) {}
+  return it.fallback || "";
+}
+
+function svcTokenToId(rawTag) {
+  const raw = String(rawTag || "").trim();
+  if (!raw) return "";
+  if (raw.toLowerCase().startsWith("svc:")) {
+    let id = raw.slice(4).trim();
+    if (id.toLowerCase().startsWith("svc_tag_")) id = id.slice(8);
+    return id;
+  }
+  return "";
+}
+
+function _svcAliasSignature() {
+  // Rebuild alias map when packs load/expand.
+  try {
+    const packs = (typeof translations === "object" && translations) ? translations : {};
+    const cur = String(window.currentLang || localStorage.getItem("bton_lang") || "en").toLowerCase();
+    const a = packs.en ? Object.keys(packs.en).length : 0;
+    const b = packs.tr ? Object.keys(packs.tr).length : 0;
+    const c = packs[cur] ? Object.keys(packs[cur]).length : 0;
+    return [a,b,c,cur].join("|");
+  } catch (e) {
+    return "0|0|0|en";
+  }
+}
+
+window.__svcAliasCache = window.__svcAliasCache || { sig: "", map: null };
+
+function _svcBuildAliasMap() {
+  const packs = (typeof translations === "object" && translations) ? translations : {};
+  const m = new Map();
+  SVC_LIBRARY.forEach(it => {
+    const key = svcI18nKeyFromId(it.id);
+    const labels = new Set();
+    if (it.fallback) labels.add(it.fallback);
+    try {
+      if (packs.en && packs.en[key]) labels.add(packs.en[key]);
+      if (packs.tr && packs.tr[key]) labels.add(packs.tr[key]);
+      const curLabel = (typeof t === "function") ? t(key) : "";
+      if (curLabel) labels.add(curLabel);
+    } catch (e) {}
+
+    // also accept id as a typed value (with spaces)
+    labels.add(String(it.id || "").replace(/_/g, " "));
+
+    labels.forEach(l => {
+      const k = _svcKey(l);
+      if (k) m.set(k, it.id);
+    });
+  });
+  return m;
+}
+
+function _svcAliasMap() {
+  const sig = _svcAliasSignature();
+  if (window.__svcAliasCache.map && window.__svcAliasCache.sig === sig) return window.__svcAliasCache.map;
+  const built = _svcBuildAliasMap();
+  window.__svcAliasCache = { sig, map: built };
+  return built;
+}
+
+function svcCanonicalizeTag(rawTag) {
+  const raw = _svcNorm(rawTag);
+  if (!raw) return "";
+  const idFromToken = svcTokenToId(raw);
+  if (idFromToken) {
+    if (SVC_BY_ID.has(idFromToken)) return "svc:" + idFromToken;
+    return raw; // unknown token; keep
+  }
+  const alias = _svcAliasMap();
+  const id = alias.get(_svcKey(raw));
+  if (id) return "svc:" + id;
+  return raw;
+}
+
+function getServiceSuggestions(query) {
+  const q = _svcKey(query);
+  if (!q) return [];
+  const out = [];
+  for (const it of SVC_LIBRARY) {
+    const label = svcLabelById(it.id) || it.fallback || it.id;
+    const hay = (String(label) + " " + String(it.fallback || "")).toLowerCase();
+    if (hay.includes(q)) {
+      out.push({ token: "svc:" + it.id, label });
+      if (out.length >= 12) break;
+    }
+  }
+  return out;
 }
 
 function svcDisplayLabel(tag) {
-  const raw = String(tag || '').trim();
-  if (!raw) return '';
-  const lang = String(window.currentLang || localStorage.getItem('bton_lang') || 'en').toLowerCase();
-  if (lang !== 'tr') return raw;
-  const map = {
-    'consultancy': 'Danışmanlık',
-    'environment': 'Çevre',
-    'site supervision': 'Saha Süpervizyonu',
-    'project management': 'Proje Yönetimi',
-    'shutdown services': 'Kapanış Servisleri',
-    'surveying': 'Haritacılık/Ölçüm',
-    'engineering design': 'Mühendislik Tasarımı',
-    'procurement': 'Tedarik (Procurement)',
-    'construction': 'İnşaat',
-    'commissioning': 'Devreye Alma',
-    'maintenance': 'Bakım',
-    'drilling': 'Sondaj',
-    'blasting': 'Patlatma',
-    'crushing & screening': 'Kırma-Eleme',
-    'equipment rental': 'Ekipman Kiralama',
-    'spare parts': 'Yedek Parça',
-    'fabrication': 'İmalat/Fabrikasyon',
-    'geology': 'Jeoloji',
-    'geophysics': 'Jeofizik',
-    'environmental': 'Çevre',
-    'hse': 'İSG'
-  };
-  const k = raw.toLowerCase();
-  return map[k] || raw;
+  const raw = String(tag || "").trim();
+  if (!raw) return "";
+  const canon = svcCanonicalizeTag(raw);
+  const id = svcTokenToId(canon);
+  if (id && SVC_BY_ID.has(id)) {
+    return svcLabelById(id) || raw;
+  }
+  return raw;
 }
+
 
 function svcEscape(s){
   return String(s).replace(/[&<>"']/g, (c)=>({
@@ -10715,18 +11110,26 @@ function initServiceTagEditor() {
 
 function setServiceTagsFromString(str) {
   const s = String(str || "");
-  const parts = s.split(",").map(_svcNorm).filter(Boolean);
-  // de-dupe (case-insensitive)
+  const parts = s
+    .split(",")
+    .map(_svcNorm)
+    .filter(Boolean)
+    .map(svcCanonicalizeTag)
+    .filter(Boolean);
+
+  // de-dupe (case-insensitive, canonical)
   const seen = new Set();
   const unique = [];
   parts.forEach(p => {
-    const k = p.toLowerCase();
+    const k = _svcKey(p);
     if (!seen.has(k)) { seen.add(k); unique.push(p); }
   });
+
   window.__svcEditor.tags = unique;
   _svcSyncHiddenInput();
   renderServiceTags();
 }
+
 
 function setServiceFeaturedFromAny(val) {
   let arr = [];
@@ -10735,6 +11138,9 @@ function setServiceFeaturedFromAny(val) {
   } else if (typeof val === "string") {
     arr = String(val || "").split(",").map(_svcNorm).filter(Boolean);
   }
+
+  arr = arr.map(svcCanonicalizeTag).filter(Boolean);
+
   // de-dupe + keep only existing tags (sync will handle)
   const seen = new Set();
   const uniq = [];
@@ -10742,10 +11148,12 @@ function setServiceFeaturedFromAny(val) {
     const k = _svcKey(p);
     if (!seen.has(k)) { seen.add(k); uniq.push(p); }
   });
+
   window.__svcEditor.featured = uniq;
   _svcSyncHiddenInput();
   renderServiceTags();
 }
+
 
 function toggleServiceFeatured(tag) {
   const t = _svcNorm(tag);
@@ -10765,16 +11173,22 @@ function toggleServiceFeatured(tag) {
 }
 
 function addServiceTag(tag) {
-  const t = _svcNorm(tag);
-  if (!t) return;
-  const key = t.toLowerCase();
+  const raw = _svcNorm(tag);
+  if (!raw) return;
+
+  // Canonicalize known services so i18n can render them in any language.
+  const canon = svcCanonicalizeTag(raw) || raw;
+
+  const key = _svcKey(canon);
   const tags = window.__svcEditor.tags || [];
-  if (tags.some(x => String(x).toLowerCase() === key)) return;
-  tags.push(t);
+  if (tags.some(x => _svcKey(x) === key)) return;
+
+  tags.push(canon);
   window.__svcEditor.tags = tags;
   _svcSyncHiddenInput();
   renderServiceTags();
 }
+
 
 function removeServiceTag(idx) {
   const tags = window.__svcEditor.tags || [];
@@ -10917,10 +11331,7 @@ function serviceSuggest(query) {
 
     let matches = [];
     try {
-      matches = getServiceSuggestions()
-        .filter(Boolean)
-        .filter(s => String(s).toLowerCase().includes(q))
-        .slice(0, 8);
+      matches = getServiceSuggestions(q).slice(0, 8);
     } catch (e) {
       matches = [];
     }
@@ -10929,16 +11340,18 @@ function serviceSuggest(query) {
 
     // Build safely (no inline onclick; avoids escaping issues like '&' in labels)
     suggest.innerHTML = "";
-    matches.forEach((s) => {
+    matches.forEach((m) => {
+      const token = (m && m.token) ? String(m.token) : "";
+      const label = (m && m.label) ? String(m.label) : (token ? svcDisplayLabel(token) : "");
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between gap-2";
-      btn.addEventListener("click", () => servicePickSuggestion(String(s)));
+      btn.addEventListener("click", () => servicePickSuggestion(token));
 
       const left = document.createElement("span");
       left.className = "text-sm text-gray-700 truncate";
-      // Display label respects current language mapping
-      left.textContent = svcDisplayLabel(String(s));
+      left.textContent = label || svcDisplayLabel(token) || token;
 
       const right = document.createElement("span");
       right.className = "text-[10px] font-extrabold text-BTrustOn-accent";
