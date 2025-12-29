@@ -5,6 +5,15 @@
 <title>BtrustOn</title>
 <!-- UX STABILITY FIXES (prevents horizontal jump on refresh / scroll lock) -->
 <style id="ux-stability-fixes">
+/* Layout: bring content slightly closer to the edges (outer container only) */
+:root{
+  --bton-shell-max: 90rem;   /* was Tailwind 7xl = 80rem */
+  --bton-shell-vw: 96vw;     /* keep a soft margin on ultra-wide screens */
+}
+.max-w-7xl{
+  max-width: min(var(--bton-shell-max), var(--bton-shell-vw)) !important;
+}
+
     html { scrollbar-gutter: stable; }
     html, body { overflow-x: hidden; }
   
