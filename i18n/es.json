@@ -1135,5 +1135,12 @@
   "svc_tag_fleet_leasing": "Leasing de flotas",
   "svc_tag_consultancy": "Consultoría",
   "svc_tag_environment": "Medio ambiente",
-  "svc_tag_shutdown_services": "Servicios de parada de planta"
+  "svc_tag_shutdown_services": "Servicios de parada de planta",
+  "post_no_updates_7d": "No hay actualizaciones en los últimos 7 días.",
+  "updates_signal_info": "Información",
+  "updates_signal_progress": "Progreso",
+  "updates_signal_completed": "Completado",
+  "updates_signal_attention": "Atención",
+  "toast_select_update_type": "Por favor, selecciona un tipo de actualización.",
+  "toast_select_item": "Por favor, selecciona un elemento."
 }
