@@ -3472,7 +3472,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
        ========================= -->
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[99998]" id="modal-cropper">
 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCropperModal()"></div>
-<div class="relative bg-white w-[95%] max-w-4xl rounded-2xl shadow-2xl border border-white/50 max-h-[90vh] overflow-hidden flex flex-col">
+<div class="relative bg-white w-[95%] max-w-6xl rounded-2xl shadow-2xl border border-white/50 max-h-[92vh] overflow-hidden flex flex-col">
 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white">
 <div class="min-w-0">
 <h3 class="text-sm md:text-base font-bold text-gray-900 truncate" data-i18n="cropper_title" id="cropper-title">Adjust Photo</h3>
@@ -3484,7 +3484,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 overflow-y-auto">
 <div class="md:col-span-8">
-<div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden h-[60vh] md:h-[65vh] flex items-center justify-center">
+<div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden h-[72vh] md:h-[76vh] flex items-center justify-center">
 <img alt="Crop" class="max-w-full max-h-full block" id="cropper-image"/>
 </div>
 </div>
@@ -7401,7 +7401,7 @@ function openCropper(imageSrc) {
     cropperInstance = new Cropper(image, {
         aspectRatio: 16 / 9, 
         viewMode: 1, 
-        autoCropArea: 1,
+        autoCropArea: (__btonCropContain ? 0.92 : 1),
         dragMode: 'move',
         guides: true,
         center: true,
@@ -10060,8 +10060,16 @@ if (servicesGrid) {
       if(btnQuote) btnQuote.classList.remove("hidden-view");
 
       if (logoContainer) {
-          logoContainer.classList.remove("cursor-pointer", "group");
-          logoContainer.removeAttribute("onclick");
+          // Allow viewers to click the logo to enlarge (only if a logo exists)
+          const logoImg = document.getElementById("p-logo-image");
+          const hasLogo = !!(logoImg && !logoImg.classList.contains("hidden") && (logoImg.getAttribute("src") || "").trim());
+          if (hasLogo) {
+              logoContainer.classList.add("cursor-pointer");
+              logoContainer.setAttribute("onclick", "openProfileLogoViewer()");
+          } else {
+              logoContainer.classList.remove("cursor-pointer", "group");
+              logoContainer.removeAttribute("onclick");
+          }
       }
       if (logoOverlay) {
           logoOverlay.classList.add("hidden");
@@ -15767,6 +15775,7 @@ let __btonCropper = null;
 let __btonCropCtx = null; // { kind: 'logo'|'owner', mode: 'direct'|'edit' }
 let __btonCropMinRatio = null; // initial zoom ratio when the cropper is ready
 let __btonCropZoomSpan = 2.5;    // slider 0..100 => minRatio .. minRatio*(1+ZoomSpan)
+let __btonCropContain = false; // logos with extreme aspect ratios: start in 'contain' mode
 let __btonCropBaseline = null; // { minRatio, canvas, cropBox } baseline for "100%" view
 
 function __btonCaptureCropBaseline() {
@@ -15864,6 +15873,16 @@ function openCropperForFile(file, ctx) {
     imgEl.onload = () => {
       try { imgEl.onload = null; } catch(_) {}
 
+      // Decide 'contain' vs 'cover' behavior.
+      // Very wide/tall logos look better when the image is fitted *inside* the square (with optional padding)
+      // instead of forcing a 'cover' crop that cuts most of the logo.
+      try {
+        const ar = (imgEl.naturalWidth || 1) / (imgEl.naturalHeight || 1);
+        __btonCropContain = (__btonCropCtx && __btonCropCtx.kind === "logo") && (ar > 1.6 || ar < 0.62);
+      } catch (_) {
+        __btonCropContain = false;
+      }
+
       // (Re)destroy just in case
       if (__btonCropper) {
         try { __btonCropper.destroy(); } catch(_) {}
@@ -15872,7 +15891,7 @@ function openCropperForFile(file, ctx) {
 
       __btonCropper = new Cropper(imgEl, {
         aspectRatio: (__btonCropCtx.kind === "project_cover" ? (16/9) : 1),
-        viewMode: 1,
+        viewMode: (__btonCropContain ? 0 : 1),
         dragMode: "move",
         autoCropArea: 1,
         responsive: true,
@@ -15895,7 +15914,68 @@ function openCropperForFile(file, ctx) {
           // Force "move" so mouse-drag always pans the photo (not the frame)
           try { __btonCropper.setDragMode("move"); } catch(_) {}
 
-          // Capture the "minimum" zoom ratio once the cropper is fully laid out.
+          // Improve UX for large / wide images:
+          // - Make the crop box visually larger (within the container)
+          // - Auto-zoom so the image comfortably fills the crop frame
+          try {
+            const c = __btonCropper.getContainerData();
+            const isCover = (__btonCropCtx && __btonCropCtx.kind === "project_cover");
+            const aspect = isCover ? (16/9) : 1;
+
+            let targetW, targetH;
+
+            if (!isCover) {
+              // Square (logo / profile / owner)
+              const base = Math.min(c.width, c.height) * 0.86;
+              const size = Math.max(360, Math.min(780, base));
+              targetW = size;
+              targetH = size;
+            } else {
+              // 16:9 cover (project)
+              let w = c.width * 0.94;
+              let h = w / aspect;
+              const maxH = c.height * 0.72;
+              if (h > maxH) { h = maxH; w = h * aspect; }
+              targetW = Math.max(360, w);
+              targetH = Math.max(200, h);
+            }
+
+            // Adjust initial zoom:
+            // - Default: "cover" (fill the crop box)
+            // - For very wide/tall logos: "contain" (fit the whole logo inside the square, allowing padding)
+            const img0 = __btonCropper.getImageData();
+            const containLogo = (!!__btonCropContain && !isCover && (__btonCropCtx && __btonCropCtx.kind === "logo"));
+
+            let factor;
+            if (containLogo) {
+              factor = Math.min(targetW / img0.width, targetH / img0.height);
+            } else {
+              factor = Math.max(targetW / img0.width, targetH / img0.height, 1);
+            }
+
+            if (Number.isFinite(factor) && factor > 0) {
+              __btonCropper.zoomTo(img0.ratio * factor);
+            }
+
+            // Center the image after zoom
+            const img1 = __btonCropper.getImageData();
+            __btonCropper.setCanvasData({
+              left: (c.width - img1.width) / 2,
+              top: (c.height - img1.height) / 2
+            });
+
+            // Center and size the crop box
+            __btonCropper.setCropBoxData({
+              left: (c.width - targetW) / 2,
+              top: (c.height - targetH) / 2,
+              width: targetW,
+              height: targetH
+            });
+          } catch (e) {
+            // Keep defaults if anything fails
+          }
+
+          // Capture the baseline zoom ratio once the cropper is fully laid out (after our adjustments).
           try {
             const d = __btonCropper.getImageData();
             __btonCropMinRatio = (d && d.ratio) ? d.ratio : null;
@@ -19228,6 +19308,17 @@ function __resetAttachmentViewer(){
   if(fb){
     fb.classList.add("hidden");
   }
+}
+
+
+function openProfileLogoViewer(){
+  try{
+    const img = document.getElementById("p-logo-image");
+    const url = img ? (img.getAttribute("src") || "").trim() : "";
+    if(!url) return;
+    const name = (document.getElementById("p-name")?.textContent || "").trim() || "Company";
+    openAttachmentViewer(url, name + " • Logo", "logo");
+  }catch(e){}
 }
 
 async function openAttachmentViewer(url, title, fileName){
