@@ -1135,5 +1135,12 @@
   "svc_tag_fleet_leasing": "Filo Kiralama",
   "svc_tag_consultancy": "Danışmanlık",
   "svc_tag_environment": "Çevre",
-  "svc_tag_shutdown_services": "Kapanış Servisleri"
+  "svc_tag_shutdown_services": "Kapanış Servisleri",
+  "post_no_updates_7d": "Son 7 gün içinde güncelleme yok.",
+  "updates_signal_info": "Bilgi",
+  "updates_signal_progress": "Devam Ediyor",
+  "updates_signal_completed": "Tamamlandı",
+  "updates_signal_attention": "Dikkat",
+  "toast_select_update_type": "Lütfen bir güncelleme türü seçin.",
+  "toast_select_item": "Lütfen bir öğe seçin."
 }
