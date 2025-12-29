@@ -13550,11 +13550,41 @@ async function fetchSavedCompanies() {
     const companyId = (storedCompanyId && isUuid(storedCompanyId)) ? storedCompanyId : user.id;
     try { if (storedCompanyId !== companyId) localStorage.setItem("BTrustOn_my_company_id", String(companyId)); } catch(e) {}
 
-    const { data: rows, error } = await supabaseClient
-      .from('saved_companies')
-      .select('id, company_id, saved_company_id, note, created_at, updated_at, saved_company_name, saved_company_logo_url, saved_company_country, saved_company_city, saved_company_type')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false });
+    let rows = null;
+    let error = null;
+
+    const selectV2 = 'id, company_id, saved_company_id, note, created_at, updated_at, saved_company_name, saved_company_logo_url, saved_company_country, saved_company_city, saved_company_type, saved_company_is_verified, saved_company_verification_status';
+    const selectV1 = 'id, company_id, saved_company_id, note, created_at, updated_at, saved_company_name, saved_company_logo_url, saved_company_country, saved_company_city, saved_company_type';
+
+    try {
+      const res = await supabaseClient
+        .from('saved_companies')
+        .select(selectV2)
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+
+      rows = res.data || [];
+      error = res.error || null;
+
+      // Fallback if new snapshot columns don't exist yet
+      if (error) {
+        const msg = String(error?.message || error?.details || error || "");
+        const low = msg.toLowerCase();
+        if (low.includes("does not exist") || low.includes("column") || low.includes("schema cache") || low.includes("pgrst")) {
+          const res2 = await supabaseClient
+            .from('saved_companies')
+            .select(selectV1)
+            .eq('company_id', companyId)
+            .order('created_at', { ascending: false });
+
+          rows = res2.data || [];
+          error = res2.error || null;
+        }
+      }
+    } catch(e) {
+      error = e;
+      rows = [];
+    }
 
     if (error) {
       console.warn("fetchSavedCompanies error:", error.message);
@@ -13570,6 +13600,10 @@ async function fetchSavedCompanies() {
     // ✅ SAFE MODE: Use snapshot fields stored in saved_companies.
     // This avoids any dependency on profiles RLS/policies.
     savedCompaniesData = list.map(r => {
+      const boolTrue = (x) => (x === true || x === 1 || x === "true" || x === "1");
+      const vStatus = (r.saved_company_verification_status || null);
+      const vFlag = boolTrue(r.saved_company_is_verified) || (String(vStatus || "").trim().toLowerCase() === "approved") || (String(vStatus || "").trim().toLowerCase() === "verified");
+
       const company = {
         id: r.saved_company_id,
         name: (r.saved_company_name || "—"),
@@ -13577,7 +13611,13 @@ async function fetchSavedCompanies() {
         city: r.saved_company_city || "—",
         country: r.saved_company_country || "TR",
         company_type: ((r.saved_company_type && String(r.saved_company_type).trim() && String(r.saved_company_type).trim().toLowerCase() !== "company") ? r.saved_company_type : null),
-        business_type: null
+        business_type: null,
+
+        // ✅ verified tick support for Saved list (prefers snapshot columns if present)
+        verification_status: vStatus,
+        is_verified: vFlag,
+        verified: vFlag,
+        blue_tick: vFlag
       };
       return {
         rowId: r.id,
@@ -13595,18 +13635,23 @@ async function fetchSavedCompanies() {
       if (ids.length) {
         const { data: profs, error: pErr } = await supabaseClient
           .from('profiles')
-          .select('id, company_type')
+          .select('id, company_type, verification_status, is_verified, verified, blue_tick')
           .in('id', ids);
 
         if (!pErr && Array.isArray(profs)) {
-          const typeMap = {};
+          const metaMap = {};
           profs.forEach(p => {
-            typeMap[String(p.id)] = (p.company_type || null);
+            metaMap[String(p.id)] = {
+              company_type: (p.company_type || null),
+              verification_status: (p.verification_status || null),
+              is_verified: (p.is_verified || p.verified || p.blue_tick || (String(p.verification_status||'').toLowerCase()==='approved') || (String(p.verification_status||'').toLowerCase()==='verified'))
+            };
           });
 
           savedCompaniesData = (savedCompaniesData || []).map(item => {
             const cid = String(item?.company?.id || "");
-            const t = typeMap[cid];
+            const m = metaMap[cid] || {};
+            const t = m.company_type;
             {
               const tt = (t && String(t).trim() && String(t).trim().toLowerCase() !== "company") ? String(t).trim() : null;
               const cur = (item.company.business_type || item.company.company_type || "");
@@ -13615,6 +13660,17 @@ async function fetchSavedCompanies() {
                 // Prefer profiles.company_type as the single source of truth for Saved cards
                 item.company.company_type = tt;
                 item.company.business_type = tt; // backward compatibility with older UI code
+
+                // Verified meta (best-effort)
+                try {
+                  if (m && (m.verification_status || m.is_verified)) {
+                    item.company.verification_status = m.verification_status || (m.is_verified ? "approved" : "");
+                    item.company.is_verified = !!m.is_verified;
+                    item.company.verified = !!m.is_verified;
+                    item.company.blue_tick = !!m.is_verified;
+                  }
+                } catch(e) {}
+
 
                 // If this saved row previously had a useless default (e.g., "Company"), persist the real type for offline-safe rendering
                 if (!cur || curNorm === "company" || curNorm === "—") {
@@ -13835,20 +13891,28 @@ function renderSavedCompanies() {
 
   listEl.innerHTML = list.map(item => {
     const c = item.company || {};
-    const initials = (c.name || "C").trim().slice(0, 1).toUpperCase();
-    const logo = c.logo_url
-      ? `<img src="${c.logo_url}" alt="" class="w-10 h-10 rounded-xl object-cover border border-gray-200 bg-white" />`
+    const rc = _resolveCompanyFromCaches(c.id) || {};
+    const displayName = (c.name || "").trim() || (rc.name || "").trim() || "—";
+
+    const initials = (displayName || "C").trim().slice(0, 1).toUpperCase();
+    const logoUrl = ((c.logo_url || rc.logo_url || "") + "").trim();
+    const logo = logoUrl
+      ? `<img src="${logoUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-gray-200 bg-white" referrerpolicy="no-referrer" />`
       : `<div class="w-10 h-10 rounded-xl bg-cyan-50 border border-gray-200 grid place-items-center font-bold text-[12px] text-cyan-900">${initials}</div>`;
+
+    const ver = (typeof getVerifiedMark === "function")
+      ? getVerifiedMark(Object.assign({}, rc, c))
+      : "";
 
     const missingBadge = c._missing
       ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700">${_i18n("saved_unavailable", "Unavailable")}</span>`
       : "";
 
-    const metaCity = c.city || "—";
-    const metaCountryRaw = (c.country || "").trim();
+    const metaCity = (c.city || "").trim() || (rc.city || "").trim() || "—";
+    const metaCountryRaw = ((c.country || "").trim() || (rc.country || "").trim());
     const metaCountryCode = (c.country_code || c.countryCode || c.country_iso2 || c.country_iso || "").trim();
     const metaCountry = metaCountryRaw ? translateCountryName(metaCountryRaw, metaCountryCode) : "—";
-    const metaTypeRaw = c.business_type || c.company_type || c.type || "";
+    const metaTypeRaw = (c.business_type || c.company_type || c.type || (rc.business_type || rc.company_type || rc.type || ""));
     const metaType = (metaTypeRaw && String(metaTypeRaw).trim().toLowerCase() !== "company") ? translateCompanyType(metaTypeRaw) : "—";
 
     return `
@@ -13862,7 +13926,7 @@ function renderSavedCompanies() {
               <div class="min-w-0">
                 <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline truncate"
                      onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
-                  ${c.name || "—"}${missingBadge}
+                  ${escapeHtml(displayName)}${ver}${missingBadge}
                 </div>
                 <div class="text-[10px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
                   <span class="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">${metaType}</span>
@@ -14233,11 +14297,9 @@ const metaCountry = metaCountryRaw ? translateCountryName(metaCountryRaw, metaCo
 const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
     const locHtml = loc ? `<span class=\"text-gray-400\">•</span><span class=\"truncate\">${escapeHtml(loc)}</span>` : "";
 
-    const ver = c.is_verified
-      ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-black">${_i18n("badge_verified","Verified")}</span>`
-      : "";
-
-    const missingBadge = c._missing
+    const ver = (typeof getVerifiedMark === "function")
+      ? getVerifiedMark(Object.assign({}, rc, c))
+      : ((c.is_verified) ? `<i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle" title="Verified company"></i>` : "");const missingBadge = c._missing
       ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-black">${_i18n("saved_unavailable", "Unavailable")}</span>`
       : "";
 
