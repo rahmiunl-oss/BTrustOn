@@ -1739,93 +1739,6 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   100% { background-position: -200% 0; }
 }
 
-/* "O" = DOLAN + DÖNEN HALKA */
-.bton-o { display:inline-flex; width: 1.05em; height: 1.05em; align-items:center; justify-content:center; }
-.bton-o-svg { width: 1.05em; height: 1.05em; }
-.bton-o-track {
-  fill: none;
-  stroke: rgba(0, 198, 255, .18);
-  stroke-width: 4;
-}
-.bton-o-prog {
-  fill: none;
-  stroke: url(#btonGradProfile);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 88;
-  stroke-dashoffset: 88;
-  transform-origin: 50% 50%;
-  will-change: transform, opacity, filter;
-  filter: drop-shadow(0 0 6px rgba(0, 198, 255, .22)) drop-shadow(0 0 12px rgba(0, 120, 255, .14));
-  animation:
-    btonDash 1.35s cubic-bezier(.4,0,.2,1) infinite,
-    btonSpin 1.15s cubic-bezier(.4,0,.2,1) infinite,
-    btonGlowPulse 1.6s ease-in-out infinite;
-}
-
-.bton-on-only{
-  display:flex;
-  align-items:baseline;
-  justify-content:center;
-  gap:0;
-  line-height:1;
-}
-/* ===== BTrustOn LOADER ALIGNMENT (baseline fix) ===== */
-.bton-loader-logo{
-  display:flex;
-  align-items:baseline;
-  justify-content:center;
-  gap:0;
-  line-height:1;
-}
-.bton-onwrap{
-  display:flex;
-  align-items:baseline;
-}
-.bton-o{
-  display:inline-flex;
-  width:1.05em;
-  height:1.05em;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  top:0.06em; /* tiny baseline correction */
-}
-.bton-o-svg{
-  width:1.05em;
-  height:1.05em;
-  display:block;
-}
-.bton-n{ line-height:1; }
-.bton-o-prog-boot{ stroke: url(#btonGradBoot) !important; }
-
-@keyframes btonSpin { 
-  to { transform: rotate(360deg); } 
-}
-
-@keyframes btonDash {
-  0%   { stroke-dashoffset: 88; opacity: .55; }
-  35%  { stroke-dashoffset: 28; opacity: 1; }
-  60%  { stroke-dashoffset: 18; opacity: .95; }
-  100% { stroke-dashoffset: 88; opacity: .55; }
-}
-
-@keyframes btonGlowPulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 6px rgba(0, 198, 255, .18)) drop-shadow(0 0 12px rgba(0, 120, 255, .10));
-  }
-  50% {
-    filter: drop-shadow(0 0 10px rgba(0, 198, 255, .32)) drop-shadow(0 0 18px rgba(0, 120, 255, .20));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bton-o-prog { 
-    animation: none !important; 
-    stroke-dashoffset: 40;
-  }
-}
-
 </style>
 <script>
     (function(){
@@ -3105,26 +3018,15 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="hidden-view fade-in min-h-screen bg-white/50 backdrop-blur-sm" id="view-profile">
-<!-- ✅ PROFILE SKELETON OVERLAY (BTrustOn 'O' animasyonlu) -->
+<!-- ✅ PROFILE SKELETON OVERLAY -->
 <div class="hidden fixed inset-0 z-[9998] bg-white/90 backdrop-blur-md" id="profile-skeleton">
 <span class="sr-only" data-i18n="ui_loading_5f02f0">Loading…</span>
 <div class="max-w-6xl mx-auto px-6 py-10">
 <div class="flex items-center justify-between">
 <div class="skel h-6 w-40"></div>
-<div aria-hidden="true" class="bton-on-only text-3xl md:text-4xl font-sans font-bold tracking-tight leading-none select-none">
-<span aria-hidden="true" class="bton-o">
-<svg class="bton-o-svg" viewbox="0 0 40 40">
-<defs>
-<lineargradient id="btonGradProfile" x1="0" x2="1" y1="0" y2="1">
-<stop offset="0" stop-color="#00C6FF"></stop>
-<stop offset="1" stop-color="#0078FF"></stop>
-</lineargradient>
-</defs>
-<circle class="bton-o-track" cx="20" cy="20" r="14"></circle>
-<circle class="bton-o-prog bton-o-prog-profile" cx="20" cy="20" r="14"></circle>
-</svg>
-</span>
-<span class="bton-n bg-clip-text text-transparent bg-gradient-to-r from-[#00C6FF] to-[#0078FF]">n</span>
+<div aria-hidden="true" class="flex items-center gap-3">
+  <div class="skel h-8 w-8 rounded-full"></div>
+  <div class="skel h-4 w-16 rounded"></div>
 </div>
 </div>
 <div class="mt-6 skel h-44 w-full rounded-3xl"></div>
@@ -13933,9 +13835,13 @@ function renderSavedCompanies() {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline truncate"
+                <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline"
                      onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
-                  ${escapeHtml(displayName)}${ver}${missingBadge}
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+                    ${ver ? ('<span class="flex-shrink-0">' + ver + '</span>') : ''}
+                    ${missingBadge ? ('<span class="flex-shrink-0">' + missingBadge + '</span>') : ''}
+                  </div>
                 </div>
                 <div class="text-[10px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
                   <span class="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">${metaType}</span>
@@ -14320,10 +14226,12 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-2">
-              <div class="font-extrabold text-sm truncate cursor-pointer hover:underline" onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
-                ${escapeHtml(displayName)}
-                ${ver}
-                ${missingBadge}
+              <div class="font-extrabold text-sm text-BTrustOn-primary cursor-pointer hover:underline" onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+                  ${ver ? ('<span class="flex-shrink-0">' + ver + '</span>') : ''}
+                  ${missingBadge ? ('<span class="flex-shrink-0">' + missingBadge + '</span>') : ''}
+                </div>
               </div>
               <button class="text-xs font-black px-3 py-1.5 rounded-full border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition"
                 onclick="toggleCompanyFollow(event, '${c.id}', '${escapeHtml((c.name||'') + '')}')"
