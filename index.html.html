@@ -2845,7 +2845,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="flex gap-2">
 <button class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-50 hover:border-gray-400 transition" onclick="document.getElementById('edit-logo-input').click()" type="button">
 <i class="fa-solid fa-upload mr-1"></i><span data-i18n="ui_upload_914124">Upload</span></button>
-<button class="bg-red-50 border border-red-100 text-red-500 px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition" data-i18n-title="attr_remove_logo_b1d721" onclick="deleteLogo()" title="Remove Logo" type="button">
+<button class="bg-red-50 border border-red-100 text-red-500 px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition" data-i18n-title="attr_remove_logo_b1d721" onclick="deleteLogo()" data-i18n-title="ui_remove_logo" title="Remove Logo" type="button">
 <i class="fa-solid fa-trash"></i>
 </button>
 </div>
@@ -6766,7 +6766,7 @@ function _renderMyRecentUpdatesList(rows){
   const items = Array.isArray(rows) ? rows : [];
   if (items.length === 0){
     listEl.innerHTML = `<div class="text-[12px] text-gray-500 p-3 rounded-xl border border-gray-100 bg-gray-50">
-      ${(currentLang==="tr") ? "Son 7 günde paylaşım yok." : "No updates in the last 7 days."}
+      ${tOr("post_no_updates_7d", (currentLang==="tr") ? "Son 7 günde paylaşım yok." : (currentLang==="es" ? "No hay actualizaciones en los últimos 7 días." : "No updates in the last 7 days."))}
     </div>`;
     return;
   }
@@ -6915,10 +6915,10 @@ const list = _getAreaList(area);
 }
 
 const HOME_UPDATE_SIGNALS = [
-  { code: "info", en: "Info", tr: "Bilgi" },
-  { code: "progress", en: "Progress", tr: "İlerleme" },
-  { code: "completed", en: "Completed", tr: "Tamamlandı" },
-  { code: "attention", en: "Attention", tr: "Dikkat" },
+  { code: "info", en: "Info", tr: "Bilgi", es: "Información" },
+  { code: "progress", en: "Progress", tr: "İlerleme", es: "Progreso" },
+  { code: "completed", en: "Completed", tr: "Tamamlandı", es: "Completado" },
+  { code: "attention", en: "Attention", tr: "Dikkat", es: "Atención" },
 ];
 
 function _populateUpdateSignalSelect() {
@@ -6927,7 +6927,8 @@ function _populateUpdateSignalSelect() {
 
   sel.innerHTML = `<option value="" selected disabled>—</option>`;
   HOME_UPDATE_SIGNALS.forEach(t => {
-    const label = (currentLang === "tr") ? t.tr : t.en;
+    const base = (currentLang === "tr") ? t.tr : (currentLang === "es") ? (t.es || t.en) : t.en;
+    const label = tOr("updates_signal_" + t.code, base);
     sel.insertAdjacentHTML("beforeend", `<option value="${t.code}">${_safeText(label)}</option>`);
   });
 }
@@ -6965,13 +6966,13 @@ async function submitCompanyUpdate() {
     const note = noteEl ? (noteEl.value || "").trim() : "";
 
         if (!templateCode) {
-      showToast(currentLang === "tr" ? "Lütfen bildirim tipini seçin." : "Please select an update type.");
+      showToast(tOr("toast_select_update_type", (currentLang==="tr") ? "Lütfen bildirim tipini seçin." : (currentLang==="es" ? "Por favor, selecciona un tipo de actualización." : "Please select an update type.")));
       if (btn) { btn.disabled = false; btn.classList.remove("opacity-70"); }
       return;
     }
 
     if (String(__updArea || "").toLowerCase() !== "general" && !entityId) {
-      showToast(currentLang === "tr" ? "Lütfen bir öğe seçin." : "Please select an item.");
+      showToast(tOr("toast_select_item", (currentLang==="tr") ? "Lütfen bir öğe seçin." : (currentLang==="es" ? "Por favor, selecciona un elemento." : "Please select an item.")));
       if (btn) { btn.disabled = false; btn.classList.remove("opacity-70"); }
       return;
     }
@@ -7045,12 +7046,12 @@ async function submitCompanyUpdate() {
     const { error } = await supabaseClient.from("company_updates").insert([payload]);
     if (error) {
       console.error("Update insert error:", error);
-      showToast(currentLang === "tr" ? "Paylaşım başarısız." : "Failed to publish.");
+      showToast(t("toast_publish_failed") || (currentLang==="tr" ? "Paylaşım başarısız." : (currentLang==="es" ? "No se pudo publicar." : "Failed to publish.")));
       if (btn) { btn.disabled = false; btn.classList.remove("opacity-70"); }
       return;
     }
 
-    showToast(currentLang === "tr" ? "Paylaşıldı." : "Published.");
+    showToast(t("toast_published") || (currentLang==="tr" ? "Paylaşıldı." : (currentLang==="es" ? "Publicado." : "Published.")));
     toggleModal("modal-post-update");
 
     // Refresh immediately (realtime also handles, but this ensures older browsers)
@@ -7058,7 +7059,7 @@ async function submitCompanyUpdate() {
 
   } catch (e) {
     console.error("submitCompanyUpdate exception:", e);
-    showToast(currentLang === "tr" ? "Paylaşım başarısız." : "Failed to publish.");
+    showToast(t("toast_publish_failed") || (currentLang==="tr" ? "Paylaşım başarısız." : (currentLang==="es" ? "No se pudo publicar." : "Failed to publish.")));
   } finally {
     const btn = document.getElementById("btn-publish-update");
     if (btn) { btn.disabled = false; btn.classList.remove("opacity-70"); }
@@ -7750,6 +7751,15 @@ function populateCountrySelects() {
       if (!packReady && currentLang !== "en") return "";
       return (pack && pack[key]) || (en && en[key]) || "";
     }
+
+function tOr(key, fallback) {
+      const pack = (translations && translations[currentLang]) ? translations[currentLang] : {};
+      const packReady = pack && Object.keys(pack).length;
+      if (!packReady && currentLang !== "en") return "";
+      const v = t(key);
+      return (v && String(v).trim().length) ? v : (fallback || "");
+    }
+
 
 
     // =======================
@@ -10435,7 +10445,11 @@ async function saveProfileData() {
 
     if (error) throw error;
 
-    showToast("Success", "Profile updated successfully!", "success");
+    showToast(
+      (t("toast_success_title") || (currentLang==="tr" ? "Başarılı" : (currentLang==="es" ? "Éxito" : "Success"))),
+      (t("toast_profile_updated_success") || (currentLang==="tr" ? "Profil başarıyla güncellendi!" : (currentLang==="es" ? "¡Perfil actualizado correctamente!" : "Profile updated successfully!"))),
+      "success"
+    );
 
     // --- 6. LOCAL HAFIZAYI GÜNCELLE ---
     const localCompany = database.find(c => c.id == user.id);
@@ -19561,7 +19575,15 @@ function removeCertFile() {
     document.getElementById("current-cert-link").classList.add("hidden");
 }
 async function deleteLogo() {
-    const ok = await uiConfirm("Remove company logo?", {title:"Confirm", okText:"Remove", cancelText:"Cancel", variant:"danger"});
+    const ok = await uiConfirm(
+      (t("confirm_remove_logo_msg") || (currentLang==="tr" ? "Şirket logosunu kaldırmak istiyor musunuz?" : (currentLang==="es" ? "¿Eliminar el logotipo de la empresa?" : "Remove company logo?"))),
+      {
+        title: (t("confirm_title") || (currentLang==="tr" ? "Onay" : (currentLang==="es" ? "Confirmar" : "Confirm"))),
+        okText: (t("confirm_remove") || (currentLang==="tr" ? "Kaldır" : (currentLang==="es" ? "Eliminar" : "Remove"))),
+        cancelText: (t("confirm_cancel") || (currentLang==="tr" ? "İptal" : (currentLang==="es" ? "Cancelar" : "Cancel"))),
+        variant: "danger"
+      }
+    );
     if(!ok) return;
 
     // UI Temizle
