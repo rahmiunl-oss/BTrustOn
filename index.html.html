@@ -3163,9 +3163,9 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
             Industrial Supplier
           </span>
 <span data-i18n="ui_53fe08">•</span>
-<span id="p-size-tag">100–250 employees</span>
+<span id="p-size-tag">—</span>
 <span data-i18n="ui_53fe08">•</span>
-<span id="p-year-tag">Founded 2012</span>
+<span id="p-year-tag">—</span>
 </div>
 <div class="hidden mb-8 relative pl-6 border-l-4 border-BTrustOn-accent/40 mt-2" id="p-tagline-container">
 <i class="fa-solid fa-quote-left absolute -top-3 -left-3 text-3xl text-BTrustOn-accent/10 bg-white/50 backdrop-blur-sm p-1 rounded-full"></i>
@@ -5124,29 +5124,29 @@ function _btonIsAfterFollowStart(cid, createdAtIso) {
 
 const HOME_UPDATE_TEMPLATES = {
   projects: [
-    { code: "kickoff", en: "Kick-off started", tr: "Başlangıç / Kick-off başladı" },
-    { code: "phase_started", en: "New phase started", tr: "Yeni faz başladı" },
-    { code: "milestone", en: "Milestone achieved", tr: "Kilometre taşı tamamlandı" },
-    { code: "scope_update", en: "Scope updated", tr: "Kapsam güncellendi" },
-    { code: "schedule_update", en: "Schedule update", tr: "Takvim güncellemesi" },
-    { code: "field_update", en: "Field update", tr: "Saha güncellemesi" },
-    { code: "software_update", en: "Software / system update", tr: "Yazılım / sistem güncellemesi" },
-    { code: "completed", en: "Completed", tr: "Tamamlandı" },
+    { code: "kickoff", en: "Kick-off started", tr: "Başlangıç / Kick-off başladı", es: "Kick-off iniciado" },
+    { code: "phase_started", en: "New phase started", tr: "Yeni faz başladı", es: "Nueva fase iniciada" },
+    { code: "milestone", en: "Milestone achieved", tr: "Kilometre taşı tamamlandı", es: "Hito alcanzado" },
+    { code: "scope_update", en: "Scope updated", tr: "Kapsam güncellendi", es: "Alcance actualizado" },
+    { code: "schedule_update", en: "Schedule update", tr: "Takvim güncellemesi", es: "Actualización del cronograma" },
+    { code: "field_update", en: "Field update", tr: "Saha güncellemesi", es: "Actualización de campo" },
+    { code: "software_update", en: "Software / system update", tr: "Yazılım / sistem güncellemesi", es: "Actualización de software/sistema" },
+    { code: "completed", en: "Completed", tr: "Tamamlandı", es: "Completado" },
   ],
   assets: [
-    { code: "added", en: "New asset added", tr: "Yeni asset eklendi" },
-    { code: "availability", en: "Availability updated", tr: "Uygunluk durumu güncellendi" },
-    { code: "maintenance", en: "Maintenance / service", tr: "Bakım / servis" },
-    { code: "specs_update", en: "Specs updated", tr: "Teknik bilgiler güncellendi" },
-    { code: "inspection", en: "Inspection / calibration", tr: "Muayene / kalibrasyon" },
-    { code: "location", en: "Location updated", tr: "Lokasyon güncellendi" },
+    { code: "added", en: "New asset added", tr: "Yeni asset eklendi", es: "Nuevo activo añadido" },
+    { code: "availability", en: "Availability updated", tr: "Uygunluk durumu güncellendi", es: "Disponibilidad actualizada" },
+    { code: "maintenance", en: "Maintenance / service", tr: "Bakım / servis", es: "Mantenimiento / servicio" },
+    { code: "specs_update", en: "Specs updated", tr: "Teknik bilgiler güncellendi", es: "Especificaciones actualizadas" },
+    { code: "inspection", en: "Inspection / calibration", tr: "Muayene / kalibrasyon", es: "Inspección / calibración" },
+    { code: "location", en: "Location updated", tr: "Lokasyon güncellendi", es: "Ubicación actualizada" },
   ],
   certificates: [
-    { code: "added", en: "New certificate added", tr: "Yeni sertifika eklendi" },
-    { code: "renewed", en: "Renewed", tr: "Yenilendi" },
-    { code: "audit", en: "Audit / assessment passed", tr: "Denetim / değerlendirme geçti" },
-    { code: "scope_update", en: "Scope updated", tr: "Kapsam güncellendi" },
-    { code: "status", en: "Status update", tr: "Durum güncellemesi" },
+    { code: "added", en: "New certificate added", tr: "Yeni sertifika eklendi", es: "Nuevo certificado añadido" },
+    { code: "renewed", en: "Renewed", tr: "Yenilendi", es: "Renovado" },
+    { code: "audit", en: "Audit / assessment passed", tr: "Denetim / değerlendirme geçti", es: "Auditoría / evaluación superada" },
+    { code: "scope_update", en: "Scope updated", tr: "Kapsam güncellendi", es: "Alcance actualizado" },
+    { code: "status", en: "Status update", tr: "Durum güncellemesi", es: "Actualización de estado" },
   ]
 };
 
@@ -5158,16 +5158,25 @@ function _timeAgoI18n(dateString) {
   const d = new Date(dateString);
   if (isNaN(d.getTime())) return "";
   const seconds = Math.floor((new Date() - d) / 1000);
-  const isTR = (currentLang === "tr");
-  const fmt = (n, sEn, sTr) => isTR ? `${n} ${sTr}` : `${n} ${sEn}`;
-  if (seconds < 60) return isTR ? "az önce" : "just now";
+
+  const lang = (typeof __normLangCode === "function") ? __normLangCode(currentLang) : String(currentLang || "en").slice(0,2).toLowerCase();
+  const isTR = (lang === "tr");
+  const isES = (lang === "es");
+
+  const fmt = (n, sEn, sTr, sEs) => {
+    if (isTR) return `${n} ${sTr}`;
+    if (isES) return `hace ${n} ${sEs}`;
+    return `${n} ${sEn}`;
+  };
+
+  if (seconds < 60) return isTR ? "az önce" : (isES ? "ahora mismo" : "just now");
   let interval = Math.floor(seconds / 60);
-  if (interval < 60) return fmt(interval, "min ago", "dk önce");
+  if (interval < 60) return fmt(interval, "min ago", "dk önce", "min");
   interval = Math.floor(seconds / 3600);
-  if (interval < 24) return fmt(interval, "hours ago", "saat önce");
+  if (interval < 24) return fmt(interval, "hours ago", "saat önce", "h");
   interval = Math.floor(seconds / 86400);
-  if (interval < 7) return fmt(interval, "days ago", "gün önce");
-  return d.toLocaleDateString(isTR ? "tr-TR" : "en-US", { year:"numeric", month:"short", day:"2-digit" });
+  if (interval < 7) return fmt(interval, "days ago", "gün önce", "días");
+  return d.toLocaleDateString(isTR ? "tr-TR" : (isES ? "es-ES" : "en-US"), { year:"numeric", month:"short", day:"2-digit" });
 }
 
 // Alias kept for backwards compatibility
@@ -5256,17 +5265,20 @@ function focusProfileEntity(tab, entityId){
 
 function _templateLabel(area, code) {
   const c = String(code || "").toLowerCase();
+  const lang = (typeof __normLangCode === "function") ? __normLangCode(currentLang) : String(currentLang || "en").slice(0,2).toLowerCase();
 
   // Generic / global labels (used by "General" and by the new update type selector)
-  if (c === "info") return (currentLang === "tr") ? "Bilgi" : "Info";
-  if (c === "progress") return (currentLang === "tr") ? "İlerleme" : "Progress";
-  if (c === "completed") return (currentLang === "tr") ? "Tamamlandı" : "Completed";
-  if (c === "attention") return (currentLang === "tr") ? "Dikkat" : "Attention";
+  if (c === "info") return (lang === "tr") ? "Bilgi" : (lang === "es" ? "Información" : "Info");
+  if (c === "progress") return (lang === "tr") ? "İlerleme" : (lang === "es" ? "Progreso" : "Progress");
+  if (c === "completed") return (lang === "tr") ? "Tamamlandı" : (lang === "es" ? "Completado" : "Completed");
+  if (c === "attention") return (lang === "tr") ? "Dikkat" : (lang === "es" ? "Atención" : "Attention");
 
   const arr = HOME_UPDATE_TEMPLATES[area] || [];
-  const t = arr.find(x => String(x.code || "").toLowerCase() === c);
-  if (!t) return code || "";
-  return (currentLang === "tr") ? t.tr : t.en;
+  const trow = arr.find(x => String(x.code || "").toLowerCase() === c);
+  if (!trow) return code || "";
+  if (lang === "tr") return trow.tr || trow.en || "";
+  if (lang === "es") return trow.es || trow.en || "";
+  return trow.en || "";
 }
 
 
@@ -7790,23 +7802,44 @@ function translateCountryName(countryRaw, countryCodeRaw="") {
 function translateCompanySize(sizeRaw) {
       const v = (sizeRaw || "").trim();
       if (!v) return "";
-      if (currentLang === "tr") {
+      const lang = (typeof __normLangCode === "function") ? __normLangCode(currentLang) : String(currentLang || "en").slice(0,2).toLowerCase();
+
+      if (lang === "tr") {
         const map = {
           "1-10 employees": "1–10 çalışan",
           "10-50 employees": "10–50 çalışan",
           "50-100 employees": "50–100 çalışan",
           "100-250 employees": "100–250 çalışan",
-          "250+ employees": "250+ çalışan"
+          "250+ employees": "250+ çalışan",
+          "Size N/A": "Boyut Yok"
         };
         return map[v] || v.replace(/\s*employees\b/i, " çalışan");
       }
+
+      if (lang === "es") {
+        const map = {
+          "1-10 employees": "1–10 empleados",
+          "10-50 employees": "10–50 empleados",
+          "50-100 employees": "50–100 empleados",
+          "100-250 employees": "100–250 empleados",
+          "250+ employees": "250+ empleados",
+          "Size N/A": "Tamaño N/D"
+        };
+        return map[v] || v.replace(/\s*employees\b/i, " empleados");
+      }
+
+      // default (EN or unknown)
+      if (/^Size\s*N\/?A$/i.test(v)) return "Size N/A";
       return v;
     }
 
     function formatFoundedYear(yearVal) {
       const y = (yearVal == null) ? "" : String(yearVal).trim();
       if (!y) return "";
-      return (currentLang === "tr") ? `Kuruluş ${y}` : `Founded ${y}`;
+      const lang = (typeof __normLangCode === "function") ? __normLangCode(currentLang) : String(currentLang || "en").slice(0,2).toLowerCase();
+      if (lang === "tr") return `Kuruluş ${y}`;
+      if (lang === "es") return `Fundada en ${y}`;
+      return `Founded ${y}`;
     }
 
     
@@ -8431,25 +8464,31 @@ function filterSector(sector, btnEl) {
       const base = (baseStatusRaw || "").toLowerCase();
       const disp = (displayStatus || baseStatusRaw || "").toLowerCase();
 
+      const lang = (typeof __normLangCode === "function") ? __normLangCode(currentLang) : String(currentLang || "en").slice(0,2).toLowerCase();
+      const isTR = (lang === "tr");
+      const isES = (lang === "es");
+
       let classes = "bg-slate-50 text-slate-600 border-slate-200";
 
-      // Available / Müsait → Yeşil
-      if (base.includes("available") || disp.includes("müsait")) {
+      // Available / Müsait / Disponible → Green
+      if (base.includes("available") || disp.includes("müsait") || disp.includes("disponible")) {
         classes = "bg-emerald-50 text-emerald-700 border-emerald-100";
       }
-      // Under Maintenance / bakım → Sarı
+      // Under Maintenance / bakım / mantenimiento → Yellow
       else if (
         base.includes("maintenance") ||
         base.includes("maint") ||
-        disp.includes("bakım")
+        disp.includes("bakım") ||
+        disp.includes("mantenimiento")
       ) {
-        classes = "bg-amber-50 text-amber-700 border-amber-100";
+        classes = "bg-amber-50 text-amber-800 border-amber-100";
       }
-      // Out of Service / Servis dışı → Kırmızı
+      // Out of Service / servis dışı / fuera de servicio → Red
       else if (
         base.includes("out of service") ||
         base.includes("oos") ||
-        disp.includes("servis dışı")
+        disp.includes("servis dışı") ||
+        disp.includes("fuera de servicio")
       ) {
         classes = "bg-rose-50 text-rose-700 border-rose-100";
       }
@@ -8457,15 +8496,18 @@ function filterSector(sector, btnEl) {
       let label = displayStatus || baseStatusRaw || "";
       try {
         const base2 = (baseStatusRaw || "").toLowerCase();
-        if (__normLangCode(currentLang) === "tr") {
-          if (base2.includes("available")) label = (t("asset_status_available") || label);
-          else if (base2.includes("maintenance") || base2.includes("maint")) label = (t("asset_status_maintenance") || label);
-          else if (base2.includes("out of service") || base2.includes("oos")) label = (t("asset_status_out") || label);
-        } else {
-          // normalize common Turkish statuses back to EN if needed
-          if (base2.includes("müsait")) label = (t("asset_status_available") || "Available");
-          else if (base2.includes("bakım")) label = (t("asset_status_maintenance") || "Under Maintenance");
-          else if (base2.includes("servis dışı")) label = (t("asset_status_out") || "Out of Service");
+
+        // Normalize to stable keys regardless of stored language
+        const isAvail = base2.includes("available") || base2.includes("müsait") || base2.includes("disponible");
+        const isMaint = base2.includes("maintenance") || base2.includes("maint") || base2.includes("bakım") || base2.includes("mantenimiento");
+        const isOut = base2.includes("out of service") || base2.includes("oos") || base2.includes("servis dışı") || base2.includes("fuera de servicio");
+
+        if (isAvail) {
+          label = (t("asset_status_available") || (isTR ? "Müsait" : (isES ? "Disponible" : "Available")));
+        } else if (isMaint) {
+          label = (t("asset_status_maintenance") || (isTR ? "Bakımda" : (isES ? "En mantenimiento" : "Under Maintenance")));
+        } else if (isOut) {
+          label = (t("asset_status_out") || (isTR ? "Servis dışı" : (isES ? "Fuera de servicio" : "Out of Service")));
         }
       } catch(e) {}
 
@@ -9674,7 +9716,7 @@ if (pType) pType.textContent = translateCompanyType(company.type_label || compan
           // İkonun olduğu kapsayıcıyı göster (gizliyse)
           pAddress.parentElement.classList.remove("hidden");
       } else {
-          pAddress.textContent = "No official address listed.";
+          pAddress.textContent = (currentLang === "tr") ? "Resmi adres belirtilmemiş." : (currentLang === "es" ? "No se ha indicado una dirección oficial." : "No official address listed.");
           // İsterseniz boşsa gizleyebilirsiniz:
           // pAddress.parentElement.classList.add("hidden");
       }
@@ -10155,7 +10197,7 @@ try {
                             </span>
                             <span class="inline-flex items-center gap-1.5">
                               <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
-                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : "en-US"),{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
+                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
                             </span>
                         </div>
                     </div>
@@ -18479,7 +18521,7 @@ const offerEl = document.getElementById("upgrade-offer-text");
 
     if (isTrialActive && selectedCompany && selectedCompany.trial_end_date) {
       const d = new Date(selectedCompany.trial_end_date);
-      const ds = d.toLocaleDateString(currentLang === "tr" ? "tr-TR" : "en-US", { year:"numeric", month:"short", day:"2-digit" });
+      const ds = d.toLocaleDateString(currentLang === "tr" ? "tr-TR" : (currentLang === "es" ? "es-ES" : "en-US"), { year:"numeric", month:"short", day:"2-digit" });
 
       if (pill) pill.style.display = ""; // show something
       if (offerEl) {
@@ -19616,7 +19658,7 @@ function openProjectViewer(projectId){
 
   if(tEl) tEl.textContent = title;
   if(mEl) {
-    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : "en-US"),{year:'numeric',month:'short',day:'2-digit'}) : "");
+    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'}) : "");
     if (loc && nice) mEl.textContent = `📍 ${loc}  •  📅 ${nice}`;
     else if (loc) mEl.textContent = `📍 ${loc}`;
     else if (nice) mEl.textContent = `📅 ${nice}`;
