@@ -1142,5 +1142,14 @@
   "updates_signal_completed": "Completed",
   "updates_signal_attention": "Attention",
   "toast_select_update_type": "Please select an update type.",
-  "toast_select_item": "Please select an item."
+  "toast_select_item": "Please select an item.",
+  "toast_success_title": "Success",
+  "toast_profile_updated_success": "Profile updated successfully!",
+   "confirm_title": "Confirm",
+  "confirm_cancel": "Cancel",
+  "confirm_remove": "Remove",
+  "confirm_remove_logo_msg": "Remove company logo?",
+  "ui_remove_logo": "Remove Logo",
+   "toast_publish_failed": "Failed to publish.",
+  "toast_published": "Published."
 }
