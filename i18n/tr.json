@@ -1142,5 +1142,7 @@
   "updates_signal_completed": "Tamamlandı",
   "updates_signal_attention": "Dikkat",
   "toast_select_update_type": "Lütfen bir güncelleme türü seçin.",
-  "toast_select_item": "Lütfen bir öğe seçin."
+  "toast_select_item": "Lütfen bir öğe seçin.",
+  "toast_success_title": "Başarılı",
+  "toast_profile_updated_success": "Profil başarıyla güncellendi!"
 }
