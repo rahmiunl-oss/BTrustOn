@@ -6386,7 +6386,7 @@ async function _maybeNotifyFollowedUpdate(row) {
       key,
       "notif_follow_update_title",
       "notif_follow_update_msg",
-      { company: row.company_name || "A company you follow", company_id: cid },
+      { company: row.company_name || "A company you follow", company_id: cid, event_at: (row.created_at || "") },
       "OPEN_HOME_FOLLOWED"
     );
   } catch (e) {}
@@ -15005,9 +15005,18 @@ function renderInboxItems() {
       const msgResolved = (parsedMsg && parsedMsg.key) ? (tP(parsedMsg.key, parsedMsg.params) || _stripNotifMarkers(msgRaw)) : _stripNotifMarkers(msgRaw);
       const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-      const when = n.created_at ? timeAgo(n.created_at) : "";
-      const nidSafe = String(n.id).replace(/'/g, "\\'");
       const notifParams = (parsedMsg && parsedMsg.params) ? parsedMsg.params : {};
+      let __whenBase = n.created_at || n.updated_at || null;
+      try {
+        const ev = (notifParams.event_at || notifParams.eventAt || notifParams.event_time || notifParams.eventTime || "");
+        if (ev) {
+          const dt = new Date(ev);
+          if (!isNaN(dt.getTime())) __whenBase = dt.toISOString();
+        }
+      } catch(e) {}
+      const when = __whenBase ? timeAgo(__whenBase) : "";
+      const nidSafe = String(n.id).replace(/'/g, "\'");
+
 
       const card = document.createElement("div");
       card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-gray-200 transition-all duration-200 cursor-pointer group`;
