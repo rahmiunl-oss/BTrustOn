@@ -130,6 +130,9 @@
       }
     }
 
+
+  /* Long text wrap helpers */
+  .bton-wrap-anywhere{ overflow-wrap:anywhere; word-break:break-word; }
 </style>
 <style id="bton-apple-premium-skin">
   :root{
@@ -6006,6 +6009,21 @@ try {
       }
     } else {
       // Store snapshot into company_follows so Following tab doesn't depend on profiles RLS
+
+      // Best-effort: ensure verified tick is accurate (pull from profiles if allowed)
+      if (!snapVerified) {
+        try {
+          const { data: p, error: pe } = await supabaseClient
+            .from("profiles")
+            .select("id, verification_status")
+            .eq("id", cid)
+            .maybeSingle();
+          if (!pe && p && (typeof isCompanyVerified === "function")) {
+            if (isCompanyVerified(p)) snapVerified = true;
+          }
+        } catch(e) {}
+      }
+
       const payload = {
         follower_user_id: __authUserId,
         company_id: cid,
@@ -8297,7 +8315,7 @@ function renderTopCompanies() {
               .map(
                 (s) => `
               <span class="text-[10px] px-2 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600">
-                ${s}
+                ${svcDisplayLabel(s)}
               </span>
             `
               )
@@ -8678,7 +8696,7 @@ function renderAssetsCards(company, isMyProfile){
 
             <div class="mt-4 rounded-xl bg-slate-50/70 border border-slate-200/70 px-3 py-2.5">
               <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("th_specs") || "Specs"}</div>
-              <div class="mt-1 text-[12px] text-slate-700 font-medium leading-snug line-clamp-2">${_safeText(specText)}</div>
+              <div class="mt-1 text-[12px] text-slate-700 font-medium leading-snug whitespace-normal break-words line-clamp-2">${_safeText(specText)}</div>
             </div>
           </div>
 
@@ -10135,7 +10153,7 @@ try {
                 </div>
 
                 <div class="p-5 flex flex-col flex-1">
-                    <p class="text-sm text-gray-600 leading-relaxed line-clamp-4">
+                    <p class="text-sm text-gray-600 leading-relaxed whitespace-normal break-words line-clamp-4">
                         ${p.desc || (t("ui_no_description") || "No description provided.")}
                     </p>
                 </div>
@@ -10950,14 +10968,37 @@ function getServiceSuggestions(query) {
   return out;
 }
 
+function svcHumanizeId(id) {
+  return String(id || "")
+    .replace(/^svc_tag_?/i, "")
+    .replace(/^svc[:\s]*/i, "")
+    .replace(/[_\-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
 function svcDisplayLabel(tag) {
-  const raw = String(tag || "").trim();
-  if (!raw) return "";
-  const canon = svcCanonicalizeTag(raw);
-  const id = svcTokenToId(canon);
-  if (id && SVC_BY_ID.has(id)) {
-    return svcLabelById(id) || raw;
-  }
+  const raw0 = String(tag || "").trim();
+  if (!raw0) return "";
+
+  // Strip common prefixes (svc:, svv:) and whitespace variants
+  const mm = raw0.match(/^(?:svc|svv)\s*:\s*(.+)$/i);
+  const raw = mm ? String(mm[1] || "").trim() : raw0;
+
+  // If token/id is known in library, prefer its translated label (fallback to EN, then fallback label)
+  try {
+    const id = (typeof svcTokenToId === "function") ? (svcTokenToId(raw0) || svcTokenToId(raw) || "") : "";
+    const finalId = id || (typeof SVC_BY_ID !== "undefined" && SVC_BY_ID && SVC_BY_ID.has(raw) ? raw : "");
+    if (finalId && typeof svcLabelById === "function") {
+      const label = svcLabelById(finalId);
+      if (label) return label;
+      if (typeof svcHumanizeId === "function") return svcHumanizeId(finalId);
+      return String(finalId);
+    }
+  } catch (e) {}
+
+  // Last resort: just return without prefix
   return raw;
 }
 
@@ -12046,7 +12087,7 @@ function deleteCert(certId, certName) {
 <button class="w-full rounded-xl overflow-hidden border border-gray-200 bg-slate-50 focus:outline-none" id="pv-cover-btn">
 <img alt="" class="w-full h-[320px] object-cover" id="pv-cover"/>
 </button>
-<div class="text-sm text-gray-600 mt-4 whitespace-pre-wrap" id="pv-desc"></div>
+<div class="text-sm text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere" id="pv-desc"></div>
 <div class="mt-4 flex items-center justify-between">
 <div class="text-[11px] text-gray-400" id="pv-gallery-info"></div>
 <button class="hidden px-4 py-2 rounded-lg bg-BTrustOn-primary text-white text-xs font-bold hover:bg-BTrustOn-accent transition" id="pv-open-gallery" onclick="openProjectViewerGallery()">
@@ -13391,13 +13432,25 @@ function normalizeCompanySnapshot(c) {
   if (!c) return null;
   const id = c.id || c.profile_id || c.company_id;
   if (!id) return null;
+
+  const vs = (c.verification_status || c.verificationStatus || "").toString().trim();
+  const boolTrue = (x) => (x === true || x === 1 || x === "true" || x === "1");
+  const vFlag = (vs.toLowerCase() === "approved" || vs.toLowerCase() === "verified")
+    || boolTrue(c.is_verified) || boolTrue(c.verified) || boolTrue(c.blue_tick);
+
   return {
     id,
     name: c.company_name || c.name || c.company || "—",
     logo_url: c.logo_url || c.company_logo_url || c.logo || null,
     city: c.city || "—",
     country: c.country || "TR",
-    type: (c.company_type || c.business_type || c.type || c.type_label || c.company_type_label || c.business_type_label || null)
+    type: (c.company_type || c.business_type || c.type || c.type_label || c.company_type_label || c.business_type_label || null),
+
+    // Verified snapshot (best-effort)
+    verification_status: vs || null,
+    is_verified: vFlag,
+    verified: vFlag,
+    blue_tick: vFlag
   };
 }
 function indexCompanySnapshot(c) {
@@ -13544,10 +13597,33 @@ async function fetchSavedCompanies() {
     try {
       const ids = Array.from(savedCompanyIds || []);
       if (ids.length) {
-        const { data: profs, error: pErr } = await supabaseClient
-          .from('profiles')
-          .select('id, company_type, verification_status, is_verified, verified, blue_tick')
-          .in('id', ids);
+        let profs = null;
+        let pErr = null;
+
+        try {
+          let r = await supabaseClient
+            .from('profiles')
+            .select('id, company_type, verification_status, is_verified, verified, blue_tick')
+            .in('id', ids);
+
+          // Fallback if boolean columns don't exist (common schema)
+          if (r.error) {
+            const msg = String(r.error?.message || r.error?.details || r.error || "");
+            const low = msg.toLowerCase();
+            if (low.includes("does not exist") || low.includes("column") || low.includes("schema cache") || low.includes("pgrst")) {
+              r = await supabaseClient
+                .from('profiles')
+                .select('id, company_type, verification_status')
+                .in('id', ids);
+            }
+          }
+
+          profs = r.data || null;
+          pErr = r.error || null;
+        } catch(e) {
+          pErr = e;
+          profs = null;
+        }
 
         if (!pErr && Array.isArray(profs)) {
           const metaMap = {};
@@ -13684,11 +13760,37 @@ async function toggleSaveCompany(targetCompanyId) {
       saved_company_type: snap ? snap.type : null
     };
 
-    const { data, error } = await supabaseClient
+    // Add verified snapshot if possible (safe: will retry without these columns if schema doesn't have them)
+    try {
+      const vs = (snap?.verification_status || "").toString().trim();
+      const boolTrue = (x) => (x === true || x === 1 || x === "true" || x === "1");
+      const vFlag = (vs.toLowerCase() === "approved" || vs.toLowerCase() === "verified")
+        || boolTrue(snap?.is_verified) || boolTrue(snap?.verified) || boolTrue(snap?.blue_tick);
+      payload.saved_company_verification_status = vs || null;
+      payload.saved_company_is_verified = !!vFlag;
+    } catch(e) {}
+
+    let ins = await supabaseClient
       .from('saved_companies')
       .insert(payload)
       .select('id')
       .single();
+
+    // Fallback: if new snapshot columns don't exist, retry without them
+    if (ins.error) {
+      const msg = String(ins.error?.message || ins.error?.details || ins.error || "");
+      const low = msg.toLowerCase();
+      if (low.includes("does not exist") || low.includes("column") || low.includes("schema cache") || low.includes("pgrst")) {
+        try { delete payload.saved_company_verification_status; delete payload.saved_company_is_verified; } catch(e) {}
+        ins = await supabaseClient
+          .from('saved_companies')
+          .insert(payload)
+          .select('id')
+          .single();
+      }
+    }
+
+    const { data, error } = ins;
 
     if (error) {
       showToast("Error", "Couldn't save company: " + error.message, "error");
@@ -13835,13 +13937,10 @@ function renderSavedCompanies() {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline"
+                <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline min-w-0 flex items-center gap-1"
                      onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
-                    ${ver ? ('<span class="flex-shrink-0">' + ver + '</span>') : ''}
-                    ${missingBadge ? ('<span class="flex-shrink-0">' + missingBadge + '</span>') : ''}
-                  </div>
+                  <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+                  <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}</span>
                 </div>
                 <div class="text-[10px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
                   <span class="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">${metaType}</span>
@@ -14056,6 +14155,45 @@ async function fetchFollowingCompanies() {
       return { company: c, created_at: r.created_at || null };
     });
 
+
+    // Best-effort enrich from profiles to ensure Verified tick + latest meta are correct
+    // (some follows may have been inserted before snapshot fields were populated)
+    try {
+      const ids = Array.from(followingCompanyIds || []).slice(0, 400);
+      if (ids.length) {
+        const { data: profs, error: pe } = await supabaseClient
+          .from("profiles")
+          .select("id, company_name, logo_url, company_type, city, country, country_code, verification_status")
+          .in("id", ids);
+
+        if (!pe && Array.isArray(profs) && profs.length) {
+          const mp = new Map(profs.map(p => [String(p.id), p]));
+          followingCompaniesData = (followingCompaniesData || []).map(item => {
+            const cid = String(item?.company?.id || "");
+            const p = mp.get(cid);
+            if (!p) return item;
+
+            const c = Object.assign({}, item.company || {});
+
+            // Prefer fresh profile fields (safe fallbacks)
+            if (p.company_name) c.name = p.company_name;
+            if (p.logo_url) c.logo_url = p.logo_url;
+            if (p.company_type) { c.business_type = p.company_type; c.company_type = p.company_type; }
+            if (p.city) c.city = p.city;
+            if (p.country) c.country = p.country;
+            if (p.country_code) c.country_code = p.country_code;
+            if (p.verification_status) c.verification_status = p.verification_status;
+
+            const v = (typeof isCompanyVerified === "function") ? isCompanyVerified(Object.assign({}, c, p)) : !!c.is_verified;
+            c.is_verified = v;
+            c.verified = v;
+
+            return Object.assign({}, item, { company: c });
+          });
+        }
+      }
+    } catch(e) {}
+
     _followingLoadedOnce = true;
     updateSavedBadges();
   } catch (e) {
@@ -14226,12 +14364,10 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-2">
-              <div class="font-extrabold text-sm text-BTrustOn-primary cursor-pointer hover:underline" onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
-                  ${ver ? ('<span class="flex-shrink-0">' + ver + '</span>') : ''}
-                  ${missingBadge ? ('<span class="flex-shrink-0">' + missingBadge + '</span>') : ''}
-                </div>
+              <div class="font-extrabold text-sm cursor-pointer hover:underline min-w-0 flex items-center gap-1"
+                onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
+                <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+                <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}</span>
               </div>
               <button class="text-xs font-black px-3 py-1.5 rounded-full border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition"
                 onclick="toggleCompanyFollow(event, '${c.id}', '${escapeHtml((c.name||'') + '')}')"
@@ -16814,8 +16950,9 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                       </div>
 
                       <div class="min-w-0 flex-1">
-                        <h3 class="text-[15px] font-extrabold text-BTrustOn-primary truncate pr-1 leading-snug tracking-tight">
-                          ${company.name} ${getVerifiedMark(company)}
+                        <h3 class="text-[15px] font-extrabold text-BTrustOn-primary leading-snug tracking-tight min-w-0 flex items-center gap-1">
+                          <span class="truncate min-w-0" title="${escapeHtml(company.name || '')}">${escapeHtml(company.name || '')}</span>
+                          <span class="shrink-0 flex items-center">${getVerifiedMark(company)}</span>
                         </h3>
 
                         <div class="flex flex-wrap items-center gap-2 mt-1">
@@ -16835,29 +16972,41 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
 
                   <div class="flex flex-wrap gap-1.5">
                     ${(services || []).slice(0, 3).map(s => `
-                      <span class="text-[10px] px-2 py-1 rounded-full bg-white/70 border border-slate-200/70 text-slate-700 shadow-sm">${s}</span>
+                      <span class="text-[10px] px-2 py-1 rounded-full bg-white/70 border border-slate-200/70 text-slate-700 shadow-sm">${svcDisplayLabel(s)}</span>
                     `).join("")}
                   </div>
 
-                  <div class="flex flex-wrap items-center gap-2 pt-1">
-                    <button type="button" class="text-[10px] px-2 py-1 rounded-full bg-white/70 backdrop-blur border border-slate-200/70 text-slate-700 inline-flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-white hover:border-BTrustOn-accent/40 hover:shadow-md transition" onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'projects'});">
-<i class="fa-solid fa-diagram-project text-[10px] text-gray-500"></i>
-                      <span class="text-gray-600">${t("card_meta_references") || "References"}</span>
+                  <div class="flex items-center gap-3 pt-1 text-[11px] font-semibold text-slate-600">
+                    <button type="button"
+                      class="inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
+                      title="${t("card_meta_references") || "References"}"
+                      aria-label="${t("card_meta_references") || "References"}"
+                      onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'projects'});">
+                      <span>${t("card_meta_references") || "References"}</span>
                       <span class="font-extrabold text-slate-900">${refCount}</span>
-                    
-</button>
-                    <button type="button" class="text-[10px] px-2 py-1 rounded-full bg-white/70 backdrop-blur border border-slate-200/70 text-slate-700 inline-flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-white hover:border-BTrustOn-accent/40 hover:shadow-md transition" onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'certs'});">
-<i class="fa-solid fa-certificate text-[10px] text-gray-500"></i>
-                      <span class="text-gray-600">${t("card_meta_certificates") || "Certificates"}</span>
+                    </button>
+
+                    <span class="text-slate-300 select-none" aria-hidden="true">•</span>
+
+                    <button type="button"
+                      class="inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
+                      title="${t("card_meta_certificates") || "Certificates"}"
+                      aria-label="${t("card_meta_certificates") || "Certificates"}"
+                      onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'certs'});">
+                      <span>${t("card_meta_certificates") || "Certificates"}</span>
                       <span class="font-extrabold text-slate-900">${certCount}</span>
-                    
-</button>
-                    <button type="button" class="text-[10px] px-2 py-1 rounded-full bg-white/70 backdrop-blur border border-slate-200/70 text-slate-700 inline-flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-white hover:border-BTrustOn-accent/40 hover:shadow-md transition" onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'assets'});">
-<i class="fa-solid fa-boxes-stacked text-[10px] text-gray-500"></i>
-                      <span class="text-gray-600">${t("card_meta_assets") || "Assets"}</span>
+                    </button>
+
+                    <span class="text-slate-300 select-none" aria-hidden="true">•</span>
+
+                    <button type="button"
+                      class="inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
+                      title="${t("card_meta_assets") || "Assets"}"
+                      aria-label="${t("card_meta_assets") || "Assets"}"
+                      onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'assets'});">
+                      <span>${t("card_meta_assets") || "Assets"}</span>
                       <span class="font-extrabold text-slate-900">${assetCount}</span>
-                    
-</button>
+                    </button>
                   </div>
               </div>
 
@@ -19872,8 +20021,8 @@ function sortProjectsUI(mode){
 <div class="p-5">
 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
 <div class="md:col-span-8">
-<div class="text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="lbl_asset_specs">${t("th_specs") || "Specs"}</div>
-<div class="mt-1 text-sm text-gray-700 whitespace-pre-wrap" id="av-spec"></div>
+<div class="text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="lbl_asset_specs">Specs</div>
+<div class="mt-1 text-sm text-gray-700 whitespace-pre-wrap break-words bton-wrap-anywhere" id="av-spec"></div>
 <div class="mt-5 text-xs font-bold text-gray-500 uppercase tracking-wider" data-i18n="ui_document_094535">Document</div>
 <div class="mt-2" id="av-file"></div>
 </div>
