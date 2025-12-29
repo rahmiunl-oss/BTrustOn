@@ -2141,6 +2141,19 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       <span class="text-[11px] font-black text-slate-500">TR</span>
     </button>
 
+<button id="lang-es"
+        type="button"
+        class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold tracking-wide text-gray-600 hover:bg-slate-50 transition"
+        onclick="switchLanguage('es'); closeLangMenu();">
+  <span class="flex items-center gap-2">
+    <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-900/5 text-slate-700">
+      <i class="fa-solid fa-language"></i>
+    </span>
+    <span>Español</span>
+  </span>
+  <span class="text-[11px] font-black text-slate-500">ES</span>
+</button>
+
     <div class="px-3 py-2 text-[11px] text-slate-500" data-i18n="lang_more_soon">More languages soon</div>
   
 </div>
@@ -4894,9 +4907,16 @@ async function partnerLogout() {
 }
 </script>
 <script>
-        const translations = { en: {}, tr: {} };
+        const translations = { en: {}, tr: {}, es: {} };
 
-let currentLang = (() => { try { const v = localStorage.getItem("bton_lang"); return (v === "tr") ? "tr" : "en"; } catch(e) { return "en"; } })();
+let currentLang = (() => {
+  try {
+    const v = String(localStorage.getItem("bton_lang") || "en").toLowerCase();
+    if (v.startsWith("tr")) return "tr";
+    if (v.startsWith("es")) return "es";
+    return "en";
+  } catch(e) { return "en"; }
+})();
 // =======================
 // DEBUG (safe diagnostics)
 // Enable via: ?debug=1  OR localStorage.setItem("bton_debug","1")
@@ -4915,22 +4935,36 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // =======================
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
+const I18N_VERSION = "updated35";
+
+// Add languages here and drop the corresponding file into /i18n/<lang>.json
 const I18N_ENDPOINTS = {
-  en: "i18n/en.json?v=updated35",
-  tr: "i18n/tr.json?v=updated35",
+  en: `i18n/en.json?v=${I18N_VERSION}`,
+  tr: `i18n/tr.json?v=${I18N_VERSION}`,
+  es: `i18n/es.json?v=${I18N_VERSION}`,
 };
 
-const __i18nLoad = { en: null, tr: null };
+const __i18nLoad = { en: null, tr: null, es: null };
+
+function __normalizeLangForI18n(lang) {
+  const s = String(lang || "en").toLowerCase();
+  if (s.startsWith("tr")) return "tr";
+  if (s.startsWith("es")) return "es";
+  if (s.startsWith("en")) return "en";
+  // allow future 2-letter codes if you add a JSON + a menu item
+  return s.length ? s.split("-")[0] : "en";
+}
 
 function loadI18n(lang) {
-  const L = (lang === "tr") ? "tr" : "en";
+  const L = __normalizeLangForI18n(lang);
+  const endpoint = I18N_ENDPOINTS[L] || `i18n/${L}.json?v=${I18N_VERSION}`;
   if (translations[L] && Object.keys(translations[L]).length) return Promise.resolve(translations[L]);
   if (__i18nLoad[L]) return __i18nLoad[L];
 
     const __i18nCtrl = new AbortController();
   const __i18nTmr = setTimeout(() => { try { __i18nCtrl.abort(); } catch(e){} }, 6000);
 
-  __i18nLoad[L] = fetch(I18N_ENDPOINTS[L], { cache: "no-store", signal: __i18nCtrl.signal })
+  __i18nLoad[L] = fetch(endpoint, { cache: "no-store", signal: __i18nCtrl.signal })
     .finally(() => { try { clearTimeout(__i18nTmr); } catch(e){} })
     .then((r) => (r.ok ? r.json() : {}))
     .then((json) => {
@@ -4946,12 +4980,13 @@ function loadI18n(lang) {
 async function bootI18n() {
   let saved = "en";
   try { saved = localStorage.getItem("bton_lang") || "en"; } catch(e) {}
-  saved = (saved === "tr") ? "tr" : "en";
+  saved = __normalizeLangForI18n(saved) || "en";
 
-  // 2 dil olduğu için preload yapıyoruz (flicker yok)
-  await Promise.all([loadI18n("en"), loadI18n("tr")]);
+  // Preload EN + the chosen language (prevents "blank" UI on non-EN)
+  try { await loadI18n("en"); } catch(e) {}
+  if (saved !== "en") { try { await loadI18n(saved); } catch(e) {} }
 
-  // switchLanguage zaten applyTranslations + UI refresh yapıyor
+  // switchLanguage already applies i18n + refreshes dynamic UI
   if (typeof switchLanguage === "function") switchLanguage(saved);
 }
     let currentSector = "all";
@@ -7709,125 +7744,48 @@ function populateCountrySelects() {
     // UI value translations (dynamic enums)
     // =======================
     function translateCompanyType(typeRaw) {
-      const v = (typeRaw || "").trim();
-      if (!v) return "";
-      if (__normLangCode(currentLang) === "tr") {
-        const key = v.toLowerCase();
-        const map = {
-          "operator": "Operatör / Varlık Sahibi",
-          "operator / asset owner": "Operatör / Varlık Sahibi",
-          "asset owner": "Varlık Sahibi",
-          "epc contractor": "Yüklenici",
-          "epc / general contractor": "Yüklenici",
-          "general contractor": "Yüklenici",
-          "subcontractor": "Alt Yüklenici",
-          "subcontractor / specialist": "Alt Yüklenici",
-          "manufacturer": "Üretici",
-          "manufacturer / oem": "Üretici",
-          "oem": "Üretici",
-          "distributor": "Distribütör",
-          "distributor / supplier": "Distribütör",
-          "supplier": "Tedarikçi",
-          "industrial supplier": "Endüstriyel Tedarikçi",
-          "service provider": "Hizmet Sağlayıcı",
-          "consultant": "Danışman",
-          "engineering": "Mühendislik",
-          "tech": "Teknoloji & Yazılım",
-          "tech & software": "Teknoloji & Yazılım",
-          "technology": "Teknoloji & Yazılım",
-          "software": "Yazılım"
-        };
-        return map[key] || map[v] || v;
-      }
-      return v;
-    }
+  const v = (typeRaw || "").toString().trim();
+  if (!v) return "";
 
-    
-    function translateCountryName(countryRaw, countryCodeRaw="") {
-      const lang = __normLangCode(currentLang);
-      const v = (countryRaw || "").trim();
-      const code = (countryCodeRaw || "").trim().toUpperCase();
-      if (!v && !code) return "";
-      const desiredLocale = (lang === "tr") ? "tr-TR" : "en-US";
+  const s = v.toLowerCase();
 
-      // Prefer ISO-2 code if available
-      if (code && code.length === 2 && typeof Intl !== "undefined" && Intl.DisplayNames) {
-        try {
-          const dn = new Intl.DisplayNames([desiredLocale], { type: "region" });
-          const n = dn.of(code);
-          if (n) return n;
-        } catch (e) {}
-      }
+  // Normalize many possible stored/display labels to a stable i18n key
+  let k = "";
+  if (s.includes("operator") || s.includes("asset owner") || s === "operator") k = "join_type_operator";
+  else if (s.includes("epc") || s.includes("general contractor") || s.includes("contractor")) k = "join_type_contractor";
+  else if (s.includes("subcontractor") || s.includes("specialist") || s.includes("sub-contractor")) k = "join_type_subcontractor";
+  else if (s.includes("manufacturer") || s.includes("oem") || s.includes("fabrication") || s.includes("fabricator")) k = "join_type_manufacturer";
+  else if (s.includes("distributor") || s.includes("supplier") || s.includes("distribütör") || s.includes("tedarik")) k = "join_type_distributor";
+  else if (s.includes("engineering") || s.includes("consult") || s.includes("consultancy") || s.includes("danışman")) k = "join_type_engineering_consultancy";
+  else if (s.includes("tech") || s.includes("software") || s.includes("technology") || s.includes("yazılım")) k = "join_type_technology_software";
+  else if (s.includes("service provider")) k = "join_type_service_provider";
+  else if (s.includes("consultant")) k = "join_type_consultant";
 
-      if (lang === "tr") {
-        const key = v.toLowerCase();
-        const map = {
-          "turkey": "Türkiye",
-          "türkiye": "Türkiye",
-          "turkiye": "Türkiye",
-          "united states": "ABD",
-          "united states of america": "ABD",
-          "usa": "ABD",
-          "germany": "Almanya",
-          "united kingdom": "Birleşik Krallık",
-          "uk": "Birleşik Krallık",
-          "saudi arabia": "Suudi Arabistan",
-          "united arab emirates": "Birleşik Arap Emirlikleri",
-          "uae": "Birleşik Arap Emirlikleri",
-          "russia": "Rusya",
-          "china": "Çin",
-          "france": "Fransa",
-          "italy": "İtalya",
-          "spain": "İspanya",
-          "netherlands": "Hollanda",
-          "switzerland": "İsviçre",
-          "austria": "Avusturya",
-          "belgium": "Belçika",
-          "sweden": "İsveç",
-          "norway": "Norveç",
-          "finland": "Finlandiya",
-          "denmark": "Danimarka",
-          "japan": "Japonya",
-          "south korea": "Güney Kore",
-          "korea, republic of": "Güney Kore",
-          "india": "Hindistan",
-          "brazil": "Brezilya",
-          "israel": "İsrail",
-          "qatar": "Katar",
-          "kuwait": "Kuveyt",
-          "oman": "Umman",
-          "egypt": "Mısır",
-          "iran": "İran",
-          "iraq": "Irak",
-          "syria": "Suriye",
-          "azerbaijan": "Azerbaycan",
-          "georgia": "Gürcistan",
-          "greece": "Yunanistan",
-          "bulgaria": "Bulgaristan",
-          "romania": "Romanya",
-          "serbia": "Sırbistan",
-          "croatia": "Hırvatistan",
-          "hungary": "Macaristan",
-          "poland": "Polonya",
-          "ukraine": "Ukrayna",
-          "kazakhstan": "Kazakistan",
-          "uzbekistan": "Özbekistan",
-          "kyrgyzstan": "Kırgızistan",
-          "turkmenistan": "Türkmenistan",
-          "mongolia": "Moğolistan",
-          "canada": "Kanada",
-          "australia": "Avustralya",
-          "new zealand": "Yeni Zelanda",
-          "south africa": "Güney Afrika",
-          "nigeria": "Nijerya",
-          "morocco": "Fas",
-          "algeria": "Cezayir",
-          "tunisia": "Tunus"
-        };
-        return map[key] || v;
-      }
-      return v || code;
-    }
+  const label = k ? t(k) : "";
+  return label || v;
+}
+
+function translateCountryName(countryRaw, countryCodeRaw="") {
+  const code = String(countryCodeRaw || "").trim().toUpperCase();
+
+  // If we have ISO-2, localize via Intl.DisplayNames
+  if (code && code.length === 2 && typeof Intl !== "undefined" && Intl.DisplayNames) {
+    try {
+      const lang = __normLangCode(typeof currentLang !== "undefined" ? currentLang : "en");
+      const locale = (lang === "tr") ? "tr-TR" : (lang === "es" ? "es-ES" : "en-US");
+      const dn = new Intl.DisplayNames([locale], { type: "region" });
+      const n = dn.of(code);
+      if (n) return n;
+    } catch(e) {}
+  }
+
+  // Otherwise infer ISO from the name and localize
+  if (typeof localizeCountryName === "function") return localizeCountryName(countryRaw);
+
+  return (countryRaw || "").toString().trim() || code;
+}
+
+
 
 function translateCompanySize(sizeRaw) {
       const v = (sizeRaw || "").trim();
@@ -8023,28 +7981,22 @@ function getCompanyTypeBadge(rawType) {
     }
 
     function sectorToTr(sector) {
-      if (currentLang === "en") {
-        // İngilizce modda baş harfi büyütüp döndürür
-        if (sector === "manufacturing") return "Manufacturing";
-        if (sector === "technology") return "Technology";
-        if (sector === "logistics") return "Logistics";
-        return sector.charAt(0).toUpperCase() + sector.slice(1);
-      }
-      
-      // Türkçe mod için karşılıklar
-      if (sector === "construction") return "İnşaat";
-      if (sector === "mining") return "Maden";
-      if (sector === "energy") return "Enerji";
-      if (sector === "drilling") return "Sondaj";
-      if (sector === "equipment") return "Ekipman";
-      if (sector === "manufacturing") return "Üretim & Sanayi";
-      if (sector === "technology") return "Teknoloji";
-      if (sector === "logistics") return "Lojistik";
-      
-      return sector;
-    }
+  const raw = String(sector || "").trim();
+  if (!raw) return "";
+  const k = raw.toLowerCase();
 
-    function applyTranslations() {
+  // Prefer i18n keys (so ES and future languages work automatically)
+  const lbl =
+    t("sector_short_" + k) ||
+    t("join_sector_" + k) ||
+    t("sec_" + k) ||
+    t("sector_" + k);
+
+  if (lbl) return lbl;
+  return k.charAt(0).toUpperCase() + k.slice(1);
+}
+
+function applyTranslations() {
       // Text / HTML
       document.querySelectorAll("[data-i18n]").forEach((el) => {
         if (el.hasAttribute("data-i18n-skip")) return;
@@ -9646,27 +9598,15 @@ if (cityEl) {
 }
 
   
-  // Sektör (Dil Desteği)
-  if (sectorEl) {
-      if (__normLangCode(currentLang) === 'tr') {
-          const sectorMap = {
-              "construction": "İnşaat ve Altyapı",
-              "mining": "Madencilik ve Metal",
-              "energy": "Enerji ve Petrol/Gaz",
-              "manufacturing": "Üretim ve Makine",
-              "technology": "Teknoloji ve Otomasyon",
-              "logistics": "Lojistik ve Ticaret",
-              "engineering": "Mühendislik ve Hizmetler"
-          };
-          const __sraw = String(company.sector || "");
-          const __skey = __sraw.toLowerCase();
-          sectorEl.textContent = sectorMap[__skey] || (__sraw ? (__sraw.charAt(0).toUpperCase() + __sraw.slice(1)) : "");
-      } else {
-          sectorEl.textContent = company.sector.charAt(0).toUpperCase() + company.sector.slice(1);
-      }
-  }
-  
-  if (pType) pType.textContent = translateCompanyType(company.type_label || company.type || "Industrial Supplier");
+  // Sector (i18n)
+if (sectorEl) {
+    const __sraw = String(company.sector || "");
+    const __skey = __sraw.trim().toLowerCase();
+    const __lbl = (__skey ? (t("join_sector_" + __skey) || "") : "");
+    sectorEl.textContent = __lbl || (__sraw ? (__sraw.charAt(0).toUpperCase() + __sraw.slice(1)) : "");
+}
+
+if (pType) pType.textContent = translateCompanyType(company.type_label || company.type || "Industrial Supplier");
   if (pSize) pSize.textContent = translateCompanySize(company.size_label || "");
   if (pYear) pYear.textContent = formatFoundedYear(company.year_label);
   
@@ -11514,7 +11454,7 @@ document.addEventListener("DOMContentLoaded", initLangMenuOnce);
 
 async function switchLanguage(lang) {
   // 1) Persist language
-  currentLang = (lang === "tr") ? "tr" : "en";
+  currentLang = __normalizeLangForI18n(lang) || "en";
   try { localStorage.setItem("bton_lang", currentLang); } catch(e) {}
 
   // 2) Ensure translations are loaded (only if missing)
@@ -11576,22 +11516,27 @@ async function switchLanguage(lang) {
   try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 80); } catch(e) {}
   try { setTimeout(() => { try { applyTranslations(); } catch(_) {} }, 320); } catch(e) {}
 
-  // Update lang switcher UI states
-  const btnEn = document.getElementById("lang-en");
-  const btnTr = document.getElementById("lang-tr");
-  if (btnEn && btnTr) {
-    if (currentLang === "en") {
-      btnEn.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
-      btnEn.classList.remove("text-gray-500");
-      btnTr.classList.remove("bg-white", "text-BTrustOn-primary", "shadow-sm");
-      btnTr.classList.add("text-gray-500");
-    } else {
-      btnTr.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
-      btnTr.classList.remove("text-gray-500");
-      btnEn.classList.remove("bg-white", "text-BTrustOn-primary", "shadow-sm");
-      btnEn.classList.add("text-gray-500");
-    }
-  }
+  
+// Update lang switcher UI states
+const btnEn = document.getElementById("lang-en");
+const btnTr = document.getElementById("lang-tr");
+const btnEs = document.getElementById("lang-es");
+const btns = [btnEn, btnTr, btnEs].filter(Boolean);
+
+btns.forEach((b) => {
+  b.classList.remove("bg-white", "text-BTrustOn-primary", "shadow-sm");
+  b.classList.add("text-gray-500");
+});
+
+const activeBtn =
+  (currentLang === "tr") ? btnTr :
+  (currentLang === "es") ? btnEs :
+  btnEn;
+
+if (activeBtn) {
+  activeBtn.classList.add("bg-white", "text-BTrustOn-primary", "shadow-sm");
+  activeBtn.classList.remove("text-gray-500");
+}
 
   // Refresh country dropdown labels (localized)
   try { if (typeof populateCountryFilter === "function") populateCountryFilter(); } catch(e) {}
