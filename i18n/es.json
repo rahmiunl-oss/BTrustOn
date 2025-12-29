@@ -1142,5 +1142,14 @@
   "updates_signal_completed": "Completado",
   "updates_signal_attention": "Atención",
   "toast_select_update_type": "Por favor, selecciona un tipo de actualización.",
-  "toast_select_item": "Por favor, selecciona un elemento."
+  "toast_select_item": "Por favor, selecciona un elemento.",
+  "toast_success_title": "Éxito",
+  "toast_profile_updated_success": "¡Perfil actualizado correctamente!",
+  "confirm_title": "Confirmar",
+  "confirm_cancel": "Cancelar",
+  "confirm_remove": "Eliminar",
+  "confirm_remove_logo_msg": "¿Eliminar el logotipo de la empresa?",
+  "ui_remove_logo": "Eliminar logotipo",
+  "toast_publish_failed": "No se pudo publicar.",
+  "toast_published": "Publicado."
 }
