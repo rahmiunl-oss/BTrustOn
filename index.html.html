@@ -13486,7 +13486,7 @@ function normalizeCompanySnapshot(c) {
     logo_url: c.logo_url || c.company_logo_url || c.logo || null,
     city: c.city || "—",
     country: c.country || "TR",
-    type: c.business_type || c.company_type || c.type || null
+    type: (c.company_type || c.business_type || c.type || c.type_label || c.company_type_label || c.business_type_label || null)
   };
 }
 function indexCompanySnapshot(c) {
@@ -14287,7 +14287,7 @@ const logo = logoUrl
   ? `<img src="${logoUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-gray-200 bg-white" referrerpolicy="no-referrer" />`
   : `<div class="w-10 h-10 rounded-xl bg-cyan-50 border border-gray-200 grid place-items-center font-bold text-[12px] text-cyan-900">${initials}</div>`;
 
-const metaTypeRaw = (c.business_type || c.company_type || c.type || "").trim() || (rc.business_type || "").trim();
+const metaTypeRaw = (c.business_type || c.company_type || c.type || c.type_label || "").toString().trim() || (rc.business_type || rc.company_type || rc.type || rc.type_label || "").toString().trim();
 const metaType = (metaTypeRaw && metaTypeRaw.toLowerCase() !== "company") ? translateCompanyType(metaTypeRaw) : "—";
 
 const metaCity = (c.city || "").trim() || (rc.city || "").trim();
@@ -16856,7 +16856,8 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
             const services = currentLang === "tr" && company.services_tr ? company.services_tr : company.services;
             
             // Veritabanındaki "type" veya "type_label" alanını kullanıyoruz
-            const compType = (company.type_label || company.type || "—");
+            const compTypeKey = String(company.company_type || company.business_type || company.type || "").trim();
+const compType = (company.type_label || (compTypeKey ? translateCompanyType(compTypeKey) : "—") || "—");
 
             const refCount = (company.projects || []).length;
             const certCount = (company.certificates || []).length;
@@ -16875,7 +16876,7 @@ if (company.email === ADMIN_EMAIL || company.contact_email === ADMIN_EMAIL) {
 
 const safeCompanyNameAttr2 = String(company.name || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const safeCompanyLogoAttr2 = String(company.logo_url || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const safeCompanyTypeAttr2 = String(compType || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const safeCompanyTypeAttr2 = String(compTypeKey || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const safeCompanyCityAttr2 = String(company.city || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const safeCompanyCountryAttr2 = String(company.country || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || company.verification_status === "verified" || company.is_verified || company.verified) ? "1" : "0";
