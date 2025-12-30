@@ -1945,9 +1945,19 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="flex-1 overflow-y-auto p-4 space-y-3">
-<div class="hidden text-sm text-gray-500 bg-white/70 border border-gray-200 rounded-2xl p-4" data-i18n="ui_no_saved_companies_yet_use_the_b_bc1588" id="saved-empty">
-      No saved companies yet. Use the bookmark icon on company cards to save.
+<div class="hidden" id="saved-empty">
+  <div class="bton-empty-card">
+    <div class="bton-empty-ic"><i class="fa-regular fa-bookmark"></i></div>
+    <div class="min-w-0">
+      <div class="bton-empty-title" data-i18n="empty_saved_title">No saved companies yet</div>
+      <div class="bton-empty-desc" data-i18n="ui_no_saved_companies_yet_use_the_b_bc1588">No saved companies yet. Use the bookmark icon on company cards to save.</div>
+      <button class="bton-empty-action" type="button" onclick="try{ toggleSavedPanel(); }catch(e){} try{ document.getElementById('search-input')?.focus(); }catch(e){}">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span data-i18n="empty_browse_companies_btn">Browse companies</span>
+      </button>
     </div>
+  </div>
+</div>
 <div class="space-y-3" id="saved-list"></div>
 <div class="hidden text-sm text-gray-500 bg-white/70 border border-gray-200 rounded-2xl p-4" id="following-empty"><span data-i18n="ui_no_followed_companies_yet_use_th_bfe54b">No followed companies yet. Use the Follow</span><span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-900/5 border border-slate-900/10 align-middle mx-0.5"><i class="fa-solid fa-tower-broadcast text-[11px] text-slate-600"></i></span><span data-i18n="ui_icon_on_company_cards_or_profile_808d3c">icon on company cards or profiles.</span></div>
 <div class="hidden space-y-3" id="following-list"></div>
@@ -2359,8 +2369,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     <i class="fa-solid fa-chevron-right text-xs"></i>
   </button>
   <div class="flex items-start gap-4 overflow-x-auto no-scrollbar pb-2 pr-2 scroll-smooth snap-x snap-proximity bton-updates-rail" id="home-updates"></div>
-<div class="hidden p-5 text-center text-gray-400 text-xs italic bg-white/50 rounded-xl border border-dashed border-gray-200" id="home-updates-empty">
-<span data-i18n="updates_empty">No updates posted in the last 7 days.</span>
+<div class="hidden" id="home-updates-empty">
+  <div class="bton-empty-card bton-empty-card--soft">
+    <div class="bton-empty-ic"><i class="fa-regular fa-newspaper"></i></div>
+    <div class="min-w-0">
+      <div class="bton-empty-title" data-i18n="updates_empty_title">No fresh updates</div>
+      <div class="bton-empty-desc"><span data-i18n="updates_empty">No updates posted in the last 7 days.</span></div>
+    </div>
+  </div>
 </div>
 <div class="hidden mt-3 text-[10px] text-gray-400 flex items-center justify-between gap-2 bg-cyan-50/60 border border-cyan-100 rounded-xl px-3 py-2" id="home-updates-prohint">
 <div class="flex items-center gap-2 min-w-0">
@@ -3274,6 +3290,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="min-w-0">
 <div class="text-[13px] font-extrabold text-slate-800" data-i18n="ui_no_assets_found_73e934">No assets found</div>
 <div class="mt-1 text-[11px] text-slate-500" data-i18n="ui_this_company_hasn_t_listed_any_a_410cda">This company hasn’t listed any assets yet.</div>
+<button class="bton-empty-action hidden" id="p-assets-empty-cta" type="button" onclick="openAssetModal()">
+  <i class="fa-solid fa-plus"></i>
+  <span data-i18n="empty_add_asset_btn">Add asset</span>
+</button>
 </div>
 </div>
 </div>
@@ -4728,6 +4748,143 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     margin-left: 6px !important;
   }
 }
+
+/* === BTrustOn Premium UX (Empty states + Tooltips + Active signal) === */
+.bton-tip{ position:relative; display:inline-flex; align-items:center; }
+.bton-tip[data-tip]::after{
+  content: attr(data-tip);
+  position:absolute;
+  left:50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  background: rgba(15,23,42,.95);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  box-shadow: 0 18px 40px -22px rgba(15,23,42,.75);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 99999;
+}
+.bton-tip[data-tip]::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(15,23,42,.95);
+  opacity: 0;
+  transition: opacity .12s ease;
+  z-index: 99999;
+}
+
+/* Use a floating tooltip (not clipped by card overflow) */
+.bton-tip[data-tip]::after,
+.bton-tip[data-tip]::before{
+  display: none !important;
+}
+
+#bton-floating-tooltip{
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: none;
+  max-width: 320px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(15,23,42,.95);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.3;
+  box-shadow: 0 18px 40px -22px rgba(15,23,42,.75);
+  z-index: 2147483647;
+  pointer-events: none;
+  white-space: normal;
+}
+#bton-floating-tooltip[data-show="1"]{
+  display: block;
+}
+
+.bton-tip:hover::after{ opacity:1; transform: translateX(-50%) translateY(-2px); }
+.bton-tip:hover::before{ opacity:1; }
+
+.bton-empty-card{
+  display:flex;
+  gap: 14px;
+  align-items:flex-start;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px dashed rgba(15,23,42,.14);
+  background: rgba(255,255,255,.72);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 44px -30px rgba(15,23,42,.45);
+}
+.bton-empty-card--soft{ border-style: solid; border-color: rgba(15,23,42,.08); background: rgba(255,255,255,.62); }
+.bton-empty-ic{
+  width: 42px; height: 42px;
+  border-radius: 16px;
+  display:grid; place-items:center;
+  background: rgba(15,23,42,.04);
+  border: 1px solid rgba(15,23,42,.08);
+  color: rgba(15,23,42,.70);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+  flex: 0 0 auto;
+}
+.bton-empty-title{ font-size: 13px; font-weight: 900; color: rgba(15,23,42,.92); letter-spacing: .01em; }
+.bton-empty-desc{ margin-top: 4px; font-size: 12px; font-weight: 600; color: rgba(15,23,42,.55); line-height: 1.35; }
+.bton-empty-action{
+  margin-top: 10px;
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.78);
+  color: rgba(15,23,42,.80);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.bton-empty-action:hover{
+  background: rgba(255,255,255,.95);
+  border-color: rgba(15,23,42,.18);
+  box-shadow: 0 14px 30px -24px rgba(15,23,42,.55);
+  transform: translateY(-1px);
+}
+
+.bton-active-pill{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(6,182,212,.25);
+  background: rgba(6,182,212,.06);
+  color: rgba(8,145,178,.95);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.bton-active-dot{
+  width: 7px; height: 7px;
+  border-radius: 999px;
+  background: rgba(6,182,212,.95);
+  box-shadow: 0 0 0 3px rgba(6,182,212,.10);
+}
+
 </style>
 <div class="modal opacity-0 pointer-events-none fixed inset-0 z-[120000] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
 <button class="absolute top-5 right-5 text-white/70 hover:text-white text-3xl z-50" onclick="closeGallery()">
@@ -5712,7 +5869,7 @@ function renderHomeUpdates(list) {
               <div class="min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
                   <div class="text-sm font-extrabold text-BTrustOn-primary truncate">${companyName}</div>
-                  ${verified ? `<i class="fa-solid fa-circle-check text-cyan-500 text-sm" title="Verified"></i>` : ``}
+                  ${verified ? `<span class="bton-tip" data-tip="${escapeHtml(_verifiedTipText())}"><i class="fa-solid fa-circle-check text-cyan-500 text-sm"></i></span>` : ``}
                 </div>
 
                 <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
@@ -7984,20 +8141,121 @@ function isCompanyVerified(company){
   }
 }
 
+/* === Premium helpers: Verified tooltip + Active recently signal === */
+function _verifiedTipText(){
+  try {
+    const v = (typeof t === "function") ? (t("tip_verified_by_btruston") || "") : "";
+    if (v) return v;
+  } catch(e) {}
+  if (currentLang === "tr") return "BTrustOn tarafından doğrulandı";
+  if (currentLang === "es") return "Verificado por BTrustOn";
+  return "Verified by BTrustOn";
+}
+
+function _getLastActiveDate(company){
+  try {
+    const c = company || {};
+    const raw =
+      c.last_active_at || c.last_seen_at || c.last_login_at || c.last_sign_in_at ||
+      c.lastActiveAt || c.lastSeenAt || c.lastLoginAt ||
+      c.updated_at || c.updatedAt || c.profile_updated_at || c.profileUpdatedAt ||
+      null;
+    if (!raw) return null;
+    const d = new Date(raw);
+    if (!Number.isFinite(d.getTime())) return null;
+    return d;
+  } catch(e) {
+    return null;
+  }
+}
+
+function getActiveRecentlyMark(company, opts){
+  try {
+    const o = opts || {};
+    const d = _getLastActiveDate(company);
+    if (!d) return "";
+    const ageMs = Date.now() - d.getTime();
+    const hasRealLastActive = !!((company||{}).last_active_at || (company||{}).last_seen_at || (company||{}).last_login_at || (company||{}).last_sign_in_at || (company||{}).lastActiveAt || (company||{}).lastSeenAt || (company||{}).lastLoginAt);
+    const defaultDays = hasRealLastActive ? 7 : 30;
+    const windowMs = (o.windowDays ? Number(o.windowDays) : defaultDays) * 24*60*60*1000;
+    if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs > windowMs) return "";
+
+    const label = (typeof t === "function" && t("pill_active")) || (currentLang === "tr" ? "Aktif" : (currentLang === "es" ? "Activo" : "Active"));
+    const tipPrefix = (typeof t === "function" && t("tip_last_active")) || (currentLang === "tr" ? "Son aktif: " : (currentLang === "es" ? "Última actividad: " : "Last active: "));
+    const tip = tipPrefix + (typeof timeAgo === "function" ? timeAgo(d.toISOString()) : d.toISOString());
+    const tipEsc = (typeof escapeHtml === "function") ? escapeHtml(tip) : tip;
+
+    // Smaller option
+    const extra = o.compact ? "px-2 py-1 text-[9px]" : "";
+    return `<span class="bton-active-pill bton-tip ${extra}" data-tip="${tipEsc}"><span class="bton-active-dot"></span>${label}</span>`;
+  } catch(e) {
+    return "";
+  }
+}
+
+/* Best-effort: touch last_active_at on login (safe even if column doesn't exist) */
+async function touchLastActive(session){
+  try {
+    const nowIso = new Date().toISOString();
+    const throttleKey = "bton_last_active_touch_at";
+    const last = Number(localStorage.getItem(throttleKey) || "0");
+    if (Number.isFinite(last) && (Date.now() - last) < 15*60*1000) return; // 15 min
+
+    const uid = session?.user?.id || session?.user_id || null;
+    if (!uid) return;
+
+    const stored = (typeof getMyCompanyId === "function") ? getMyCompanyId() : null;
+    const myId = (stored && typeof isUuid === "function" && isUuid(stored)) ? stored : uid;
+
+    try { localStorage.setItem(throttleKey, String(Date.now())); } catch(e) {}
+
+    // Attempt update (ignore errors)
+    const res = await supabaseClient
+      .from("profiles")
+      .update({ last_active_at: nowIso })
+      .eq("id", myId);
+
+    if (res?.error) {
+      const msg = String(res.error?.message || "");
+      // Ignore "column does not exist" etc.
+      if (!/does not exist|column|schema cache|pgrst/i.test(msg)) {
+        console.warn("touchLastActive error:", msg);
+      }
+      return;
+    }
+
+    // Update caches (best-effort)
+    try {
+      if (selectedCompany && String(selectedCompany.id) === String(myId)) {
+        selectedCompany.last_active_at = nowIso;
+      }
+    } catch(e) {}
+    try {
+      if (typeof companiesData !== "undefined" && Array.isArray(companiesData)) {
+        const idx = companiesData.findIndex(x => x && String(x.id) === String(myId));
+        if (idx > -1) companiesData[idx] = { ...companiesData[idx], last_active_at: nowIso };
+      }
+    } catch(e) {}
+  } catch(e) {}
+}
+
 function getTrustBadge(company) {
   if (!isCompanyVerified(company)) return "";
+  const tip = (typeof escapeHtml === "function") ? escapeHtml(_verifiedTipText()) : _verifiedTipText();
   return `
-    <span class="bg-cyan-50 text-cyan-800 border border-cyan-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm" title="Verified company">
+    <span class="bg-cyan-50 text-cyan-800 border border-cyan-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm bton-tip" data-tip="${tip}">
       <i class="fa-solid fa-circle-check text-cyan-600"></i>
       <span>${t("badge_verified") || "VERIFIED"}</span>
     </span>
   `;
 }
 
+
 /* --- LIVE SHOWCASE CARD HELPERS --- */
 function getVerifiedMark(company){
   if (!isCompanyVerified(company)) return "";
-  return `<i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle" title="Verified company"></i>`;
+  const tip = (typeof escapeHtml === "function") ? escapeHtml(_verifiedTipText()) : _verifiedTipText();
+  return `<span class="bton-tip" data-tip="${tip}"><i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle bton-verified-icon"></i></span>`;
 }
 
 function getCompanyLogoThumb(company){
@@ -8397,12 +8655,22 @@ function renderTopCompanies() {
 
       if (filtered.length === 0) {
         const empty = document.createElement("div");
-        empty.className =
-          "col-span-full text-center text-sm text-gray-500";
-        empty.textContent =
-          currentLang === "tr"
-            ? "Kriterlere uygun firma bulunamadı."
-            : "No companies match the selected filters.";
+        empty.className = "col-span-full";
+        const title = (currentLang === "tr")
+          ? "Sonuç bulunamadı"
+          : (currentLang === "es" ? "No hay resultados" : "No results");
+        const desc = (currentLang === "tr")
+          ? "Filtreleri genişletmeyi veya aramayı değiştirmeyi deneyin."
+          : (currentLang === "es" ? "Prueba ampliar los filtros o cambiar la búsqueda." : "Try widening your filters or changing your search.");
+        empty.innerHTML = `
+          <div class="bton-empty-card bton-empty-card--soft mx-auto max-w-[620px]">
+            <div class="bton-empty-ic"><i class="fa-solid fa-filter"></i></div>
+            <div class="min-w-0">
+              <div class="bton-empty-title">${title}</div>
+              <div class="bton-empty-desc">${desc}</div>
+            </div>
+          </div>
+        `;
         container.appendChild(empty);
         return;
       }
@@ -8430,9 +8698,10 @@ function renderTopCompanies() {
               <h3 class="text-sm font-bold text-BTrustOn-primary mb-0.5 line-clamp-1">
                 ${company.name}
               </h3>
-              <p class="text-[11px] text-gray-400 mb-1 line-clamp-1">
-                ${company.city}
-              </p>
+              <div class="flex items-center gap-2 text-[11px] text-gray-400 mb-1 min-w-0">
+                <span class="truncate">${company.city}</span>
+                ${getActiveRecentlyMark(company, { compact: true })}
+              </div>
             </div>
             <div class="flex items-center gap-2 justify-end">
               ${getTrustBadge(company)}
@@ -8887,9 +9156,14 @@ function renderAssetsCards(company, isMyProfile){
 
   if (!arr.length){
     if (empty) empty.classList.remove("hidden");
+    try {
+      const cta = document.getElementById("p-assets-empty-cta");
+      if (cta) cta.classList.toggle("hidden", !isMyProfile);
+    } catch(e) {}
     return;
   } else {
     if (empty) empty.classList.add("hidden");
+    try { const cta = document.getElementById("p-assets-empty-cta"); if (cta) cta.classList.add("hidden"); } catch(e) {}
   }
 
   arr.forEach(a => {
@@ -13178,6 +13452,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     
     // ✅ Keep auth id + follow UI in sync
     try { __authUserId = session?.user?.id || null; } catch(e) { try { __authUserId = null; } catch(_) {} }
+    try { if (typeof touchLastActive === 'function') touchLastActive(session); } catch(e) {}
     try { if (__authUserId) _ensureHomeFollowSet(__authUserId); } catch(e) {}
     try { updateFollowButtonsUI(); } catch(e) {}
 // 1. Önce Admin mi diye bak (Bunu ekleyin)
@@ -14382,6 +14657,10 @@ function renderSavedCompanies() {
     const metaTypeRaw = (c.business_type || c.company_type || c.type || (rc.business_type || rc.company_type || rc.type || ""));
     const metaType = (metaTypeRaw && String(metaTypeRaw).trim().toLowerCase() !== "company") ? translateCompanyType(metaTypeRaw) : "—";
 
+    const activeHtml = (typeof getActiveRecentlyMark === 'function') ? getActiveRecentlyMark(Object.assign({}, rc, c), { compact: true }) : '';
+    const activeChunk = activeHtml ? `<span class="text-gray-300">•</span>${activeHtml}` : "";
+
+
     return `
       <div class="saved-item rounded-2xl p-3 bg-white border border-gray-200 shadow-sm">
         <div class="flex items-start gap-3">
@@ -14394,13 +14673,13 @@ function renderSavedCompanies() {
                 <div class="font-bold text-sm text-BTrustOn-primary cursor-pointer hover:underline min-w-0 flex items-center gap-1"
                      onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
                   <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
-                  <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}</span>
+                  <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}${activeHtml ? `<span class=\"ml-1\">${activeHtml}</span>` : ""}</span>
                 </div>
                 <div class="text-[10px] text-gray-500 mt-1 flex flex-wrap items-center gap-2">
                   <span class="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">${metaType}</span>
                   <span class="text-gray-400">•</span>
                   <span class="truncate">${metaCity}, ${metaCountry}</span>
-                </div>
+                                  </div>
               </div>
 
               <button
@@ -14615,10 +14894,33 @@ async function fetchFollowingCompanies() {
     try {
       const ids = Array.from(followingCompanyIds || []).slice(0, 400);
       if (ids.length) {
-        const { data: profs, error: pe } = await supabaseClient
-          .from("profiles")
-          .select("id, company_name, logo_url, company_type, city, country, country_code, verification_status")
-          .in("id", ids);
+        let profs = null;
+        let pe = null;
+        // Try to pull last-active signals when available (falls back if columns don't exist)
+        {
+          const r1 = await supabaseClient
+            .from("profiles")
+            .select("id, company_name, logo_url, company_type, city, country, country_code, verification_status, last_active_at, updated_at")
+            .in("id", ids);
+
+          profs = r1.data; pe = r1.error;
+
+          if (pe) {
+            const r2 = await supabaseClient
+              .from("profiles")
+              .select("id, company_name, logo_url, company_type, city, country, country_code, verification_status, updated_at")
+              .in("id", ids);
+            profs = r2.data; pe = r2.error;
+          }
+
+          if (pe) {
+            const r3 = await supabaseClient
+              .from("profiles")
+              .select("id, company_name, logo_url, company_type, city, country, country_code, verification_status")
+              .in("id", ids);
+            profs = r3.data; pe = r3.error;
+          }
+        }
 
         if (!pe && Array.isArray(profs) && profs.length) {
           const mp = new Map(profs.map(p => [String(p.id), p]));
@@ -14773,9 +15075,26 @@ function renderFollowingCompanies() {
         </button>
       `;
     } else {
-      emptyEl.innerHTML = (currentLang === "tr")
-        ? "Henüz takip ettiğin şirket yok. Şirket kartlarında veya profilde Takip <span class='inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-900/5 border border-slate-900/10 align-middle mx-0.5'><i class='fa-solid fa-tower-broadcast text-[11px] text-slate-600'></i></span> ikonunu kullan."
-        : "No followed companies yet. Use the Follow <span class='inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-900/5 border border-slate-900/10 align-middle mx-0.5'><i class='fa-solid fa-tower-broadcast text-[11px] text-slate-600'></i></span> icon on company cards or profiles.";
+      const title = (currentLang === "tr")
+        ? "Henüz takip ettiğin şirket yok"
+        : (currentLang === "es" ? "Aún no sigues empresas" : "No followed companies yet");
+      const desc = (currentLang === "tr")
+        ? "Şirket kartlarında veya profilde Takip ikonunu kullanarak firmaları takip edebilirsin."
+        : (currentLang === "es" ? "Usa el icono Seguir en las tarjetas o en el perfil de la empresa." : "Use the Follow icon on company cards or profiles.");
+
+      emptyEl.innerHTML = `
+        <div class="bton-empty-card">
+          <div class="bton-empty-ic"><i class="fa-solid fa-tower-broadcast"></i></div>
+          <div class="min-w-0">
+            <div class="bton-empty-title">${title}</div>
+            <div class="bton-empty-desc">${desc}</div>
+            <button class="bton-empty-action" type="button" onclick="try{ toggleSavedPanel(); }catch(e){} try{ document.getElementById('search-input')?.focus(); }catch(e){}">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>${(currentLang === "tr") ? "Şirketleri keşfet" : (currentLang === "es" ? "Explorar empresas" : "Browse companies")}</span>
+            </button>
+          </div>
+        </div>
+      `;
     }
     return;
   }
@@ -14804,9 +15123,12 @@ const metaCountry = metaCountryRaw ? translateCountryName(metaCountryRaw, metaCo
 const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
     const locHtml = loc ? `<span class=\"text-gray-400\">•</span><span class=\"truncate\">${escapeHtml(loc)}</span>` : "";
 
+    const activeHtml = (typeof getActiveRecentlyMark === 'function') ? getActiveRecentlyMark(Object.assign({}, rc, c), { compact: true }) : '';
+    const activeChunk = activeHtml ? (loc ? `<span class=\"text-gray-300\">•</span>${activeHtml}` : `${activeHtml}`) : "";
+
     const ver = (typeof getVerifiedMark === "function")
       ? getVerifiedMark(Object.assign({}, rc, c))
-      : ((c.is_verified) ? `<i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle" title="Verified company"></i>` : "");const missingBadge = c._missing
+      : ((c.is_verified) ? `<span class="bton-tip" data-tip="${escapeHtml(_verifiedTipText())}"><i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle"></i></span>` : "");const missingBadge = c._missing
       ? `<span class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-black">${_i18n("saved_unavailable", "Unavailable")}</span>`
       : "";
 
@@ -14821,7 +15143,7 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
               <div class="font-extrabold text-sm cursor-pointer hover:underline min-w-0 flex items-center gap-1"
                 onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
                 <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
-                <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}</span>
+                <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}${activeHtml ? `<span class=\"ml-1\">${activeHtml}</span>` : ""}</span>
               </div>
               <button class="text-xs font-black px-3 py-1.5 rounded-full border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition"
                 onclick="toggleCompanyFollow(event, '${c.id}', '${escapeHtml((c.name||'') + '')}')"
@@ -14832,7 +15154,7 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
             <div class="mt-1 text-[10px] text-gray-500 flex flex-wrap items-center gap-2">
   <span class="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">${escapeHtml(metaType)}</span>
   ${locHtml}
-</div>
+  </div>
           </div>
         </div>
       </div>
@@ -17137,6 +17459,9 @@ async function initRealData() {
       id: pId,
       name: p.company_name || "New Company",
       city: p.city || "Konum Yok",
+      updated_at: p.updated_at || p.updatedAt || null,
+      last_active_at: p.last_active_at || p.last_seen_at || p.last_login_at || p.last_sign_in_at || p.updated_at || null,
+
       
       // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
       country: p.country || "Turkey",
@@ -20671,5 +20996,90 @@ function sortProjectsUI(mode){
     } catch(e){}
   });
 })();
+
+/* Floating tooltips for .bton-tip[data-tip] (not clipped by overflow) */
+(function(){
+  try{
+    if (document.getElementById("bton-floating-tooltip")) return;
+
+    const tip = document.createElement("div");
+    tip.id = "bton-floating-tooltip";
+    document.body.appendChild(tip);
+
+    let activeEl = null;
+    let raf = null;
+
+    function setText(msg){
+      tip.textContent = msg || "";
+    }
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    function position(el){
+      if (!el) return;
+      const msg = el.getAttribute("data-tip");
+      if (!msg) return;
+
+      // ensure rendered to measure
+      tip.dataset.show = "1";
+      tip.style.maxWidth = Math.min(360, window.innerWidth - 24) + "px";
+      // allow wrap
+      tip.style.whiteSpace = "normal";
+
+      const r = el.getBoundingClientRect();
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+
+      let x = r.left + (r.width / 2) - (tw / 2);
+      x = clamp(x, 12, window.innerWidth - tw - 12);
+
+      let y = r.top - th - 10; // above
+      if (y < 12) y = r.bottom + 10; // below if no space
+
+      tip.style.left = Math.round(x) + "px";
+      tip.style.top  = Math.round(y) + "px";
+    }
+
+    function show(el){
+      const msg = el.getAttribute("data-tip");
+      if (!msg) return;
+      activeEl = el;
+      setText(msg);
+      position(el);
+    }
+    function hide(el){
+      if (activeEl && el && activeEl !== el) return;
+      activeEl = null;
+      tip.dataset.show = "0";
+    }
+
+    function scheduleReposition(){
+      if (!activeEl) return;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => position(activeEl));
+    }
+
+    document.addEventListener("pointerenter", (e) => {
+      const el = e.target && e.target.closest ? e.target.closest(".bton-tip[data-tip]") : null;
+      if (!el) return;
+      show(el);
+    }, true);
+
+    document.addEventListener("pointerleave", (e) => {
+      const el = e.target && e.target.closest ? e.target.closest(".bton-tip[data-tip]") : null;
+      if (!el) return;
+      hide(el);
+    }, true);
+
+    window.addEventListener("scroll", scheduleReposition, true);
+    window.addEventListener("resize", scheduleReposition, true);
+
+    document.addEventListener("pointermove", () => {
+      // if the cursor is moving with the tooltip shown, keep it placed correctly
+      scheduleReposition();
+    }, { passive: true });
+
+  }catch(e){}
+})();
+
 </script>
 </body></html>
