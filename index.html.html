@@ -710,14 +710,37 @@ document.addEventListener("DOMContentLoaded", () => {
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* Text clamp helpers (for consistent card heights) */
+    /* Text clamp helpers (Tailwind-like line-clamp utilities) */
+    .line-clamp-1,
+    .line-clamp-2,
+    .line-clamp-3,
+    .line-clamp-4,
+    .line-clamp-5,
     .clamp-4{
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 4;
       overflow: hidden;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
-    .modal {
+    .line-clamp-1{ -webkit-line-clamp: 1; }
+    .line-clamp-2{ -webkit-line-clamp: 2; }
+    .line-clamp-3{ -webkit-line-clamp: 3; }
+    .line-clamp-4, .clamp-4{ -webkit-line-clamp: 4; }
+    .line-clamp-5{ -webkit-line-clamp: 5; }
+
+    /* Hover hint for clickable cards */
+    .bton-view-hint{
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity .18s ease, transform .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease;
+    }
+    .group:hover .bton-view-hint,
+    .group:focus-within .bton-view-hint{
+      opacity: 1;
+      transform: translateY(0);
+    }
+.modal {
       transition: opacity 0.25s ease;
     }
     body.modal-active {
@@ -8671,6 +8694,13 @@ function renderAssetsCards(company, isMyProfile){
       </div>
     ` : ``;
 
+
+    const viewAction = !isMyProfile ? `
+      <button onclick="event.stopPropagation(); openAssetViewer(${a.id})" class="bton-view-hint inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[11px] font-extrabold text-slate-700 hover:bg-cyan-50/50 hover:border-cyan-200 hover:text-BTrustOn-primary" title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
+        ${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}
+      </button>
+    ` : ``;
+
     const card = document.createElement("div");
     try{ card.id = _btonEntityDomId('asset', a.id); }catch(e){}
     card.className = "relative group rounded-2xl border border-[rgba(15,23,42,.10)] bg-white/80 backdrop-blur shadow-sm hover:shadow-md hover:border-cyan-200 transition overflow-hidden cursor-pointer";
@@ -8689,7 +8719,7 @@ function renderAssetsCards(company, isMyProfile){
                 <i class="fa-solid fa-boxes-stacked text-[13px] opacity-90"></i>
               </div>
               <div class="min-w-0">
-                <div class="text-[13px] font-extrabold text-slate-800 leading-snug break-words line-clamp-2 min-h-[2.4rem]">${_safeText(_assetName(a) || "Asset")}</div>
+                <div class="text-[14px] font-extrabold text-slate-800 leading-snug break-words line-clamp-2 min-h-[2.6rem]">${_safeText(_assetName(a) || "Asset")}</div>
                 ${locText ? '<div class="mt-1 text-[11px] text-slate-500 break-words line-clamp-1"><i class="fa-solid fa-location-dot text-[10px] mr-1 text-slate-400"></i>' + _safeText(locText) + '</div>' : ''}
               </div>
             </div>
@@ -8702,6 +8732,7 @@ function renderAssetsCards(company, isMyProfile){
 
           <div class="flex flex-col items-end gap-2 shrink-0">
             <div>${getStatusBadge(a.status)}</div>
+            ${viewAction}
             <div class="flex items-center gap-2">
               <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200 text-[11px] font-extrabold text-slate-800">
                 <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("ui_qty") || "Qty"}</span>
