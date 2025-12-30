@@ -1172,5 +1172,10 @@
   "ph_reg_no_latam": "Registro oficial / ID fiscal",
   "help_reg_latam": "Sudamérica: Usa tu registro oficial de empresa o ID fiscal.",
   "lbl_registry_link_optional": "Enlace del registro (opcional)",
-  "ph_registry_link_optional": "URL oficial del registro (opcional)"
+  "ph_registry_link_optional": "URL oficial del registro (opcional)",
+  "ui_success": "Correcto",
+  "ui_request_sent_for_review": "Solicitud enviada para revisión.",
+  "ui_verification_rejected": "Verificación rechazada.",
+  "ui_verification_request_rejected": "Tu solicitud de verificación fue rechazada. Revisa la información e inténtalo de nuevo.",
+  "ui_reject_reason_prompt": "Motivo de rechazo (opcional):\nIndica qué debe corregir la empresa (p. ej., número incorrecto, falta el estado, enlace inválido)."
 }
