@@ -1172,5 +1172,10 @@
   "ph_reg_no_latam": "Resmî şirket kayıt / vergi no",
   "help_reg_latam": "Güney Amerika: Resmî şirket kayıt veya vergi numaranızı kullanın.",
   "lbl_registry_link_optional": "Sicil linki (opsiyonel)",
-  "ph_registry_link_optional": "Resmî sicil URL’si (opsiyonel)"
+  "ph_registry_link_optional": "Resmî sicil URL’si (opsiyonel)",
+  "ui_success": "Başarılı",
+  "ui_request_sent_for_review": "Talebiniz inceleme için gönderildi.",
+  "ui_verification_rejected": "Doğrulama reddedildi.",
+  "ui_verification_request_rejected": "Doğrulama talebiniz reddedildi. Lütfen bilgilerinizi kontrol edip tekrar deneyin.",
+  "ui_reject_reason_prompt": "Red gerekçesi (opsiyonel):\nŞirketin neyi düzeltmesi gerektiğini yazın (örn. yanlış kayıt no, eyalet eksik, geçersiz link)."
 }
