@@ -1177,5 +1177,8 @@
   "ui_request_sent_for_review": "Solicitud enviada para revisión.",
   "ui_verification_rejected": "Verificación rechazada.",
   "ui_verification_request_rejected": "Tu solicitud de verificación fue rechazada. Revisa la información e inténtalo de nuevo.",
-  "ui_reject_reason_prompt": "Motivo de rechazo (opcional):\nIndica qué debe corregir la empresa (p. ej., número incorrecto, falta el estado, enlace inválido)."
+  "ui_reject_reason_prompt": "Motivo de rechazo (opcional):\nIndica qué debe corregir la empresa (p. ej., número incorrecto, falta el estado, enlace inválido).",
+  "ui_pro_plan_title": "Plan Pro",
+  "ui_pro_plan_active_sub": "Tu plan está activo. Puedes cancelarlo cuando quieras.",
+  "updates_upgrade": "Mejorar"
 }
