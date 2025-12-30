@@ -1177,5 +1177,8 @@
   "ui_request_sent_for_review": "Request sent for review.",
   "ui_verification_rejected": "Verification rejected.",
   "ui_verification_request_rejected": "Your verification request was rejected. Please review your information and try again.",
-  "ui_reject_reason_prompt": "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link)."
+  "ui_reject_reason_prompt": "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link).",
+  "ui_pro_plan_title": "Pro Plan",
+  "ui_pro_plan_active_sub": "Your plan is active. You can cancel anytime.",
+  "updates_upgrade": "Upgrade"
 }
