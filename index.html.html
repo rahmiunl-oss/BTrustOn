@@ -3028,12 +3028,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="hidden mb-4 p-3 rounded-lg text-[11px] font-bold border flex items-center gap-2" id="verify-status-alert"></div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div>
-<label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_tax_id">Tax ID / VKN</label>
+<label id="lbl-verify-regno" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_tax_id">Tax ID / VKN</label>
 <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" data-i18n-placeholder="ph_edit_tax_id" id="edit-tax-id" placeholder="Official Tax Number" type="text"/>
+<div id="verify-regno-help" class="mt-1 text-[10px] text-gray-400 leading-snug hidden"></div>
 </div>
 <div>
-<label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_duns">DUNS Number</label>
+<label id="lbl-verify-secondary" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_duns">DUNS Number</label>
 <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" data-i18n-placeholder="ph_edit_duns" id="edit-duns" placeholder="Optional" type="text"/>
+<div id="verify-secondary-help" class="mt-1 text-[10px] text-gray-400 leading-snug hidden"></div>
 </div>
 </div>
 <div class="mt-4 flex justify-end">
@@ -3330,12 +3332,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="hidden mb-3 p-2 rounded-lg text-[10px] font-bold border flex items-center gap-2" id="widget-status-alert"></div>
 <div class="space-y-3">
 <div>
-<label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_tax_id">Tax ID / VKN</label>
+<label id="lbl-widget-regno" class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_tax_id">Tax ID / VKN</label>
 <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" data-i18n-placeholder="ph_edit_tax_id" id="widget-tax-id" placeholder="Official Tax Number" type="text"/>
+<div id="widget-regno-help" class="mt-1 text-[9px] text-gray-400 leading-snug hidden"></div>
 </div>
 <div>
-<label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_duns">DUNS Number</label>
+<label id="lbl-widget-secondary" class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_duns">DUNS Number</label>
 <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" data-i18n-placeholder="ph_edit_duns" id="widget-duns" placeholder="Optional" type="text"/>
+<div id="widget-secondary-help" class="mt-1 text-[9px] text-gray-400 leading-snug hidden"></div>
 </div>
 <button class="w-full bg-slate-800 text-white py-2.5 rounded-lg text-[10px] font-bold hover:bg-slate-900 transition" data-i18n="ui_submit_82b1fb" id="btn-widget-submit" onclick="submitVerificationRequest('widget')" type="button">
                             SUBMIT
@@ -4218,7 +4222,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="rounded-2xl bg-white border border-gray-100 p-4">
 <div class="text-[11px] font-extrabold text-slate-900" data-i18n="about_step3_title">3) Request verification</div>
-<div class="text-[11px] text-gray-500 mt-1" data-i18n="about_step3_desc">Submit your Company ID (e.g., VKN) for admin review.</div>
+<div class="text-[11px] text-gray-500 mt-1" data-i18n="about_step3_desc">Submit your Registration No. (e.g., State Entity No. / VKN) for admin review.</div>
 </div>
 <div class="rounded-2xl bg-white border border-gray-100 p-4">
 <div class="text-[11px] font-extrabold text-slate-900" data-i18n="about_step4_title">4) Connect &amp; do business</div>
@@ -10194,6 +10198,7 @@ try {
   }
 
   selectedCompany = company;
+  try { if (typeof applyVerificationDynamicHints === "function") applyVerificationDynamicHints(); } catch(e) {}
 
   try { if (typeof updateSaveButtonsUI === 'function') updateSaveButtonsUI(); try{ updateFollowButtonsUI();
   // BTON_FOLLOW_UI_DELAY_REFRESH: auth/follow set may arrive slightly later on mobile
@@ -12210,6 +12215,7 @@ async function switchLanguage(lang) {
 
   // 3) Always apply i18n to the current DOM
   try { applyTranslations(); } catch(e) {}
+  try { if (typeof applyVerificationDynamicHints === "function") applyVerificationDynamicHints(); } catch(e) {}
 
 
   // 3b) Refresh dynamic plan/upgrade labels in header & menus (no refresh needed)
@@ -18828,6 +18834,115 @@ function toggleVerifyVisibility(mode) {
     }
 }
 
+
+// --- Dynamic verification labels/placeholders (country-aware) ---
+function __btonGetCountryCodeForCompany(c){
+  try {
+    const raw = (c && (c.country_code || c.countryCode || c.country_iso2 || c.countryIso2 || c.country_iso || c.countryIso)) || "";
+    const cc = String(raw || "").trim();
+    if (cc) return cc.toUpperCase();
+  } catch(e) {}
+  const name = String((c && c.country) || "").trim().toLowerCase();
+  if (!name) return "";
+  const map = {
+    "united states":"US","united states of america":"US","usa":"US","u.s.a.":"US","us":"US","america":"US",
+    "turkey":"TR","türkiye":"TR","turkiye":"TR",
+    "united kingdom":"GB","uk":"GB","u.k.":"GB","great britain":"GB","england":"GB"
+  };
+  return (map[name] || "");
+}
+function __btonVerificationHints(countryCode){
+  const cc = String(countryCode || "").toUpperCase();
+  const L = (typeof currentLang !== "undefined" ? String(currentLang) : "en");
+  const isTR = (L === "tr");
+  const isES = (L === "es");
+  const pick = (en,tr,es) => isTR ? tr : (isES ? es : en);
+
+  // Defaults
+  const base = {
+    cc,
+    regLabel: pick("Registration No.", "Registration No.", "Nº de registro"),
+    regPlaceholder: pick("Official registration / tax number", "Resmî kayıt / vergi numarası", "Número oficial de registro / fiscal"),
+    regHelp: pick("Use the official number found in your country/state registry.", "Ülkenizin/eyaletinizin resmî sicilindeki numarayı girin.", "Usa el número oficial del registro de tu país/estado."),
+    secondaryLabel: pick("DUNS (optional)", "DUNS (opsiyonel)", "DUNS (opcional)"),
+    secondaryPlaceholder: pick("Optional", "Opsiyonel", "Opcional"),
+    secondaryHelp: "",
+    secondaryRequired: false
+  };
+
+  if (cc === "US") {
+    return {
+      ...base,
+      regPlaceholder: pick("State File / Entity No.", "Eyalet Sicil No. (Entity/File No.)", "Nº de entidad del estado"),
+      regHelp: pick("Find it in your state's Business Entity Search.", "Eyalet 'Business Entity Search' sayfasında bulunur.", "Búscalo en el registro de empresas del estado."),
+      secondaryLabel: pick("State (incorporation)", "Eyalet", "Estado"),
+      secondaryPlaceholder: pick("e.g., Delaware", "örn. Delaware", "ej. Delaware"),
+      secondaryHelp: pick("Required for US companies.", "ABD şirketleri için zorunlu.", "Obligatorio para empresas de EE. UU."),
+      secondaryRequired: true
+    };
+  }
+  if (cc === "TR") {
+    return {
+      ...base,
+      regPlaceholder: pick("VKN / MERSİS No.", "VKN / MERSİS No.", "NIF / Nº de registro"),
+      regHelp: pick("Use your official tax/registry number (VKN/MERSİS).", "Resmî vergi/kayıt numaranızı girin (VKN/MERSİS).", "Usa tu número oficial (NIF/registro)."),
+      secondaryLabel: pick("DUNS (optional)", "DUNS (opsiyonel)", "DUNS (opcional)"),
+      secondaryRequired: false
+    };
+  }
+  if (cc === "GB") {
+    return {
+      ...base,
+      regPlaceholder: pick("Companies House number", "Companies House numarası", "Número de Companies House"),
+      regHelp: pick("Use the Companies House registration number.", "Companies House kayıt numarasını girin.", "Usa el número de Companies House."),
+      secondaryLabel: pick("DUNS (optional)", "DUNS (opsiyonel)", "DUNS (opcional)"),
+      secondaryRequired: false
+    };
+  }
+  return base;
+}
+
+function applyVerificationDynamicHints(){
+  const c = (typeof selectedCompany !== "undefined" && selectedCompany) ? selectedCompany : null;
+  const cc = __btonGetCountryCodeForCompany(c);
+  const hints = __btonVerificationHints(cc);
+
+  try { window.__bton_verify_cc = cc; window.__bton_verify_hints = hints; } catch(e){}
+
+  // Editor (profile editor verify box)
+  const lbl1 = document.getElementById("lbl-verify-regno");
+  const in1  = document.getElementById("edit-tax-id");
+  const hlp1 = document.getElementById("verify-regno-help");
+  const lbl2 = document.getElementById("lbl-verify-secondary");
+  const in2  = document.getElementById("edit-duns");
+  const hlp2 = document.getElementById("verify-secondary-help");
+
+  if (lbl1) lbl1.textContent = hints.regLabel;
+  if (in1)  in1.placeholder = hints.regPlaceholder || "";
+  if (hlp1) { hlp1.textContent = hints.regHelp || ""; hlp1.classList.toggle("hidden", !(hints.regHelp && String(hints.regHelp).trim())); }
+
+  if (lbl2) lbl2.textContent = hints.secondaryLabel;
+  if (in2)  in2.placeholder = hints.secondaryPlaceholder || "";
+  if (hlp2) { hlp2.textContent = hints.secondaryHelp || ""; hlp2.classList.toggle("hidden", !(hints.secondaryHelp && String(hints.secondaryHelp).trim())); }
+
+  // Widget (profile right side verify card)
+  const wlbl1 = document.getElementById("lbl-widget-regno");
+  const win1  = document.getElementById("widget-tax-id");
+  const whlp1 = document.getElementById("widget-regno-help");
+  const wlbl2 = document.getElementById("lbl-widget-secondary");
+  const win2  = document.getElementById("widget-duns");
+  const whlp2 = document.getElementById("widget-secondary-help");
+
+  if (wlbl1) wlbl1.textContent = hints.regLabel;
+  if (win1)  win1.placeholder = hints.regPlaceholder || "";
+  if (whlp1) { whlp1.textContent = hints.regHelp || ""; whlp1.classList.toggle("hidden", !(hints.regHelp && String(hints.regHelp).trim())); }
+
+  if (wlbl2) wlbl2.textContent = hints.secondaryLabel;
+  if (win2)  win2.placeholder = hints.secondaryPlaceholder || "";
+  if (whlp2) { whlp2.textContent = hints.secondaryHelp || ""; whlp2.classList.toggle("hidden", !(hints.secondaryHelp && String(hints.secondaryHelp).trim())); }
+}
+// --- end dynamic verification hints ---
+
 // 3. FORM GÖNDERME (Kaynaktan Bağımsız)
 async function submitVerificationRequest(source = 'editor') {
     // Hangi butona basıldıysa onu yükleniyor yap
@@ -18844,11 +18959,33 @@ async function submitVerificationRequest(source = 'editor') {
         duns = document.getElementById("edit-duns").value.trim();
     }
 
-    if (!taxId) { 
-  showToast("Missing Info", "Enter Tax ID.", "error"); 
-  handleVerifyClick(source === 'widget');   // ✅ boşsa VKN alanını sallayıp fokuslar
-  return; 
-}
+    // Country-aware validation (Registration No. + optional extras)
+    const __cc = (window.__bton_verify_cc || __btonGetCountryCodeForCompany(selectedCompany) || "").toUpperCase();
+    const __h  = (window.__bton_verify_hints || __btonVerificationHints(__cc) || null);
+    const __primaryLbl = (__h && __h.regLabel) ? __h.regLabel : ((currentLang === "tr") ? "Registration No." : (currentLang === "es" ? "Nº de registro" : "Registration No."));
+    const __secondaryLbl = (__h && __h.secondaryLabel) ? __h.secondaryLabel : "DUNS";
+    const __secondaryReq = !!(__h && __h.secondaryRequired);
+
+    if (!taxId) {
+      const msg = (currentLang === "tr")
+        ? `${__primaryLbl} girin.`
+        : (currentLang === "es" ? `Introduce ${__primaryLbl}.` : `Enter ${__primaryLbl}.`);
+      showToast((currentLang === "tr") ? "Eksik Bilgi" : (currentLang === "es" ? "Falta información" : "Missing Info"), msg, "error");
+      handleVerifyClick(source === 'widget');
+      return;
+    }
+    if (__secondaryReq && !duns) {
+      const msg2 = (currentLang === "tr")
+        ? `${__secondaryLbl} girin.`
+        : (currentLang === "es" ? `Introduce ${__secondaryLbl}.` : `Enter ${__secondaryLbl}.`);
+      showToast((currentLang === "tr") ? "Eksik Bilgi" : (currentLang === "es" ? "Falta información" : "Missing Info"), msg2, "error");
+      // Focus secondary field
+      try {
+        const target = (source === "widget") ? document.getElementById("widget-duns") : document.getElementById("edit-duns");
+        if (target) target.focus({ preventScroll: true });
+      } catch(e) {}
+      return;
+    }
 
 
     if(btn) { btn.textContent = "Wait..."; btn.disabled = true; }
@@ -18893,6 +19030,7 @@ async function submitVerificationRequest(source = 'editor') {
 /* --- GÜNCELLENMİŞ: updateVerificationUI (ONAYLANINCA KUTULARI GİZLER) --- */
 function updateVerificationUI(status) {
     const tier = selectedCompany.subscription_tier || 'free';
+    try { if (typeof applyVerificationDynamicHints === "function") applyVerificationDynamicHints(); } catch(e) {}
     
     // Pro ise veya işlem başladıysa formu aç
     if (tier === 'pro' || status === 'pending' || status === 'verified') {
