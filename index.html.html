@@ -11023,6 +11023,9 @@ async function saveProfileData() {
     const name = document.getElementById("edit-name").value.trim();
     const city = document.getElementById("edit-city").value.trim();
     const country = document.getElementById("edit-country").value;
+    const regNo = (document.getElementById("edit-reg-no")?.value || "").trim();
+    const regRegion = (document.getElementById("edit-reg-region")?.value || "").trim();
+    const regUrl = (document.getElementById("edit-reg-url")?.value || "").trim();
     const address = document.getElementById("edit-address").value.trim();
     const sector = document.getElementById("edit-sector").value;
     const desc = document.getElementById("edit-desc").value.trim();
@@ -11085,6 +11088,10 @@ async function saveProfileData() {
       company_name: name,
       city: city,
       country: country,
+      registry_country: country,
+      registry_region: regRegion || null,
+      registry_number: regNo || null,
+      registry_url: regUrl || null,
       address: address,
       tagline: tagline,
       sector: sector,
@@ -11115,16 +11122,24 @@ async function saveProfileData() {
       .update(updates)
       .eq('id', user.id);
 
-    // If the DB doesn't have the new column yet, retry without it (backward compatible)
-    if (error && String(error.message || "").toLowerCase().includes("services_featured") && String(error.message || "").toLowerCase().includes("does not exist")) {
-      try { delete updates.services_featured; } catch(e) {}
+    // If the DB doesn't have a column yet, retry without it (backward compatible)
+    if (error && String(error.message || "").toLowerCase().includes("does not exist")) {
+      const __msg = String(error.message || "").toLowerCase();
+      try { if (__msg.includes("services_featured")) delete updates.services_featured; } catch(e) {}
+      try {
+        if (__msg.includes("registry_country") || __msg.includes("registry_region") || __msg.includes("registry_number") || __msg.includes("registry_url") || __msg.includes("registry_")) {
+          delete updates.registry_country;
+          delete updates.registry_region;
+          delete updates.registry_number;
+          delete updates.registry_url;
+        }
+      } catch(e) {}
       ({ error } = await supabaseClient
         .from('profiles')
         .update(updates)
         .eq('id', user.id));
     }
-
-    if (error) throw error;
+if (error) throw error;
 
     showToast(
       (t("toast_success_title") || (currentLang==="tr" ? "Başarılı" : (currentLang==="es" ? "Éxito" : "Success"))),
@@ -11137,6 +11152,10 @@ async function saveProfileData() {
     if (localCompany) {
         Object.assign(localCompany, {
             name, city, country, sector, desc, tagline,
+            registry_country: country,
+            registry_region: regRegion || null,
+            registry_number: regNo || null,
+            registry_url: regUrl || null,
             website, phone, contact_email: contactEmail,
             address, type_label: typeVal, size_label: sizeVal, year_label: yearVal,
             logo_url: finalLogoUrl,
@@ -11194,9 +11213,16 @@ async function saveProfileData() {
 
     openProfile(user.id, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
     
-    document.getElementById("view-editor").classList.add("hidden-view");
-    document.getElementById("view-profile").classList.remove("hidden-view");
-    document.getElementById("back-btn").classList.remove("hidden", "hidden-view");
+    // Re-render the profile instantly (no manual refresh needed)
+    try {
+      await openProfile(user.id, { preserveTab: true });
+    } catch(e) {
+      try {
+        document.getElementById("view-editor").classList.add("hidden-view");
+        document.getElementById("view-profile").classList.remove("hidden-view");
+        document.getElementById("back-btn").classList.remove("hidden", "hidden-view");
+      } catch(_) {}
+    }
 
   } catch (error) {
     console.error("Error:", error);
