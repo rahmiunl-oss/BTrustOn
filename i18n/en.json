@@ -1172,5 +1172,10 @@
   "ph_reg_no_latam": "Official company registration / tax ID",
   "help_reg_latam": "South America: Use your official company registration / tax ID.",
   "lbl_registry_link_optional": "Registry link (optional)",
-  "ph_registry_link_optional": "Official registry URL (optional)"
+  "ph_registry_link_optional": "Official registry URL (optional)",
+  "ui_success": "Success",
+  "ui_request_sent_for_review": "Request sent for review.",
+  "ui_verification_rejected": "Verification rejected.",
+  "ui_verification_request_rejected": "Your verification request was rejected. Please review your information and try again.",
+  "ui_reject_reason_prompt": "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link)."
 }
