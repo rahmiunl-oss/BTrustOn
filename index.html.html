@@ -9240,7 +9240,7 @@ function renderAssetsCards(company, isMyProfile){
           </div>
 
           <div class="flex flex-col items-end gap-2 shrink-0">
-            <div class="flex items-center gap-2">${getStatusBadge(a.status)}${__recencyBadge}</div>
+            <div class="flex items-center gap-2">${getStatusBadge(a.status)}</div>
             ${viewAction}
             <div class="flex items-start gap-2">
               <div class="flex flex-col items-end gap-2">
@@ -9253,14 +9253,6 @@ function renderAssetsCards(company, isMyProfile){
               ${actions}
             </div>
           </div>
-        </div>
-
-        <div class="mt-4 flex items-center justify-start text-[11px] text-slate-500">
-          <span class="inline-flex items-center gap-1.5">
-            <i class="fa-regular fa-clock text-[11px]"></i>
-            ${(a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "")}
-          </span>
-
         </div>
       </div>
 `;
