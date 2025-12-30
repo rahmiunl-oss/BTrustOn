@@ -2244,7 +2244,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="w-6 h-6 rounded-lg flex items-center justify-center bg-white/70 border border-white/60 shadow-sm" id="nav-plan-icon-wrap">
 <i class="fa-solid fa-gem" id="nav-plan-icon"></i>
 </span>
-<span class="hidden md:inline" id="nav-plan-label">UPGRADE</span>
+<span class="hidden md:inline" id="nav-plan-label" data-i18n="updates_upgrade">Upgrade</span>
 <i class="fa-solid fa-chevron-down text-[10px] opacity-60 ml-0.5"></i>
 </button>
 <div class="hidden absolute right-0 mt-2 w-64 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60]" id="nav-plan-menu">
@@ -19790,22 +19790,18 @@ function renderNavPlanButton(company = null) {
     btn.className = baseBtn + " bg-white/80 backdrop-blur text-slate-800 border-cyan-200 hover:bg-white hover:shadow-md";
     if (icon) icon.className = "fa-solid fa-gem text-BTrustOn-accent";
     if (iconWrap) iconWrap.className = "w-6 h-6 rounded-lg flex items-center justify-center bg-cyan-50 border border-cyan-200 shadow-sm";
-    if (label) label.textContent = (currentLang === "tr") ? "PRO" : "PRO";
-    if (mTitle) mTitle.textContent = (currentLang === "tr") ? "Pro Plan" : "Pro Plan";
-    if (mSub) mSub.textContent = (currentLang === "tr")
-      ? "Planın aktif. İstersen iptal edebilirsin."
-      : "Your plan is active. You can cancel anytime.";
+    if (label) label.textContent = "PRO";
+    if (mTitle) mTitle.textContent = tOr("ui_pro_plan_title","Pro Plan");
+    if (mSub) mSub.textContent = tOr("ui_pro_plan_active_sub","Your plan is active. You can cancel anytime.");
     if (mUpgrade) mUpgrade.classList.add("hidden");
     if (mCancel) mCancel.classList.remove("hidden");
   } else {
     btn.className = baseBtn + " bg-BTrustOn-primary text-white border-white/10 hover:bg-BTrustOn-accent hover:shadow-md";
     if (icon) icon.className = "fa-solid fa-gem text-cyan-100";
     if (iconWrap) iconWrap.className = "w-6 h-6 rounded-lg flex items-center justify-center bg-white/10 border border-white/15 shadow-sm";
-    if (label) label.textContent = (currentLang === "tr") ? "YÜKSELT" : "UPGRADE";
-    if (mTitle) mTitle.textContent = (currentLang === "tr") ? "Plan" : "Plan";
-    if (mSub) mSub.textContent = (currentLang === "tr")
-      ? "Pro özelliklerini açmak için yükselt."
-      : "Upgrade to unlock Pro features.";
+    if (label) label.textContent = tOr("updates_upgrade","Upgrade");
+    if (mTitle) mTitle.textContent = tOr("attr_plan_0b6cbd","Plan");
+    if (mSub) mSub.textContent = tOr("ui_upgrade_to_unlock_pro_features_7bc2e8","Upgrade to unlock Pro features.");
     if (mUpgrade) mUpgrade.classList.remove("hidden");
     if (mCancel) mCancel.classList.add("hidden");
   }
