@@ -5260,12 +5260,57 @@ function _i18n(key, fallback="") {
   try { return (translations && translations[currentLang] && translations[currentLang][key]) || fallback; } catch(e){ return fallback; }
 }
 
-function _timeAgoI18n(dateString) {
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return "";
-  const seconds = Math.floor((new Date() - d) / 1000);
+function __parseTimestampMs(v){
+  if (!v) return null;
+  // Date instance
+  if (v instanceof Date) {
+    const ms = v.getTime();
+    return isNaN(ms) ? null : ms;
+  }
+  // Numeric epoch (ms or seconds)
+  if (typeof v === "number") {
+    if (!isFinite(v)) return null;
+    return (v > 1e12) ? Math.floor(v) : Math.floor(v * 1000); // seconds -> ms
+  }
+  let s = String(v).trim();
+  if (!s) return null;
 
-  const lang = (typeof __normLangCode === "function") ? __normLangCode(currentLang) : String(currentLang || "en").slice(0,2).toLowerCase();
+  // Normalize: "YYYY-MM-DD HH:MM:SS(.ffffff)(+00)" -> ISO-ish
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}/.test(s)) {
+    s = s.replace(" ", "T");
+  }
+
+  // Normalize timezone like +00 or -03 to +00:00 / -03:00
+  s = s.replace(/([+-]\d{2})(?!:?\d{2})$/, "$1:00");
+
+  // If has fractional seconds longer than 3 digits, truncate to 3 for Safari compatibility
+  s = s.replace(/(\.\d{3})\d+/, "$1");
+
+  // If no timezone info, assume UTC (Supabase timestamps are UTC by default)
+  if (!/[zZ]$/.test(s) && !/[+-]\d{2}:\d{2}$/.test(s)) {
+    s = s + "Z";
+  }
+
+  const ms = Date.parse(s);
+  return isNaN(ms) ? null : ms;
+}
+
+function _timeAgoI18n(dateString) {
+  const ms = __parseTimestampMs(dateString);
+  if (ms == null) return "";
+
+  const now = Date.now();
+  let seconds = Math.floor((now - ms) / 1000);
+
+  // If the parsed time is slightly "in the future" due to timezone parsing quirks, clamp small negatives.
+  if (seconds < 0 && seconds > -120) seconds = 0;
+
+  const d = new Date(ms);
+
+  const lang = (typeof __normLangCode === "function")
+    ? __normLangCode(currentLang)
+    : String(currentLang || "en").slice(0,2).toLowerCase();
+
   const isTR = (lang === "tr");
   const isES = (lang === "es");
 
@@ -5276,13 +5321,20 @@ function _timeAgoI18n(dateString) {
   };
 
   if (seconds < 60) return isTR ? "az önce" : (isES ? "ahora mismo" : "just now");
+
   let interval = Math.floor(seconds / 60);
   if (interval < 60) return fmt(interval, "min ago", "dk önce", "min");
+
   interval = Math.floor(seconds / 3600);
   if (interval < 24) return fmt(interval, "hours ago", "saat önce", "h");
+
   interval = Math.floor(seconds / 86400);
   if (interval < 7) return fmt(interval, "days ago", "gün önce", "días");
-  return d.toLocaleDateString(isTR ? "tr-TR" : (isES ? "es-ES" : "en-US"), { year:"numeric", month:"short", day:"2-digit" });
+
+  return d.toLocaleDateString(
+    isTR ? "tr-TR" : (isES ? "es-ES" : "en-US"),
+    { year:"numeric", month:"short", day:"2-digit" }
+  );
 }
 
 // Alias kept for backwards compatibility
@@ -19155,7 +19207,7 @@ async function submitVerificationRequest(source = 'editor') {
         if (eUrl) eUrl.value = regUrl;
         if (wUrl) wUrl.value = regUrl;
 
-        showToast("Success", (t("ui_request_sent_for_review") || "Request sent for review."), "success");
+        showToast((t("ui_success") || "Success"), (t("ui_request_sent_for_review") || "Request sent for review."), "success");
 
     } catch (err) {
         showToast("Error", err.message || "Verification request failed.", "error");
@@ -19226,6 +19278,27 @@ function updateVerificationUI(status) {
             // Kaydet butonunu gizle (Zaten gönderildi)
             if(btnBox) btnBox.classList.add("hidden");
             if(specificBtn) specificBtn.classList.add("hidden");
+
+
+        } else if (type === 'rejected') {
+            // ✅ DURUM 3: REDDEDİLDİ (Mesaj Var, Inputlar Açık, Buton Var)
+            alertEl.classList.add("bg-rose-50", "border-rose-200", "text-rose-700");
+            const _reasonRaw = (typeof selectedCompany !== "undefined" && selectedCompany && (selectedCompany.verification_reject_reason || selectedCompany.verification_notes)) ? (selectedCompany.verification_reject_reason || selectedCompany.verification_notes) : "";
+            const _reason = (_reasonRaw ? String(_reasonRaw).trim() : "");
+            const _reasonHtml = _reason ? `<div class="mt-1 text-[10px] font-medium text-rose-700/90">${escapeHtml(_reason)}</div>` : "";
+            alertEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + (t("ui_verification_rejected") || "Verification rejected.") + _reasonHtml;
+            alertEl.classList.remove("hidden");
+
+            // Inputları göster ve açık bırak
+            if(inputBox) {
+                inputBox.classList.remove("hidden");
+                const inputs = inputBox.querySelectorAll("input");
+                inputs.forEach(i => i.disabled = false);
+            }
+
+            // Kaydet butonu görünür (yeniden gönderebilsin)
+            if(btnBox) btnBox.classList.remove("hidden");
+            if(specificBtn) specificBtn.classList.remove("hidden");
 
         } else {
             // ✅ DURUM 3: HİÇBİRİ (Form Açık, Mesaj Yok)
@@ -19421,8 +19494,8 @@ async function processVerification(requestId, userId, action) {
 
     } else {
         const reason = prompt(
-            "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link).",
-            "Your verification request was rejected. Please review your information and try again."
+            (t("ui_reject_reason_prompt") || "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link)."),
+            (t("ui_verification_request_rejected") || "Your verification request was rejected. Please review your information and try again.")
         );
         profileUpdates = {
             verification_status: 'rejected',
