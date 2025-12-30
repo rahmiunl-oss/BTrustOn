@@ -1177,5 +1177,8 @@
   "ui_request_sent_for_review": "Talebiniz inceleme için gönderildi.",
   "ui_verification_rejected": "Doğrulama reddedildi.",
   "ui_verification_request_rejected": "Doğrulama talebiniz reddedildi. Lütfen bilgilerinizi kontrol edip tekrar deneyin.",
-  "ui_reject_reason_prompt": "Red gerekçesi (opsiyonel):\nŞirketin neyi düzeltmesi gerektiğini yazın (örn. yanlış kayıt no, eyalet eksik, geçersiz link)."
+  "ui_reject_reason_prompt": "Red gerekçesi (opsiyonel):\nŞirketin neyi düzeltmesi gerektiğini yazın (örn. yanlış kayıt no, eyalet eksik, geçersiz link).",
+  "ui_pro_plan_title": "Pro Plan",
+  "ui_pro_plan_active_sub": "Planın aktif. İstersen iptal edebilirsin.",
+  "updates_upgrade": "Yükselt"
 }
