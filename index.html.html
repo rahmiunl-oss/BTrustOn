@@ -1950,7 +1950,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     <div class="bton-empty-ic"><i class="fa-regular fa-bookmark"></i></div>
     <div class="min-w-0">
       <div class="bton-empty-title" data-i18n="empty_saved_title">No saved companies yet</div>
-      <div class="bton-empty-desc" data-i18n="ui_no_saved_companies_yet_use_the_b_bc1588">No saved companies yet. Use the bookmark icon on company cards to save.</div>
+      <div class="bton-empty-desc" data-i18n="empty_saved_desc">No saved companies yet. Use the bookmark icon on company cards to save.</div>
       <button class="bton-empty-action" type="button" onclick="try{ toggleSavedPanel(); }catch(e){} try{ document.getElementById('search-input')?.focus(); }catch(e){}">
         <i class="fa-solid fa-magnifying-glass"></i>
         <span data-i18n="empty_browse_companies_btn">Browse companies</span>
@@ -12254,6 +12254,10 @@ async function switchLanguage(lang) {
   // 3) Always apply i18n to the current DOM
   try { applyTranslations(); } catch(e) {}
 
+  // Refresh country-specific registry placeholders/helpers after language change
+  try { if (typeof updateRegistryVerificationUI === "function") updateRegistryVerificationUI(); } catch(e) {}
+
+
 
   // 3b) Refresh dynamic plan/upgrade labels in header & menus (no refresh needed)
   try {
@@ -19006,6 +19010,13 @@ function updateRegistryVerificationUI() {
     try { eRegionInput.required = !!rule.regionRequired; } catch(_) {}
   }
 
+  // Registry link placeholders (i18n)
+  const eUrl = document.getElementById("edit-reg-url");
+  if (eUrl) {
+    try { eUrl.placeholder = (t("ph_registry_link_optional") || "Official registry URL (optional)"); } catch(_) {}
+  }
+
+
   // Widget
   const wReg = document.getElementById("widget-reg-no");
   const wHelp = document.getElementById("widget-regno-help");
@@ -19024,6 +19035,12 @@ function updateRegistryVerificationUI() {
   if (wRegionLabel) wRegionLabel.textContent = rule.regionLabel || "State / Region";
   if (wRegionInput) {
     try { wRegionInput.placeholder = rule.regionPlaceholder || wRegionInput.placeholder; } catch(_) {}
+  }
+
+  // Registry link placeholders (i18n)
+  const wUrl = document.getElementById("widget-reg-url");
+  if (wUrl) {
+    try { wUrl.placeholder = (t("ph_registry_link_optional") || "Official registry URL (optional)"); } catch(_) {}
   }
 }
 
