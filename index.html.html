@@ -3027,15 +3027,20 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
                 </p>
 <div class="hidden mb-4 p-3 rounded-lg text-[11px] font-bold border flex items-center gap-2" id="verify-status-alert"></div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-<div>
-<label id="lbl-verify-regno" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_tax_id">Tax ID / VKN</label>
-<input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" data-i18n-placeholder="ph_edit_tax_id" id="edit-tax-id" placeholder="Official Tax Number" type="text"/>
-<div id="verify-regno-help" class="mt-1 text-[10px] text-gray-400 leading-snug hidden"></div>
+<div class="md:col-span-2">
+  <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_reg_no">Registration No.</label>
+  <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" id="edit-reg-no" placeholder="Registration / Entity number" type="text"/>
+  <p class="text-[10px] text-gray-400 mt-1 leading-snug" id="edit-regno-help"></p>
 </div>
+
+<div id="edit-regregion-wrap" class="hidden">
+  <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" id="edit-regregion-label">State</label>
+  <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" id="edit-reg-region" placeholder="e.g., Delaware" type="text"/>
+</div>
+
 <div>
-<label id="lbl-verify-secondary" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_duns">DUNS Number</label>
-<input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" data-i18n-placeholder="ph_edit_duns" id="edit-duns" placeholder="Optional" type="text"/>
-<div id="verify-secondary-help" class="mt-1 text-[10px] text-gray-400 leading-snug hidden"></div>
+  <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_registry_link_optional">Registry link (optional)</label>
+  <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" id="edit-reg-url" placeholder="Official registry URL (optional)" type="text"/>
 </div>
 </div>
 <div class="mt-4 flex justify-end">
@@ -3332,14 +3337,19 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="hidden mb-3 p-2 rounded-lg text-[10px] font-bold border flex items-center gap-2" id="widget-status-alert"></div>
 <div class="space-y-3">
 <div>
-<label id="lbl-widget-regno" class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_tax_id">Tax ID / VKN</label>
-<input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" data-i18n-placeholder="ph_edit_tax_id" id="widget-tax-id" placeholder="Official Tax Number" type="text"/>
-<div id="widget-regno-help" class="mt-1 text-[9px] text-gray-400 leading-snug hidden"></div>
+  <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_reg_no">Registration No.</label>
+  <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-no" placeholder="Registration / Entity number" type="text"/>
+  <p class="text-[9px] text-gray-400 mt-1 leading-snug" id="widget-regno-help"></p>
 </div>
+
+<div id="widget-regregion-wrap" class="hidden">
+  <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" id="widget-regregion-label">State</label>
+  <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-region" placeholder="e.g., Delaware" type="text"/>
+</div>
+
 <div>
-<label id="lbl-widget-secondary" class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_edit_duns">DUNS Number</label>
-<input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" data-i18n-placeholder="ph_edit_duns" id="widget-duns" placeholder="Optional" type="text"/>
-<div id="widget-secondary-help" class="mt-1 text-[9px] text-gray-400 leading-snug hidden"></div>
+  <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_registry_link_optional">Registry link (optional)</label>
+  <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-url" placeholder="Official registry URL (optional)" type="text"/>
 </div>
 <button class="w-full bg-slate-800 text-white py-2.5 rounded-lg text-[10px] font-bold hover:bg-slate-900 transition" data-i18n="ui_submit_82b1fb" id="btn-widget-submit" onclick="submitVerificationRequest('widget')" type="button">
                             SUBMIT
@@ -4047,7 +4057,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-gray-200">
 <tr>
 <th class="px-6 py-4" data-i18n="ui_company_1c76cb">Company</th>
-<th class="px-6 py-4" data-i18n="ui_tax_id_info_0dfb18">Tax ID / Info</th>
+<th class="px-6 py-4" data-i18n="ui_reg_no_info">Registration / Registry</th>
 <th class="px-6 py-4" data-i18n="ui_submitted_at_626a47">Submitted At</th>
 <th class="px-6 py-4" data-i18n="ui_document_094535">Document</th>
 <th class="px-6 py-4 text-right" data-i18n="ui_actions_06df33">Actions</th>
@@ -4222,7 +4232,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="rounded-2xl bg-white border border-gray-100 p-4">
 <div class="text-[11px] font-extrabold text-slate-900" data-i18n="about_step3_title">3) Request verification</div>
-<div class="text-[11px] text-gray-500 mt-1" data-i18n="about_step3_desc">Submit your Registration No. (e.g., State Entity No. / VKN) for admin review.</div>
+<div class="text-[11px] text-gray-500 mt-1" data-i18n="about_step3_desc">Submit your Company ID (e.g., VKN) for admin review.</div>
 </div>
 <div class="rounded-2xl bg-white border border-gray-100 p-4">
 <div class="text-[11px] font-extrabold text-slate-900" data-i18n="about_step4_title">4) Connect &amp; do business</div>
@@ -10198,7 +10208,6 @@ try {
   }
 
   selectedCompany = company;
-  try { if (typeof applyVerificationDynamicHints === "function") applyVerificationDynamicHints(); } catch(e) {}
 
   try { if (typeof updateSaveButtonsUI === 'function') updateSaveButtonsUI(); try{ updateFollowButtonsUI();
   // BTON_FOLLOW_UI_DELAY_REFRESH: auth/follow set may arrive slightly later on mobile
@@ -10937,8 +10946,8 @@ try {
   }
 // 👇 YENİ: PROFİL WIDGET YÖNETİMİ (Buraya Ekleyin) 👇
   const profileWidget = document.getElementById("profile-verify-widget");
-  const widgetTax = document.getElementById("widget-tax-id");
-  const widgetDuns = document.getElementById("widget-duns");
+  const widgetTax = document.getElementById("widget-reg-no");
+  const widgetDuns = document.getElementById("widget-reg-url");
 
   if (profileWidget) {
       if (isMyProfile) {
@@ -10946,11 +10955,14 @@ try {
           profileWidget.classList.remove("hidden");
           
           // 2. Kutuları veritabanı verisiyle doldur
-          if(widgetTax) widgetTax.value = company.tax_id || "";
-          if(widgetDuns) widgetDuns.value = company.duns_number || "";
+          const widgetRegion = document.getElementById("widget-reg-region");
+          if(widgetTax) widgetTax.value = company.registry_number || company.tax_id || "";
+          if(widgetRegion) widgetRegion.value = company.registry_region || "";
+          if(widgetDuns) widgetDuns.value = company.registry_url || "";
           
           // 3. Durumu (Kilitli/Açık/Sarı/Yeşil) güncelle
           updateVerificationUI(company.verification_status);
+          try { updateRegistryVerificationUI(); } catch(_) {}
       } else {
           // Başkası bakıyorsa Widget'ı gizle
           profileWidget.classList.add("hidden");
@@ -12215,7 +12227,6 @@ async function switchLanguage(lang) {
 
   // 3) Always apply i18n to the current DOM
   try { applyTranslations(); } catch(e) {}
-  try { if (typeof applyVerificationDynamicHints === "function") applyVerificationDynamicHints(); } catch(e) {}
 
 
   // 3b) Refresh dynamic plan/upgrade labels in header & menus (no refresh needed)
@@ -13650,8 +13661,10 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
   // Hizmetler
   const services = selectedCompany.services || []; 
   document.getElementById("edit-services").value = Array.isArray(services) ? services.join(", ") : services;
-  document.getElementById("edit-tax-id").value = selectedCompany.tax_id || "";
-  document.getElementById("edit-duns").value = selectedCompany.duns_number || "";
+  document.getElementById("edit-reg-no").value = selectedCompany.registry_number || selectedCompany.tax_id || "";
+  document.getElementById("edit-reg-region").value = selectedCompany.registry_region || "";
+  document.getElementById("edit-reg-url").value = selectedCompany.registry_url || "";
+  try { updateRegistryVerificationUI(); } catch(_) {}
   document.getElementById("edit-service-details").value = selectedCompany.service_details || ""; // <-- BU SATIRI EKLE 
 
   // ✅ Services Tag Editor (chips + featured + reorder)
@@ -18770,11 +18783,11 @@ function handleVerifyClick(forceUnlocked = false) {
             if (isEditorActive) {
                 // Editördeki kutuyu hedefle
                 targetContainer = document.getElementById("verify-form-view");
-                targetInput = document.getElementById("edit-tax-id");
+                targetInput = document.getElementById("edit-reg-no");
             } else {
                 // Profildeki (Widget) kutuyu hedefle
                 targetContainer = document.getElementById("widget-form-view");
-                targetInput = document.getElementById("widget-tax-id");
+                targetInput = document.getElementById("widget-reg-no");
             }
 
             // Hedef bulunduysa işlemi yap
@@ -18834,195 +18847,276 @@ function toggleVerifyVisibility(mode) {
     }
 }
 
+/* =========================
+   VERIFIED BADGE (Registry-based verification)
+   - Stores: profiles.registry_country / registry_region / registry_number / registry_url
+   - Creates audit rows in: verification_requests
+========================= */
 
-// --- Dynamic verification labels/placeholders (country-aware) ---
-function __btonGetCountryCodeForCompany(c){
-  try {
-    const raw = (c && (c.country_code || c.countryCode || c.country_iso2 || c.countryIso2 || c.country_iso || c.countryIso)) || "";
-    const cc = String(raw || "").trim();
-    if (cc) return cc.toUpperCase();
-  } catch(e) {}
-  const name = String((c && c.country) || "").trim().toLowerCase();
-  if (!name) return "";
+function normalizeCountryKey(raw) {
+  const v = String(raw || "").trim();
+  if (!v) return "";
+  const up = v.toUpperCase();
+  if (up.length === 2) return up;
+
+  const low = v.toLowerCase();
   const map = {
-    "united states":"US","united states of america":"US","usa":"US","u.s.a.":"US","us":"US","america":"US",
-    "turkey":"TR","türkiye":"TR","turkiye":"TR",
-    "united kingdom":"GB","uk":"GB","u.k.":"GB","great britain":"GB","england":"GB"
+    "united states": "US",
+    "usa": "US",
+    "u.s.": "US",
+    "u.s.a.": "US",
+    "united states of america": "US",
+    "canada": "CA",
+    "turkey": "TR",
+    "türkiye": "TR",
+    "uk": "GB",
+    "united kingdom": "GB",
+    "england": "GB",
+    "germany": "DE",
+    "france": "FR",
+    "spain": "ES",
+    "italy": "IT",
+    "netherlands": "NL",
+    "belgium": "BE",
+    "switzerland": "CH",
+    "austria": "AT",
+    "sweden": "SE",
+    "norway": "NO",
+    "denmark": "DK",
+    "finland": "FI",
+    "poland": "PL",
+    "czechia": "CZ",
+    "czech republic": "CZ",
+    "portugal": "PT",
+    "ireland": "IE",
+    "romania": "RO",
+    "bulgaria": "BG",
+    "greece": "GR",
+    "brazil": "BR",
+    "argentina": "AR",
+    "chile": "CL",
+    "colombia": "CO",
+    "peru": "PE",
+    "mexico": "MX",
+    "australia": "AU",
+    "new zealand": "NZ",
+    "south africa": "ZA",
+    "saudi arabia": "SA",
+    "united arab emirates": "AE",
+    "qatar": "QA"
   };
-  return (map[name] || "");
+  return map[low] || up; // last resort: keep stable
 }
-function __btonVerificationHints(countryCode){
-  const cc = String(countryCode || "").toUpperCase();
-  const L = (typeof currentLang !== "undefined" ? String(currentLang) : "en");
-  const isTR = (L === "tr");
-  const isES = (L === "es");
-  const pick = (en,tr,es) => isTR ? tr : (isES ? es : en);
+
+function getRegistryRule(countryKey) {
+  const c = String(countryKey || "").toUpperCase();
 
   // Defaults
-  const base = {
-    cc,
-    regLabel: pick("Registration No.", "Registration No.", "Nº de registro"),
-    regPlaceholder: pick("Official registration / tax number", "Resmî kayıt / vergi numarası", "Número oficial de registro / fiscal"),
-    regHelp: pick("Use the official number found in your country/state registry.", "Ülkenizin/eyaletinizin resmî sicilindeki numarayı girin.", "Usa el número oficial del registro de tu país/estado."),
-    secondaryLabel: pick("DUNS (optional)", "DUNS (opsiyonel)", "DUNS (opcional)"),
-    secondaryPlaceholder: pick("Optional", "Opsiyonel", "Opcional"),
-    secondaryHelp: "",
-    secondaryRequired: false
+  const rule = {
+    regLabel: (t("lbl_reg_no") || "Registration No."),
+    regPlaceholder: (t("ph_reg_no") || "Registration / Entity number"),
+    help: (t("help_reg_default") || "Use your official registration / tax entity number. You can also add a registry link."),
+    showRegion: false,
+    regionLabel: "State / Region",
+    regionPlaceholder: "e.g., Delaware",
+    regionRequired: false
   };
 
-  if (cc === "US") {
-    return {
-      ...base,
-      regPlaceholder: pick("State File / Entity No.", "Eyalet Sicil No. (Entity/File No.)", "Nº de entidad del estado"),
-      regHelp: pick("Find it in your state's Business Entity Search.", "Eyalet 'Business Entity Search' sayfasında bulunur.", "Búscalo en el registro de empresas del estado."),
-      secondaryLabel: pick("State (incorporation)", "Eyalet", "Estado"),
-      secondaryPlaceholder: pick("e.g., Delaware", "örn. Delaware", "ej. Delaware"),
-      secondaryHelp: pick("Required for US companies.", "ABD şirketleri için zorunlu.", "Obligatorio para empresas de EE. UU."),
-      secondaryRequired: true
-    };
+  if (c === "US") {
+    rule.regLabel = (t("lbl_reg_no_us") || "Registration No.");
+    rule.regPlaceholder = (t("ph_reg_no_us") || "EIN / Entity number (varies by state)");
+    rule.help = (t("help_reg_us") || "US: Enter your official EIN or State Entity Number. State is required for faster verification.");
+    rule.showRegion = true;
+    rule.regionLabel = (t("lbl_state") || "State");
+    rule.regionPlaceholder = (t("ph_state") || "e.g., Delaware");
+    rule.regionRequired = true;
+  } else if (c === "CA") {
+    rule.regPlaceholder = (t("ph_reg_no_ca") || "Business Number (BN) / Corporation number");
+    rule.help = (t("help_reg_ca") || "Canada: Use your Business Number (BN) or your provincial/territorial corporation number.");
+    rule.showRegion = true;
+    rule.regionLabel = (t("lbl_province") || "Province / Territory");
+    rule.regionPlaceholder = (t("ph_province") || "e.g., Ontario");
+    rule.regionRequired = false;
+  } else if (["GB","DE","FR","ES","IT","NL","BE","CH","AT","SE","NO","DK","FI","PL","CZ","PT","IE","RO","BG","GR"].includes(c)) {
+    rule.regPlaceholder = (t("ph_reg_no_eu") || "Company registration number (e.g., VAT / Trade register)");
+    rule.help = (t("help_reg_eu") || "Europe: Use your company registration number (trade register / VAT / national ID).");
+  } else if (["BR","AR","CL","CO","PE","MX"].includes(c)) {
+    rule.regPlaceholder = (t("ph_reg_no_latam") || "Official company registration / tax ID");
+    rule.help = (t("help_reg_latam") || "South America: Use your official company registration / tax ID.");
   }
-  if (cc === "TR") {
-    return {
-      ...base,
-      regPlaceholder: pick("VKN / MERSİS No.", "VKN / MERSİS No.", "NIF / Nº de registro"),
-      regHelp: pick("Use your official tax/registry number (VKN/MERSİS).", "Resmî vergi/kayıt numaranızı girin (VKN/MERSİS).", "Usa tu número oficial (NIF/registro)."),
-      secondaryLabel: pick("DUNS (optional)", "DUNS (opsiyonel)", "DUNS (opcional)"),
-      secondaryRequired: false
-    };
-  }
-  if (cc === "GB") {
-    return {
-      ...base,
-      regPlaceholder: pick("Companies House number", "Companies House numarası", "Número de Companies House"),
-      regHelp: pick("Use the Companies House registration number.", "Companies House kayıt numarasını girin.", "Usa el número de Companies House."),
-      secondaryLabel: pick("DUNS (optional)", "DUNS (opsiyonel)", "DUNS (opcional)"),
-      secondaryRequired: false
-    };
-  }
-  return base;
+
+  return rule;
 }
 
-function applyVerificationDynamicHints(){
-  const c = (typeof selectedCompany !== "undefined" && selectedCompany) ? selectedCompany : null;
-  const cc = __btonGetCountryCodeForCompany(c);
-  const hints = __btonVerificationHints(cc);
-
-  try { window.__bton_verify_cc = cc; window.__bton_verify_hints = hints; } catch(e){}
-
-  // Editor (profile editor verify box)
-  const lbl1 = document.getElementById("lbl-verify-regno");
-  const in1  = document.getElementById("edit-tax-id");
-  const hlp1 = document.getElementById("verify-regno-help");
-  const lbl2 = document.getElementById("lbl-verify-secondary");
-  const in2  = document.getElementById("edit-duns");
-  const hlp2 = document.getElementById("verify-secondary-help");
-
-  if (lbl1) lbl1.textContent = hints.regLabel;
-  if (in1)  in1.placeholder = hints.regPlaceholder || "";
-  if (hlp1) { hlp1.textContent = hints.regHelp || ""; hlp1.classList.toggle("hidden", !(hints.regHelp && String(hints.regHelp).trim())); }
-
-  if (lbl2) lbl2.textContent = hints.secondaryLabel;
-  if (in2)  in2.placeholder = hints.secondaryPlaceholder || "";
-  if (hlp2) { hlp2.textContent = hints.secondaryHelp || ""; hlp2.classList.toggle("hidden", !(hints.secondaryHelp && String(hints.secondaryHelp).trim())); }
-
-  // Widget (profile right side verify card)
-  const wlbl1 = document.getElementById("lbl-widget-regno");
-  const win1  = document.getElementById("widget-tax-id");
-  const whlp1 = document.getElementById("widget-regno-help");
-  const wlbl2 = document.getElementById("lbl-widget-secondary");
-  const win2  = document.getElementById("widget-duns");
-  const whlp2 = document.getElementById("widget-secondary-help");
-
-  if (wlbl1) wlbl1.textContent = hints.regLabel;
-  if (win1)  win1.placeholder = hints.regPlaceholder || "";
-  if (whlp1) { whlp1.textContent = hints.regHelp || ""; whlp1.classList.toggle("hidden", !(hints.regHelp && String(hints.regHelp).trim())); }
-
-  if (wlbl2) wlbl2.textContent = hints.secondaryLabel;
-  if (win2)  win2.placeholder = hints.secondaryPlaceholder || "";
-  if (whlp2) { whlp2.textContent = hints.secondaryHelp || ""; whlp2.classList.toggle("hidden", !(hints.secondaryHelp && String(hints.secondaryHelp).trim())); }
+function _getCountryForVerificationUI() {
+  // Prefer editor selection when open (user may change country)
+  const cSel = document.getElementById("edit-country");
+  const raw = (cSel && cSel.value) ? cSel.value : (selectedCompany && (selectedCompany.registry_country || selectedCompany.country)) || "";
+  return normalizeCountryKey(raw);
 }
-// --- end dynamic verification hints ---
+
+function updateRegistryVerificationUI() {
+  const key = _getCountryForVerificationUI();
+  const rule = getRegistryRule(key);
+
+  // Editor
+  const eReg = document.getElementById("edit-reg-no");
+  const eHelp = document.getElementById("edit-regno-help");
+  const eRegionWrap = document.getElementById("edit-regregion-wrap");
+  const eRegionLabel = document.getElementById("edit-regregion-label");
+  const eRegionInput = document.getElementById("edit-reg-region");
+
+  if (eReg) {
+    try { eReg.placeholder = rule.regPlaceholder || eReg.placeholder; } catch(_) {}
+  }
+  if (eHelp) eHelp.textContent = rule.help || "";
+  if (eRegionWrap) {
+    if (rule.showRegion) eRegionWrap.classList.remove("hidden");
+    else eRegionWrap.classList.add("hidden");
+  }
+  if (eRegionLabel) eRegionLabel.textContent = rule.regionLabel || "State / Region";
+  if (eRegionInput) {
+    try { eRegionInput.placeholder = rule.regionPlaceholder || eRegionInput.placeholder; } catch(_) {}
+    try { eRegionInput.required = !!rule.regionRequired; } catch(_) {}
+  }
+
+  // Widget
+  const wReg = document.getElementById("widget-reg-no");
+  const wHelp = document.getElementById("widget-regno-help");
+  const wRegionWrap = document.getElementById("widget-regregion-wrap");
+  const wRegionLabel = document.getElementById("widget-regregion-label");
+  const wRegionInput = document.getElementById("widget-reg-region");
+
+  if (wReg) {
+    try { wReg.placeholder = rule.regPlaceholder || wReg.placeholder; } catch(_) {}
+  }
+  if (wHelp) wHelp.textContent = rule.help || "";
+  if (wRegionWrap) {
+    if (rule.showRegion) wRegionWrap.classList.remove("hidden");
+    else wRegionWrap.classList.add("hidden");
+  }
+  if (wRegionLabel) wRegionLabel.textContent = rule.regionLabel || "State / Region";
+  if (wRegionInput) {
+    try { wRegionInput.placeholder = rule.regionPlaceholder || wRegionInput.placeholder; } catch(_) {}
+  }
+}
+
+// Keep UI synced when user changes country in editor
+document.addEventListener("change", (e) => {
+  try {
+    if (e && e.target && e.target.id === "edit-country") {
+      updateRegistryVerificationUI();
+    }
+  } catch(_) {}
+});
 
 // 3. FORM GÖNDERME (Kaynaktan Bağımsız)
 async function submitVerificationRequest(source = 'editor') {
-    // Hangi butona basıldıysa onu yükleniyor yap
     const btnId = source === 'widget' ? "btn-widget-submit" : "btn-verify-submit";
     const btn = document.getElementById(btnId);
-    
-    // Veriyi doğru inputtan al
-    let taxId, duns;
-    if (source === 'widget') {
-        taxId = document.getElementById("widget-tax-id").value.trim();
-        duns = document.getElementById("widget-duns").value.trim();
-    } else {
-        taxId = document.getElementById("edit-tax-id").value.trim();
-        duns = document.getElementById("edit-duns").value.trim();
-    }
 
-    // Country-aware validation (Registration No. + optional extras)
-    const __cc = (window.__bton_verify_cc || __btonGetCountryCodeForCompany(selectedCompany) || "").toUpperCase();
-    const __h  = (window.__bton_verify_hints || __btonVerificationHints(__cc) || null);
-    const __primaryLbl = (__h && __h.regLabel) ? __h.regLabel : ((currentLang === "tr") ? "Registration No." : (currentLang === "es" ? "Nº de registro" : "Registration No."));
-    const __secondaryLbl = (__h && __h.secondaryLabel) ? __h.secondaryLabel : "DUNS";
-    const __secondaryReq = !!(__h && __h.secondaryRequired);
+    // Inputs
+    const regNoEl = document.getElementById(source === 'widget' ? "widget-reg-no" : "edit-reg-no");
+    const regionEl = document.getElementById(source === 'widget' ? "widget-reg-region" : "edit-reg-region");
+    const urlEl = document.getElementById(source === 'widget' ? "widget-reg-url" : "edit-reg-url");
 
-    if (!taxId) {
-      const msg = (currentLang === "tr")
-        ? `${__primaryLbl} girin.`
-        : (currentLang === "es" ? `Introduce ${__primaryLbl}.` : `Enter ${__primaryLbl}.`);
-      showToast((currentLang === "tr") ? "Eksik Bilgi" : (currentLang === "es" ? "Falta información" : "Missing Info"), msg, "error");
-      handleVerifyClick(source === 'widget');
+    const regNo = (regNoEl && regNoEl.value) ? regNoEl.value.trim() : "";
+    const region = (regionEl && regionEl.value) ? regionEl.value.trim() : "";
+    const regUrl = (urlEl && urlEl.value) ? urlEl.value.trim() : "";
+
+    // Country rule
+    const countryKey = _getCountryForVerificationUI();
+    const rule = getRegistryRule(countryKey);
+
+    if (!regNo) {
+      showToast("Missing Info", (t("err_regno_required") || "Enter Registration No."), "error");
+      handleVerifyClick(source === 'widget'); // shake + focus
       return;
     }
-    if (__secondaryReq && !duns) {
-      const msg2 = (currentLang === "tr")
-        ? `${__secondaryLbl} girin.`
-        : (currentLang === "es" ? `Introduce ${__secondaryLbl}.` : `Enter ${__secondaryLbl}.`);
-      showToast((currentLang === "tr") ? "Eksik Bilgi" : (currentLang === "es" ? "Falta información" : "Missing Info"), msg2, "error");
-      // Focus secondary field
+    if (rule.showRegion && rule.regionRequired && !region) {
+      showToast("Missing Info", (t("err_state_required") || "State is required for US verification."), "error");
       try {
-        const target = (source === "widget") ? document.getElementById("widget-duns") : document.getElementById("edit-duns");
-        if (target) target.focus({ preventScroll: true });
-      } catch(e) {}
+        if (regionEl) {
+          regionEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          regionEl.focus({ preventScroll: true });
+        }
+      } catch(_) {}
       return;
     }
 
-
-    if(btn) { btn.textContent = "Wait..."; btn.disabled = true; }
+    if (btn) { btn.textContent = (t("ui_wait") || "Wait..."); btn.disabled = true; }
 
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        const { error } = await supabaseClient.from('profiles')
-            .update({ tax_id: taxId, duns_number: duns, verification_status: 'pending' })
-            .eq('id', user.id);
+        if (!user || !user.id) throw new Error("Login required");
 
-        if (error) throw error;
+        // 1) Update profile (single source of truth)
+        const profilePayload = {
+          registry_country: countryKey || null,
+          registry_region: (rule.showRegion ? (region || null) : null),
+          registry_number: regNo,
+          registry_url: regUrl || null,
+          verification_method: 'registry',
+          verification_status: 'pending'
+        };
 
-        // Hafızayı Güncelle
+        const { error: uErr } = await supabaseClient
+          .from('profiles')
+          .update(profilePayload)
+          .eq('id', user.id);
+
+        if (uErr) throw uErr;
+
+        // 2) Insert audit request row (best-effort; doesn't block UI if policy isn't ready yet)
+        try {
+          await supabaseClient
+            .from('verification_requests')
+            .insert([{
+              company_id: user.id,
+              submitted_by: user.id,
+              status: 'submitted',
+              registry_country: profilePayload.registry_country,
+              registry_region: profilePayload.registry_region,
+              registry_number: profilePayload.registry_number,
+              registry_url: profilePayload.registry_url,
+              verification_method: 'registry'
+            }]);
+        } catch(e) {
+          console.warn("verification_requests insert skipped:", e);
+        }
+
+        // Local cache update
         selectedCompany.verification_status = 'pending';
-        selectedCompany.tax_id = taxId;
-        selectedCompany.duns_number = duns;
+        selectedCompany.registry_country = profilePayload.registry_country;
+        selectedCompany.registry_region = profilePayload.registry_region;
+        selectedCompany.registry_number = profilePayload.registry_number;
+        selectedCompany.registry_url = profilePayload.registry_url;
+        selectedCompany.verification_method = 'registry';
 
-        // HER İKİ TARAFI DA GÜNCELLE (Sync)
+        // Sync both sides (widget + editor)
         updateVerificationUI('pending');
-        
-        // Inputları da eşitle (Diğer tarafa da yaz)
-        const eTax = document.getElementById("edit-tax-id");
-        const wTax = document.getElementById("widget-tax-id");
-        const eDuns = document.getElementById("edit-duns");
-        const wDuns = document.getElementById("widget-duns");
-        
-        if(eTax) eTax.value = taxId;
-        if(wTax) wTax.value = taxId;
-        if(eDuns) eDuns.value = duns;
-        if(wDuns) wDuns.value = duns;
+        try { updateRegistryVerificationUI(); } catch(_) {}
 
-        showToast("Success", "Request sent for review.", "success");
+        // Mirror values
+        const eReg = document.getElementById("edit-reg-no");
+        const wReg = document.getElementById("widget-reg-no");
+        const eRegion = document.getElementById("edit-reg-region");
+        const wRegion = document.getElementById("widget-reg-region");
+        const eUrl = document.getElementById("edit-reg-url");
+        const wUrl = document.getElementById("widget-reg-url");
+
+        if (eReg) eReg.value = regNo;
+        if (wReg) wReg.value = regNo;
+        if (eRegion) eRegion.value = region;
+        if (wRegion) wRegion.value = region;
+        if (eUrl) eUrl.value = regUrl;
+        if (wUrl) wUrl.value = regUrl;
+
+        showToast("Success", (t("ui_request_sent_for_review") || "Request sent for review."), "success");
 
     } catch (err) {
-        showToast("Error", err.message, "error");
-        if(btn) { btn.disabled = false; btn.textContent = "SUBMIT"; }
+        showToast("Error", err.message || "Verification request failed.", "error");
+        if (btn) { btn.disabled = false; btn.textContent = (t("ui_submit_82b1fb") || "SUBMIT"); }
     }
 }
 
@@ -19030,7 +19124,6 @@ async function submitVerificationRequest(source = 'editor') {
 /* --- GÜNCELLENMİŞ: updateVerificationUI (ONAYLANINCA KUTULARI GİZLER) --- */
 function updateVerificationUI(status) {
     const tier = selectedCompany.subscription_tier || 'free';
-    try { if (typeof applyVerificationDynamicHints === "function") applyVerificationDynamicHints(); } catch(e) {}
     
     // Pro ise veya işlem başladıysa formu aç
     if (tier === 'pro' || status === 'pending' || status === 'verified') {
@@ -19151,15 +19244,17 @@ function showAdminView() {
 async function loadAdminData() {
     const listContainer = document.getElementById("admin-request-list");
     const countBadge = document.getElementById("admin-pending-count");
-    
+
+    if (!listContainer) return;
+
     listContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center"><i class="fa-solid fa-spinner fa-spin text-2xl text-gray-300"></i></td></tr>';
 
-    // Supabase'den 'pending' olanları çek
+    // Pull pending verification requests (audit table)
     const { data: requests, error } = await supabaseClient
-        .from('profiles')
+        .from('verification_requests')
         .select('*')
-        .eq('verification_status', 'pending')
-        .order('updated_at', { ascending: false });
+        .eq('status', 'submitted')
+        .order('submitted_at', { ascending: false });
 
     if (error) {
         console.error(error);
@@ -19167,25 +19262,49 @@ async function loadAdminData() {
         return;
     }
 
-    if (countBadge) countBadge.textContent = requests.length;
+    const reqs = Array.isArray(requests) ? requests : [];
+    if (countBadge) countBadge.textContent = reqs.length;
 
-    if (requests.length === 0) {
+    if (reqs.length === 0) {
         listContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 italic">No pending requests found.</td></tr>';
         return;
     }
 
+    // Fetch related company profiles (name/email/logo)
+    const ids = Array.from(new Set(reqs.map(r => r.company_id).filter(Boolean)));
+    let profileMap = {};
+    if (ids.length > 0) {
+      const { data: profs, error: pErr } = await supabaseClient
+        .from('profiles')
+        .select('id, company_name, email, logo_url, country')
+        .in('id', ids);
+
+      if (!pErr && Array.isArray(profs)) {
+        profs.forEach(p => { profileMap[String(p.id)] = p; });
+      }
+    }
+
     listContainer.innerHTML = "";
 
-    requests.forEach(req => {
-        // Belge Linki (Varsa)
-        let docLink = '<span class="text-gray-300 text-xs">No file</span>';
-        if (req.verification_docs_url) {
-            docLink = `<a href="${req.verification_docs_url}" target="_blank" class="flex items-center gap-1 text-blue-600 hover:underline font-bold text-xs"><i class="fa-solid fa-file-pdf"></i> View Doc</a>`;
-        } else if (req.duns_number) {
-             docLink = `<span class="text-xs text-gray-500">DUNS: ${req.duns_number}</span>`;
+    reqs.forEach(req => {
+        const p = profileMap[String(req.company_id)] || {};
+        const cName = p.company_name || "Unknown Company";
+        const cEmail = p.email || "";
+        const iconLetter = (cName && cName[0]) ? cName[0].toUpperCase() : "?";
+
+        const regNo = req.registry_number || "";
+        const regCountry = req.registry_country || normalizeCountryKey(p.country || "");
+        const regRegion = req.registry_region || "";
+
+        const regInfo = [regCountry, regRegion, regNo].filter(Boolean).join(" • ") || "N/A";
+
+        let docLink = '<span class="text-gray-300 text-xs">No link</span>';
+        if (req.registry_url) {
+          const safe = String(req.registry_url);
+          docLink = `<a href="${safe}" target="_blank" class="flex items-center gap-1 text-blue-600 hover:underline font-bold text-xs"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open</a>`;
         }
 
-        const dateStr = formatDateTimeMeridiemTR(req.updated_at) || "";
+        const dateStr = formatDateTimeMeridiemTR(req.submitted_at || req.created_at || req.updated_at) || "";
 
         const row = document.createElement("tr");
         row.className = "hover:bg-slate-50 transition";
@@ -19193,27 +19312,27 @@ async function loadAdminData() {
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center font-bold text-gray-500">
-                        ${req.company_name.charAt(0).toUpperCase()}
+                        ${iconLetter}
                     </div>
                     <div>
-                        <div class="font-bold text-gray-800">${req.company_name}</div>
-                        <div class="text-[10px] text-gray-400">${req.email}</div>
+                        <div class="font-bold text-gray-800">${cName}</div>
+                        <div class="text-[10px] text-gray-400">${cEmail}</div>
                     </div>
                 </div>
             </td>
             <td class="px-6 py-4">
                 <div class="font-mono text-xs bg-gray-100 px-2 py-1 rounded inline-block text-gray-600">
-                    ${req.tax_id || 'N/A'}
+                    ${regInfo}
                 </div>
             </td>
             <td class="px-6 py-4 text-xs text-gray-500">${dateStr}</td>
             <td class="px-6 py-4">${docLink}</td>
             <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-2">
-                    <button onclick="processVerification('${req.id}', 'reject')" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition flex items-center justify-center" title="Reject">
+                    <button onclick="processVerification('${req.id}', '${req.company_id}', 'reject')" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition flex items-center justify-center" title="Reject">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
-                    <button onclick="processVerification('${req.id}', 'approve')" class="px-4 py-2 rounded-lg bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 transition shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                    <button onclick="processVerification('${req.id}', '${req.company_id}', 'approve')" class="px-4 py-2 rounded-lg bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 transition shadow-lg shadow-emerald-500/20 flex items-center gap-2">
                         <i class="fa-solid fa-check"></i> APPROVE (Pro)
                     </button>
                 </div>
@@ -19225,20 +19344,29 @@ async function loadAdminData() {
 
 
 // 5. ONAYLAMA / REDDETME İŞLEMİ
-async function processVerification(userId, action) {
-    // Kullanıcıya sor
+async function processVerification(requestId, userId, action) {
     const ok = await uiConfirm(`Are you sure you want to ${action} this company?`, {title:'Confirm', okText:'Yes', cancelText:'Cancel'});
     if (!ok) return;
 
-    let updates = {};
+    const { data: { user: adminUser } } = await supabaseClient.auth.getUser();
+    const adminId = adminUser && adminUser.id ? adminUser.id : null;
+
+    let profileUpdates = {};
+    let requestUpdates = {
+      status: action === 'approve' ? 'approved' : 'rejected',
+      reviewed_by: adminId,
+      reviewed_at: nowDate().toISOString()
+    };
 
     if (action === 'approve') {
         const now = nowDate();
-        // Use the same Pro trial rules everywhere for consistency
         const { endDate } = computeProTrialEnd(now, null);
 
-        updates = {
+        profileUpdates = {
             verification_status: 'verified',
+            verified_at: now.toISOString(),
+            verified_by: adminId,
+            verification_method: 'registry',
             subscription_tier: 'pro',
             subscription_status: 'active_trial',
             trial_start_date: now.toISOString(),
@@ -19246,30 +19374,48 @@ async function processVerification(userId, action) {
             verification_reject_reason: null,
             verification_rejected_at: null
         };
+        requestUpdates.decision_notes = null;
+
     } else {
         const reason = prompt(
-            "Reject reason (optional):\nTell the company what to fix (e.g., Tax ID/VKN mismatch, missing docs).",
+            "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link).",
             "Your verification request was rejected. Please review your information and try again."
         );
-        updates = {
+        profileUpdates = {
             verification_status: 'rejected',
             verification_reject_reason: reason ? reason.trim() : null,
             verification_rejected_at: nowDate().toISOString()
         };
+        requestUpdates.decision_notes = reason ? reason.trim() : null;
     }
 
-    // Veritabanını güncelle
-    const { error } = await supabaseClient
+    // Update profile
+    const { error: pErr } = await supabaseClient
         .from('profiles')
-        .update(updates)
+        .update(profileUpdates)
         .eq('id', userId);
 
-    if (error) {
-        alert("Error: " + error.message);
-    } else {
-        showToast("Success", `Company ${action}d successfully.`, "success");
-        loadAdminData(); // Listeyi yenile
+    if (pErr) {
+        alert("Error: " + pErr.message);
+        return;
     }
+
+    // Update request audit row (best-effort)
+    try {
+      if (requestId) {
+        const { error: rErr } = await supabaseClient
+          .from('verification_requests')
+          .update(requestUpdates)
+          .eq('id', requestId);
+
+        if (rErr) console.warn("verification_requests update error:", rErr);
+      }
+    } catch(e) {
+      console.warn("verification_requests update skipped:", e);
+    }
+
+    showToast("Success", `Company ${action}d successfully.`, "success");
+    loadAdminData();
 }
 
 
