@@ -3707,7 +3707,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="flex items-center gap-3">
 <label class="flex-1 cursor-pointer bg-gray-50 border border-dashed border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center gap-2 hover:bg-gray-100 hover:border-BTrustOn-accent transition group relative overflow-hidden" id="asset-file-label">
-<input accept=".pdf, .jpg, .jpeg, .png" class="hidden" id="asset-file-input" onchange="handleAssetFileSelect(this)" type="file"/>
+<input accept=".pdf,.jpg,.jpeg,.png,.webp" multiple class="hidden" id="asset-file-input" onchange="handleAssetFileSelect(this)" type="file"/>
 <i class="fa-solid fa-cloud-arrow-up text-gray-400 group-hover:text-BTrustOn-accent"></i>
 <span class="text-xs font-bold text-gray-500 group-hover:text-gray-700 truncate" data-i18n="lbl_asset_file_input" id="asset-file-text">Attach File (Max 5MB)</span>
 <div class="hidden absolute inset-0 bg-gray-100/80 flex items-center justify-center cursor-not-allowed" id="asset-file-lock">
@@ -3718,9 +3718,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <i class="fa-solid fa-trash text-xs"></i>
 </button>
 </div>
-<a class="hidden text-[10px] text-BTrustOn-accent font-bold mt-1 hover:underline flex items-center gap-1" href="#" id="current-asset-link" target="_blank">
-<i class="fa-solid fa-paperclip"></i> <span data-i18n="ui_view_current_file_680038">View Current File</span>
-</a>
+<div id="asset-file-list" class="mt-2 space-y-2"></div>
 </div>
 <div class="pt-4 flex gap-3">
 <button class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs hover:bg-gray-50 transition" data-i18n="post_cancel" onclick="closeAssetModal()" type="button">
@@ -4949,10 +4947,10 @@ async function getAdminProfileId() {
   }
 }
 
-/* --- YENİ EKLENEN DEĞİŞKENLER (DOSYA İÇİN) --- */
-let currentAssetFile = null; // Yeni yüklenecek dosyayı tutar
-let existingAssetFileUrl = null; // Zaten yüklü olan dosyanın linkini tutar
-let existingAssetFileName = null; // Zaten yüklü olan dosyanın adını tutar
+/* --- ASSET CATALOG FILES (multi attachments) --- */
+let currentAssetFiles = []; // Yeni seçilen dosyalar (File objeleri)
+let existingAssetFiles = []; // Mevcut dosyalar: { url, name }
+
 
 /* =========================================================
    HOME UPDATES (Last 7 days) + POST UPDATE MODAL
@@ -7270,44 +7268,156 @@ async function pricingChoosePro() {
 }
 
 // Dosya Seçilince Çalışır (Input Change)
-function handleAssetFileSelect(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        // Boyut Kontrolü (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showToast("File too large", "Max file size is 5MB.", "error");
-            input.value = ""; // Sıfırla
-            return;
-        }
-        currentAssetFile = file;
-        
-        // Label'ı güncelle (Dosya ismini yaz)
-        const textEl = document.getElementById("asset-file-text");
-        const labelEl = document.getElementById("asset-file-label");
-        
-        if(textEl) textEl.textContent = file.name;
-        if(labelEl) labelEl.classList.add("border-BTrustOn-accent", "bg-cyan-50");
-    }
+function __assetFileTypeLabelFromName(name, url){
+  const n = (name || url || "").toString().toLowerCase();
+  try{
+    if (typeof _isImageFileName === "function" && _isImageFileName(n)) return "IMG";
+  }catch(_){}
+  if (n.includes(".pdf")) return "PDF";
+  try{
+    const k = _assetFileKind({ file_url: url || "", file_name: name || "" });
+    return k || "FILE";
+  }catch(e){
+    return "FILE";
+  }
 }
 
-// Seçilen/Mevcut Dosyayı İptal Et (Çöp Kutusu Butonu)
-function removeAssetFile() {
-    currentAssetFile = null;
-    existingAssetFileUrl = null;
-    existingAssetFileName = null;
-    
-    // Inputu ve görseli sıfırla
-    const inputEl = document.getElementById("asset-file-input");
-    const textEl = document.getElementById("asset-file-text");
-    const labelEl = document.getElementById("asset-file-label");
-    const removeBtn = document.getElementById("btn-remove-asset-file");
-    const linkEl = document.getElementById("current-asset-link");
+function __renderAssetFileList(){
+  const list = document.getElementById("asset-file-list");
+  const textEl = document.getElementById("asset-file-text");
+  const labelEl = document.getElementById("asset-file-label");
+  const removeBtn = document.getElementById("btn-remove-asset-file");
 
-    if(inputEl) inputEl.value = "";
-    if(textEl) textEl.textContent = (t("lbl_asset_file_input") || "Attach File (Max 5MB)");
-    if(labelEl) labelEl.classList.remove("border-BTrustOn-accent", "bg-cyan-50");
-    if(removeBtn) removeBtn.classList.add("hidden");
-    if(linkEl) linkEl.classList.add("hidden");
+  const totalExisting = (existingAssetFiles || []).length;
+  const totalNew = (currentAssetFiles || []).length;
+  const total = totalExisting + totalNew;
+
+  if(textEl){
+    textEl.textContent = total
+      ? (currentLang === "tr" ? `${total} dosya ekli` : `${total} file(s) attached`)
+      : (t("lbl_asset_file_input") || "Attach File (Max 5MB)");
+  }
+  if(labelEl){
+    if(total) labelEl.classList.add("border-BTrustOn-accent", "bg-cyan-50");
+    else labelEl.classList.remove("border-BTrustOn-accent", "bg-cyan-50");
+  }
+  if(removeBtn){
+    if(total) removeBtn.classList.remove("hidden");
+    else removeBtn.classList.add("hidden");
+  }
+
+  if(!list) return;
+  if(!total){
+    list.innerHTML = "";
+    return;
+  }
+
+  const row = (kind, name, rightHtml) => `
+    <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+      <div class="min-w-0 flex items-center gap-2">
+        <span class="shrink-0 text-[10px] font-extrabold px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-600">${kind}</span>
+        <div class="min-w-0 text-[11px] font-bold text-slate-700 truncate" title="${_safeText(name)}">${_safeText(name)}</div>
+      </div>
+      <div class="shrink-0 flex items-center gap-1">${rightHtml || ""}</div>
+    </div>
+  `;
+
+  const openLbl = (t("attachment_open") || (currentLang === "tr" ? "Aç" : "Open"));
+  const selLbl = (currentLang === "tr" ? "Seçildi" : "Selected");
+  const removeTitle = _safeText(t("attr_remove_file_46330f") || "Remove");
+
+  const existingHtml = (existingAssetFiles || []).map((f, idx) => {
+    const kind = __assetFileTypeLabelFromName(f.name, f.url);
+    const viewBtn = `
+      <button type="button"
+        class="js-att-open px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition text-[11px] font-extrabold"
+        data-att-url="${_safeText(f.url || "")}"
+        data-att-title="${_safeText(f.name || "Attachment")}"
+        data-att-filename="${_safeText(f.name || "")}"
+      >${openLbl}</button>
+    `;
+    const delBtn = `
+      <button type="button"
+        class="w-8 h-8 rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500 grid place-items-center transition"
+        onclick="removeExistingAssetFile(${idx})"
+        title="${removeTitle}">
+        <i class="fa-solid fa-trash text-xs"></i>
+      </button>
+    `;
+    return row(kind, (f.name || f.url || ""), viewBtn + delBtn);
+  }).join("");
+
+  const newHtml = (currentAssetFiles || []).map((f, idx) => {
+    const kind = __assetFileTypeLabelFromName(f.name, "");
+    const pill = `<span class="text-[10px] font-extrabold px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700">${selLbl}</span>`;
+    const delBtn = `
+      <button type="button"
+        class="w-8 h-8 rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500 grid place-items-center transition"
+        onclick="removeNewAssetFile(${idx})"
+        title="${removeTitle}">
+        <i class="fa-solid fa-trash text-xs"></i>
+      </button>
+    `;
+    return row(kind, (f && f.name ? f.name : ""), pill + delBtn);
+  }).join("");
+
+  list.innerHTML = existingHtml + (existingHtml && newHtml ? `<div class="h-2"></div>` : ``) + newHtml;
+}
+
+function removeExistingAssetFile(idx){
+  try{
+    existingAssetFiles = (existingAssetFiles || []).filter((_, i) => i !== idx);
+    __renderAssetFileList();
+  }catch(e){}
+}
+function removeNewAssetFile(idx){
+  try{
+    currentAssetFiles = (currentAssetFiles || []).filter((_, i) => i !== idx);
+    __renderAssetFileList();
+  }catch(e){}
+}
+
+// Dosya Seçilince Çalışır (Input Change)
+function handleAssetFileSelect(input) {
+  if (!input || !input.files || !input.files.length) return;
+  const files = Array.from(input.files || []);
+
+  const MAX_MB = 5;
+  const MAX_FILES = 12;
+
+  for (const file of files) {
+    if (!file) continue;
+
+    if (file.size > MAX_MB * 1024 * 1024) {
+      showToast("File too large", `Max file size is ${MAX_MB}MB. (${file.name})`, "error");
+      continue;
+    }
+
+    // prevent duplicates by name+size (new) / name (existing)
+    const dupNew = (currentAssetFiles || []).some(f => f && f.name === file.name && f.size === file.size);
+    const dupExisting = (existingAssetFiles || []).some(f => f && f.name === file.name);
+    if (dupNew || dupExisting) continue;
+
+    currentAssetFiles.push(file);
+
+    if ((currentAssetFiles.length + (existingAssetFiles || []).length) >= MAX_FILES) break;
+  }
+
+  // Reset input so selecting the same file triggers again
+  input.value = "";
+
+  __renderAssetFileList();
+}
+
+// Seçilen/Mevcut Dosyaları İptal Et (Çöp Kutusu Butonu)
+function removeAssetFile() {
+  currentAssetFiles = [];
+  existingAssetFiles = [];
+
+  const inputEl = document.getElementById("asset-file-input");
+  if(inputEl) inputEl.value = "";
+
+  __renderAssetFileList();
 }
 
 /* --- PROJE RESİM YÖNETİMİ --- */
@@ -8508,46 +8618,97 @@ function _assetFileIconClass(fn){
   if (_isImageFileName(f)) return "fa-image";
   return "fa-file";
 }
-function buildAssetAttachmentPreview(a){
-  // Compact overlay preview (does NOT change card size)
-  if (!a || !a.file_url) return "";
-  const fnRaw = (a.file_name || a.file_url || "").toString();
-  const fn = fnRaw.toLowerCase();
-  const isImg = _isImageFileName(fn);
-  const isPdf = fn.endsWith(".pdf") || fn.includes(".pdf?");
-  const iconClass = isPdf ? "fa-file-pdf" : _assetFileIconClass(fnRaw);
 
-  // IMPORTANT:
-  // Do NOT inline JSON.stringify(...) inside onclick="" attributes (breaks HTML quoting -> SyntaxError).
-  // Use data-* attributes + a single delegated click listener instead.
-  const urlAttr = _safeText(a.file_url || "");
-  const titleAttr = _safeText(a.file_name || _assetName(a) || (currentLang === "tr" ? "Ek" : "Attachment"));
-  const fileNameAttr = _safeText(a.file_name || "");
+function _assetFiles(a){
+  if(!a) return [];
+  const raw = a.files || a.catalog_files || a.attachments || a.docs;
+  if(Array.isArray(raw)){
+    return raw.map(x => {
+      const url = (x && (x.url || x.file_url || x.fileUrl || x.href)) || "";
+      const name = (x && (x.name || x.file_name || x.fileName || x.title)) || "";
+      return url ? { url, name } : null;
+    }).filter(Boolean);
+  }
+  if(a.file_url){
+    return [{ url: a.file_url, name: a.file_name || "" }];
+  }
+  return [];
+}
+function _assetPrimaryFile(a){
+  const files = _assetFiles(a);
+  return files[0] || null;
+}
+
+
+function buildAssetAttachmentPreview(a){
+  // Small catalog cover preview (keeps layout stable, avoids random crop)
+  const files = _assetFiles(a);
+  if (!a || !files.length) return "";
+
+  const primary = files[0];
+  const fnRaw = (primary.name || primary.url || "").toString();
+  const fn = fnRaw.toLowerCase();
+  const urlLower = (primary.url || "").toString().toLowerCase();
+  const isImg = _isImageFileName(fn) || _isImageFileName(urlLower);
+  const isPdf = fn.endsWith(".pdf") || fn.includes(".pdf?") || urlLower.includes(".pdf");
+
+  // Extension label for non-image covers
+  let ext = "";
+  try {
+    const cleaned = (fnRaw || "").split("?")[0].split("#")[0];
+    ext = (cleaned.includes(".") ? cleaned.split(".").pop() : "").toUpperCase();
+  } catch(e) { ext = ""; }
+  if (!ext || ext.length > 6) ext = (isPdf ? "PDF" : (currentLang === "tr" ? "DOSYA" : "FILE"));
+
+  const urlAttr = _safeText(primary.url || "");
+  const titleAttr = _safeText(primary.name || _assetName(a) || (currentLang === "tr" ? "Ek" : "Attachment"));
+  const fileNameAttr = _safeText(primary.name || "");
+
+  const assetIdAttr = _safeText(String(a.id ?? ""));
+  const cidxAttr = "0";
+
+  const countBadge = files.length > 1
+    ? `<span class="absolute -top-2 -right-2 min-w-[20px] h-[20px] px-1 rounded-full bg-slate-900 text-white text-[10px] font-extrabold grid place-items-center shadow">${files.length}</span>`
+    : "";
+
+  const baseBtnClass = "js-att-open w-[68px] h-[68px] shrink-0 rounded-xl border border-slate-200 bg-slate-50 shadow-sm transition overflow-hidden opacity-90 group-hover:opacity-100 hover:shadow-md hover:scale-[1.01] relative";
 
   if (isImg){
     return `
       <button type="button"
-         class="js-att-open absolute bottom-3 right-3 w-12 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition overflow-hidden opacity-70 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
+         class="${baseBtnClass}"
+         data-asset-id="${assetIdAttr}"
+         data-cidx="${cidxAttr}"
          data-att-url="${urlAttr}"
          data-att-title="${titleAttr}"
          data-att-filename="${fileNameAttr}"
-         title="${_safeText(t("ui_view_image") || (currentLang === "tr" ? "Görseli görüntüle" : "View image"))}">
-        <img src="${a.file_url}" alt="Attachment" class="w-full h-full object-cover filter saturate-75 contrast-95 brightness-95" loading="lazy" />
+         title="${_safeText(t("ui_open_catalog") || (currentLang === "tr" ? "Kataloğu aç" : "Open catalog"))}">
+        <img src="${primary.url}" alt="Attachment" class="w-full h-full object-contain p-2" loading="lazy" />
+        ${countBadge}
       </button>
     `;
   }
 
+  // PDF / docs cover
+  const coverTone = isPdf ? "text-rose-600 bg-white/70 border-rose-100" : "text-slate-700 bg-white/70 border-slate-200";
+  const openText = (t("ui_open") || (currentLang === "tr" ? "Aç" : "Open"));
   return `
     <button type="button"
-       class="js-att-open absolute bottom-3 right-3 w-9 h-9 rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur shadow-sm transition flex items-center justify-center opacity-75 group-hover:opacity-100 hover:shadow-md hover:scale-[1.02]"
+       class="${baseBtnClass} flex flex-col items-center justify-center"
+       data-asset-id="${assetIdAttr}"
+       data-cidx="${cidxAttr}"
        data-att-url="${urlAttr}"
        data-att-title="${titleAttr}"
        data-att-filename="${fileNameAttr}"
-       title="${_safeText(t("ui_open_document") || (currentLang === "tr" ? "Belgeyi aç" : "Open document"))}">
-      <i class="fa-solid ${iconClass} text-[18px] ${isPdf ? "text-rose-400" : "text-slate-600"}"></i>
+       title="${_safeText(t("ui_open_catalog") || (currentLang === "tr" ? "Kataloğu aç" : "Open catalog"))}">
+      <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full border text-[10px] font-extrabold ${coverTone}">${_safeText(ext)}</span>
+      <span class="mt-1 text-[10px] font-bold text-slate-500">${_safeText(openText)}</span>
+      ${countBadge}
     </button>
   `;
 }
+
+
 
 // Delegated handler for all attachment preview buttons (assets + cards)
 if (!window.__attDelegationBound) {
@@ -8556,6 +8717,29 @@ if (!window.__attDelegationBound) {
     const btn = e.target && e.target.closest ? e.target.closest(".js-att-open") : null;
     if (!btn) return;
     try { e.preventDefault(); e.stopPropagation(); } catch(_){}
+
+    const assetId = btn.getAttribute("data-asset-id");
+    const cidx = parseInt(btn.getAttribute("data-cidx") || "0", 10);
+
+    // Asset cards: open catalog viewer (asset modal) instead of single-file viewer
+    if (assetId) {
+      try {
+        openAssetViewer(assetId);
+        // After modal renders, jump to index (if supported)
+        setTimeout(() => {
+          try {
+            if (typeof __avSelectCatalogIndex === "function") __avSelectCatalogIndex(cidx);
+            else if (window.__avSelectCatalogIndex) window.__avSelectCatalogIndex(cidx);
+          } catch(e) {}
+        }, 0);
+        return;
+      } catch (err) {
+        console.error("openAssetViewer failed:", err);
+        // fallback below
+      }
+    }
+
+    // Generic attachments (certificates etc.)
     const url = btn.getAttribute("data-att-url") || "";
     const title = btn.getAttribute("data-att-title") || "";
     const fn = btn.getAttribute("data-att-filename") || "";
@@ -8567,6 +8751,7 @@ if (!window.__attDelegationBound) {
     }
   }, true);
 }
+
 
 // Keep a few key UI labels in sync even if some parts render async
 function syncLocaleUIBits() {
@@ -8598,6 +8783,37 @@ function _assetQty(a){
   const n = parseFloat((a?.qty ?? "").toString().replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 }
+
+function _assetFileKind(a){
+  const name = (a?.file_name || a?.fileName || "").toString().toLowerCase();
+  const url = (a?.file_url || a?.fileUrl || a?.file || "").toString().toLowerCase();
+  const src = name || url;
+  if (!src) return "";
+
+  const m = src.match(/\.([a-z0-9]{1,10})(?:$|[?#])/i);
+  const ext = m ? (m[1] || "").toLowerCase() : "";
+  if (!ext) return "";
+
+  const img = ["jpg","jpeg","png","webp","gif","bmp","svg","tif","tiff","heic"];
+  const doc = ["doc","docx","rtf","odt"];
+  const xls = ["xls","xlsx","csv","ods"];
+  const ppt = ["ppt","pptx","odp"];
+  const cad = ["dwg","dxf","dgn","stp","step","igs","iges","stl","3dm","rvt","ifc"];
+  const zip = ["zip","rar","7z","tar","gz"];
+
+  if (ext === "pdf") return "PDF";
+  if (img.includes(ext)) return "IMG";
+  if (doc.includes(ext)) return "DOC";
+  if (xls.includes(ext)) return "XLS";
+  if (ppt.includes(ext)) return "PPT";
+  if (cad.includes(ext)) return "CAD";
+  if (zip.includes(ext)) return "ZIP";
+  if (ext === "txt") return "TXT";
+  if (ext.length <= 6) return ext.toUpperCase();
+
+  return "FILE";
+}
+
 function _assetNormStatus(s){
   const v = (s || "").toString().toLowerCase().trim();
 
@@ -8678,7 +8894,23 @@ function renderAssetsCards(company, isMyProfile){
 
   arr.forEach(a => {
 
+    const __now = Date.now();
+    const __cAt = Date.parse(a?.created_at || "");
+    const __uAt = Date.parse(a?.updated_at || "");
+    const __isNew = Number.isFinite(__cAt) && (__now - __cAt <= 7*24*60*60*1000);
+    const __isUpdated = !__isNew && Number.isFinite(__uAt) && (__now - __uAt <= 48*60*60*1000);
+
+    const __recencyText = __isNew
+      ? (currentLang === "tr" ? "Yeni" : (currentLang === "es" ? "Nuevo" : "New"))
+      : (__isUpdated ? (currentLang === "tr" ? "Güncellendi" : (currentLang === "es" ? "Actualizado" : "Updated")) : "");
+
+    const __recencyBadge = __recencyText ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-extrabold ${__isNew ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-600'}">${__recencyText}</span>` : "";
+
+    const __fileKind = _assetFileKind(a);
+    const __fileKindBadge = __fileKind ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-white/70 border border-slate-200 text-[10px] font-extrabold text-slate-600" title="${(currentLang === "tr" ? "Dosya" : (currentLang === "es" ? "Archivo" : "File"))}: ${__fileKind}">${__fileKind}</span>` : "";
+
     const attachmentPreview = buildAssetAttachmentPreview(a);
+    const attachmentPreviewInline = attachmentPreview ? `<div class="flex justify-end">${attachmentPreview}</div>` : "";
     const locText = (_assetLoc(a) || "").toString().trim();
     const specRaw = (_assetSpec(a) || "").toString().trim();
     const specText = specRaw ? specRaw : (t("ui_no_specs_provided") || (currentLang === "tr" ? "Özellik belirtilmedi." : "No specs provided."));
@@ -8725,36 +8957,38 @@ function renderAssetsCards(company, isMyProfile){
             </div>
 
             <div class="mt-4 rounded-xl bg-slate-50/70 border border-slate-200/70 px-3 py-2.5">
+              <div class="flex items-center justify-between gap-2">
               <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("th_specs") || "Specs"}</div>
+              ${__fileKindBadge}
+              </div>
               <div class="mt-1 text-[12px] text-slate-700 font-medium leading-snug whitespace-normal break-words line-clamp-2">${_safeText(specText)}</div>
             </div>
           </div>
 
           <div class="flex flex-col items-end gap-2 shrink-0">
-            <div>${getStatusBadge(a.status)}</div>
+            <div class="flex items-center gap-2">${getStatusBadge(a.status)}${__recencyBadge}</div>
             ${viewAction}
-            <div class="flex items-center gap-2">
-              <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200 text-[11px] font-extrabold text-slate-800">
+            <div class="flex items-start gap-2">
+              <div class="flex flex-col items-end gap-2">
+                <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200 text-[11px] font-extrabold text-slate-800">
                 <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("ui_qty") || "Qty"}</span>
                 <span>${(a.qty ?? "-")}</span>
               </span>
+                ${attachmentPreviewInline}
+              </div>
               ${actions}
             </div>
           </div>
         </div>
 
-        <div class="mt-4 pr-14 flex items-center justify-between text-[11px] text-slate-500">
+        <div class="mt-4 flex items-center justify-start text-[11px] text-slate-500">
           <span class="inline-flex items-center gap-1.5">
             <i class="fa-regular fa-clock text-[11px]"></i>
             ${(a.updated_at ? new Date(a.updated_at).toLocaleDateString() : "")}
           </span>
-          <span class="inline-flex items-center gap-2 text-slate-400">
-            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-            ${(a.created_at ? ("Created " + new Date(a.created_at).toLocaleDateString()) : "")}
-          </span>
+
         </div>
       </div>
-      ${attachmentPreview}
 `;
     grid.appendChild(card);
   });
@@ -8789,8 +9023,151 @@ function sortAssetsUI(mode){
    ASSET VIEWER MODAL
    ========================= */
 let __assetViewerItem = null;
+let __avCatalog = null;
+
+function __avCatalogHTML(){
+  const openLbl = (t("attachment_open") || (currentLang === "tr" ? "Aç" : "Open"));
+  const prevLbl = (currentLang === "tr" ? "Önceki" : "Previous");
+  const nextLbl = (currentLang === "tr" ? "Sonraki" : "Next");
+  const pna = (t("attachment_preview_not_available") || "Preview not available");
+  const pnt = (t("attachment_to_view_new_tab") || "Use Open to view this file in a new tab.");
+  return `
+    <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+      <div class="relative bg-slate-50 aspect-[16/10] overflow-hidden" id="av-cat-stage">
+        <img id="av-cat-img" class="hidden w-full h-full object-contain select-none" draggable="false" />
+        <iframe id="av-cat-frame" class="hidden w-full h-full" title="Preview"></iframe>
+        <div id="av-cat-fallback" class="hidden absolute inset-0 flex items-center justify-center p-6">
+          <div class="bg-white/90 border border-slate-200 rounded-2xl p-5 shadow-glass text-center max-w-sm">
+            <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
+              <i class="fa-solid fa-file text-slate-500"></i>
+            </div>
+            <div class="text-sm font-extrabold text-slate-800 mb-1">${pna}</div>
+            <div class="text-xs text-slate-500">${pnt}</div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between gap-2 px-3 py-2 border-t border-slate-100">
+        <div class="min-w-0 text-[11px] text-slate-600 font-semibold truncate" id="av-cat-caption"></div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" id="av-cat-open" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-900 hover:text-white transition text-xs font-bold">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[12px]"></i>
+            <span class="hidden sm:inline">${openLbl}</span>
+          </button>
+          <button type="button" id="av-cat-prev" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition grid place-items-center" aria-label="${prevLbl}" title="${prevLbl}">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button type="button" id="av-cat-next" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white transition grid place-items-center" aria-label="${nextLbl}" title="${nextLbl}">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="mt-2 flex items-center gap-2 overflow-x-auto pb-1" id="av-cat-thumbs"></div>
+  `;
+}
+
+function __avGuessKind(url, name){
+  try{
+    if(typeof __attachmentKind === "function"){
+      let k = __attachmentKind(url, name);
+      if(k && k !== "other") return k;
+    }
+  }catch(e){}
+  const lower = (name || url || "").toString().toLowerCase();
+  if (typeof _isImageFileName === "function" && _isImageFileName(lower)) return "image";
+  if (lower.includes(".pdf")) return "pdf";
+  return "pdf";
+}
+
+function __avRenderCatalog(idx){
+  if(!__avCatalog || !Array.isArray(__avCatalog.files) || !__avCatalog.files.length) return;
+  const files = __avCatalog.files;
+  const total = files.length;
+
+  let i = idx;
+  if(i < 0) i = total - 1;
+  if(i >= total) i = 0;
+  __avCatalog.idx = i;
+
+  const item = files[i];
+  const url = item && item.url ? item.url : "";
+  const name = (item && item.name ? item.name : ("File " + (i + 1)));
+  const kind = __avGuessKind(url, name);
+
+  const img = document.getElementById("av-cat-img");
+  const frame = document.getElementById("av-cat-frame");
+  const fb = document.getElementById("av-cat-fallback");
+  const caption = document.getElementById("av-cat-caption");
+  const thumbs = document.getElementById("av-cat-thumbs");
+
+  if(caption) caption.textContent = `${name} (${i + 1}/${total})`;
+  try{ if(fb) fb.classList.add("hidden"); }catch(_){}
+
+  if(kind === "image"){
+    if(frame){ frame.classList.add("hidden"); try{ frame.src = "about:blank"; }catch(_e){} }
+    if(img){
+      img.classList.remove("hidden");
+      img.onerror = () => { try{ img.onerror = null; }catch(e){} try{ if(fb) fb.classList.remove("hidden"); }catch(_e){} };
+      img.src = url;
+    }
+  } else {
+    if(img){ img.classList.add("hidden"); img.src = ""; }
+    if(frame){
+      frame.classList.remove("hidden");
+      let loaded = false;
+      const onLoad = () => { loaded = true; try{ if(fb) fb.classList.add("hidden"); }catch(e){} };
+      frame.addEventListener("load", onLoad, { once: true });
+      frame.src = url;
+
+      setTimeout(() => {
+        try{ if(!loaded && fb) fb.classList.remove("hidden"); }catch(e){}
+      }, 1800);
+    }
+  }
+
+  if(thumbs){
+    thumbs.innerHTML = files.map((f, j) => {
+      const nm = (f && f.name ? f.name : "");
+      const k = __avGuessKind(f.url, nm);
+      const active = (j === i) ? "border-slate-900" : "border-slate-200";
+      if(k === "image"){
+        return `
+          <button type="button" onclick="__avSelectCatalogIndex(${j})" class="shrink-0 w-14 h-14 rounded-xl border ${active} overflow-hidden bg-white">
+            <img src="${_safeText(f.url)}" class="w-full h-full object-cover" loading="lazy" />
+          </button>
+        `;
+      }
+      const label = (nm || "").toLowerCase().includes(".pdf") ? "PDF" : (_assetFileKind({ file_url: f.url, file_name: nm }) || "FILE");
+      const icon = (label === "PDF") ? "fa-file-pdf text-rose-400" : "fa-file text-slate-500";
+      return `
+        <button type="button" onclick="__avSelectCatalogIndex(${j})" class="shrink-0 w-14 h-14 rounded-xl border ${active} bg-white flex flex-col items-center justify-center gap-1">
+          <i class="fa-solid ${icon} text-[18px]"></i>
+          <span class="text-[9px] font-extrabold text-slate-600">${label}</span>
+        </button>
+      `;
+    }).join("");
+  }
+}
+
+function __avStepCatalog(delta){
+  if(!__avCatalog) return;
+  __avRenderCatalog(__avCatalog.idx + delta);
+}
+
+function __avOpenCurrentInAttachmentViewer(){
+  if(!__avCatalog) return;
+  const item = __avCatalog.files[__avCatalog.idx];
+  if(!item || !item.url) return;
+  openAttachmentViewer(item.url, (item.name || "Attachment"), (item.name || ""));
+}
+
+function __avSelectCatalogIndex(idx){
+  __avRenderCatalog(idx);
+}
+window.__avSelectCatalogIndex = __avSelectCatalogIndex;
 
 function openAssetViewer(assetId){
+
   const company = selectedCompany;
   const a = (company?.assets || []).find(x => String(x.id) === String(assetId));
   if (!a) return;
@@ -8809,20 +9186,25 @@ function openAssetViewer(assetId){
 
   const fileWrap = document.getElementById("av-file");
   if (fileWrap) {
-    if (a.file_url) {
-      const label = a.file_name ? a.file_name : (t("ui_open_document") || (currentLang === "tr" ? "Belgeyi aç" : "Open document"));
-      fileWrap.innerHTML = `
-        <button type="button" id="av-open-file" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-BTrustOn-primary hover:text-white transition">
-          <i class="fa-solid fa-file-arrow-up"></i>
-          <span class="text-xs font-bold">${label}</span>
-        </button>
-      `;
-      const __btn = document.getElementById("av-open-file");
-      if(__btn){
-        __btn.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} openAttachmentViewer(a.file_url, (a.file_name || label), a.file_name); };
-      }
+    const files = _assetFiles(a);
+
+    if (files.length) {
+      fileWrap.innerHTML = __avCatalogHTML();
+      __avCatalog = { files: files, idx: 0 };
+
+      // bind controls
+      const prev = document.getElementById("av-cat-prev");
+      const next = document.getElementById("av-cat-next");
+      const openBtn = document.getElementById("av-cat-open");
+
+      if (prev) prev.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(_){ } __avStepCatalog(-1); };
+      if (next) next.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(_){ } __avStepCatalog(1); };
+      if (openBtn) openBtn.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(_){ } __avOpenCurrentInAttachmentViewer(); };
+
+      __avRenderCatalog(0);
     } else {
-      fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">${t("ui_no_document_attached") || (currentLang === "tr" ? "Ekli belge yok." : "No document attached.")}</div>`;
+      __avCatalog = null;
+      fileWrap.innerHTML = `<div class="text-[11px] text-gray-400">${(t("ui_no_document_attached") || (currentLang === "tr" ? "Ekli belge yok." : "No document attached."))}</div>`;
     }
   }
 
@@ -8834,6 +9216,7 @@ function closeAssetViewer(){
   const m = document.getElementById("asset-viewer");
   if (m) m.classList.add("hidden");
   __assetViewerItem = null;
+  __avCatalog = null;
 }
 
 
@@ -8945,6 +9328,8 @@ function renderCertificates(company) {
       issuer: c?.issuer || "",
       expiry_date: c?.expiry_date || null,
       file_url: c?.file_url || null,
+      file_name: c?.file_name || c?.fileName || null,
+      created_at: c?.created_at || c?.createdAt || c?.issued_at || c?.issuedAt || c?.issue_date || c?.issueDate || null,
       updated_at: c?.updated_at || null,
     };
   }).filter(c => String(c.name || "").trim() !== "");
@@ -9022,26 +9407,44 @@ function renderCertificates(company) {
     const status = _certStatus(date);
     const daysLeft = _certDaysLeft(date);
 
-    // Status badge
+    // Status badge (Valid / Expiring soon / Expired)
+    const _certLbl = (key, en, tr, es) => {
+      try { const v = (typeof t === "function") ? t(key) : null; if (v) return v; } catch(_) {}
+      return (currentLang === "tr") ? tr : (currentLang === "es" ? es : en);
+    };
+    const _lblValid    = _certLbl("cert_badge_valid", "Valid", "Geçerli", "Válido");
+    const _lblExpSoon  = _certLbl("cert_badge_expiring", "Expiring soon", "Süresi dolmak üzere", "Próximo a caducar");
+    const _lblExpired  = _certLbl("cert_badge_expired", "Expired", "Süresi doldu", "Caducado");
+    const _lblNoExpiry = (() => {
+      try { const v = (typeof t === "function") ? (t("ui_no_expiry") || t("cert_badge_no_expiry")) : null; if (v) return v; } catch(_) {}
+      return (currentLang === "tr") ? "Son kullanma yok" : (currentLang === "es" ? "Sin caducidad" : "No expiry");
+    })();
+
     let statusBadge = "";
     if (status === "valid") {
       const warn = (typeof daysLeft === "number" && daysLeft <= 30);
       statusBadge = `
         <span class="inline-flex items-center gap-1 ${warn ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-emerald-50 text-emerald-700 border-emerald-100"} text-[9px] font-extrabold px-2 py-1 rounded-lg border uppercase">
           <i class="fa-solid ${warn ? "fa-triangle-exclamation" : "fa-circle-check"}"></i>
-          ${warn ? "Expiring" : "Valid"}
+          ${warn ? _lblExpSoon : _lblValid}
         </span>`;
     } else if (status === "expired") {
       statusBadge = `
         <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-[9px] font-extrabold px-2 py-1 rounded-lg border border-red-100 uppercase">
-          <i class="fa-solid fa-circle-exclamation"></i> Expired
+          <i class="fa-solid fa-circle-exclamation"></i> ${_lblExpired}
         </span>`;
     } else {
       statusBadge = `
         <span class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-[9px] font-extrabold px-2 py-1 rounded-lg border border-slate-200 uppercase">
-          <i class="fa-solid fa-circle-question"></i> ${t("ui_no_expiry") || "No expiry"}
+          <i class="fa-solid fa-circle-question"></i> ${_lblNoExpiry}
         </span>`;
     }
+
+    // File kind badge (PDF / IMG / DOC…)
+    const __kind = fileUrl ? _assetFileKind({ file_url: fileUrl, file_name: cert.file_name || "" }) : "";
+    const fileTypeBadge = __kind ? `
+      <span class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 bg-white/70 text-slate-600 text-[9px] font-extrabold uppercase tracking-wide">${__kind}</span>`
+      : "";
 
     // File preview icon
     let thumb = `
@@ -9072,6 +9475,27 @@ function renderCertificates(company) {
          </span>`
       : `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400"><i class="fa-regular fa-calendar"></i> ${t("ui_expiry") || "Expiry"}: <span class="font-bold text-gray-600">${t("ui_not_provided") || "Not provided"}</span></span>`;
 
+    // Issued micro timestamp (small, helpful)
+    const _lblIssued = (typeof t === "function" ? t("ui_issued") : null) || (currentLang === "tr" ? "Düzenlendi" : (currentLang === "es" ? "Emitido" : "Issued"));
+
+    let __issuedTs = Date.parse(cert.created_at || "");
+    if (!Number.isFinite(__issuedTs)) {
+      const __idn = Number(cert.id);
+      if (Number.isFinite(__idn) && __idn > 100000000000) __issuedTs = __idn; // ms timestamp ids
+    }
+
+    const __fmtDate = (ts) => {
+      try {
+        const loc = (currentLang === "tr") ? "tr-TR" : (currentLang === "es" ? "es-ES" : "en-US");
+        return new Date(ts).toLocaleDateString(loc, { year: "numeric", month: "2-digit", day: "2-digit" });
+      } catch(e) { return ""; }
+    };
+
+    const issuedTxt = Number.isFinite(__issuedTs) ? __fmtDate(__issuedTs) : "";
+    const stampHtml = issuedTxt
+      ? `<div class="mt-2 text-[10px] text-gray-400 font-semibold">${_lblIssued}: <span class="font-bold text-gray-600">${issuedTxt}</span></div>`
+      : "";
+
     // Actions
     const viewBtn = fileUrl
       ? `<button type="button" data-action="view-doc" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 backdrop-blur border border-[rgba(15,23,42,.12)] text-slate-700 text-[11px] font-extrabold hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm" title="${t("ui_view_document") || "View document"}">
@@ -9089,7 +9513,9 @@ const ownerActions = isOwner ? `
       </div>
     ` : ``;
 
-    const card = document.createElement("div");
+        const nameTitle = String(name || "").replace(/"/g, "&quot;");
+
+const card = document.createElement("div");
     try{ card.id = _btonEntityDomId('cert', id); }catch(e){}
     card.className = "relative bg-gradient-to-b from-white/92 to-slate-50/70 backdrop-blur border border-[rgba(15,23,42,.08)] rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-[1px] hover:border-[rgba(6,182,212,.28)] transition group overflow-hidden";
 
@@ -9099,11 +9525,15 @@ const ownerActions = isOwner ? `
         ${thumb}
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 flex-wrap">
-            <div class="text-sm font-extrabold text-gray-800 truncate">${name}</div>
-            ${statusBadge}
+            <div class="min-w-0 flex-1 text-sm font-extrabold text-gray-800 truncate" title="${nameTitle}">${name}</div>
+            <div class="shrink-0 flex items-center gap-2 flex-wrap justify-end">
+              ${statusBadge}
+              ${fileTypeBadge}
+            </div>
           </div>
           <div class="text-[11px] text-gray-500 font-semibold truncate mt-0.5">${issuer}</div>
           <div class="mt-2">${meta}</div>
+          ${stampHtml}
         </div>
       </div>
 
@@ -11691,21 +12121,10 @@ function openAssetModal(assetId = null) {
         document.getElementById("asset-location").value = asset.location || "";
         document.getElementById("asset-status").value = asset.status || "Available";
 
-        // Varsa Dosyayı Göster
-        if (asset.file_url) {
-            existingAssetFileUrl = asset.file_url;
-            existingAssetFileName = asset.file_name || "Attached Document";
-            
-            document.getElementById("current-asset-link").href = asset.file_url;
-            document.getElementById("current-asset-link").querySelector("span").textContent = existingAssetFileName;
-            document.getElementById("current-asset-link").classList.remove("hidden");
-            
-            // Silme butonunu aç
-            document.getElementById("btn-remove-asset-file").classList.remove("hidden");
-            
-            // Texti güncelle
-            document.getElementById("asset-file-text").textContent = "Change File";
-        }
+        // Catalog files (multi attachments)
+        existingAssetFiles = _assetFiles(asset);
+        currentAssetFiles = [];
+        __renderAssetFileList();
     }
   } else {
     currentEditingAssetId = null;
@@ -11739,34 +12158,37 @@ async function saveAsset() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("No session.");
 
-    // --- DOSYA YÜKLEME İŞLEMİ ---
-    let finalFileUrl = existingAssetFileUrl; // Varsayılan: eski dosya kalsın
-    let finalFileName = existingAssetFileName;
+    // --- DOSYA YÜKLEME (Katalog: bir asset'e birden fazla dosya) ---
+    const uploadedFiles = [];
 
-    // Eğer yeni dosya seçildiyse yükle
-    if (currentAssetFile) {
-        const fileExt = currentAssetFile.name.split('.').pop();
-        const cleanName = currentAssetFile.name.replace(/[^a-zA-Z0-9]/g, '_');
+    if (currentAssetFiles && currentAssetFiles.length) {
+      for (const file of currentAssetFiles) {
+        if (!file) continue;
+        const fileExt = (file.name || "").split('.').pop();
+        const cleanName = (file.name || "file").replace(/[^a-zA-Z0-9]/g, '_');
         const filePath = `${user.id}/${nowTs()}_${cleanName}.${fileExt}`;
 
-        // 'asset-docs' bucketına yükle (Adım 1'de oluşturduğumuz yer)
-        const { error: uploadError } = await supabaseClient.storage
+        const { error: uploadError } = await supabaseClient
+            .storage
             .from('asset-docs')
-            .upload(filePath, currentAssetFile);
+            .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
-        // Public URL al
-        const { data } = supabaseClient.storage.from('asset-docs').getPublicUrl(filePath);
-        finalFileUrl = data.publicUrl;
-        finalFileName = currentAssetFile.name;
+        const { data: publicUrlData } = supabaseClient.storage.from('asset-docs').getPublicUrl(filePath);
+        uploadedFiles.push({ url: publicUrlData.publicUrl, name: file.name });
+      }
     }
-    
-    // Eğer kullanıcı dosyayı sildiyse (removeAssetFile çalıştıysa)
-    if (!currentAssetFile && !existingAssetFileUrl) {
-        finalFileUrl = null;
-        finalFileName = null;
-    }
+
+    // Mevcut + yeni eklenen dosyalar
+    const finalFiles = [...(existingAssetFiles || []), ...uploadedFiles].filter(f => f && f.url);
+
+    // Backward compatible primary file
+    const primary = finalFiles[0] || null;
+    const finalFileUrl = primary ? primary.url : null;
+    const finalFileName = primary ? (primary.name || null) : null;
+
+    const nowIso = nowDate().toISOString();
 
     // --- VERİ HAZIRLAMA ---
     let currentAssets = [...(selectedCompany.assets || [])];
@@ -11777,9 +12199,10 @@ async function saveAsset() {
         qty: qty, 
         location: location, 
         status: status,
-        file_url: finalFileUrl, // Yeni alan
-        file_name: finalFileName, // Yeni alan
-        updated_at: nowDate().toISOString()
+        files: finalFiles, // Catalog files (images + pdf)
+        file_url: finalFileUrl, // backward compatible primary file
+        file_name: finalFileName, // backward compatible primary file name
+        updated_at: nowIso
     };
 
     if (currentEditingAssetId) {
@@ -11788,7 +12211,7 @@ async function saveAsset() {
             currentAssets[index] = { ...currentAssets[index], ...assetObj };
         }
     } else {
-        currentAssets.push({ id: nowTs(), ...assetObj, date_added: nowDate().toISOString() });
+        currentAssets.push({ id: nowTs(), ...assetObj, date_added: nowIso, created_at: nowIso });
     }
 
     // --- DB UPDATE ---
@@ -16621,7 +17044,7 @@ async function saveCert() {
             currentCerts[index] = { ...currentCerts[index], ...certObj };
         }
     } else {
-        currentCerts.push({ id: nowTs(), ...certObj });
+        currentCerts.push({ id: nowTs(), created_at: nowDate().toISOString(), ...certObj });
     }
 
     // --- DB GÜNCELLEME ---
