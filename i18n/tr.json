@@ -1185,5 +1185,8 @@
   "updates_empty": "Son 7 günde şirket güncellemesi paylaşılmadı.",
   "updates_no_followed": "Güncellemeleri burada görmek için şirketleri takip edin.",
   "post_no_updates_7d": "Son 7 günde paylaşım yok.",
-  "ui_services_capabilities_724c56": "Hizmetler ve Yetkinlikler"
+  "ui_services_capabilities_724c56": "Hizmetler ve Yetkinlikler",
+  "notif.profile_view.title": "Profil görüntüleme",
+  "notif.profile_view.member": "{name} profilinizi inceledi.",
+  "notif.profile_view.guest": "Bir misafir profilinizi inceledi."
 }
