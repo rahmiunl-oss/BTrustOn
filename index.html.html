@@ -6739,6 +6739,7 @@ async function _resolveViewerCompanyNames(viewRows=[]) {
 
 async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
   try {
+      if (window.__PV_NOTIF_DB_ONLY) return;
     if (!viewRow || !__authUserId) return;
     if (!_isProActiveForEngagement()) return;
 
@@ -6772,6 +6773,7 @@ async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
 
 async function syncProfileViewNotifications() {
   try {
+      if (window.__PV_NOTIF_DB_ONLY) return;
     if (!__authUserId) return;
     if (!_isProActiveForEngagement()) return;
 
@@ -6819,6 +6821,7 @@ async function syncProfileViewNotifications() {
 
 function subscribeProfileViewsRealtime() {
   try {
+      if (window.__PV_NOTIF_DB_ONLY) return;
     if (profileViewsSub) {
       try { supabaseClient.removeChannel(profileViewsSub); } catch(e) {}
       profileViewsSub = null;
@@ -6860,9 +6863,7 @@ async function btonInitEngagementNotifications() {
     // Followed updates (all users)
     try { await _ensureHomeFollowSet(user.id); } catch(e) {}
     try { syncFollowedUpdateNotifications(); } catch(e) {}
-
-    // Profile views: DB-driven (trigger on profile_views) — no client-side sync/subscribe (prevents duplicates)
-    // (Keeping JS helpers in file is harmless, but we do not call them here.)
+    // Profile views: DB-driven (trigger creates notifications) — client-side PV notification sync disabled
   } catch(e) {}
 }
 
@@ -10024,28 +10025,13 @@ const card = document.createElement("div");
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
-// Guest fingerprint (stable per browser) - used only when viewer_id is null
-function btonGetGuestFingerprint(){
-  try{
-    const k = "BTrustOn_guest_fp";
-    let fp = localStorage.getItem(k);
-    if(!fp){
-      fp = "g_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
-      localStorage.setItem(k, fp);
-    }
-    return fp;
-  }catch(e){ return null; }
-}
-
-
-
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
     const { data: { user } } = await supabaseClient.auth.getUser();
 
     // ✅ Admin kullanıcı (rahmiunl@gmail.com) görüntülediğinde analitiğe hiç yazma / sayma
-    if (user && user.email === ADMIN_EMAIL) return;
+    if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
     
     // A. Kendi profilime bakıyorsam HİÇBİR ŞEY YAPMA
     if (user && user.id === targetProfileId) return;
@@ -10061,29 +10047,29 @@ async function trackProfileView(targetProfileId) {
         return;
     }
 
-    // C. Veritabanına Kaydet (Guest + Logged-in)
-/*
-  Not:
-  - viewer_id varsa "login olan kullanıcı" demektir.
-  - viewer_id NULL ise "guest" demektir.
-  - RLS tarafında anon insert'e izin verildiği için Edge Function'a gerek yok.
-*/
-const viewerId = user ? user.id : null;
-const { error } = await supabaseClient
-    .from("profile_views")
-    .insert([{
-      profile_id: targetProfileId,
-      viewer_id: viewerId,
-      is_guest: (!viewerId),
-      guest_fingerprint: (viewerId ? null : btonGetGuestFingerprint())
-    }]);
+    // C. Veritabanına Kaydet (DB’ye düşer → trigger ile notifications üretilebilir)
+    // Login varsa: viewer_id = user.id
+    // Guest ise: viewer_id = null, guest_fingerprint = stable localStorage id
+    let payload = null;
+    let onConflict = null;
 
-if (error) {
-    console.warn("profile_views insert error:", error);
-    // Loglama başarısızsa localStorage'a işaret koymayalım ki sonra tekrar deneyebilelim.
-    return;
-}
+    if (user) {
+        payload = { profile_id: targetProfileId, viewer_id: user.id, guest_fingerprint: null };
+        onConflict = "profile_id,viewer_id,view_day";
+    } else {
+        // Guest id (tarayıcıda kalıcı)
+        let guestId = localStorage.getItem("BTrustOn_guest_id");
+        if (!guestId) {
+            guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
+            localStorage.setItem("BTrustOn_guest_id", guestId);
+        }
+        payload = { profile_id: targetProfileId, viewer_id: null, guest_fingerprint: guestId };
+        onConflict = "profile_id,guest_fingerprint,view_day";
+    }
 
+    const { error } = await supabaseClient
+      .from('profile_views')
+      .upsert([payload], { onConflict, ignoreDuplicates: true });
 // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
     if (!error) {
         localStorage.setItem(storageKey, "true");
@@ -19526,7 +19512,7 @@ async function checkAdminAccess() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     const adminBtn = document.getElementById("btn-admin-panel");
     
-    if (user && user.email === ADMIN_EMAIL) {
+    if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) {
         if(adminBtn) adminBtn.classList.remove("hidden");
     } else {
         if(adminBtn) adminBtn.classList.add("hidden");
