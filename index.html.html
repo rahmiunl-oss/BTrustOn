@@ -13175,7 +13175,41 @@ async function handleJoin() {
       } catch(_) {}
     }
 
-    try { checkUserAndOpenProfile(); } catch(e) { console.warn("checkUserAndOpenProfile(after join):", e); }
+    try {
+      // ✅ After successful join, go directly to the user's own company profile (no manual refresh)
+      const __uid = authData?.user?.id || null;
+      if (__uid) {
+        try { localStorage.setItem("BTrustOn_just_joined", "1"); } catch(_) {}
+        try { localStorage.setItem("BTrustOn_just_joined_uid", String(__uid)); } catch(_) {}
+        try { localStorage.setItem("BTrustOn_just_joined_edit", "1"); } catch(_) {}
+        try { localStorage.setItem("BTrustOn_my_company_id", String(__uid)); } catch(_) {}
+        try { localStorage.setItem("BTrustOn_last_route", `company:${__uid}`); } catch(_) {}
+
+        // Prefer a direct profile open for instant UX; fallback to checkUserAndOpenProfile(forceOpen)
+        if (typeof openProfile === "function") {
+          await openProfile(__uid, { tab: "overview" });
+          // ✅ Jump straight into Profile Editor after join
+          if (typeof editMyProfile === "function") {
+            try { setTimeout(() => { try { editMyProfile(); } catch(e) {} }, 120); } catch(e) {}
+          } else if (typeof showEditorView === "function") {
+            try { setTimeout(() => { try { showEditorView(); } catch(e) {} }, 120); } catch(e) {}
+          }
+        } else if (typeof checkUserAndOpenProfile === "function") {
+          await checkUserAndOpenProfile(true);
+        } else {
+          try { window.location.hash = `#company=${encodeURIComponent(__uid)}`; } catch(_) {}
+        }
+      } else {
+        // Fallback: at least refresh session-driven UI
+        if (typeof checkUserAndOpenProfile === "function") await checkUserAndOpenProfile(true);
+      }
+
+      // Clear join redirect flag once navigated
+      try { localStorage.removeItem("BTrustOn_just_joined"); } catch(_) {}
+    } catch(e) {
+      console.warn("post-join redirect to profile failed:", e);
+      try { if (typeof checkUserAndOpenProfile === "function") await checkUserAndOpenProfile(true); } catch(_) {}
+    }
     try { if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120); } catch(e) {}
 
     // If user joined from the Pro pricing CTA, start Pro trial immediately
@@ -13415,7 +13449,28 @@ async function checkUserAndOpenProfile(forceOpen = false) {
       
       localStorage.setItem("BTrustOn_my_company_id", profile.id);
 
-      if (forceOpen === true) { openProfile(profile.id); }
+      // ✅ Auto-open my profile after join (or when forced)
+      try {
+        const __justJoinedUid = (localStorage.getItem("BTrustOn_just_joined_uid") || "").trim();
+        const __shouldOpen = (forceOpen === true) || (__justJoinedUid && __justJoinedUid === String(profile.id));
+        if (__shouldOpen) {
+          let __wantEdit = false;
+          try { __wantEdit = (localStorage.getItem("BTrustOn_just_joined_edit") === "1"); } catch(_) {}
+          try { await openProfile(profile.id); } catch(e) { try { openProfile(profile.id); } catch(_) {} }
+
+          if (__wantEdit && typeof editMyProfile === "function") {
+            try { setTimeout(() => { try { editMyProfile(); } catch(e) {} }, 160); } catch(e) {}
+          }
+
+          try {
+            localStorage.removeItem("BTrustOn_just_joined_uid");
+            localStorage.removeItem("BTrustOn_just_joined");
+            localStorage.removeItem("BTrustOn_just_joined_edit");
+          } catch(_) {}
+        }
+      } catch(e) {
+        try { if (forceOpen === true) openProfile(profile.id); } catch(_) {}
+      }
 
       // ✅ If user's company profile is currently open, refresh it so verification badge updates without a manual refresh
       try {
@@ -17743,138 +17798,6 @@ function deleteCert(certId, certName) {
     });
 }
 // --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
-
-/* =========================================================
-   REALTIME: New companies appear without refresh (Discover/Search)
-   - List is loaded once in initRealData(); without realtime you only see new joins after refresh.
-   - This subscription updates the in-memory `database` on INSERT/UPDATE/DELETE for public.profiles
-   - Then refreshes the UI (showcase or search results).
-   NOTE: Enable Realtime for `profiles` table in Supabase Dashboard:
-         Database → Replication (or Realtime) → add table `profiles` to publication.
-   ========================================================= */
-let __btonProfilesRealtimeChannel = null;
-let __btonProfilesRealtimeRefreshT = null;
-
-function btonMapProfileRowToCompany(p) {
-  try {
-    if (!p) return null;
-    if (p.email && typeof ADMIN_EMAIL !== "undefined" && String(p.email) === String(ADMIN_EMAIL)) return null;
-
-    return {
-      id: p.id,
-      name: p.company_name || "New Company",
-      city: p.city || "Konum Yok",
-      updated_at: p.updated_at || p.updatedAt || null,
-      last_active_at: p.last_active_at || p.last_seen_at || p.last_login_at || p.last_sign_in_at || p.updated_at || null,
-
-      country: p.country || "Turkey",
-      address: p.address || "",
-      email: p.email || "",
-      subscription_tier: p.subscription_tier || "free",
-      subscription_status: p.subscription_status || "free",
-      verification_status: p.verification_status || "none",
-      tax_id: p.tax_id || "",
-      duns_number: p.duns_number || "",
-
-      service_details: p.service_details || "",
-      owner_name: p.owner_name,
-      owner_role: p.owner_role,
-      owner_linkedin: p.owner_linkedin,
-      owner_photo_url: p.owner_photo_url,
-
-      sector: p.sector || "construction",
-      desc: p.description || "",
-      tagline: p.tagline || "",
-      type_label: p.company_type,
-      size_label: p.company_size,
-      year_label: p.founded_year,
-      services: p.services ? String(p.services).split(',').map(s=>String(s).trim()).filter(Boolean) : [],
-      logo_url: p.logo_url || null,
-      website: p.website || "",
-      phone: p.phone || "",
-      contact_email: p.contact_email || "",
-      certificates: p.certificates || [],
-      projects: p.projects || [],
-      assets: p.assets || [],
-      trust: "verified",
-      meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
-    };
-  } catch(e) { return null; }
-}
-
-function btonUpsertCompanyFromProfileRow(p) {
-  try {
-    const mapped = btonMapProfileRowToCompany(p);
-    if (!mapped || !mapped.id) return;
-
-    const idx = (typeof database !== "undefined" && Array.isArray(database))
-      ? database.findIndex(c => String(c && c.id) === String(mapped.id))
-      : -1;
-
-    if (idx > -1) {
-      database[idx] = { ...(database[idx] || {}), ...mapped };
-    } else {
-      database.unshift(mapped);
-    }
-  } catch(e) {}
-}
-
-function btonRemoveCompanyById(companyId) {
-  try {
-    if (typeof database === "undefined" || !Array.isArray(database)) return;
-    const cid = String(companyId || "");
-    if (!cid) return;
-    const idx = database.findIndex(c => String(c && c.id) === cid);
-    if (idx > -1) database.splice(idx, 1);
-  } catch(e) {}
-}
-
-function btonScheduleDiscoverRefresh() {
-  try { if (__btonProfilesRealtimeRefreshT) clearTimeout(__btonProfilesRealtimeRefreshT); } catch(e) {}
-  __btonProfilesRealtimeRefreshT = setTimeout(() => {
-    try { if (typeof dedupeDatabasePreferReal === "function") dedupeDatabasePreferReal(); } catch(e) {}
-    try { if (typeof populateCountryFilter === "function") populateCountryFilter(); } catch(e) {}
-    try {
-      if (typeof isSearchActive !== 'undefined' && isSearchActive) {
-        const q = document.getElementById("search-input") ? (document.getElementById("search-input").value || "") : "";
-        renderSearchResults(q);
-      } else {
-        renderShowcase();
-      }
-    } catch(e) {}
-  }, 160);
-}
-
-function btonSubscribeProfilesRealtime() {
-  try {
-    if (__btonProfilesRealtimeChannel) return __btonProfilesRealtimeChannel;
-    if (typeof supabaseClient === "undefined" || !supabaseClient) return null;
-
-    __btonProfilesRealtimeChannel = supabaseClient
-      .channel('bton_profiles_live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (payload) => {
-        try { btonUpsertCompanyFromProfileRow(payload && payload.new); } catch(e) {}
-        btonScheduleDiscoverRefresh();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
-        try { btonUpsertCompanyFromProfileRow(payload && payload.new); } catch(e) {}
-        btonScheduleDiscoverRefresh();
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'profiles' }, (payload) => {
-        try { btonRemoveCompanyById(payload && payload.old && payload.old.id); } catch(e) {}
-        btonScheduleDiscoverRefresh();
-      })
-      .subscribe((status) => {
-        try { if (typeof btonDbg === "function") btonDbg("profiles realtime:", status); } catch(e) {}
-      });
-
-    return __btonProfilesRealtimeChannel;
-  } catch(e) {
-    try { if (typeof btonDbg === "function") btonDbg("profiles realtime subscribe error:", e); } catch(_) {}
-    return null;
-  }
-}
-
 /* --- GÜNCELLENMİŞ: initRealData (COUNTRY VERİSİ EKLENDİ) --- */
 async function initRealData() {
   console.log("Supabase'den veriler çekiliyor...");
@@ -17963,7 +17886,6 @@ owner_name: p.owner_name,
           openProfile(selectedCompany.id);
       }
   }
-  try { btonSubscribeProfilesRealtime(); } catch(e) {}
 }
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
 /* --- TÜMÜNÜ OKUNDU YAP (GÜÇLENDİRİLMİŞ) --- */
