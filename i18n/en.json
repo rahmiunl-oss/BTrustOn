@@ -1186,7 +1186,7 @@
   "updates_no_followed": "Follow companies to see their updates here.",
   "post_no_updates_7d": "No company updates in the last 7 days.",
   "ui_services_capabilities_724c56": "Services & Capabilities",
-  "notif.profile_view.title": "Profil görüntüleme",
-  "notif.profile_view.member": "{name} profilinizi inceledi.",
-  "notif.profile_view.guest": "Bir misafir profilinizi inceledi."
+  "notif.profile_view.title": "Profile view",
+  "notif.profile_view.member": "{name} viewed your profile.",
+  "notif.profile_view.guest": "A guest viewed your profile."
 }
