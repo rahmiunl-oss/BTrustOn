@@ -1337,28 +1337,60 @@ document.addEventListener("DOMContentLoaded", () => {
       position: absolute;
       top: -6px;
       right: -6px;
+
       min-width: 18px;
       height: 18px;
       padding: 0 6px;
       border-radius: 9999px;
+
       display: inline-flex;
       align-items: center;
       justify-content: center;
+
       font-size: 11px;
       font-weight: 900;
-      letter-spacing: .01em;
+      letter-spacing: -0.2px;
       color: #fff;
 
-      background: linear-gradient(135deg, #ff2d55, #ff3b30);
-      border: 2px solid rgba(255,255,255,.92);
-      box-shadow: 0 14px 30px rgba(255, 45, 85, .30);
+      /* default (neutral) */
+      background: linear-gradient(180deg, rgba(15,23,42,.86) 0%, rgba(15,23,42,.72) 100%);
+      border: 1px solid rgba(255,255,255,.72);
+      box-shadow: 0 12px 26px rgba(2,6,23,.14);
+
       transform-origin: center;
-      animation: btonBadgeIn .26s ease-out;
+      animation: btonBadgeIn .22s ease-out;
     }
+
+    /* Notifications badge: premium jewel red */
+    #nav-badge, #mobile-nav-badge{
+      background: linear-gradient(180deg, #E52B50 0%, #C81D3E 100%);
+      border: 1px solid rgba(255,255,255,.42);
+      box-shadow:
+        0 6px 14px rgba(200, 29, 62, .22),
+        0 14px 30px rgba(200, 29, 62, .18),
+        inset 0 1px 0 rgba(255,255,255,.22);
+    }
+
+    /* Lists badge: brand accent (calm) */
+    #saved-badge{
+      background: linear-gradient(180deg, rgba(6,182,212,.92) 0%, rgba(59,130,246,.86) 100%);
+      border: 1px solid rgba(255,255,255,.38);
+      box-shadow:
+        0 10px 26px rgba(6,182,212,.18),
+        inset 0 1px 0 rgba(255,255,255,.18);
+    }
+
     @keyframes btonBadgeIn{
-      from{ transform: scale(.85); opacity: .0; }
+      from{ transform: scale(.86); opacity: 0; }
       to{ transform: scale(1); opacity: 1; }
     }
+    @keyframes btonBadgePop{
+      0%{ transform: scale(.85); }
+      55%{ transform: scale(1.08); }
+      100%{ transform: scale(1); }
+    }
+    .bton-badge.bton-pop{ animation: btonBadgePop 220ms ease-out; }
+
 
 /* --- Premium Pro pill (badges) --- */
 .bton-pro-pill{
@@ -2810,6 +2842,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <nav class="space-y-2 sticky top-6">
 <button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-gray-200 text-sm font-bold text-BTrustOn-primary border-l-4 border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-general')">
 <i class="fa-solid fa-building w-6 text-gray-400"></i><span data-i18n="ui_general_info_b3f8f8">General Info</span></button>
+
+<button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-gray-200 text-sm font-bold text-gray-700 border-l-4 border-l-transparent hover:border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-services')">
+<i class="fa-solid fa-screwdriver-wrench w-6 text-gray-400"></i><span data-i18n="ui_services_capabilities_724c56">Services &amp; Capabilities</span></button>
+
 <div class="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
 <div class="flex justify-between items-center mb-2">
 <h4 class="text-xs font-bold text-blue-800" data-i18n="ui_profile_strength_6ef8db">Profile Strength</h4>
@@ -13931,6 +13967,29 @@ document.getElementById("edit-address").value = selectedCompany.address || "";
    ========================================= */
 
 // A. Sol menüden tıklayınca ilgili yere kaydırma
+
+function scrollToSection(sectionId) {
+  try {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+
+    // If the global header is fixed, keep a comfortable offset
+    const headerOffset = 110;
+
+    const rect = el.getBoundingClientRect();
+    const absoluteY = rect.top + window.pageYOffset;
+    const targetY = Math.max(0, absoluteY - headerOffset);
+
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+
+    // subtle focus flash to help the user see where they landed
+    el.classList.add("bton-focus-flash");
+    setTimeout(() => el.classList.remove("bton-focus-flash"), 1400);
+  } catch (e) {
+    // no-op
+  }
+}
+
 /* --- PROFILE STRENGTH HESAPLAMA (GÜNCEL) --- */
 function calculateProfileStatus() {
   // 1. ADIM: FORM ALANLARINI KONTROL ET
@@ -16270,7 +16329,21 @@ function renderInboxItems() {
   updateBadges(totalUnreadNav);
 }
 // Yardımcı Badge Fonksiyonu (Eğer yoksa bunu da ekle, varsa gerek yok)
+let __btonLastNavBadgeCount = 0;
+function __btonPopBadge(el){
+  if(!el) return;
+  try{
+    el.classList.remove('bton-pop');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('bton-pop');
+    setTimeout(() => { try { el.classList.remove('bton-pop'); } catch(e){} }, 260);
+  } catch(e){}
+}
 function updateBadges(count) {
+  const prev = (typeof __btonLastNavBadgeCount === 'number') ? __btonLastNavBadgeCount : 0;
+  const next = Number(count || 0);
+  const shouldPop = (next > prev);
+  __btonLastNavBadgeCount = next;
   const badgeNav = document.getElementById("nav-badge");
   const badgeHeader = document.getElementById("inbox-badge-count");
   const mobileNavBadge = document.getElementById("mobile-nav-badge");
@@ -16280,7 +16353,8 @@ function updateBadges(count) {
       if(count > 0) {
           badgeNav.textContent = count;
           badgeNav.classList.remove("hidden");
-      } else {
+                if(shouldPop) __btonPopBadge(badgeNav);
+} else {
           badgeNav.classList.add("hidden");
       }
   }
@@ -16288,7 +16362,8 @@ function updateBadges(count) {
       if(count > 0) {
           mobileNavBadge.textContent = count;
           mobileNavBadge.classList.remove("hidden");
-      } else {
+                if(shouldPop) __btonPopBadge(mobileNavBadge);
+} else {
           mobileNavBadge.classList.add("hidden");
       }
   }
