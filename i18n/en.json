@@ -1180,5 +1180,9 @@
   "ui_reject_reason_prompt": "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link).",
   "ui_pro_plan_title": "Pro Plan",
   "ui_pro_plan_active_sub": "Your plan is active. You can cancel anytime.",
-  "updates_upgrade": "Upgrade"
+  "updates_upgrade": "Upgrade",
+  "updates_empty_title": "No company updates in 7 days",
+  "updates_empty": "No company updates posted in the last 7 days.",
+  "updates_no_followed": "Follow companies to see their updates here.",
+  "post_no_updates_7d": "No company updates in the last 7 days."
 }
