@@ -17743,6 +17743,138 @@ function deleteCert(certId, certName) {
     });
 }
 // --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
+
+/* =========================================================
+   REALTIME: New companies appear without refresh (Discover/Search)
+   - List is loaded once in initRealData(); without realtime you only see new joins after refresh.
+   - This subscription updates the in-memory `database` on INSERT/UPDATE/DELETE for public.profiles
+   - Then refreshes the UI (showcase or search results).
+   NOTE: Enable Realtime for `profiles` table in Supabase Dashboard:
+         Database → Replication (or Realtime) → add table `profiles` to publication.
+   ========================================================= */
+let __btonProfilesRealtimeChannel = null;
+let __btonProfilesRealtimeRefreshT = null;
+
+function btonMapProfileRowToCompany(p) {
+  try {
+    if (!p) return null;
+    if (p.email && typeof ADMIN_EMAIL !== "undefined" && String(p.email) === String(ADMIN_EMAIL)) return null;
+
+    return {
+      id: p.id,
+      name: p.company_name || "New Company",
+      city: p.city || "Konum Yok",
+      updated_at: p.updated_at || p.updatedAt || null,
+      last_active_at: p.last_active_at || p.last_seen_at || p.last_login_at || p.last_sign_in_at || p.updated_at || null,
+
+      country: p.country || "Turkey",
+      address: p.address || "",
+      email: p.email || "",
+      subscription_tier: p.subscription_tier || "free",
+      subscription_status: p.subscription_status || "free",
+      verification_status: p.verification_status || "none",
+      tax_id: p.tax_id || "",
+      duns_number: p.duns_number || "",
+
+      service_details: p.service_details || "",
+      owner_name: p.owner_name,
+      owner_role: p.owner_role,
+      owner_linkedin: p.owner_linkedin,
+      owner_photo_url: p.owner_photo_url,
+
+      sector: p.sector || "construction",
+      desc: p.description || "",
+      tagline: p.tagline || "",
+      type_label: p.company_type,
+      size_label: p.company_size,
+      year_label: p.founded_year,
+      services: p.services ? String(p.services).split(',').map(s=>String(s).trim()).filter(Boolean) : [],
+      logo_url: p.logo_url || null,
+      website: p.website || "",
+      phone: p.phone || "",
+      contact_email: p.contact_email || "",
+      certificates: p.certificates || [],
+      projects: p.projects || [],
+      assets: p.assets || [],
+      trust: "verified",
+      meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
+    };
+  } catch(e) { return null; }
+}
+
+function btonUpsertCompanyFromProfileRow(p) {
+  try {
+    const mapped = btonMapProfileRowToCompany(p);
+    if (!mapped || !mapped.id) return;
+
+    const idx = (typeof database !== "undefined" && Array.isArray(database))
+      ? database.findIndex(c => String(c && c.id) === String(mapped.id))
+      : -1;
+
+    if (idx > -1) {
+      database[idx] = { ...(database[idx] || {}), ...mapped };
+    } else {
+      database.unshift(mapped);
+    }
+  } catch(e) {}
+}
+
+function btonRemoveCompanyById(companyId) {
+  try {
+    if (typeof database === "undefined" || !Array.isArray(database)) return;
+    const cid = String(companyId || "");
+    if (!cid) return;
+    const idx = database.findIndex(c => String(c && c.id) === cid);
+    if (idx > -1) database.splice(idx, 1);
+  } catch(e) {}
+}
+
+function btonScheduleDiscoverRefresh() {
+  try { if (__btonProfilesRealtimeRefreshT) clearTimeout(__btonProfilesRealtimeRefreshT); } catch(e) {}
+  __btonProfilesRealtimeRefreshT = setTimeout(() => {
+    try { if (typeof dedupeDatabasePreferReal === "function") dedupeDatabasePreferReal(); } catch(e) {}
+    try { if (typeof populateCountryFilter === "function") populateCountryFilter(); } catch(e) {}
+    try {
+      if (typeof isSearchActive !== 'undefined' && isSearchActive) {
+        const q = document.getElementById("search-input") ? (document.getElementById("search-input").value || "") : "";
+        renderSearchResults(q);
+      } else {
+        renderShowcase();
+      }
+    } catch(e) {}
+  }, 160);
+}
+
+function btonSubscribeProfilesRealtime() {
+  try {
+    if (__btonProfilesRealtimeChannel) return __btonProfilesRealtimeChannel;
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return null;
+
+    __btonProfilesRealtimeChannel = supabaseClient
+      .channel('bton_profiles_live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (payload) => {
+        try { btonUpsertCompanyFromProfileRow(payload && payload.new); } catch(e) {}
+        btonScheduleDiscoverRefresh();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+        try { btonUpsertCompanyFromProfileRow(payload && payload.new); } catch(e) {}
+        btonScheduleDiscoverRefresh();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'profiles' }, (payload) => {
+        try { btonRemoveCompanyById(payload && payload.old && payload.old.id); } catch(e) {}
+        btonScheduleDiscoverRefresh();
+      })
+      .subscribe((status) => {
+        try { if (typeof btonDbg === "function") btonDbg("profiles realtime:", status); } catch(e) {}
+      });
+
+    return __btonProfilesRealtimeChannel;
+  } catch(e) {
+    try { if (typeof btonDbg === "function") btonDbg("profiles realtime subscribe error:", e); } catch(_) {}
+    return null;
+  }
+}
+
 /* --- GÜNCELLENMİŞ: initRealData (COUNTRY VERİSİ EKLENDİ) --- */
 async function initRealData() {
   console.log("Supabase'den veriler çekiliyor...");
@@ -17831,6 +17963,7 @@ owner_name: p.owner_name,
           openProfile(selectedCompany.id);
       }
   }
+  try { btonSubscribeProfilesRealtime(); } catch(e) {}
 }
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
 /* --- TÜMÜNÜ OKUNDU YAP (GÜÇLENDİRİLMİŞ) --- */
