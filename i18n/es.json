@@ -1186,7 +1186,8 @@
   "updates_no_followed": "Sigue a empresas para ver sus actualizaciones aquí.",
   "post_no_updates_7d": "No hay actualizaciones en los últimos 7 días.",
   "ui_services_capabilities_724c56": "Servicios y capacidades",
-  "notif.profile_view.title": "Vista de perfil",
-  "notif.profile_view.member": "{name} vio tu perfil.",
-  "notif.profile_view.guest": "Un visitante vio tu perfil."
+  "notif_profile_view_title": "Perfil visto",
+  "notif_profile_view_revealed": "{viewer} vio tu perfil.",
+  "notif_profile_view_guest": "Un visitante anónimo vio tu perfil.",
+  "notif_profile_view_locked": "Una empresa vio tu perfil. Actualiza a Pro para ver quién."
 }
