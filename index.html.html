@@ -6621,34 +6621,24 @@ async function _notifySelfI18nOnce(key, titleKey, msgKey, params = {}, action = 
     const user = await _getAuthUserSafe();
     if (!user || !user.id || !key) return;
 
-    const keyTag = `[KEY:${key}]`;
+    // ✅ Primary path: DB-level dedupe via (recipient_user_id, dedupe_key) unique index
     const title = `[I18N:${titleKey}]`;
-    const msg = `${keyTag}${action ? `[ACTION:${action}]` : ``}${_makeI18nMarker(msgKey, params)}`;
+    const msg = `${action ? `[ACTION:${action}]` : ``}${_makeI18nMarker(msgKey, params)}`;
 
-    const baseRow = { recipient_user_id: user.id, title, message: msg, is_read: false };
+    const row = { recipient_user_id: user.id, title, message: msg, is_read: false, dedupe_key: key };
 
-    // Prefer DB-level dedupe (needs notifications.dedupe_key + unique index)
-    try {
-      const row = Object.assign({}, baseRow, { dedupe_key: key });
-      const { error } = await supabaseClient
-        .from('notifications')
-        .upsert([row], { onConflict: 'recipient_user_id,dedupe_key', ignoreDuplicates: true });
-      if (error) throw error;
-    } catch (e) {
-      // Fallback (no schema change): best-effort dedupe by scanning recent notifications
-      const since = new Date(nowTs() - 30*24*60*60*1000).toISOString();
-      const { data } = await supabaseClient
-        .from('notifications')
-        .select('id,message,created_at')
-        .eq('recipient_user_id', user.id)
-        .gte('created_at', since)
-        .limit(50);
+    const { error } = await supabaseClient
+      .from('notifications')
+      .upsert([row], { onConflict: 'recipient_user_id,dedupe_key', ignoreDuplicates: true });
 
-      const already = (data || []).some(n => String(n.message || "").includes(keyTag));
-      if (already) return;
-
-      const { error: err2 } = await supabaseClient.from('notifications').insert([baseRow]);
-      if (err2) throw err2;
+    if (error) {
+      // Fallback: legacy insert (best-effort). Keeps KEY marker for older parsers.
+      try {
+        const keyTag = `[KEY:${key}]`;
+        const baseRow = { recipient_user_id: user.id, title, message: `${keyTag}${msg}`, is_read: false };
+        const { error: err2 } = await supabaseClient.from('notifications').insert([baseRow]);
+        if (err2) console.warn("Notification fallback insert failed:", err2);
+      } catch(_) {}
     }
 
     _scheduleNotifRefresh();
@@ -20141,37 +20131,32 @@ async function _maybeSendLifecycleNotification(userId, key, title, message) {
   try {
     if (!userId || !key) return;
 
-    const keyTag = `[KEY:${key}]`;
-    const baseRow = {
+    // ✅ Primary path: DB-level dedupe via (recipient_user_id, dedupe_key) unique index
+    const row = {
       recipient_user_id: userId,
       title,
-      message: `${keyTag}[ACTION:UPGRADE]
-` + message,
-      is_read: false
+      message: `[ACTION:UPGRADE]\n` + String(message || ""),
+      is_read: false,
+      dedupe_key: key
     };
 
-    // Prefer DB-level dedupe (needs notifications.dedupe_key + unique index)
-    try {
-      const row = Object.assign({}, baseRow, { dedupe_key: key });
-      const { error } = await supabaseClient
-        .from('notifications')
-        .upsert([row], { onConflict: 'recipient_user_id,dedupe_key', ignoreDuplicates: true });
-      if (error) throw error;
-    } catch (e) {
-      // Fallback (no schema change): best-effort dedupe by scanning recent notifications
-      const since = new Date(nowTs() - 30*24*60*60*1000).toISOString();
-      const { data } = await supabaseClient
-        .from('notifications')
-        .select('id,message,created_at')
-        .eq('recipient_user_id', userId)
-        .gte('created_at', since)
-        .limit(50);
+    const { error } = await supabaseClient
+      .from('notifications')
+      .upsert([row], { onConflict: 'recipient_user_id,dedupe_key', ignoreDuplicates: true });
 
-      const already = (data || []).some(n => String(n.message || "").includes(keyTag));
-      if (already) return;
-
-      const { error: err2 } = await supabaseClient.from('notifications').insert([baseRow]);
-      if (err2) throw err2;
+    if (error) {
+      // Fallback: legacy insert (best-effort)
+      try {
+        const keyTag = `[KEY:${key}]`;
+        const baseRow = {
+          recipient_user_id: userId,
+          title,
+          message: `${keyTag}[ACTION:UPGRADE]\n` + String(message || ""),
+          is_read: false
+        };
+        const { error: err2 } = await supabaseClient.from('notifications').insert([baseRow]);
+        if (err2) console.warn("Lifecycle notif fallback insert failed:", err2);
+      } catch(_) {}
     }
 
     // Refresh UI fast
