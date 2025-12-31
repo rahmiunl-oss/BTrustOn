@@ -13410,8 +13410,8 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     try { if (typeof btonInitEngagementNotifications === "function") await btonInitEngagementNotifications(); } catch(e) {}
 }
 
-  // Kutlama kontrolü yap
-  checkAndTriggerCelebration(mappedProfile);
+  // Kutlama kontrolü yap (optional)
+  try { if (typeof checkAndTriggerCelebration === 'function') checkAndTriggerCelebration(mappedProfile); } catch(e) {}
 
   // Admin Kontrolü
   checkAdminAccess();
@@ -14558,38 +14558,42 @@ async function fetchSavedCompanies() {
       };
     });
 
-    // Optional enrich: try to pull live business type from public profiles (if policies allow).
-    // This fixes older saved rows where saved_company_type was stored as "Company".
-    try {
-      const ids = Array.from(savedCompanyIds || []);
-      if (ids.length) {
-        let profs = null;
-        let pErr = null;
+    // Optional enrich (disabled by default to avoid schema/RLS 400 noise in console).
+    // Enable only if your public profiles schema/policies allow it:
+    //   window.__BTON_ENABLE_PROFILE_META_ENRICH = true
+    if (window.__BTON_ENABLE_PROFILE_META_ENRICH === true) {
+      try {
+        const ids = Array.from(savedCompanyIds || []);
+        if (ids.length) {
+          let profs = null;
+          let pErr = null;
 
-        try {
-          let r = await supabaseClient
-            .from('profiles')
-            .select('id, company_type, verification_status, is_verified, verified, blue_tick')
-            .in('id', ids);
+          // Try progressively safer selects (schemas differ across installs)
+          const attempts = [
+            'id, company_type, verification_status',
+            'id, company_type',
+            'id, verification_status',
+            'id'
+          ];
 
-          // Fallback if boolean columns don't exist (common schema)
-          if (r.error) {
-            const msg = String(r.error?.message || r.error?.details || r.error || "");
-            const low = msg.toLowerCase();
-            if (low.includes("does not exist") || low.includes("column") || low.includes("schema cache") || low.includes("pgrst")) {
-              r = await supabaseClient
-                .from('profiles')
-                .select('id, company_type, verification_status')
-                .in('id', ids);
+          for (const sel of attempts) {
+            try {
+              const r = await supabaseClient.from('profiles').select(sel).in('id', ids);
+              if (!r.error) {
+                profs = r.data || null;
+                pErr = null;
+                break;
+              }
+              const msg = String(r.error?.message || r.error?.details || r.error || '');
+              const low = msg.toLowerCase();
+              pErr = r.error;
+              // Only retry on schema/column errors; otherwise stop to avoid extra requests
+              if (!(low.includes('does not exist') || low.includes('column') || low.includes('schema cache') || low.includes('pgrst'))) break;
+            } catch(e) {
+              pErr = e;
+              break;
             }
           }
-
-          profs = r.data || null;
-          pErr = r.error || null;
-        } catch(e) {
-          pErr = e;
-          profs = null;
-        }
 
         if (!pErr && Array.isArray(profs)) {
           const metaMap = {};
@@ -14634,8 +14638,9 @@ async function fetchSavedCompanies() {
             return item;
           });
         }
-      }
-    } catch(e) { /* ignore */ }
+        }
+      } catch(e) { /* ignore */ }
+    }
 
     updateSavedBadges();
     _savedLoadedOnce = true;
