@@ -6851,6 +6851,9 @@ async function btonInitEngagementNotifications() {
     const user = await _getAuthUserSafe();
     if (!user || !user.id) return;
 
+    // ✅ Ensure auth id is set before sync/subscribe (they early-return if missing)
+    try { __authUserId = user.id; } catch(e) {}
+
     if (__BTON_ENG_NOTIF_INIT_FOR === user.id) return;
     __BTON_ENG_NOTIF_INIT_FOR = user.id;
 
@@ -13411,10 +13414,10 @@ async function checkUserAndOpenProfile(forceOpen = false) {
 }
 
   // Kutlama kontrolü yap
-  checkAndTriggerCelebration(mappedProfile);
+  try { if (typeof checkAndTriggerCelebration === "function") checkAndTriggerCelebration(mappedProfile); } catch(e) {}
 
   // Admin Kontrolü
-  checkAdminAccess();
+  try { if (typeof checkAdminAccess === "function") checkAdminAccess(); } catch(e) {}
 
   // --- PLAN BUTONU (UPGRADE / PRO) ---
   const navUpgradeBtn = document.getElementById("btn-nav-upgrade");
@@ -14569,7 +14572,7 @@ async function fetchSavedCompanies() {
         try {
           let r = await supabaseClient
             .from('profiles')
-            .select('id, company_type, verification_status, is_verified, verified, blue_tick')
+            .select('id, company_type, verification_status')
             .in('id', ids);
 
           // Fallback if boolean columns don't exist (common schema)
