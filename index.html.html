@@ -13410,8 +13410,8 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     try { if (typeof btonInitEngagementNotifications === "function") await btonInitEngagementNotifications(); } catch(e) {}
 }
 
-  // Kutlama kontrolü yap (optional)
-  try { if (typeof checkAndTriggerCelebration === 'function') checkAndTriggerCelebration(mappedProfile); } catch(e) {}
+  // Kutlama kontrolü yap
+  checkAndTriggerCelebration(mappedProfile);
 
   // Admin Kontrolü
   checkAdminAccess();
@@ -14558,42 +14558,38 @@ async function fetchSavedCompanies() {
       };
     });
 
-    // Optional enrich (disabled by default to avoid schema/RLS 400 noise in console).
-    // Enable only if your public profiles schema/policies allow it:
-    //   window.__BTON_ENABLE_PROFILE_META_ENRICH = true
-    if (window.__BTON_ENABLE_PROFILE_META_ENRICH === true) {
-      try {
-        const ids = Array.from(savedCompanyIds || []);
-        if (ids.length) {
-          let profs = null;
-          let pErr = null;
+    // Optional enrich: try to pull live business type from public profiles (if policies allow).
+    // This fixes older saved rows where saved_company_type was stored as "Company".
+    try {
+      const ids = Array.from(savedCompanyIds || []);
+      if (ids.length) {
+        let profs = null;
+        let pErr = null;
 
-          // Try progressively safer selects (schemas differ across installs)
-          const attempts = [
-            'id, company_type, verification_status',
-            'id, company_type',
-            'id, verification_status',
-            'id'
-          ];
+        try {
+          let r = await supabaseClient
+            .from('profiles')
+            .select('id, company_type, verification_status, is_verified, verified, blue_tick')
+            .in('id', ids);
 
-          for (const sel of attempts) {
-            try {
-              const r = await supabaseClient.from('profiles').select(sel).in('id', ids);
-              if (!r.error) {
-                profs = r.data || null;
-                pErr = null;
-                break;
-              }
-              const msg = String(r.error?.message || r.error?.details || r.error || '');
-              const low = msg.toLowerCase();
-              pErr = r.error;
-              // Only retry on schema/column errors; otherwise stop to avoid extra requests
-              if (!(low.includes('does not exist') || low.includes('column') || low.includes('schema cache') || low.includes('pgrst'))) break;
-            } catch(e) {
-              pErr = e;
-              break;
+          // Fallback if boolean columns don't exist (common schema)
+          if (r.error) {
+            const msg = String(r.error?.message || r.error?.details || r.error || "");
+            const low = msg.toLowerCase();
+            if (low.includes("does not exist") || low.includes("column") || low.includes("schema cache") || low.includes("pgrst")) {
+              r = await supabaseClient
+                .from('profiles')
+                .select('id, company_type, verification_status')
+                .in('id', ids);
             }
           }
+
+          profs = r.data || null;
+          pErr = r.error || null;
+        } catch(e) {
+          pErr = e;
+          profs = null;
+        }
 
         if (!pErr && Array.isArray(profs)) {
           const metaMap = {};
@@ -14638,9 +14634,8 @@ async function fetchSavedCompanies() {
             return item;
           });
         }
-        }
-      } catch(e) { /* ignore */ }
-    }
+      }
+    } catch(e) { /* ignore */ }
 
     updateSavedBadges();
     _savedLoadedOnce = true;
@@ -20172,35 +20167,311 @@ async function _maybeSendLifecycleNotification(userId, key, title, message) {
 }
 
 async function enforceProLifecycle(profileRow) {
-  // NOTE: As of v4, Pro-trial reminders + expiry are handled server-side via Supabase Cron (pg_cron).
-  // This client function is now READ-ONLY: it only normalizes the effective tier/status for UI gating.
   try {
     if (!profileRow || !profileRow.id) return profileRow;
 
     const now = nowDate();
-    const status = profileRow.subscription_status || 'free';
     const tier = profileRow.subscription_tier || 'free';
+    const status = profileRow.subscription_status || 'free';
     const trialEnd = profileRow.trial_end_date ? new Date(profileRow.trial_end_date) : null;
 
+    // If active trial: send reminders + expire when needed
     if (status === 'active_trial' && trialEnd && !isNaN(trialEnd.getTime())) {
-      if (trialEnd.getTime() <= now.getTime()) {
-        // Trial has ended (UI gating only; DB downgrade happens via cron)
+      const msLeft = trialEnd.getTime() - now.getTime();
+
+      // Calendar-day based (stable across time-of-day + time-travel testing)
+      const _msDay = 24*60*60*1000;
+      const _dayStart = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+      const today0 = _dayStart(now);
+      const end0 = _dayStart(trialEnd);
+      const daysLeft = Math.round((end0.getTime() - today0.getTime()) / _msDay);
+      const endKey = end0.toISOString().slice(0,10);
+
+      if (daysLeft === 10) {
+        await _maybeSendLifecycleNotification(
+          profileRow.id,
+          `PRO_TRIAL_10D_${endKey}`,
+          "Pro trial ending soon",
+          `Your Pro trial ends on ${trialEnd.toLocaleDateString()}. Upgrade to keep unlimited features.`
+        );
+      }
+
+      if (daysLeft === 1) {
+        await _maybeSendLifecycleNotification(
+          profileRow.id,
+          `PRO_TRIAL_1D_${endKey}`,
+          "Pro trial ends tomorrow",
+          `Your Pro trial ends on ${trialEnd.toLocaleDateString()}. Upgrade now to avoid losing Pro features.`
+        );
+      }
+
+      // Expired
+      if (msLeft <= 0) {
+        await supabaseClient.from('profiles').update({
+          subscription_tier: 'free',
+          subscription_status: 'trial_expired',
+          updated_at: now.toISOString()
+        }).eq('id', profileRow.id);
+
+        await _maybeSendLifecycleNotification(
+          profileRow.id,
+          `PRO_TRIAL_ENDED_${endKey}`,
+          "Pro trial ended",
+          `Your Pro trial ended on ${trialEnd.toLocaleDateString()}. You are now on the Free plan (your verification badge stays). Upgrade to restore unlimited features.`
+        );
+
         profileRow.subscription_tier = 'free';
         profileRow.subscription_status = 'trial_expired';
-      } else {
-        // Keep as-is
-        profileRow.subscription_tier = tier || 'pro';
-        profileRow.subscription_status = 'active_trial';
+      }
+    }
+
+    // Safety: if tier says pro but status not active_trial -> downgrade unless you add paid_until later
+    if (tier === 'pro' && status !== 'active_trial') {
+      // If there's no valid active trial end date, treat as free to avoid "forever pro"
+      if (!trialEnd || isNaN(trialEnd.getTime()) || trialEnd <= now) {
+        await supabaseClient.from('profiles').update({
+          subscription_tier: 'free',
+          subscription_status: status === 'active_paid' ? status : 'trial_expired',
+          updated_at: now.toISOString()
+        }).eq('id', profileRow.id);
+        profileRow.subscription_tier = 'free';
+        if (profileRow.subscription_status !== 'active_paid') profileRow.subscription_status = 'trial_expired';
       }
     }
 
     return profileRow;
-  } catch (e) {
-    console.warn("enforceProLifecycle (read-only) error:", e);
+  } catch(e) {
+    console.warn("enforceProLifecycle error:", e);
     return profileRow;
   }
 }
 
+
+/* --- GÜNCELLENMİŞ: upgradeToPro (ANINDA BUTON GİZLEME) --- */
+async function upgradeToPro() {
+    const btn = document.querySelector("#modal-upgrade button:last-child");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+    btn.disabled = true;
+
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error("Please login first.");
+
+        // --- TRIAL DATE (revenue-friendly rules) ---
+        const now = nowDate();
+        // Trial is one-time per company (prevents infinite free Pro)
+        const trialAlreadyUsed = !!(selectedCompany && selectedCompany.trial_start_date);
+        if (trialAlreadyUsed) {
+            toggleModal('modal-upgrade');
+            openProPayment();
+            return;
+        }
+        const _createdAtISO = (selectedCompany && selectedCompany.created_at) ? selectedCompany.created_at : null;
+        const { endDate, label } = computeProTrialEnd(now, _createdAtISO);
+
+        // 1. Veritabanı Güncellemesi
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ 
+                subscription_tier: 'pro',
+                subscription_status: 'active_trial',
+                trial_start_date: now.toISOString(),
+                trial_end_date: endDate.toISOString(),
+                updated_at: now
+            })
+            .eq('id', user.id);
+
+        if (error) throw error;
+
+        // 2. Yerel Hafızayı Güncelle
+        if (selectedCompany) {
+            selectedCompany.subscription_tier = 'pro';
+            selectedCompany.subscription_status = 'active_trial';
+            selectedCompany.trial_start_date = now.toISOString();
+            selectedCompany.trial_end_date = endDate.toISOString();
+        }
+
+        
+if (__postCompany && String(__postCompany.id) === String(user.id)) {
+    __postCompany.subscription_tier = 'pro';
+    __postCompany.subscription_status = 'active_trial';
+    __postCompany.trial_start_date = now.toISOString();
+    __postCompany.trial_end_date = endDate.toISOString();
+}
+// 3. Modalı Kapat
+        toggleModal('modal-upgrade');
+// 4. ✅ UI'ı anında güncelle (butonları gizleme yerine Pro durumuna geçir)
+try { renderNavPlanButton(selectedCompany); } catch(_) {}
+try { if (typeof refreshAnalyticsPlanUI === "function") refreshAnalyticsPlanUI(); } catch(_) {}
+
+// 5. Verify Kutularının Kilidini Aç (Artık Pro olduğu için)
+// Eğer verification durumu yoksa 'none' gönderiyoruz
+        updateVerificationUI(selectedCompany.verification_status || 'none');
+        
+        // 6. Kullanıcıyı Bilgilendir
+        const niceDate = endDate.toLocaleDateString(); 
+        showToast("Welcome to Pro!", `${label} active until ${niceDate}`, "success");
+        
+        
+
+try { refreshHomeUpdatesCTA(); } catch(_) {}
+try { refreshPricingSection(); } catch(_) {}
+// 7. Profili Yeniden Çiz (Rozetler vs. için)
+        openProfile(user.id, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
+	setTimeout(() => handleVerifyClick(true), 700);
+    } catch (err) {
+        console.error(err);
+        showToast("Error", "Upgrade failed: " + err.message, "error");
+    } finally {
+        if(btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+}
+
+/* --- KUTLAMA MANTIĞI --- */
+
+// 1. Durumu Kontrol Et ve Kutla
+/* --- CROSS-DEVICE: Verification Celebration (DB-based, no repeat across devices) --- */
+async function __getAuthUserId() {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    return user?.id || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function __fetchCelebrationSeen(userId) {
+  if (!userId) return true; // güvenli varsayım: tekrar göstermeyelim
+  try {
+    // 1) primary key = id
+    let { data, error } = await supabaseClient
+      .from("profiles")
+      .select("verification_celebrated")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // 2) bazı şemalarda auth uid ayrı kolonda olabilir: user_id
+    if ((error || !data) && typeof userId === "string") {
+      const fallback = await supabaseClient
+        .from("profiles")
+        .select("verification_celebrated")
+        .eq("user_id", userId)
+        .maybeSingle();
+      data = fallback.data;
+      error = fallback.error;
+    }
+
+    // Eğer okuma hatası varsa tekrar göstermeyelim (cross-device tekrar riskini önler)
+    if (error) return true;
+
+    return !!data?.verification_celebrated;
+  } catch (e) {
+    return true;
+  }
+}
+
+async function __setCelebrationSeen(userId) {
+  if (!userId) return;
+  const nowIso = nowDate().toISOString();
+
+  // id üzerinden dene
+  let { error } = await supabaseClient
+    .from("profiles")
+    .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+    .eq("id", userId);
+
+  // user_id fallback
+  if (error) {
+    await supabaseClient
+      .from("profiles")
+      .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+      .eq("user_id", userId);
+  }
+}
+
+async function checkAndTriggerCelebration(company) {
+  try {
+    const userId = await __getAuthUserId();
+    if (!userId) return;
+
+    // Sadece kendi profilinde ve verified ise çalışsın
+    if (!company || company.verification_status !== "verified") return;
+    if (String(company.id) !== String(userId)) return;
+
+    const hasSeen = await __fetchCelebrationSeen(userId);
+    if (hasSeen) return;
+
+    // Modalı açmadan önce DB'ye yaz: başka cihazlarda tekrar çıkmasın
+    __setCelebrationSeen(userId).catch(() => {});
+    openCelebrationModal();
+  } catch (e) {
+    // hiçbir şey yapma
+  }
+}
+
+// 2. Modalı Aç ve Konfeti Patlat
+/* --- GÜNCELLENMİŞ: openCelebrationModal (SADE VE KURUMSAL) --- */
+function openCelebrationModal() {
+    const modal = document.getElementById("modal-celebration");
+    const card = document.getElementById("celebration-card");
+    
+    if(!modal) return;
+
+    // Modalı Göster
+    modal.classList.remove("opacity-0", "pointer-events-none");
+    if(card) {
+        card.classList.remove("scale-90");
+        card.classList.add("scale-100");
+    }
+
+    // BURADAKİ KONFETİ KODLARINI SİLDİK (Daha profesyonel durması için)
+}
+// 3. Modalı Kapat ve Kaydet
+async function closeCelebration() {
+  const modal = document.getElementById("modal-celebration");
+  if (modal) modal.classList.add("opacity-0", "pointer-events-none");
+
+  // Ek güvenlik: modal kapatılırken de DB'ye "seen" yaz
+  try {
+    const userId = await __getAuthUserId();
+    if (userId) await __setCelebrationSeen(userId);
+  } catch (e) {}
+}
+
+// --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
+// --- GALERİ (LIGHTBOX) FONKSİYONLARI ---
+// Scroll sabitleme (modal aç/kapatta sayfa en üste zıplamasın)
+window.__scrollLock = window.__scrollLock || { count: 0, y: 0, prev: null };
+
+function __lockScrollForModal(){
+  const st = window.__scrollLock;
+  if (st.count === 0){
+    st.y = window.scrollY || document.documentElement.scrollTop || 0;
+    st.prev = {
+      position: document.body.style.position || "",
+      top: document.body.style.top || "",
+      left: document.body.style.left || "",
+      right: document.body.style.right || "",
+      width: document.body.style.width || "",
+      paddingRight: document.body.style.paddingRight || "",
+      overflow: document.body.style.overflow || ""
+    };
+    // Sabitle
+    const sbw = Math.max(0, (window.innerWidth || 0) - (document.documentElement ? document.documentElement.clientWidth : 0));
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${st.y}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.paddingRight = sbw ? `${sbw}px` : "";
+    document.body.style.overflow = "hidden";
+  }
+  st.count += 1;
+}
 
 function __unlockScrollForModal(){
   const st = window.__scrollLock;
