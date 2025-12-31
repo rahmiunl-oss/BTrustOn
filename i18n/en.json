@@ -1193,5 +1193,11 @@
   "ui_welcome_badge_2aa1d1": "BTRUSTON",
   "ui_welcome_title_bton_9d3e2b": "Welcome to BTrustOn",
   "ui_welcome_text_boost_1c4f72": "Your profile is your digital showcase in the business world. Prove your expertise with your certificates and projects, and showcase your capacity by sharing your inventory. Get one step closer to trust-based, sustainable partnerships in the BTrustOn network.",
-  "ui_start_building_profile_7b6a91": "STRENGTHEN YOUR CORPORATE IDENTITY"
+  "ui_start_building_profile_7b6a91": "STRENGTHEN YOUR CORPORATE IDENTITY",
+  "mc_field_state_city": "State/Province & City",
+  "field_state_city": "State/Province & City",
+  "ph_edit_state_city": "e.g., San Francisco, CA",
+  "ph_join_state_city": "e.g., San Francisco, CA",
+  "help_state_city": "Use the city + state/province abbreviation format when available. e.g., San Francisco, CA",
+  "help_state_city_join": "Use the city + state/province abbreviation format when available. e.g., San Francisco, CA"
 }
