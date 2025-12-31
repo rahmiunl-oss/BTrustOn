@@ -10054,7 +10054,7 @@ async function trackProfileView(targetProfileId) {
     let onConflict = null;
 
     if (user) {
-        payload = { profile_id: targetProfileId, viewer_id: user.id, guest_fingerprint: null };
+        payload = { profile_id: targetProfileId, viewer_id: user.id, view_day: today, is_guest: false, guest_fingerprint: null };
         onConflict = "profile_id,viewer_id,view_day";
     } else {
         // Guest id (tarayıcıda kalıcı)
@@ -10063,7 +10063,7 @@ async function trackProfileView(targetProfileId) {
             guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
             localStorage.setItem("BTrustOn_guest_id", guestId);
         }
-        payload = { profile_id: targetProfileId, viewer_id: null, guest_fingerprint: guestId };
+        payload = { profile_id: targetProfileId, viewer_id: null, view_day: today, is_guest: true, guest_fingerprint: guestId };
         onConflict = "profile_id,guest_fingerprint,view_day";
     }
 
