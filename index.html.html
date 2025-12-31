@@ -1322,6 +1322,45 @@ document.addEventListener("DOMContentLoaded", () => {
       box-shadow: 0 18px 46px rgba(2,6,23,.10) !important;
     }
 
+    /* --- Editor header: premium top block --- */
+    .bton-editor-header{
+      background:
+        radial-gradient(900px 220px at 10% 0%, rgba(255,255,255,.92), rgba(255,255,255,0) 62%),
+        linear-gradient(180deg, rgba(248,250,252,.92), rgba(255,255,255,0));
+      border: 1px solid rgba(15,23,42,.08) !important;
+      border-radius: 20px !important;
+      padding: 18px 18px 22px !important;
+      margin-top: 6px !important;
+      box-shadow: 0 14px 36px rgba(2,6,23,.07) !important;
+    }
+    .bton-editor-header #edit-logo-preview-container{
+      margin-top: 0 !important;
+      border-radius: 24px !important;
+    }
+    @media (min-width: 1024px){
+      .bton-editor-header #edit-logo-preview-container{
+        width: 112px !important;
+        height: 112px !important;
+      }
+    }
+
+    /* Sidebar nav: drop the first tab a bit for nicer balance */
+    #view-editor .bg-slate-50 nav.sticky{
+      margin-top: 14px !important;
+    }
+    @media (min-width: 768px){
+      #view-editor .bg-slate-50 nav.sticky{
+        margin-top: 18px !important;
+      }
+    }
+
+    /* Make section dividers match the header line */
+    #editor-form #section-general > h3,
+    #editor-form [id^="section-"] > h3{
+      border-bottom-color: rgba(15,23,42,.10) !important;
+      padding-bottom: 12px !important;
+    }
+
 
     
     .bton-avatar-uploader{
@@ -2862,7 +2901,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="col-span-2 p-8">
 <form id="editor-form" onsubmit="event.preventDefault(); saveProfileData();">
-<div class="flex items-center gap-6 mb-8 border-b border-gray-100 pb-6">
+<div class="bton-editor-header flex items-start gap-6 mb-10 pb-8">
 <div class="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden relative shadow-sm group" id="edit-logo-preview-container">
 <i class="fa-solid fa-building text-3xl text-gray-300" id="edit-logo-icon"></i>
 <img class="hidden w-full h-full object-cover" id="edit-logo-img"/>
@@ -2904,8 +2943,9 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </select>
 </div>
 <div>
-<label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_city">City</span> <span class="text-red-500" data-i18n="ui_3389da">*</span></label>
-<input class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" data-i18n-placeholder="ph_edit_city" id="edit-city" placeholder="e.g. Berlin" required="" type="text"/>
+<label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1"><span data-i18n="mc_field_state_city">State/Province &amp; City</span> <span class="text-red-500" data-i18n="ui_3389da">*</span></label>
+<input class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" data-i18n-placeholder="ph_edit_state_city" id="edit-city" placeholder="e.g., San Francisco, CA" required="" type="text"/>
+<p class="text-[11px] text-gray-400 mt-1 leading-tight" data-i18n="help_state_city">Use city + state/province abbreviation when available.</p>
 </div>
 </div>
 <div class="mt-4">
@@ -3631,9 +3671,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </select>
 </div>
 <div>
-<label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_city">City</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_city" id="join-city" placeholder="e.g. Istanbul" required="" type="text">
-</input></div>
+<label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_state_city">State/Province &amp; City</label>
+<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_state_city" id="join-city" placeholder="e.g., San Francisco, CA" required="" type="text">
+</input>
+<p class="text-[10px] text-gray-400 mt-1 leading-tight" data-i18n="help_state_city_join">Use city + state/province abbreviation when available.</p></div>
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_services">Core Services</label>
@@ -4972,6 +5013,156 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   background: rgba(6,182,212,.95);
   box-shadow: 0 0 0 3px rgba(6,182,212,.10);
 }
+
+
+/* =========================
+   BTrustOn Welcome Modal (Join) — Ultra Premium Minimal
+========================= */
+.bton-modal-open{ overflow:hidden; }
+#bton-welcome-overlay.hidden{ display:none !important; }
+#bton-welcome-overlay{
+  position:fixed; inset:0;
+  z-index:99999;
+  display:flex; align-items:center; justify-content:center;
+  padding:18px;
+}
+#bton-welcome-overlay .bton-welcome-backdrop{
+  position:absolute; inset:0;
+  background:
+    radial-gradient(1200px 600px at 20% 10%, rgba(56,189,248,.14), transparent 55%),
+    radial-gradient(900px 520px at 90% 0%, rgba(99,102,241,.10), transparent 60%),
+    rgba(2,6,23,.62);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+#bton-welcome-overlay .bton-welcome-card{
+  position:relative;
+  width:min(600px, 100%);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,.94) 0%, rgba(248,250,252,.90) 100%);
+  border: 1px solid rgba(148,163,184,.26);
+  box-shadow:
+    0 55px 140px rgba(2,6,23,.30),
+    0 14px 38px rgba(2,6,23,.12),
+    inset 0 1px 0 rgba(255,255,255,.75);
+  overflow:hidden;
+  transform: translateY(10px) scale(.985);
+  opacity:0;
+  transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+#bton-welcome-overlay .bton-welcome-card:before{
+  content:'';
+  position:absolute; left:0; right:0; top:0; height:1px;
+  background: linear-gradient(90deg, rgba(56,189,248,.95), rgba(59,130,246,.95), rgba(99,102,241,.90));
+  opacity:.9;
+}
+#bton-welcome-overlay .bton-welcome-card:after{
+  content:'';
+  position:absolute; inset:-1px;
+  background:
+    radial-gradient(700px 260px at 18% -10%, rgba(56,189,248,.22), transparent 62%),
+    radial-gradient(600px 240px at 105% 15%, rgba(99,102,241,.14), transparent 58%),
+    radial-gradient(380px 180px at 35% 115%, rgba(16,185,129,.06), transparent 62%);
+  pointer-events:none;
+  opacity:.9;
+}
+#bton-welcome-overlay.show .bton-welcome-card{
+  transform: translateY(0) scale(1);
+  opacity:1;
+}
+#bton-welcome-overlay .bton-welcome-top{
+  position:relative;
+  padding: 20px 20px 0 20px;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap: 12px;
+  z-index:2;
+}
+#bton-welcome-overlay .bton-welcome-badge{
+  display:inline-flex;
+  align-items:center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.03);
+  border: 1px solid rgba(148,163,184,.20);
+  color: rgba(15,23,42,.78);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+#bton-welcome-overlay .bton-welcome-close{
+  width: 40px; height: 40px;
+  border-radius: 14px;
+  display:grid; place-items:center;
+  background: rgba(15,23,42,.04);
+  border: 1px solid rgba(148,163,184,.18);
+  color: rgba(15,23,42,.70);
+  cursor:pointer;
+  transition: background .14s ease, transform .14s ease, box-shadow .14s ease;
+  z-index:2;
+}
+#bton-welcome-overlay .bton-welcome-close:hover{
+  background: rgba(15,23,42,.07);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(2,6,23,.10);
+}
+#bton-welcome-overlay .bton-welcome-body{
+  position:relative;
+  padding: 12px 24px 24px 24px;
+  z-index:2;
+}
+#bton-welcome-overlay .bton-welcome-title{
+  margin-top: 12px;
+  font-size: 28px;
+  line-height: 1.12;
+  font-weight: 950;
+  color: rgba(15,23,42,.92);
+  letter-spacing: -0.03em;
+}
+#bton-welcome-overlay .bton-welcome-text{
+  margin-top: 14px;
+  font-size: 14.5px;
+  line-height: 1.78;
+  color: rgba(51,65,85,.92);
+}
+#bton-welcome-overlay .bton-welcome-cta{
+  margin-top: 20px;
+}
+#bton-welcome-overlay .bton-welcome-btn{
+  width: 100%;
+  border-radius: 18px;
+  padding: 16px 18px;
+  font-size: 12.5px;
+  font-weight: 950;
+  letter-spacing: .19em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,.25);
+  color: white;
+  background: linear-gradient(135deg, rgba(14,165,233,.98), rgba(37,99,235,.98));
+  box-shadow:
+    0 18px 52px rgba(2,132,199,.26),
+    inset 0 1px 0 rgba(255,255,255,.22);
+  cursor: pointer;
+  transition: transform .12s ease, filter .12s ease;
+}
+#bton-welcome-overlay .bton-welcome-btn:hover{
+  filter: brightness(.99);
+  transform: translateY(-1px);
+}
+#bton-welcome-overlay .bton-welcome-btn:active{
+  transform: translateY(0);
+}
+
+@media (max-width: 420px){
+  #bton-welcome-overlay{ padding:14px; }
+  #bton-welcome-overlay .bton-welcome-card{ border-radius: 24px; }
+  #bton-welcome-overlay .bton-welcome-title{ font-size: 24px; }
+  #bton-welcome-overlay .bton-welcome-text{ font-size: 14px; }
+}
+
+
 
 </style>
 <div class="modal opacity-0 pointer-events-none fixed inset-0 z-[120000] flex items-center justify-center bg-black/90 backdrop-blur-md transition-all duration-300" id="modal-gallery">
@@ -11497,7 +11688,78 @@ function showEditorView() {
 
   // 4. Sayfayı en üste kaydır
   window.scrollTo(0, 0);
+
+  // ✅ Show welcome modal only right after join
+  try { setTimeout(() => { try { btonMaybeShowWelcomeModal('editor'); } catch(e) {} }, 220); } catch(e) {}
 }
+
+
+
+/* =========================
+   Welcome Modal logic (Join -> Editor)
+========================= */
+function btonShowWelcomeModal() {
+  const overlay = document.getElementById("bton-welcome-overlay");
+  if (!overlay) return;
+  overlay.classList.remove("hidden");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("bton-modal-open");
+  requestAnimationFrame(() => { try { overlay.classList.add("show"); } catch(e) {} });
+  // Bind ESC once
+  if (!window.__BTON_WELCOME_ESC_BOUND) {
+    window.__BTON_WELCOME_ESC_BOUND = true;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        try { btonHideWelcomeModal(); } catch(_) {}
+      }
+    });
+  }
+}
+function btonHideWelcomeModal() {
+  const overlay = document.getElementById("bton-welcome-overlay");
+  if (!overlay) return;
+  try { overlay.classList.remove("show"); } catch(e) {}
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("bton-modal-open");
+  setTimeout(() => { try { overlay.classList.add("hidden"); } catch(e) {} }, 160);
+
+  try {
+    const uid = (localStorage.getItem("BTrustOn_just_joined_uid") || "").trim() || (selectedCompany?.id || "");
+    const seenKey = uid ? `BTrustOn_welcome_seen_${uid}` : "BTrustOn_welcome_seen";
+    localStorage.setItem(seenKey, "1");
+    localStorage.removeItem("BTrustOn_welcome_pending");
+  } catch(e) {}
+}
+
+function btonWelcomeCta() {
+  // Close modal and take user to the top of Profile Editor (no tab jump)
+  try { btonHideWelcomeModal(); } catch(e) {}
+  try {
+    // Prefer scrolling to the editor hero/top
+    const hero = document.querySelector('#view-editor .bton-editor-hero');
+    if (hero && hero.scrollIntoView) {
+      hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) {}
+}
+
+function btonMaybeShowWelcomeModal(source) {
+  try {
+    if (localStorage.getItem("BTrustOn_welcome_pending") !== "1") return;
+
+    const uid = (localStorage.getItem("BTrustOn_just_joined_uid") || "").trim() || (selectedCompany?.id || "");
+    const seenKey = uid ? `BTrustOn_welcome_seen_${uid}` : "BTrustOn_welcome_seen";
+    if (localStorage.getItem(seenKey) === "1") {
+      localStorage.removeItem("BTrustOn_welcome_pending");
+      return;
+    }
+
+    btonShowWelcomeModal();
+  } catch(e) {}
+}
+
 
 
 /* =========================
@@ -13181,7 +13443,8 @@ async function handleJoin() {
       if (__uid) {
         try { localStorage.setItem("BTrustOn_just_joined", "1"); } catch(_) {}
         try { localStorage.setItem("BTrustOn_just_joined_uid", String(__uid)); } catch(_) {}
-        try { localStorage.setItem("BTrustOn_just_joined_edit", "1"); } catch(_) {}
+        try { localStorage.setItem("BTrustOn_just_joined_edit", "1");
+        try { localStorage.setItem("BTrustOn_welcome_pending", "1"); } catch(_) {} } catch(_) {}
         try { localStorage.setItem("BTrustOn_my_company_id", String(__uid)); } catch(_) {}
         try { localStorage.setItem("BTrustOn_last_route", `company:${__uid}`); } catch(_) {}
 
@@ -21751,4 +22014,29 @@ function sortProjectsUI(mode){
 })();
 
 </script>
+
+<!-- =========================
+     Welcome Modal (shown after join)
+========================= -->
+<div id="bton-welcome-overlay" class="hidden" aria-hidden="true">
+  <div class="bton-welcome-backdrop" onclick="btonHideWelcomeModal()"></div>
+  <div class="bton-welcome-card" role="dialog" aria-modal="true" aria-labelledby="bton-welcome-title">
+    <div class="bton-welcome-top">
+      <div class="bton-welcome-badge">
+        <span data-i18n="ui_welcome_badge_2aa1d1">BTRUSTON</span>
+      </div>
+      <button class="bton-welcome-close" type="button" aria-label="Close" onclick="btonHideWelcomeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="bton-welcome-body">
+      <div class="bton-welcome-title" id="bton-welcome-title" data-i18n="ui_welcome_title_bton_9d3e2b">BTrustOn'a hoş geldiniz</div>
+      <div class="bton-welcome-text" data-i18n="ui_welcome_text_boost_1c4f72">Hoş geldiniz. Profiliniz, iş dünyasındaki dijital vitrininizdir. Sertifika ve projelerinizle uzmanlığınızı kanıtlayın, envanterinizi paylaşarak kapasitenizi sergileyin. BTrustOn ağında güvene dayalı ve sürdürülebilir iş ortaklıklarına bir adım daha yaklaşın.</div>
+      <div class="bton-welcome-cta">
+        <button class="bton-welcome-btn primary" type="button" onclick="btonWelcomeCta()" data-i18n="ui_start_building_profile_7b6a91">KURUMSAL KİMLİĞİNİ GÜÇLENDİR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body></html>
