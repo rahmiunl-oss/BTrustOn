@@ -278,7 +278,7 @@
   "ph_asset_location": "e.g. Rotterdam Logistics Hub, NL",
   "ph_asset_search": "Search assets…",
   "ph_asset_specs": "e.g. 1000 Ton Capacity, 2023 Model",
-  "ph_cert_issuer": "e.g. ISO 9001",
+  "ph_cert_issuer": "e.g. SGS or TUV",
   "ph_cert_name": "e.g. ISO 9001:2015",
   "ph_cert_search": "Search certificates (name or issuer)…",
   "ph_edit_address": "Headquarters full address (Street, No, District...)",
