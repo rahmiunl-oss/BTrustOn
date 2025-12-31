@@ -10047,12 +10047,23 @@ async function trackProfileView(targetProfileId) {
         return;
     }
 
-    // C. Veritabanına Kaydet
-    const viewerId = user ? user.id : null; // Üye ise ID, değilse NULL (Misafir)
-    
-    const { error } = await supabaseClient.functions.invoke('track-profile-view', {
-        body: { profile_id: targetProfileId }
-    });
+    // C. Veritabanına Kaydet (Guest + Logged-in)
+/*
+  Not:
+  - viewer_id varsa "login olan kullanıcı" demektir.
+  - viewer_id NULL ise "guest" demektir.
+  - RLS tarafında anon insert'e izin verildiği için Edge Function'a gerek yok.
+*/
+const viewerId = user ? user.id : null;
+const { error } = await supabaseClient
+    .from("profile_views")
+    .insert([{ profile_id: targetProfileId, viewer_id: viewerId }]);
+
+if (error) {
+    console.warn("profile_views insert error:", error);
+    // Loglama başarısızsa localStorage'a işaret koymayalım ki sonra tekrar deneyebilelim.
+    return;
+}
 
 // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
     if (!error) {
