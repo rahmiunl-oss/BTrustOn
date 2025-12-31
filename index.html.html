@@ -2406,8 +2406,8 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   <div class="bton-empty-card bton-empty-card--soft">
     <div class="bton-empty-ic"><i class="fa-regular fa-newspaper"></i></div>
     <div class="min-w-0">
-      <div class="bton-empty-title" data-i18n="updates_empty_title">No fresh updates</div>
-      <div class="bton-empty-desc"><span data-i18n="updates_empty">No updates posted in the last 7 days.</span></div>
+      <div class="bton-empty-title" data-i18n="updates_empty_title">No company updates in 7 days</div>
+      <div class="bton-empty-desc"><span data-i18n="updates_empty">No company updates posted in the last 7 days.</span></div>
     </div>
   </div>
 </div>
@@ -4886,6 +4886,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 }
 .bton-empty-title{ font-size: 13px; font-weight: 900; color: rgba(15,23,42,.92); letter-spacing: .01em; }
 .bton-empty-desc{ margin-top: 4px; font-size: 12px; font-weight: 600; color: rgba(15,23,42,.55); line-height: 1.35; }
+
+/* Home > Company Updates empty-state: slightly smaller copy */
+#home-updates-empty .bton-empty-title{ font-size: 12px; }
+#home-updates-empty .bton-empty-desc{ font-size: 11px; }
 .bton-empty-action{
   margin-top: 10px;
   display:inline-flex;
@@ -6158,11 +6162,54 @@ function setHomeUpdatesFilter(mode) {
 function _homeUpdatesSetEmptyText(type) {
   const empty = document.getElementById("home-updates-empty");
   if (!empty) return;
-  const msg = (type === "no_followed")
-    ? (t("updates_no_followed") || "Follow companies to see their updates here.")
-    : (t("updates_empty") || "No updates posted in the last 7 days.");
-  empty.textContent = msg;
+
+  // Keep the structured empty card (title + description). Do NOT overwrite container textContent.
+  const titleEl = empty.querySelector('[data-i18n="updates_empty_title"]') || empty.querySelector(".bton-empty-title");
+  let descSpan =
+    empty.querySelector('[data-i18n="updates_empty"]') ||
+    empty.querySelector('[data-i18n="updates_no_followed"]') ||
+    empty.querySelector(".bton-empty-desc span") ||
+    null;
+
+  // If the desc span is missing (unexpected DOM), fall back to the first desc container.
+  if (!descSpan) {
+    const descWrap = empty.querySelector(".bton-empty-desc");
+    if (descWrap) descSpan = descWrap;
+  }
+
+  // Title (static): No company updates in 7 days
+  if (titleEl) {
+    const titleFallback = (currentLang === "tr")
+      ? "Son 7 günde şirket güncellemesi yok."
+      : (currentLang === "es"
+        ? "No hay actualizaciones de empresas en los últimos 7 días."
+        : "No company updates in the last 7 days.");
+    titleEl.setAttribute("data-i18n", "updates_empty_title");
+    titleEl.textContent = _i18n("updates_empty_title", titleFallback);
+  }
+
+  if (!descSpan) return;
+
+  if (type === "no_followed") {
+    const fb = (currentLang === "tr")
+      ? "Güncellemeleri burada görmek için şirketleri takip edin."
+      : (currentLang === "es"
+        ? "Sigue a empresas para ver sus actualizaciones aquí."
+        : "Follow companies to see their updates here.");
+    if (descSpan.setAttribute) descSpan.setAttribute("data-i18n", "updates_no_followed");
+    descSpan.textContent = _i18n("updates_no_followed", fb);
+  } else {
+    const fb = (currentLang === "tr")
+      ? "Şirketler son 7 günde paylaşım yapmadı."
+      : (currentLang === "es"
+        ? "Ninguna empresa ha publicado actualizaciones en los últimos 7 días."
+        : "No company updates posted in the last 7 days.");
+    if (descSpan.setAttribute) descSpan.setAttribute("data-i18n", "updates_empty");
+    descSpan.textContent = _i18n("updates_empty", fb);
+  }
 }
+
+
 
 
 function _followErrorHint(error) {
@@ -6948,7 +6995,7 @@ async function loadMyRecentUpdates(){
 
   const user = await _getAuthUserSafe();
   if (!user?.id) {
-    listEl.innerHTML = `<div class="text-[12px] text-gray-500 p-3 rounded-xl border border-gray-100 bg-gray-50">
+    listEl.innerHTML = `<div class="text-[11px] text-gray-500 p-3 rounded-xl border border-gray-100 bg-gray-50">
       ${_i18n("toast_login_required","Please sign in.")}
     </div>`;
     return;
@@ -6984,8 +7031,8 @@ function _renderMyRecentUpdatesList(rows){
 
   const items = Array.isArray(rows) ? rows : [];
   if (items.length === 0){
-    listEl.innerHTML = `<div class="text-[12px] text-gray-500 p-3 rounded-xl border border-gray-100 bg-gray-50">
-      ${tOr("post_no_updates_7d", (currentLang==="tr") ? "Son 7 günde paylaşım yok." : (currentLang==="es" ? "No hay actualizaciones en los últimos 7 días." : "No updates in the last 7 days."))}
+    listEl.innerHTML = `<div class="text-[11px] text-gray-500 p-3 rounded-xl border border-gray-100 bg-gray-50">
+      ${_i18n("post_no_updates_7d", (currentLang==="tr") ? "Son 7 günde paylaşım yok." : (currentLang==="es" ? "No hay actualizaciones en los últimos 7 días." : "No company updates in the last 7 days."))}
     </div>`;
     return;
   }
@@ -13244,11 +13291,14 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     if(mobileGuestGroup) { mobileGuestGroup.classList.add("hidden"); mobileGuestGroup.classList.remove("flex"); }
     if(mobileUserGroup) { mobileUserGroup.classList.remove("hidden"); mobileUserGroup.classList.add("flex"); }
     if(mobileQuickCompany) { mobileQuickCompany.classList.remove("hidden"); }
-    
-    fetchInboxMessages();
-    subscribeToMessages();
-    fetchNotificationsUnread();
-    subscribeNotifications();
+
+    // ✅ Safe init (mobile refresh): i18n might not be ready yet; guard + avoid unhandled errors
+    try { if (typeof t !== "function" && typeof bootI18n === "function") { await bootI18n(); } } catch(e) {}
+    try { if (typeof fetchInboxMessages === "function") fetchInboxMessages(); } catch(e){ console.warn("fetchInboxMessages:", e); }
+    try { if (typeof subscribeToMessages === "function") subscribeToMessages(); } catch(e){ console.warn("subscribeToMessages:", e); }
+    try { if (typeof fetchNotificationsUnread === "function") fetchNotificationsUnread(); } catch(e){ console.warn("fetchNotificationsUnread:", e); }
+    try { if (typeof subscribeNotifications === "function") subscribeNotifications(); } catch(e){ console.warn("subscribeNotifications:", e); }
+
   }
 
   // 3. PROFİL VERİSİNİ ÇEK
