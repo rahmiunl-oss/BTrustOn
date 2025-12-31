@@ -1180,5 +1180,9 @@
   "ui_reject_reason_prompt": "Red gerekçesi (opsiyonel):\nŞirketin neyi düzeltmesi gerektiğini yazın (örn. yanlış kayıt no, eyalet eksik, geçersiz link).",
   "ui_pro_plan_title": "Pro Plan",
   "ui_pro_plan_active_sub": "Planın aktif. İstersen iptal edebilirsin.",
-  "updates_upgrade": "Yükselt"
+  "updates_upgrade": "Yükselt",
+  "updates_empty_title": "Son 7 günde şirket güncellemesi yok",
+  "updates_empty": "Son 7 günde şirket güncellemesi paylaşılmadı.",
+  "updates_no_followed": "Güncellemeleri burada görmek için şirketleri takip edin.",
+  "post_no_updates_7d": "Son 7 günde paylaşım yok."
 }
