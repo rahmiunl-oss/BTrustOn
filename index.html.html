@@ -6861,9 +6861,8 @@ async function btonInitEngagementNotifications() {
     try { await _ensureHomeFollowSet(user.id); } catch(e) {}
     try { syncFollowedUpdateNotifications(); } catch(e) {}
 
-    // Profile views (Pro only)
-    try { syncProfileViewNotifications(); } catch(e) {}
-    try { subscribeProfileViewsRealtime(); } catch(e) {}
+    // Profile views: DB-driven (trigger on profile_views) — no client-side sync/subscribe (prevents duplicates)
+    // (Keeping JS helpers in file is harmless, but we do not call them here.)
   } catch(e) {}
 }
 
@@ -10025,6 +10024,21 @@ const card = document.createElement("div");
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
+// Guest fingerprint (stable per browser) - used only when viewer_id is null
+function btonGetGuestFingerprint(){
+  try{
+    const k = "BTrustOn_guest_fp";
+    let fp = localStorage.getItem(k);
+    if(!fp){
+      fp = "g_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+      localStorage.setItem(k, fp);
+    }
+    return fp;
+  }catch(e){ return null; }
+}
+
+
+
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
@@ -10057,7 +10071,12 @@ async function trackProfileView(targetProfileId) {
 const viewerId = user ? user.id : null;
 const { error } = await supabaseClient
     .from("profile_views")
-    .insert([{ profile_id: targetProfileId, viewer_id: viewerId }]);
+    .insert([{
+      profile_id: targetProfileId,
+      viewer_id: viewerId,
+      is_guest: (!viewerId),
+      guest_fingerprint: (viewerId ? null : btonGetGuestFingerprint())
+    }]);
 
 if (error) {
     console.warn("profile_views insert error:", error);
