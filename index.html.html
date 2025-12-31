@@ -10057,12 +10057,11 @@ async function trackProfileView(targetProfileId) {
     // C. Veritabanına Kaydet
     const viewerId = user ? user.id : null; // Üye ise ID, değilse NULL (Misafir)
     
-    const { error } = await supabaseClient.from('profile_views').insert([{
-        profile_id: targetProfileId,
-        viewer_id: viewerId
-    }]);
+    const { error } = await supabaseClient.functions.invoke('track-profile-view', {
+        body: { profile_id: targetProfileId }
+    });
 
-    // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
+// D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
     if (!error) {
         localStorage.setItem(storageKey, "true");
         console.log("Yeni ziyaret kaydedildi.");
