@@ -10053,14 +10053,15 @@ async function trackProfileView(targetProfileId) {
     // Login varsa: viewer_id = user.id
     // Guest ise: viewer_id = null, guest_fingerprint = stable localStorage id
     let payload = null;
-    let onConflict = null;
+    let onConflict = null; // legacy (no longer used)
+    let guestId = null;
 
     if (user) {
         payload = { profile_id: targetProfileId, viewer_id: user.id, view_day: today, is_guest: false, guest_fingerprint: null };
         onConflict = "profile_id,viewer_id,view_day";
     } else {
         // Guest id (tarayıcıda kalıcı)
-        let guestId = localStorage.getItem("BTrustOn_guest_id");
+        guestId = localStorage.getItem("BTrustOn_guest_id");
         if (!guestId) {
             guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
             localStorage.setItem("BTrustOn_guest_id", guestId);
@@ -10069,9 +10070,10 @@ async function trackProfileView(targetProfileId) {
         onConflict = "profile_id,guest_fingerprint,view_day";
     }
 
-    const { error } = await supabaseClient
-      .from('profile_views')
-      .upsert([payload], { onConflict, ignoreDuplicates: true });
+    const { error } = await supabaseClient.rpc('track_profile_view', {
+      p_profile_id: targetProfileId,
+      p_guest_fingerprint: user ? null : guestId
+    });
     if (error) { console.warn('trackProfileView upsert failed:', error); }
 // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
     if (!error) {
