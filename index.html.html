@@ -1660,6 +1660,8 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   );
 
     window.supabaseClient = supabaseClient;
+    window.__PV_NOTIF_DB_ONLY = true; // DB trigger handles profile-view notifications
+
 </script>
 <!-- Boot overlay: prevents dashboard flash on refresh -->
 <style>
@@ -10028,9 +10030,9 @@ const card = document.createElement("div");
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
-    // ✅ Admin kullanıcı (rahmiunl@gmail.com) görüntülediğinde analitiğe hiç yazma / sayma
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    const user = sessionData?.session?.user || null;
+// ✅ Admin kullanıcı (rahmiunl@gmail.com) görüntülediğinde analitiğe hiç yazma / sayma
     if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
     
     // A. Kendi profilime bakıyorsam HİÇBİR ŞEY YAPMA
@@ -10070,6 +10072,7 @@ async function trackProfileView(targetProfileId) {
     const { error } = await supabaseClient
       .from('profile_views')
       .upsert([payload], { onConflict, ignoreDuplicates: true });
+    if (error) { console.warn('trackProfileView upsert failed:', error); }
 // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
     if (!error) {
         localStorage.setItem(storageKey, "true");
