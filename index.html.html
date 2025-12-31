@@ -15762,7 +15762,7 @@ async function fetchNotificationsUnread() {
     // ✅ Fetch full list so the Inbox can actually show notifications
     const { data, error } = await supabaseClient
       .from('notifications')
-      .select('id,title,message,created_at,is_read')
+      .select('id,title,message,created_at,is_read,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars')
       .eq('recipient_user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -15846,6 +15846,10 @@ function subscribeNotifications() {
               id: n.id,
               title: n.title || (t("ui_notification") || "Notification"),
               message: n.message || "",
+              title_i18n_key: n.title_i18n_key || null,
+              title_i18n_vars: n.title_i18n_vars || null,
+              message_i18n_key: n.message_i18n_key || null,
+              message_i18n_vars: n.message_i18n_vars || null,
               created_at: n.created_at || nowDate().toISOString(),
               is_read: n.is_read
             });
@@ -16143,16 +16147,43 @@ function renderInboxItems() {
       const msgRaw = (n.message || "");
 
       const action = _extractNotifAction(msgRaw);
-      const parsedMsg = _parseNotifI18n(msgRaw);
-      const parsedTitle = _parseNotifI18n(titleRaw);
 
-      const titleResolved = (parsedTitle && parsedTitle.key) ? (tP(parsedTitle.key, parsedTitle.params) || titleRaw) : titleRaw;
+      // ✅ DB-backed i18n support (title_i18n_key/message_i18n_key + vars)
+      const titleVars = (typeof _normNotifVars === "function") ? _normNotifVars(n.title_i18n_vars) : (n.title_i18n_vars || {});
+      const msgVars   = (typeof _normNotifVars === "function") ? _normNotifVars(n.message_i18n_vars) : (n.message_i18n_vars || {});
+
+      const parsedMsg = (!n.message_i18n_key) ? _parseNotifI18n(msgRaw) : null;
+      const parsedTitle = (!n.title_i18n_key) ? _parseNotifI18n(titleRaw) : null;
+
+      let titleResolved = titleRaw;
+      try {
+        if (n.title_i18n_key) {
+          const out = tP(n.title_i18n_key, titleVars);
+          if (out) titleResolved = out;
+        } else if (parsedTitle && parsedTitle.key) {
+          const out = tP(parsedTitle.key, parsedTitle.params);
+          if (out) titleResolved = out;
+        }
+      } catch(e) {}
       const title = String(titleResolved || (t("ui_notification") || "Notification")).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-      const msgResolved = (parsedMsg && parsedMsg.key) ? (tP(parsedMsg.key, parsedMsg.params) || _stripNotifMarkers(msgRaw)) : _stripNotifMarkers(msgRaw);
+      let msgResolved = "";
+      let notifParams = {};
+      try {
+        if (n.message_i18n_key) {
+          notifParams = (msgVars && typeof msgVars === "object") ? msgVars : {};
+          msgResolved = tP(n.message_i18n_key, notifParams) || (n.message || "");
+        } else {
+          notifParams = (parsedMsg && parsedMsg.params) ? parsedMsg.params : {};
+          msgResolved = (parsedMsg && parsedMsg.key)
+            ? (tP(parsedMsg.key, parsedMsg.params) || _stripNotifMarkers(msgRaw))
+            : _stripNotifMarkers(msgRaw);
+        }
+      } catch(e) {
+        msgResolved = _stripNotifMarkers(msgRaw);
+        notifParams = {};
+      }
       const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-      const notifParams = (parsedMsg && parsedMsg.params) ? parsedMsg.params : {};
       let __whenBase = n.created_at || n.updated_at || null;
       try {
         const ev = (notifParams.event_at || notifParams.eventAt || notifParams.event_time || notifParams.eventTime || "");
@@ -19753,6 +19784,20 @@ function tP(key, params = {}) {
   } catch(e) {}
   return s;
 }
+
+function _normNotifVars(v) {
+  try {
+    if (!v) return {};
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (!s) return {};
+      return JSON.parse(s);
+    }
+    if (typeof v === "object") return v;
+  } catch(e) {}
+  return {};
+}
+
 
 function _parseNotifI18n(text="") {
   const raw = String(text || "");
