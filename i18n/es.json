@@ -1189,5 +1189,9 @@
   "notif_profile_view_title": "Perfil visto",
   "notif_profile_view_revealed": "{viewer} vio tu perfil.",
   "notif_profile_view_guest": "Un visitante anónimo vio tu perfil.",
-  "notif_profile_view_locked": "Una empresa vio tu perfil. Actualiza a Pro para ver quién."
+  "notif_profile_view_locked": "Una empresa vio tu perfil. Actualiza a Pro para ver quién.",
+  "ui_welcome_badge_2aa1d1": "BTRUSTON",
+  "ui_welcome_title_bton_9d3e2b": "Bienvenido/a a BTrustOn",
+  "ui_welcome_text_boost_1c4f72": "Tu perfil es tu escaparate digital en el mundo empresarial. Demuestra tu experiencia con tus certificados y proyectos, y muestra tu capacidad compartiendo tu inventario. Acércate un paso más a alianzas comerciales sostenibles y basadas en la confianza dentro de la red BTrustOn.",
+  "ui_start_building_profile_7b6a91": "REFUERZA TU IDENTIDAD CORPORATIVA"
 }
