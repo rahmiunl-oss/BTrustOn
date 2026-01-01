@@ -16196,54 +16196,46 @@ async function fetchInboxMessages() {
         return true; // Diğer durumlarda göster
     });
 
-    const groupedMap = new Map();
-    const partnersToFetch = new Set();
+        const groupedMap = new Map();
+    const partnersToFetch = new Set(); // owner user ids
 
-    // 👇 messages.forEach bloğunu tamamen bununla değiştirin 👇
+    // 👇 messages.forEach bloğunu claim-aware hale getirdik 👇
     messages.forEach(msg => {
-        // Konu başlığını temizle (Re: kısımlarını at)
         const cleanSubject = msg.subject ? msg.subject.replace(/^(Re:\s*)+/i, '').trim() : (t("inbox_no_subject") || "No Subject");
         const isMeSender = (msg.sender_id === user.id);
-        
-        // ✅ DEĞİŞİKLİK 1: Eğer sender_id yoksa (Misafir), partnerId'yi string 'null' yap
+
+        // PartnerId here is ALWAYS a user id (auth.users.id) for registered users
         const partnerId = isMeSender ? msg.receiver_id : (msg.sender_id || 'null');
-        
         const groupKey = cleanSubject + "_" + partnerId;
 
         if (!groupedMap.has(groupKey)) {
             let displayCompany = (t("ui_loading") || ((getUILang()||"en").toLowerCase().startsWith("tr") ? "Yükleniyor..." : "Loading..."));
             let logoChar = "P";
+            let partnerCompanyId = null;
 
-            // ✅ DEĞİŞİKLİK 2: MİSAFİR KONTROLÜ
-            if (partnerId === 'null') {
+            // Guest
+            if (partnerId === 'null' || partnerId === 'undefined' || partnerId === null) {
                 displayCompany = (t("inbox_guest_user") || "Guest User");
                 logoChar = "G";
-
-                // Eğer mesajda "Ahmet (Guest)" gibi bir isim saklıysa onu al
                 if (msg.related_company_name) {
                     displayCompany = msg.related_company_name;
-                    // Baş harfini logo yap (Örn: Ahmet -> A)
-                    // Parantez içini temizleyip saf ismi almaya çalışalım
                     const nameMatch = displayCompany.match(/^(.*?)\s*\(/);
                     if(nameMatch) logoChar = nameMatch[1].charAt(0).toUpperCase();
                     else logoChar = displayCompany.charAt(0).toUpperCase();
                 }
-            } 
-            else {
-                // --- NORMAL ŞİRKET BULMA MANTIĞI (Eskisi Gibi) ---
-                const localPartner = database.find(c => c.id == partnerId);
-                if (localPartner) {
-                    displayCompany = localPartner.name;
-                    logoChar = displayCompany.charAt(0).toUpperCase();
-                } else {
-                    if (!isMeSender && msg.related_company_name) {
-                        const match = msg.related_company_name.match(/\((.+)\)$/);
-                        displayCompany = match ? match[1] : msg.related_company_name;
+            } else {
+                // ✅ Claim-aware: try cache first
+                try {
+                    const cached = __btonOwnerToCompanyCache && __btonOwnerToCompanyCache.get(String(partnerId));
+                    if (cached && cached.company_name) {
+                        displayCompany = cached.company_name;
                         logoChar = displayCompany.charAt(0).toUpperCase();
+                        partnerCompanyId = cached.id || null;
                     } else {
-                        displayCompany = "Company ID: " + partnerId.substr(0,4) + "...";
-                        partnersToFetch.add(partnerId);
+                        partnersToFetch.add(String(partnerId));
                     }
+                } catch(e) {
+                    partnersToFetch.add(String(partnerId));
                 }
             }
 
@@ -16251,6 +16243,7 @@ async function fetchInboxMessages() {
                 id: msg.id,
                 count: 1,
                 partner_id: partnerId,
+                partner_company_id: partnerCompanyId,
                 company: displayCompany,
                 title: cleanSubject,
                 desc: isMeSender ? `You: ${msg.content}` : msg.content,
@@ -16259,7 +16252,7 @@ async function fetchInboxMessages() {
                 sent_unread: !msg.is_read && isMeSender,
                 type: msg.msg_type,
                 logo: logoChar,
-                isSentByMe: isMeSender 
+                isSentByMe: isMeSender
             });
         } else {
             const existing = groupedMap.get(groupKey);
@@ -16270,19 +16263,52 @@ async function fetchInboxMessages() {
     });
     // 👆 messages.forEach bloğu burada bitiyor 👆
 
-    // Eksik isimleri veritabanından tamamla
+    // ✅ Partner isimlerini owner_user_id üzerinden batch resolve et
     if (partnersToFetch.size > 0) {
-        const { data: profiles } = await supabaseClient
-            .from('profiles')
-            .select('id, company_name')
-            .in('id', Array.from(partnersToFetch));
-        
-        if (profiles) {
+        const owners = Array.from(partnersToFetch).filter(x => x && x !== 'null' && x !== 'undefined');
+
+        if (owners.length > 0) {
+            const { data: profs, error: pErr } = await supabaseClient
+                .from('profiles')
+                .select('id, company_name, owner_user_id, claimed_at')
+                .in('owner_user_id', owners)
+                .order('claimed_at', { ascending: false });
+
+            const bestMap = new Map(); // owner_user_id -> best profile
+            if (!pErr && Array.isArray(profs)) {
+                profs.forEach(p => {
+                    const key = String(p.owner_user_id || "");
+                    if (!key) return;
+
+                    const prev = bestMap.get(key);
+                    const score = (row) => {
+                        const nonStub = (String(row.id) !== String(row.owner_user_id)) ? 1000000 : 0;
+                        const tms = row.claimed_at ? (new Date(row.claimed_at).getTime() || 0) : 0;
+                        return nonStub + tms;
+                    };
+
+                    if (!prev || score(p) > score(prev)) {
+                        bestMap.set(key, p);
+                    }
+                });
+            }
+
             groupedMap.forEach((val) => {
-                const found = profiles.find(p => p.id === val.partner_id);
-                if (found) {
-                    val.company = found.company_name;
-                    val.logo = found.company_name.charAt(0).toUpperCase();
+                const pid = String(val.partner_id || "");
+                if (!pid || pid === 'null' || pid === 'undefined') return;
+
+                const best = bestMap.get(pid);
+                if (best && best.company_name) {
+                    val.company = best.company_name;
+                    val.logo = best.company_name.charAt(0).toUpperCase();
+                    val.partner_company_id = best.id || null;
+                    try { __btonOwnerToCompanyCache.set(pid, best); } catch(e) {}
+                } else {
+                    // fallback: keep existing text, but ensure not showing raw id forever
+                    if (!val.company || /^Company ID:/i.test(val.company) || val.company === "Loading..." || val.company === "Yükleniyor...") {
+                        val.company = (t("ui_company") || "Company") + " • " + pid.substr(0,4) + "...";
+                        val.logo = "C";
+                    }
                 }
             });
         }
@@ -16298,16 +16324,32 @@ function manualInboxUpdate(partnerId, subject, content, isQuote = false) {
     const cleanSubject = subject.replace(/^(Re:\s*)+/i, '').trim();
     
     // 2. Partnerin (Alıcının) İsmini Bul
-    let partnerName = "Loading...";
-    // Veritabanı listesinden bulmaya çalış
-    const partnerProfile = database.find(c => c.id == partnerId);
-    if (partnerProfile) {
-        partnerName = partnerProfile.name;
-    } else {
-        // Bulamazsak inputlardan veya mevcut ekrandan almaya çalış
-        const msgHeaderName = document.getElementById("quote-target-company");
-        if(msgHeaderName && msgHeaderName.textContent) partnerName = msgHeaderName.textContent;
+        let partnerName = (t("ui_loading") || "Loading...");
+    try {
+      const cached = __btonOwnerToCompanyCache && __btonOwnerToCompanyCache.get(String(partnerId));
+      if (cached && cached.company_name) partnerName = cached.company_name;
+    } catch(e) {}
+
+    // If still not known, try modal header (target company name)
+    if (!partnerName || partnerName === "Loading..." || partnerName === "Yükleniyor..." || partnerName === (t("ui_loading") || "Loading...")) {
+      const msgHeaderName = document.getElementById("quote-target-company");
+      if (msgHeaderName && msgHeaderName.textContent) partnerName = msgHeaderName.textContent.trim();
     }
+
+    // Background resolve (claim-aware)
+    try {
+      if (partnerId && partnerId !== 'null' && partnerId !== 'undefined') {
+        btonResolveCompanyByOwnerId(partnerId).then(res => {
+          try {
+            if (res && res.company_name) {
+              __btonOwnerToCompanyCache.set(String(partnerId), res);
+              // refresh the list silently
+              try { fetchInboxMessages(); } catch(e) {}
+            }
+          } catch(e) {}
+        }).catch(()=>{});
+      }
+    } catch(e) {}
 
     // 3. Listede bu konuşma var mı?
     const existingIndex = inboxData.findIndex(item => 
@@ -16373,11 +16415,20 @@ function subscribeToMessages() {
         // 1. INBOX LİSTESİNİ VE KIRMIZI ROZETİ YENİLE
         await fetchInboxMessages(); 
 
-        // 2. TOAST BİLDİRİMİ GÖSTER (Şirket Adını Ayıkla)
-        const rawName = payload.new.related_company_name || "Unknown";
-        // "Ahmet (Rönesans)" içinden parantezdeki şirketi al
-        const match = rawName.match(/\((.+)\)$/);
-        const companyName = match ? match[1] : rawName;
+                // 2. TOAST BİLDİRİMİ GÖSTER (Claim-aware company name)
+        let companyName = "Unknown";
+        try {
+          if (payload.new.sender_id) {
+            const resolved = await btonResolveCompanyByOwnerId(payload.new.sender_id);
+            if (resolved && resolved.company_name) companyName = resolved.company_name;
+          }
+        } catch(e) {}
+
+        if (!companyName || companyName === "Unknown") {
+          const rawName = payload.new.related_company_name || "Unknown";
+          const match = rawName.match(/\((.+)\)$/);
+          companyName = match ? match[1] : rawName;
+        }
 
         const isQuote = payload.new.msg_type === 'quote';
         const title = isQuote ? "New Quote Request" : "New Message";
@@ -17136,13 +17187,19 @@ try {
     // --- KRİTİK DÜZELTME: BAŞLIK İSMİNİ CANLI VERİDEN AL ---
     // Inbox listesindeki isme güvenmek yerine, veritabanı (database) hafızasındaki 
     // güncel şirket kartını bulup ismini oradan çekiyoruz.
-    let fixedHeaderName = item.company; // Varsayılan (Eğer bulamazsa)
-    
-    // Veritabanı listesinden ID ile gerçek profili bul
-    const liveProfile = database.find(c => c.id == currentPartnerId);
-    if (liveProfile) {
-        fixedHeaderName = liveProfile.name;
-    }
+    let fixedHeaderName = item.company; // Varsayılan
+
+    // ✅ Claim-aware: partnerId is a USER id. Resolve their active company profile (prefer claimed company)
+    try {
+        if (currentPartnerId && currentPartnerId !== 'null' && currentPartnerId !== 'undefined') {
+            const resolved = await btonResolveCompanyByOwnerId(currentPartnerId);
+            if (resolved && resolved.company_name) {
+                fixedHeaderName = resolved.company_name;
+                currentPartnerCompanyId = resolved.id || null;
+            }
+        }
+    } catch(e) {}
+
     // -------------------------------------------------------
 
     // Okundu Yapma İşlemleri
@@ -17271,10 +17328,6 @@ async function loadMessageThread(cleanSubject, partnerId) {
         // Try resolve partner's active company name (claim-aware)
         const resolved = await btonResolveCompanyByOwnerId(partnerId);
         if (resolved && resolved.company_name) fixedPartnerName = resolved.company_name;
-        else {
-            const partnerProfile = database.find(c => c.id == partnerId);
-            if (partnerProfile) fixedPartnerName = partnerProfile.name;
-        }
     }
 
     // --- SORGULAMA MANTIĞI DEĞİŞTİ ---
@@ -17318,10 +17371,12 @@ async function loadMessageThread(cleanSubject, partnerId) {
         const isMe = m.sender_id === user.id; // Mesajı ben mi attım?
         
         // Misafir ismini mesajın içinden (related_company_name) çekmeye çalış
-        let senderDisplayName = fixedPartnerName;
-        if (!isMe && m.related_company_name) {
-             // "Rahmi (Guest)" şeklindeki isimleri temizle, sadece ismi al
-             senderDisplayName = m.related_company_name.split('(')[0].trim(); 
+                let senderDisplayName = fixedPartnerName;
+
+        // ✅ Only use stored related_company_name for GUEST threads (sender_id is null).
+        // For registered users, prefer live-resolved company name to avoid showing stale names after claim.
+        if (!isMe && (!partnerId || partnerId === 'null' || partnerId === 'undefined') && m.related_company_name) {
+             senderDisplayName = m.related_company_name.split('(')[0].trim();
         }
 
         let displayNameHtml = isMe 
@@ -19457,16 +19512,31 @@ async function handleQuoteSubmit() {
              finalContent += `\n\n(${t("ui_file_attachment_skipped_login_required") || "File attachment skipped - Login required to attach files"})`;
         }
     }
-
     // Mesajı Gönder
-    // ✅ Claim-aware: messages are stored by auth user ids; route to target company's owner_user_id if available.
-    let receiverUserId = targetId;
+    // ✅ Claim-aware: messages use auth.user ids. We must resolve the target company's owner user id.
+    let receiverUserId = null;
     try {
         if (targetId && typeof isUuid === 'function' && isUuid(targetId)) {
-            const { data: tp } = await supabaseClient.from('profiles').select('owner_user_id').eq('id', targetId).maybeSingle();
-            if (tp && tp.owner_user_id) receiverUserId = tp.owner_user_id;
+            const { data: tp, error: tpErr } = await supabaseClient
+                .from('profiles')
+                .select('owner_user_id, company_name, email')
+                .eq('id', targetId)
+                .maybeSingle();
+            if (tpErr) throw tpErr;
+
+            // If profile exists but is not claimed yet, we cannot route to a user inbox (FK would fail).
+            if (tp && tp.owner_user_id) {
+                receiverUserId = tp.owner_user_id;
+            } else {
+                throw new Error((t("ui_company_not_claimed_cant_message") || "This company hasn't claimed its profile yet, so you can't send a request via inbox."));
+            }
+        } else {
+            throw new Error((t("ui_invalid_company") || "Invalid company target."));
         }
-    } catch(e) {}
+    } catch (e) {
+        throw e;
+    }
+
 
     const { error } = await supabaseClient.from('messages').insert([{
           sender_id: senderIdToSend, // Misafir ise NULL gider
