@@ -15029,6 +15029,72 @@ function myCompanyIdOr(uid) {
 }
 
 
+
+
+// =========================================================
+// Claim-aware helpers for "active company" + partner resolution
+// =========================================================
+let __btonMyCompanyCache = { userId: null, profile: null, ts: 0 };
+async function btonGetMyCompanyProfileFresh(force=false) {
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return null;
+
+    const now = Date.now();
+    if (!force && __btonMyCompanyCache.userId === user.id && __btonMyCompanyCache.profile && (now - __btonMyCompanyCache.ts) < 60000) {
+      return __btonMyCompanyCache.profile;
+    }
+
+    const p = await _fetchMyCompanyProfile(user.id);
+    if (p && p.id) {
+      try { localStorage.setItem("BTrustOn_my_company_id", p.id); } catch(e) {}
+    }
+    __btonMyCompanyCache = { userId: user.id, profile: (p || null), ts: now };
+    return p || null;
+  } catch(e) {
+    return null;
+  }
+}
+
+const __btonOwnerToCompanyCache = new Map();
+async function btonResolveCompanyByOwnerId(ownerUserId) {
+  try {
+    const key = String(ownerUserId || "");
+    if (!key || key === "null" || key === "undefined") return null;
+    if (__btonOwnerToCompanyCache.has(key)) return __btonOwnerToCompanyCache.get(key);
+
+    // Prefer a claimed company row (id != owner_user_id), then newest claimed_at
+    const res = await supabaseClient
+      .from("profiles")
+      .select("id, company_name, owner_user_id, claimed_at")
+      .eq("owner_user_id", ownerUserId)
+      .order("claimed_at", { ascending: false })
+      .limit(10);
+
+    let best = null;
+    if (!res.error && Array.isArray(res.data) && res.data.length) {
+      best = res.data.slice().sort((a,b)=>{
+        const aNon = (String(a.id) !== String(a.owner_user_id)) ? 1 : 0;
+        const bNon = (String(b.id) !== String(b.owner_user_id)) ? 1 : 0;
+        if (aNon !== bNon) return bNon - aNon;
+        const at = a.claimed_at ? (new Date(a.claimed_at).getTime() || 0) : 0;
+        const bt = b.claimed_at ? (new Date(b.claimed_at).getTime() || 0) : 0;
+        return bt - at;
+      })[0];
+    }
+
+    // Fallback: legacy profile id == owner id
+    if (!best) {
+      const fb = await supabaseClient.from("profiles").select("id, company_name, owner_user_id, claimed_at").eq("id", ownerUserId).maybeSingle();
+      if (fb && fb.data) best = fb.data;
+    }
+
+    if (best) __btonOwnerToCompanyCache.set(key, best);
+    return best;
+  } catch(e) {
+    return null;
+  }
+}
 function updateSavedBadges() {
   // Updates counts inside Lists panel (Saved + Following). No badge on the top nav button.
   const savedCount = (savedCompanyIds && typeof savedCompanyIds.size === 'number')
@@ -17048,6 +17114,7 @@ let currentMessageContext = null; // Hangi mesajı cevaplıyoruz?
 // 1. MESAJI AÇMA FONKSİYONU
 /* --- GÜNCELLENMİŞ SOHBET AÇMA (TIKLANABİLİR BAŞLIK) --- */
 let currentPartnerId = null; // Global değişken
+let currentPartnerCompanyId = null; // Resolved company profile id for partner (claim-aware)
 let currentSubject = null;
 let currentOpenMessageId = null;
 /* --- GÜNCELLENMİŞ: openMessage (Başlık İsim Garantili) --- */
@@ -17056,6 +17123,7 @@ async function openMessage(itemId) {
     if (!item) return;
 
     currentPartnerId = item.partner_id;
+    currentPartnerCompanyId = null;
     currentSubject = item.title;
     currentOpenMessageId = itemId;
 
@@ -17114,7 +17182,7 @@ try {
         companyHeaderHtml = `
             <div class="flex flex-col">
                 <span class="text-[10px] text-gray-400 font-normal uppercase tracking-wider">${_i18n("inbox_conversation_with", (currentLang==="tr" ? "Sohbet" : "Conversation with"))}</span>
-                <button onclick="openProfile('${currentPartnerId}')" 
+                <button onclick="openProfile('${currentPartnerCompanyId || currentPartnerId}')" 
                         class="text-left font-bold text-BTrustOn-accent hover:text-blue-700 hover:underline transition text-sm flex items-center gap-1.5">
                     <i class="fa-solid fa-building-user"></i>
                     ${fixedHeaderName} 
@@ -17200,8 +17268,13 @@ async function loadMessageThread(cleanSubject, partnerId) {
     
     // Partner ismini bulmaya çalış (Misafir ise 'Guest User' kalır veya related_company_name'den gelir)
     if (partnerId && partnerId !== 'null') {
-        const partnerProfile = database.find(c => c.id == partnerId);
-        if (partnerProfile) fixedPartnerName = partnerProfile.name;
+        // Try resolve partner's active company name (claim-aware)
+        const resolved = await btonResolveCompanyByOwnerId(partnerId);
+        if (resolved && resolved.company_name) fixedPartnerName = resolved.company_name;
+        else {
+            const partnerProfile = database.find(c => c.id == partnerId);
+            if (partnerProfile) fixedPartnerName = partnerProfile.name;
+        }
     }
 
     // --- SORGULAMA MANTIĞI DEĞİŞTİ ---
@@ -17360,9 +17433,11 @@ async function sendReply() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error("Please login again.");
 
-        let myDisplayName = "My Company"; 
-        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', myCompanyIdOr(user.id)).single();
-        if (profile && profile.company_name) myDisplayName = profile.company_name;
+        let myDisplayName = "My Company";
+        try {
+          const myP = await btonGetMyCompanyProfileFresh(true);
+          if (myP && myP.company_name) myDisplayName = myP.company_name;
+        } catch(e) {}
 
         const replySubject = currentSubject.startsWith("Re:") ? currentSubject : "Re: " + currentSubject;
         
@@ -19351,8 +19426,10 @@ async function handleQuoteSubmit() {
         // Kayıtlı kullanıcı
         senderIdToSend = user.id;
         let myCompanyName = "Private User";
-        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', myCompanyIdOr(user.id)).single();
-        if (profile && profile.company_name) myCompanyName = profile.company_name;
+        try {
+          const myP = await btonGetMyCompanyProfileFresh(true);
+          if (myP && myP.company_name) myCompanyName = myP.company_name;
+        } catch(e) {}
         displaySenderName = `${senderName} (${myCompanyName})`;
     } else {
         // 2. MİSAFİR LOGIC'İ (GUEST)
@@ -19382,9 +19459,18 @@ async function handleQuoteSubmit() {
     }
 
     // Mesajı Gönder
+    // ✅ Claim-aware: messages are stored by auth user ids; route to target company's owner_user_id if available.
+    let receiverUserId = targetId;
+    try {
+        if (targetId && typeof isUuid === 'function' && isUuid(targetId)) {
+            const { data: tp } = await supabaseClient.from('profiles').select('owner_user_id').eq('id', targetId).maybeSingle();
+            if (tp && tp.owner_user_id) receiverUserId = tp.owner_user_id;
+        }
+    } catch(e) {}
+
     const { error } = await supabaseClient.from('messages').insert([{
           sender_id: senderIdToSend, // Misafir ise NULL gider
-          receiver_id: targetId,
+          receiver_id: receiverUserId,
           subject: user ? subjectRaw : `[LEAD] ${subjectRaw}`, // Misafir mesajı belli olsun
           content: finalContent,
           related_company_name: displaySenderName, 
@@ -19401,7 +19487,7 @@ async function handleQuoteSubmit() {
 
     // Eğer giriş yapmışsa Sent kutusunu güncelle
     if(user) {
-        manualInboxUpdate(targetId, subjectRaw, finalContent, true);
+        manualInboxUpdate(receiverUserId, subjectRaw, finalContent, true);
         const panel = document.getElementById("inbox-panel");
         if (panel && !panel.classList.contains("open")) toggleInbox();
         switchInboxView('sent');
