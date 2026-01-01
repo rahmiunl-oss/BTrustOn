@@ -1228,5 +1228,7 @@
   "ui_claim_welcome_sub": "Artık bu şirket profilini yönetebilirsiniz.",
   "ui_claim_welcome_body_fmt": "Tebrikler! {company} için sahiplik talebiniz onaylandı. Artık şirket profilini düzenleyebilirsiniz.",
   "ui_edit_company_profile": "Şirket profilini düzenle",
-  "ui_got_it": "Tamam"
+  "ui_got_it": "Tamam",
+  "ui_company_not_claimed_cant_message": "Bu şirket profili henüz sahiplenilmediği için inbox üzerinden talep gönderemezsiniz.",
+  "ui_invalid_company": "Geçersiz şirket hedefi."
 }
