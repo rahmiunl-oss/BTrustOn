@@ -4221,8 +4221,8 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 
 <!-- CLAIM MODAL -->
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[120]" id="modal-claim-company">
-  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-claim-company')"></div>
-  <div class="modal-container bg-white w-11/12 md:max-w-lg mx-auto rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] animate-fade-in flex flex-col">
+  <div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="toggleModal('modal-claim-company')"></div>
+  <div class="modal-container relative z-10 bg-white w-11/12 md:max-w-lg mx-auto rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] animate-fade-in flex flex-col">
     <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/60">
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl bg-BTrustOn-accent/10 text-BTrustOn-accent flex items-center justify-center">
@@ -4260,7 +4260,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[110]" id="modal-post-update">
-<div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="openPostUpdateModal()"></div>
+<div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="openPostUpdateModal()"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-xl mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col">
 <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
 <div>
@@ -4348,7 +4348,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]" id="modal-about">
-<div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-about')"></div>
+<div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="toggleModal('modal-about')"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col border border-white/60">
 <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
 <div>
@@ -4449,7 +4449,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]" id="modal-pricing">
-<div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-pricing')"></div>
+<div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="toggleModal('modal-pricing')"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col border border-white/60">
 <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
 <div>
@@ -4530,7 +4530,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]" id="modal-terms">
-<div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-terms')"></div>
+<div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="toggleModal('modal-terms')"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col border border-white/60">
 <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
 <div>
@@ -4635,7 +4635,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]" id="modal-privacy">
-<div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-privacy')"></div>
+<div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="toggleModal('modal-privacy')"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col border border-white/60">
 <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
 <div>
@@ -5322,9 +5322,22 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
         return;
       }
 
-      // ✅ Login başarılı → modalı kapat ve "benim şirketimi" aç
+      // ✅ Login başarılı
       closeLoginModal();
       checkUserAndOpenProfile(true);
+
+      // If user clicked "Claim" while logged out, continue after login
+      try {
+        const pcid = window.__pendingClaimCompanyId;
+        const pcname = window.__pendingClaimCompanyName;
+        if (pcid) {
+          window.__pendingClaimCompanyId = null;
+          window.__pendingClaimCompanyName = null;
+          setTimeout(() => {
+            try { openClaimCompanyModal(pcid, pcname || ""); } catch(e) {}
+          }, 350);
+        }
+      } catch(e) {}
     });
   });
 
@@ -10740,7 +10753,9 @@ if (nameEl) {
     const ADMIN_MAIL = "rahmiunl@gmail.com"; // Senin mailin
     const isAdmin = (company.email === ADMIN_MAIL || company.contact_email === ADMIN_MAIL);
     const isVerified = String(company.verification_status || '').toLowerCase() === 'verified';
-    const isUnclaimed = (!company.owner_user_id) && (!company.claimed_at || String(company.claimed_at).trim()==='');
+    const __emailL = String(company.email || company.contact_email || "").toLowerCase();
+    const isSeedDirectory = (__emailL.endsWith("@btruston.seed") || __emailL.includes("@btruston.seed"));
+    const isUnclaimed = isSeedDirectory && (!company.owner_user_id) && (!company.claimed_at || String(company.claimed_at).trim()==='');
 
 
     // 3. Rozet Seçimi
@@ -14218,7 +14233,7 @@ async function openMyCompanyIfExists() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session || !session.user) {
       showToast("Login required", "Please sign in to open your company profile.", "brand");
-      try { toggleModal("modal-login"); } catch(e) {}
+      try { openLoginModal(); } catch(e) { try { openJoinModal(); } catch(_) {} }
       return;
     }
 
@@ -20140,14 +20155,15 @@ async function openClaimCompanyModal(companyId, companyName) {
   try {
     const user = await _getAuthUserSafe();
     if (!user?.id) {
+      try { window.__pendingClaimCompanyId = String(companyId || ""); window.__pendingClaimCompanyName = String(companyName || ""); } catch(_){}
       showToast(tOr("ui_claim_requires_login","Login required"), tOr("ui_claim_requires_login","Please sign in to request ownership."), "brand");
-      try { toggleModal("modal-login"); } catch(e) {}
+      try { openLoginModal(); } catch(e) { try { openJoinModal(); } catch(_) {} }
       return;
     }
   } catch(e) {
     // if auth check fails, still force login modal
     showToast(tOr("ui_claim_requires_login","Login required"), tOr("ui_claim_requires_login","Please sign in to request ownership."), "brand");
-    try { toggleModal("modal-login"); } catch(_) {}
+    try { openLoginModal(); } catch(e) { try { openJoinModal(); } catch(_) {} }
     return;
   }
 
@@ -20165,7 +20181,7 @@ async function submitCompanyClaim() {
   const user = await _getAuthUserSafe();
   if (!user?.id) {
     showToast(tOr("ui_claim_requires_login","Login required"), tOr("ui_claim_requires_login","Please sign in to request ownership."), "brand");
-    try { toggleModal("modal-login"); } catch(e) {}
+    try { openLoginModal(); } catch(e) { try { openJoinModal(); } catch(_) {} }
     return;
   }
 
