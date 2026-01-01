@@ -10813,7 +10813,7 @@ if (nameEl) {
     const isVerified = String(company.verification_status || '').toLowerCase() === 'verified';
     const __emailL = String(company.email || company.contact_email || "").toLowerCase();
     const isSeedDirectory = (__emailL.endsWith("@btruston.seed") || __emailL.includes("@btruston.seed"));
-    const isUnclaimed = isSeedDirectory && (!company.owner_user_id) && (!company.claimed_at || String(company.claimed_at).trim()==='');
+    const isUnclaimed = isSeedDirectory && (!company.owner_user_id || String(company.owner_user_id).trim()==='');
 
 
     // 3. Rozet Seçimi
@@ -10856,7 +10856,7 @@ if (nameEl) {
                 <span class="text-[10px] font-extrabold uppercase tracking-wide">${tOr("ui_unclaimed_profile","Unclaimed profile")}</span>
               </span>
               <button class="inline-flex items-center gap-1.5 ml-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-900 hover:border-slate-300 hover:bg-slate-50 text-[10px] font-extrabold uppercase tracking-wide"
-                      onclick="event.stopPropagation(); openClaimCompanyModal('${company.id}', '${_safeText(company.name || "")}');"
+                      onclick="event.stopPropagation(); openClaimCompanyModal('${company.id}', '${_safeText(company.company_name || "")}');"
                       title="${tOr("ui_unclaimed_profile_hint","This profile hasn't been claimed by a company representative yet.")}">
                 <i class="fa-solid fa-handshake-angle text-[12px] text-BTrustOn-accent"></i>
                 ${tOr("ui_claim_cta","Claim")}
