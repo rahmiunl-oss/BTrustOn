@@ -7390,15 +7390,25 @@ async function loadMyRecentUpdates(){
     const now = new Date();
     const since = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
 
-    const { data, error } = await supabaseClient
+    const myCid = myCompanyIdOr(user.id);
+
+    let q = supabaseClient
       .from("company_updates")
       .select("id,created_at,area,entity_title,template_code,note,company_id")
-      .eq("company_id", user.id)
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(12);
 
-    if (error) throw error;
+    // Claim sonrası: company_updates.company_id artık profile/company UUID olabilir.
+    // Geriye dönük uyumluluk için (legacy) user.id ile atılan kayıtları da dahil ediyoruz.
+    if (String(myCid) && String(myCid) !== String(user.id)) {
+      q = q.or(`company_id.eq.${myCid},company_id.eq.${user.id}`);
+    } else {
+      q = q.eq("company_id", myCid);
+    }
+
+    const { data, error } = await q;
+if (error) throw error;
     _renderMyRecentUpdatesList(data || []);
   } catch(e){
     console.warn("loadMyRecentUpdates error:", e);
