@@ -1228,5 +1228,7 @@
   "ui_claim_welcome_sub": "Ahora puedes administrar el perfil de esta empresa.",
   "ui_claim_welcome_body_fmt": "¡Felicidades! Tu solicitud de propiedad para {company} ha sido aprobada. Ahora puedes editar el perfil de la empresa.",
   "ui_edit_company_profile": "Editar perfil de empresa",
-  "ui_got_it": "Entendido"
+  "ui_got_it": "Entendido",
+  "ui_company_not_claimed_cant_message": "Este perfil de empresa aún no ha sido reclamado, por lo que no es posible enviar solicitudes a través de la bandeja de entrada.",
+  "ui_invalid_company": "Empresa no válida."
 }
