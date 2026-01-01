@@ -5969,15 +5969,33 @@ async function _fetchMyCompanyProfile(userId) {
   if (!userId) return null;
   try {
     // ✅ Preferred: profiles are linked to auth via owner_user_id (claim flow + directory seed)
+    // IMPORTANT: a user may have a legacy self-profile row (id = auth uid) PLUS a claimed company row.
+    // We prefer a company row (id != auth uid) if it exists.
+
+    // 1) Prefer non-self owned profile
     let { data, error } = await supabaseClient
       .from("profiles")
       .select("*")
       .eq("owner_user_id", userId)
+      .neq("id", userId)
       .order("claimed_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    // ✅ Fallback 1: legacy schema (profiles.id = auth uid)
+    // 2) Otherwise fallback to any owned profile
+    if ((error || !data)) {
+      const res2 = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("owner_user_id", userId)
+        .order("claimed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      data = res2.data;
+      error = res2.error;
+    }
+
+    // 3) Fallback: legacy schema (profiles.id = auth uid)
     if ((error || !data)) {
       const res = await supabaseClient
         .from("profiles")
@@ -5988,7 +6006,7 @@ async function _fetchMyCompanyProfile(userId) {
       error = res.error;
     }
 
-    // ✅ Fallback 2: very old schemas (profiles.user_id = auth uid)
+    // 4) Fallback: very old schemas (profiles.user_id = auth uid)
     if ((error || !data) && typeof userId === "string") {
       const fb = await supabaseClient
         .from("profiles")
