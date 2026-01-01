@@ -1223,5 +1223,10 @@
   "ui_claim_approved": "Claim approved.",
   "ui_claim_rejected": "Claim rejected.",
   "ui_approve": "Approve",
-  "ui_reject": "Reject"
+  "ui_reject": "Reject",
+  "ui_claim_welcome_title": "Welcome — claim approved",
+  "ui_claim_welcome_sub": "You can now manage this company profile.",
+  "ui_claim_welcome_body_fmt": "Congratulations! Your ownership request for {company} has been approved. You can now edit the company profile.",
+  "ui_edit_company_profile": "Edit company profile",
+  "ui_got_it": "Got it"
 }
