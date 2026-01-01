@@ -1223,5 +1223,10 @@
   "ui_claim_approved": "Reclamación aprobada.",
   "ui_claim_rejected": "Reclamación rechazada.",
   "ui_approve": "Aprobar",
-  "ui_reject": "Rechazar"
+  "ui_reject": "Rechazar",
+  "ui_claim_welcome_title": "Bienvenido — reclamación aprobada",
+  "ui_claim_welcome_sub": "Ahora puedes administrar el perfil de esta empresa.",
+  "ui_claim_welcome_body_fmt": "¡Felicidades! Tu solicitud de propiedad para {company} ha sido aprobada. Ahora puedes editar el perfil de la empresa.",
+  "ui_edit_company_profile": "Editar perfil de empresa",
+  "ui_got_it": "Entendido"
 }
