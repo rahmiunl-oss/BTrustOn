@@ -5955,14 +5955,27 @@ async function _ensureSelectedCompanyForPosting() {
 async function _fetchMyCompanyProfile(userId) {
   if (!userId) return null;
   try {
-    // 1) Most common: profiles.id = auth uid
+    // ✅ Preferred: profiles are linked to auth via owner_user_id (claim flow + directory seed)
     let { data, error } = await supabaseClient
       .from("profiles")
       .select("*")
-      .eq("id", userId)
+      .eq("owner_user_id", userId)
+      .order("claimed_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    // 2) Fallback: some schemas store auth uid separately
+    // ✅ Fallback 1: legacy schema (profiles.id = auth uid)
+    if ((error || !data)) {
+      const res = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+      data = res.data;
+      error = res.error;
+    }
+
+    // ✅ Fallback 2: very old schemas (profiles.user_id = auth uid)
     if ((error || !data) && typeof userId === "string") {
       const fb = await supabaseClient
         .from("profiles")
@@ -5973,12 +5986,12 @@ async function _fetchMyCompanyProfile(userId) {
       error = fb.error;
     }
 
-    if (error) return data || null;
     return data || null;
   } catch (e) {
     return null;
   }
 }
+
 
 async function refreshHomeUpdatesCTA() {
   const btn = document.getElementById("btn-open-post-update");
@@ -11602,7 +11615,7 @@ async function saveProfileData() {
     let { error } = await supabaseClient
       .from('profiles')
       .update(updates)
-      .eq('id', user.id);
+      .eq('id', myCompanyIdOr(user.id));
 
     // If the DB doesn't have a column yet, retry without it (backward compatible)
     if (error && String(error.message || "").toLowerCase().includes("does not exist")) {
@@ -11619,7 +11632,7 @@ async function saveProfileData() {
       ({ error } = await supabaseClient
         .from('profiles')
         .update(updates)
-        .eq('id', user.id));
+        .eq('id', myCompanyIdOr(user.id)));
     }
 if (error) throw error;
 
@@ -11630,7 +11643,7 @@ if (error) throw error;
     );
 
     // --- 6. LOCAL HAFIZAYI GÜNCELLE ---
-    const localCompany = database.find(c => c.id == user.id);
+    const localCompany = database.find(c => c.id == myCompanyIdOr(user.id));
     if (localCompany) {
         Object.assign(localCompany, {
             name, city, country, sector, desc, tagline,
@@ -11656,7 +11669,7 @@ if (error) throw error;
 
     // --- 6B. CANLI GÖRÜNÜMÜ SENKRONLA (Vitrin + Home Updates) ---
     try {
-      if (typeof selectedCompany !== "undefined" && selectedCompany && String(selectedCompany.id) === String(user.id)) {
+      if (typeof selectedCompany !== "undefined" && selectedCompany && String(selectedCompany.id) === String(myCompanyIdOr(user.id))) {
         if (localCompany) selectedCompany = localCompany;
       }
     } catch(e){}
@@ -11664,7 +11677,7 @@ if (error) throw error;
     // Keep optional in-memory lists in sync too (if present)
     try {
       if (typeof companiesData !== "undefined" && Array.isArray(companiesData)) {
-        const idx = companiesData.findIndex(c => c && String(c.id) === String(user.id));
+        const idx = companiesData.findIndex(c => c && String(c.id) === String(myCompanyIdOr(user.id)));
         if (idx > -1 && localCompany) companiesData[idx] = { ...companiesData[idx], ...localCompany };
       }
     } catch(e){}
@@ -11693,11 +11706,11 @@ if (error) throw error;
       }
     } catch(e){}
 
-    openProfile(user.id, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
+    openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
     
     // Re-render the profile instantly (no manual refresh needed)
     try {
-      await openProfile(user.id, { preserveTab: true });
+      await openProfile(myCompanyIdOr(user.id), { preserveTab: true });
     } catch(e) {
       try {
         document.getElementById("view-editor").classList.add("hidden-view");
@@ -13084,15 +13097,15 @@ async function saveAsset() {
     const { error } = await supabaseClient
       .from('profiles')
       .update({ assets: currentAssets, updated_at: nowDate() })
-      .eq('id', user.id);
+      .eq('id', myCompanyIdOr(user.id));
 
     if (error) throw error;
 
     selectedCompany.assets = currentAssets;
-    const localRef = database.find(c => c.id == user.id);
+    const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
     if(localRef) localRef.assets = currentAssets;
 
-    openProfile(user.id, { preserveScroll: true, preserveTab: true });
+    openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });
             switchProfileTab('assets');
     closeAssetModal();
     showToast((t("toast_success") || (currentLang === "tr" ? "Başarılı" : "Success")), (t("msg_asset_saved") || (currentLang === "tr" ? "Varlık başarıyla kaydedildi." : "Asset saved successfully.")), "success");
@@ -13117,15 +13130,15 @@ function deleteAsset(assetId) {
             const { error } = await supabaseClient
                 .from('profiles')
                 .update({ assets: currentAssets, updated_at: nowDate() })
-                .eq('id', user.id);
+                .eq('id', myCompanyIdOr(user.id));
 
             if (error) throw error;
 
             selectedCompany.assets = currentAssets;
-            const localRef = database.find(c => c.id == user.id);
+            const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
             if(localRef) localRef.assets = currentAssets;
 
-            openProfile(user.id, { preserveScroll: true, preserveTab: true });
+            openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });
             switchProfileTab('assets');
             showToast("Deleted", (t("msg_asset_removed") || ((currentLang==="tr") ? "Varlık başarıyla silindi." : "Asset removed successfully.")), "success");
 
@@ -13300,16 +13313,16 @@ async function saveProject() {
     const { error } = await supabaseClient
       .from('profiles')
       .update({ projects: currentProjects, updated_at: nowDate() })
-      .eq('id', user.id);
+      .eq('id', myCompanyIdOr(user.id));
 
     if (error) throw error;
 
     // Local State Güncelle
     selectedCompany.projects = currentProjects;
-    const localRef = database.find(c => c.id == user.id);
+    const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
     if(localRef) localRef.projects = currentProjects;
 
-    openProfile(user.id, { preserveScroll: true, preserveTab: true });
+    openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });
             switchProfileTab('projects');
     closeProjectModal();
     showToast((t("toast_success") || (currentLang === "tr" ? "Başarılı" : "Success")), (t("msg_project_saved") || (currentLang === "tr" ? "Proje kaydedildi." : "Project saved!")), "success");
@@ -13336,15 +13349,15 @@ function deleteProject(projectId) {
             const { error } = await supabaseClient
                 .from('profiles')
                 .update({ projects: currentProjects, updated_at: nowDate() })
-                .eq('id', user.id);
+                .eq('id', myCompanyIdOr(user.id));
 
             if (error) throw error;
 
             selectedCompany.projects = currentProjects;
-            const localRef = database.find(c => c.id == user.id);
+            const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
             if(localRef) localRef.projects = currentProjects;
 
-            openProfile(user.id, { preserveScroll: true, preserveTab: true });
+            openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });
             switchProfileTab('projects');
             showToast("Deleted", (t("msg_project_removed") || ((currentLang==="tr") ? "Proje başarıyla silindi." : "Project removed successfully.")), "success");
 
@@ -13373,15 +13386,15 @@ function deleteCert(certId, certName) {
             const { error } = await supabaseClient
                 .from('profiles')
                 .update({ certificates: currentCerts, updated_at: nowDate() })
-                .eq('id', user.id);
+                .eq('id', myCompanyIdOr(user.id));
 
             if (error) throw error;
 
             selectedCompany.certificates = currentCerts;
-            const localRef = database.find(c => c.id == user.id);
+            const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
             if(localRef) localRef.certificates = currentCerts;
 
-            openProfile(user.id, { preserveScroll: true, preserveTab: true });
+            openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });
             showToast("Deleted", (t("msg_certificate_removed") || ((currentLang==="tr") ? "Sertifika başarıyla silindi." : "Certificate removed successfully.")), "success");
             
         } catch (error) {
@@ -13747,13 +13760,10 @@ async function checkUserAndOpenProfile(forceOpen = false) {
   }
 
   // 3. PROFİL VERİSİNİ ÇEK
-  let { data: profile, error } = await supabaseClient
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
+  // ✅ Claim-ready schema: resolve my company via owner_user_id (fallback to legacy)
+  let profile = await _fetchMyCompanyProfile(session.user.id);
 
-  if (error || !profile) { console.log("Profil verisi çekilemedi."); return; }
+  if (!profile) { console.log("Profil verisi çekilemedi."); return; }
 
   // ✅ Enforce Pro lifecycle (expiry + reminder notifications)
   try { profile = await enforceProLifecycle(profile); } catch(e) {}
@@ -14224,6 +14234,7 @@ async function openMyCompanyIfExists() {
           .from('profiles')
           .select('id')
           .eq('owner_user_id', session.user.id)
+          .order('claimed_at', { ascending: false })
           .limit(1);
 
         if (!oErr && owned && owned.length) {
@@ -14890,6 +14901,17 @@ function isUuid(v){ return UUID_RE.test(String(v || '')); }
 function getMyCompanyId() {
   try { return localStorage.getItem("BTrustOn_my_company_id"); } catch(e) { return null; }
 }
+
+// Helper: always act on the currently owned company profile id (claimed or legacy)
+function myCompanyIdOr(uid) {
+  try {
+    const s = getMyCompanyId();
+    return (s && typeof isUuid === "function" && isUuid(s)) ? s : uid;
+  } catch(e) {
+    return uid;
+  }
+}
+
 
 function updateSavedBadges() {
   // Updates counts inside Lists panel (Saved + Following). No badge on the top nav button.
@@ -17223,7 +17245,7 @@ async function sendReply() {
         if (!user) throw new Error("Please login again.");
 
         let myDisplayName = "My Company"; 
-        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
+        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', myCompanyIdOr(user.id)).single();
         if (profile && profile.company_name) myDisplayName = profile.company_name;
 
         const replySubject = currentSubject.startsWith("Re:") ? currentSubject : "Re: " + currentSubject;
@@ -17894,14 +17916,14 @@ async function uploadLogoDirectFile(file) {
     const { error: dbError } = await supabaseClient
       .from("profiles")
       .update({ logo_url: publicUrl, updated_at: nowDate() })
-      .eq("id", user.id);
+      .eq("id", myCompanyIdOr(user.id));
 
     if (dbError) throw dbError;
 
     // Local memory update
-    const localCompany = database.find(c => String(c.id) === String(user.id));
+    const localCompany = database.find(c => String(c.id) === String(myCompanyIdOr(user.id)));
     if (localCompany) localCompany.logo_url = publicUrl;
-    if (selectedCompany && String(selectedCompany.id) === String(user.id)) selectedCompany.logo_url = publicUrl;
+    if (selectedCompany && String(selectedCompany.id) === String(myCompanyIdOr(user.id))) selectedCompany.logo_url = publicUrl;
 
     showToast("Success", "Logo updated successfully!", "success");
 
@@ -17960,14 +17982,14 @@ async function uploadOwnerPhotoDirectFile(file) {
     const { error: dbError } = await supabaseClient
       .from("profiles")
       .update({ owner_photo_url: publicUrl, updated_at: nowDate() })
-      .eq("id", user.id);
+      .eq("id", myCompanyIdOr(user.id));
 
     if (dbError) throw dbError;
 
     // Local memory update
-    const localCompany = database.find(c => String(c.id) === String(user.id));
+    const localCompany = database.find(c => String(c.id) === String(myCompanyIdOr(user.id)));
     if (localCompany) localCompany.owner_photo_url = publicUrl;
-    if (selectedCompany && String(selectedCompany.id) === String(user.id)) selectedCompany.owner_photo_url = publicUrl;
+    if (selectedCompany && String(selectedCompany.id) === String(myCompanyIdOr(user.id))) selectedCompany.owner_photo_url = publicUrl;
 
     showToast("Success", "Contact photo updated!", "success");
   } catch (error) {
@@ -18113,16 +18135,16 @@ async function saveCert() {
     const { error } = await supabaseClient
       .from('profiles')
       .update({ certificates: currentCerts, updated_at: nowDate() })
-      .eq('id', user.id);
+      .eq('id', myCompanyIdOr(user.id));
 
     if (error) throw error;
 
     selectedCompany.certificates = currentCerts;
-    const localRef = database.find(c => c.id == user.id);
+    const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
     if(localRef) localRef.certificates = currentCerts;
 
     // --- KRİTİK DÜZELTME BURADA ---
-    openProfile(user.id, { preserveScroll: true, preserveTab: true });      // Profili yükle
+    openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });      // Profili yükle
     switchProfileTab('certs'); // HIZLICA SERTİFİKA SEKMESİNE DÖN
     
     showToast((t("toast_success") || (currentLang === "tr" ? "Başarılı" : "Success")), (t("msg_certificate_saved") || (currentLang === "tr" ? "Sertifika kaydedildi." : "Certificate saved!")), "success");
@@ -18158,15 +18180,15 @@ function deleteCert(certId, certName) {
             const { error } = await supabaseClient
                 .from('profiles')
                 .update({ certificates: currentCerts, updated_at: nowDate() })
-                .eq('id', user.id);
+                .eq('id', myCompanyIdOr(user.id));
 
             if (error) throw error;
 
             selectedCompany.certificates = currentCerts;
-            const localRef = database.find(c => c.id == user.id);
+            const localRef = database.find(c => c.id == myCompanyIdOr(user.id));
             if(localRef) localRef.certificates = currentCerts;
 
-            openProfile(user.id, { preserveScroll: true, preserveTab: true });
+            openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true });
             showToast("Deleted", (t("msg_certificate_removed") || ((currentLang==="tr") ? "Sertifika başarıyla silindi." : "Certificate removed successfully.")), "success");
             
         } catch (error) {
@@ -19207,7 +19229,7 @@ async function handleQuoteSubmit() {
         // Kayıtlı kullanıcı
         senderIdToSend = user.id;
         let myCompanyName = "Private User";
-        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
+        const { data: profile } = await supabaseClient.from('profiles').select('company_name').eq('id', myCompanyIdOr(user.id)).single();
         if (profile && profile.company_name) myCompanyName = profile.company_name;
         displaySenderName = `${senderName} (${myCompanyName})`;
     } else {
@@ -19807,7 +19829,7 @@ async function submitVerificationRequest(source = 'editor') {
         const { error: uErr } = await supabaseClient
           .from('profiles')
           .update(profilePayload)
-          .eq('id', user.id);
+          .eq('id', myCompanyIdOr(user.id));
 
         if (uErr) throw uErr;
 
@@ -20516,7 +20538,7 @@ async function startProTrialDirect(companyRow, opts = {}) {
 
     // Fetch latest if needed
     let row = companyRow;
-    if (!row || String(row.id) !== String(user.id)) {
+    if (!row || String(row.id) !== String(myCompanyIdOr(user.id))) {
       try { row = await _fetchMyCompanyProfile(user.id); } catch(_) { row = null; }
     }
     if (!row) return;
@@ -20551,7 +20573,7 @@ async function startProTrialDirect(companyRow, opts = {}) {
         trial_end_date: endDate.toISOString(),
         updated_at: now.toISOString()
       })
-      .eq('id', user.id);
+      .eq('id', myCompanyIdOr(user.id));
 
     if (error) throw error;
 
@@ -20567,7 +20589,7 @@ async function startProTrialDirect(companyRow, opts = {}) {
     // Update in-memory list (if exists)
     try {
       if (Array.isArray(database)) {
-        const ix = database.findIndex(c => String(c.id) === String(user.id));
+        const ix = database.findIndex(c => String(c.id) === String(myCompanyIdOr(user.id)));
         if (ix >= 0) {
           database[ix].subscription_tier = 'pro';
           database[ix].subscription_status = 'active_trial';
@@ -20595,7 +20617,7 @@ async function startProTrialDirect(companyRow, opts = {}) {
 
     // Keep user inside profile and guide to verification if available
     try {
-      openProfile(user.id, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
+      openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
     } catch(_) {}
     setTimeout(() => {
       try { if (typeof handleVerifyClick === "function") handleVerifyClick(true); } catch(_) {}
@@ -20710,18 +20732,18 @@ async function cancelProSubscription() {
         subscription_tier: "free",
         subscription_status: "free"
       })
-      .eq("id", user.id);
+      .eq("id", myCompanyIdOr(user.id));
 
     if (error) {
       showToast("Error", error.message || "Could not cancel.", "error");
       return;
     }
 
-    if (__postCompany && String(__postCompany.id) === String(user.id)) {
+    if (__postCompany && String(__postCompany.id) === String(myCompanyIdOr(user.id))) {
       __postCompany.subscription_tier = "free";
       __postCompany.subscription_status = "free";
     }
-    if (selectedCompany && String(selectedCompany.id) === String(user.id)) {
+    if (selectedCompany && String(selectedCompany.id) === String(myCompanyIdOr(user.id))) {
       selectedCompany.subscription_tier = "free";
       selectedCompany.subscription_status = "free";
     }
@@ -20999,7 +21021,7 @@ async function upgradeToPro() {
                 trial_end_date: endDate.toISOString(),
                 updated_at: now
             })
-            .eq('id', user.id);
+            .eq('id', myCompanyIdOr(user.id));
 
         if (error) throw error;
 
@@ -21012,7 +21034,7 @@ async function upgradeToPro() {
         }
 
         
-if (__postCompany && String(__postCompany.id) === String(user.id)) {
+if (__postCompany && String(__postCompany.id) === String(myCompanyIdOr(user.id))) {
     __postCompany.subscription_tier = 'pro';
     __postCompany.subscription_status = 'active_trial';
     __postCompany.trial_start_date = now.toISOString();
@@ -21037,7 +21059,7 @@ try { if (typeof refreshAnalyticsPlanUI === "function") refreshAnalyticsPlanUI()
 try { refreshHomeUpdatesCTA(); } catch(_) {}
 try { refreshPricingSection(); } catch(_) {}
 // 7. Profili Yeniden Çiz (Rozetler vs. için)
-        openProfile(user.id, { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
+        openProfile(myCompanyIdOr(user.id), { preserveScroll: true, preserveTab: true, tab: (window.__profileActiveTab || 'overview') });
 	setTimeout(() => handleVerifyClick(true), 700);
     } catch (err) {
         console.error(err);
@@ -21870,13 +21892,13 @@ async function deleteLogo() {
         const { error } = await supabaseClient
             .from('profiles')
             .update({ logo_url: null, updated_at: nowDate() })
-            .eq('id', user.id);
+            .eq('id', myCompanyIdOr(user.id));
 
         if(error) throw error;
         
         // Local hafızayı güncelle
         if(selectedCompany) selectedCompany.logo_url = null;
-        const localC = database.find(c => c.id == user.id);
+        const localC = database.find(c => c.id == myCompanyIdOr(user.id));
         if(localC) localC.logo_url = null;
         
         showToast("Removed", (t("msg_logo_removed") || ((currentLang==="tr") ? "Logo başarıyla kaldırıldı." : "Logo removed successfully.")), "success");
