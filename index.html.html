@@ -19960,7 +19960,7 @@ async function submitVerificationRequest(source = 'editor') {
           await supabaseClient
             .from('verification_requests')
             .insert([{
-              company_id: user.id,
+              company_id: myCompanyIdOr(user.id),
               submitted_by: user.id,
               status: 'submitted',
               registry_country: profilePayload.registry_country,
