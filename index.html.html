@@ -7490,24 +7490,22 @@ async function deleteCompanyUpdate(updateId){
   if (!ok) return;
 
   try{
-    const targetCompanyId = (__postCompany?.id || selectedCompany?.id || user.id);
-
+    // Ownership / permission is enforced by RLS. We only filter by id here to avoid company_id mismatch issues after claim.
     const { data: delRows, error } = await supabaseClient
       .from("company_updates")
       .delete()
       .eq("id", updateId)
-      .eq("company_id", targetCompanyId)
       .select("id");
 
     if (error) throw error;
 
-    // If RLS blocks DELETE (or company_id mismatch), PostgREST can return 0 rows without an error.
+    // PostgREST can return 0 rows without an error if RLS blocks DELETE or the row doesn't exist.
     if (!delRows || delRows.length === 0){
       showToast(
         "Error",
         (currentLang==="tr")
-          ? "Silinemedi. Yetki (RLS) veya şirket kimliği eşleşmiyor. Supabase'te company_updates için DELETE policy eklemeniz gerekebilir."
-          : "Delete failed. Permission (RLS) or company id mismatch. You may need a DELETE policy on company_updates.",
+          ? "Silinemedi. Bu paylaşım size ait olmayabilir veya zaten silinmiş olabilir. Eğer size ait olması gerekiyorsa Supabase'te company_updates için DELETE RLS policy ekleyin."
+          : "Delete failed. This update may not belong to you or it may already be deleted. If it should, add a DELETE RLS policy on company_updates.",
         "error"
       );
       return;
