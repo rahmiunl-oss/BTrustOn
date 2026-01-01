@@ -4160,7 +4160,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
 <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
 <h3 class="font-bold text-gray-700" data-i18n="ui_verification_requests_443d20">Verification Requests</h3>
-<button class="text-xs text-BTrustOn-accent font-bold hover:underline" onclick="loadAdminData()">
+<button class="text-xs text-BTrustOn-accent font-bold hover:underline" onclick="loadAdminData(); loadAdminClaims();">
 <i class="fa-solid fa-rotate"></i><span data-i18n="refresh">Refresh</span></button>
 </div>
 <div class="overflow-x-auto">
@@ -4177,11 +4177,88 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <tbody class="divide-y divide-gray-100" id="admin-request-list">
 <tr><td class="px-6 py-8 text-center text-gray-400 italic" colspan="5" data-i18n="ui_loading_requests_810c03">Loading requests...</td></tr>
 </tbody>
+
 </table>
 </div>
 </div>
+
+<!-- CLAIM REQUESTS (Ownership) -->
+<div class="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden mt-6">
+  <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+    <h3 class="font-bold text-gray-700" data-i18n="ui_claim_requests_title">Claim Requests</h3>
+    <div class="flex items-center gap-3">
+      <div class="bg-slate-800/5 px-3 py-2 rounded-lg border border-slate-200">
+        <span class="block text-[10px] text-slate-500 uppercase font-bold" data-i18n="ui_pending_claims">Pending Claims</span>
+        <span class="text-xl font-black text-slate-900" id="admin-claim-pending-count">0</span>
+      </div>
+      <button class="text-xs text-BTrustOn-accent font-bold hover:underline" onclick="loadAdminClaims()">
+        <i class="fa-solid fa-rotate"></i> <span data-i18n="refresh">Refresh</span>
+      </button>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm text-gray-600">
+      <thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-gray-200">
+        <tr>
+          <th class="px-6 py-4" data-i18n="ui_company_1c76cb">Company</th>
+          <th class="px-6 py-4" data-i18n="ui_claim_requester">Requester</th>
+          <th class="px-6 py-4" data-i18n="ui_claim_note">Note</th>
+          <th class="px-6 py-4" data-i18n="ui_submitted_at_626a47">Submitted At</th>
+          <th class="px-6 py-4 text-right" data-i18n="ui_actions_06df33">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100" id="admin-claim-list">
+        <tr>
+          <td class="px-6 py-8 text-center text-gray-400 italic" colspan="5" data-i18n="ui_loading_requests_810c03">Loading requests...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 </div>
 </div>
+
+<!-- CLAIM MODAL -->
+<div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[120]" id="modal-claim-company">
+  <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('modal-claim-company')"></div>
+  <div class="modal-container bg-white w-11/12 md:max-w-lg mx-auto rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] animate-fade-in flex flex-col">
+    <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/60">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-BTrustOn-accent/10 text-BTrustOn-accent flex items-center justify-center">
+          <i class="fa-solid fa-handshake-angle"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="font-extrabold text-slate-900" data-i18n="ui_claim_modal_title">Claim this company</h3>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="ui_claim_modal_sub">If you're a company representative, request ownership.</p>
+        </div>
+      </div>
+    </div>
+    <div class="p-6 overflow-y-auto">
+      <p class="text-xs text-slate-600 mb-4" data-i18n="ui_claim_modal_hint">Use a corporate email if possible. The admin will review and approve.</p>
+
+      <input type="hidden" id="claim-company-id" value="">
+      <div class="mb-3">
+        <label class="block text-[11px] font-extrabold text-slate-700 mb-2" data-i18n="ui_claim_note_label">Note (optional)</label>
+        <textarea id="claim-note" rows="3"
+          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-BTrustOn-accent/30"
+          data-i18n-placeholder="ui_claim_note_ph" placeholder=""></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-5">
+        <button class="h-10 px-4 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-extrabold text-[11px] uppercase tracking-wider"
+                onclick="toggleModal('modal-claim-company')">
+          <span data-i18n="btn_cancel">Cancel</span>
+        </button>
+        <button class="h-10 px-4 rounded-xl bg-BTrustOn-accent hover:bg-BTrustOn-accent/90 text-white font-extrabold text-[11px] uppercase tracking-wider"
+                onclick="submitCompanyClaim()">
+          <span data-i18n="ui_submit_claim">Submit</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[110]" id="modal-post-update">
 <div class="modal-overlay absolute w-full h-full bg-slate-900/80 backdrop-blur-sm" onclick="openPostUpdateModal()"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-xl mx-auto rounded-2xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col">
@@ -10560,6 +10637,8 @@ try {
               email: profile.email || "",
               subscription_tier: profile.subscription_tier || "free",
               verification_status: profile.verification_status || "none",
+              owner_user_id: profile.owner_user_id || null,
+              claimed_at: profile.claimed_at || null,
               tax_id: profile.tax_id || "",
               duns_number: profile.duns_number || "",
               country: profile.country || "Turkey",
@@ -10648,6 +10727,8 @@ if (nameEl) {
     const ADMIN_MAIL = "rahmiunl@gmail.com"; // Senin mailin
     const isAdmin = (company.email === ADMIN_MAIL || company.contact_email === ADMIN_MAIL);
     const isVerified = String(company.verification_status || '').toLowerCase() === 'verified';
+    const isUnclaimed = (!company.owner_user_id) && (!company.claimed_at || String(company.claimed_at).trim()==='');
+
 
     // 3. Rozet Seçimi
     if (isAdmin) {
@@ -10680,8 +10761,24 @@ if (nameEl) {
                     </i>
                 </span>
             `;
+        } 
+        else if (isUnclaimed) {
+            // 🧩 SAHİPLENİLMEMİŞ PROFİL: Label + Claim CTA
+            nameEl.innerHTML += `
+              <span class="inline-flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 align-middle">
+                <i class="fa-regular fa-circle-dot text-[12px]"></i>
+                <span class="text-[10px] font-extrabold uppercase tracking-wide">${tOr("ui_unclaimed_profile","Unclaimed profile")}</span>
+              </span>
+              <button class="inline-flex items-center gap-1.5 ml-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-900 hover:border-slate-300 hover:bg-slate-50 text-[10px] font-extrabold uppercase tracking-wide"
+                      onclick="event.stopPropagation(); openClaimCompanyModal('${company.id}', '${_safeText(company.name || "")}');"
+                      title="${tOr("ui_unclaimed_profile_hint","This profile hasn't been claimed by a company representative yet.")}">
+                <i class="fa-solid fa-handshake-angle text-[12px] text-BTrustOn-accent"></i>
+                ${tOr("ui_claim_cta","Claim")}
+              </button>
+            `;
         }
 }
+
 // --- BİTİŞ ---
 // Location (City, Country)
 if (cityEl) {
@@ -14117,6 +14214,21 @@ async function openMyCompanyIfExists() {
     let myId = null;
     try { myId = localStorage.getItem("BTrustOn_my_company_id"); } catch(e) {}
     if (!myId) myId = session.user.id;
+
+    // 1b) Prefer claimed company by owner_user_id (seeded profiles use different profile id)
+    try {
+      if (!myId || String(myId) === String(session.user.id)) {
+        const { data: owned, error: oErr } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('owner_user_id', session.user.id)
+          .limit(1);
+
+        if (!oErr && owned && owned.length) {
+          myId = owned[0].id;
+        }
+      }
+    } catch(e) {}
 
     // 2) Persist snapshot for future quick access
     try { localStorage.setItem("BTrustOn_my_company_id", String(myId)); } catch(e) {}
@@ -19888,6 +20000,7 @@ function showAdminView() {
     
     // Verileri yükle
     loadAdminData();
+    try { loadAdminClaims(); } catch(e) {}
 }
 
 
@@ -19995,6 +20108,223 @@ async function loadAdminData() {
 
 
 // 5. ONAYLAMA / REDDETME İŞLEMİ
+
+// =======================
+// CLAIM (Ownership) FLOW
+// =======================
+async function openClaimCompanyModal(companyId, companyName) {
+  try {
+    const user = await _getAuthUserSafe();
+    if (!user?.id) {
+      showToast(tOr("ui_claim_requires_login","Login required"), tOr("ui_claim_requires_login","Please sign in to request ownership."), "brand");
+      try { toggleModal("modal-login"); } catch(e) {}
+      return;
+    }
+  } catch(e) {
+    // if auth check fails, still force login modal
+    showToast(tOr("ui_claim_requires_login","Login required"), tOr("ui_claim_requires_login","Please sign in to request ownership."), "brand");
+    try { toggleModal("modal-login"); } catch(_) {}
+    return;
+  }
+
+  try {
+    document.getElementById("claim-company-id").value = String(companyId || "");
+    const noteEl = document.getElementById("claim-note");
+    if (noteEl) noteEl.value = "";
+    toggleModal("modal-claim-company");
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function submitCompanyClaim() {
+  const user = await _getAuthUserSafe();
+  if (!user?.id) {
+    showToast(tOr("ui_claim_requires_login","Login required"), tOr("ui_claim_requires_login","Please sign in to request ownership."), "brand");
+    try { toggleModal("modal-login"); } catch(e) {}
+    return;
+  }
+
+  const companyId = String(document.getElementById("claim-company-id")?.value || "").trim();
+  const note = String(document.getElementById("claim-note")?.value || "").trim();
+  const requesterEmail = String(user.email || "").trim();
+
+  if (!companyId) {
+    showToast("Error", tOr("ui_action_failed","Action failed."), "error");
+    return;
+  }
+
+  try {
+    const payload = {
+      company_id: companyId,
+      requester_user_id: user.id,
+      requester_email: requesterEmail,
+      note: note ? note : null,
+      status: "pending"
+    };
+
+    const { error } = await supabaseClient
+      .from("company_claim_requests")
+      .insert([payload]);
+
+    if (error) {
+      // Unique pending constraint → duplicate request
+      if (String(error.code || "") === "23505") {
+        showToast("Info", tOr("ui_claim_already_pending","A claim request is already pending for this company."), "brand");
+      } else {
+        console.error(error);
+        showToast("Error", tOr("ui_claim_request_failed","Couldn't submit claim request."), "error");
+      }
+      return;
+    }
+
+    showToast("OK", tOr("ui_claim_submitted","Claim request submitted. We'll review it soon."), "brand");
+    try { toggleModal("modal-claim-company"); } catch(e) {}
+  } catch (e) {
+    console.error(e);
+    showToast("Error", tOr("ui_claim_request_failed","Couldn't submit claim request."), "error");
+  }
+}
+
+// Admin: list + approve/reject claim requests
+async function loadAdminClaims() {
+  const listContainer = document.getElementById("admin-claim-list");
+  const countBadge = document.getElementById("admin-claim-pending-count");
+  if (!listContainer) return;
+
+  listContainer.innerHTML = `
+    <tr><td class="px-6 py-8 text-center text-gray-400 italic" colspan="5">${tOr("ui_loading_requests_810c03","Loading requests...")}</td></tr>
+  `;
+
+  try {
+    const { data: reqs, error } = await supabaseClient
+      .from("company_claim_requests")
+      .select("id, company_id, requester_email, note, submitted_at, requester_user_id")
+      .eq("status", "pending")
+      .order("submitted_at", { ascending: false });
+
+    if (error) throw error;
+
+    const rows = Array.isArray(reqs) ? reqs : [];
+    if (countBadge) countBadge.textContent = String(rows.length);
+
+    if (!rows.length) {
+      listContainer.innerHTML = `
+        <tr><td class="px-6 py-10 text-center text-gray-400 italic" colspan="5">${tOr("ui_no_pending_claims","No pending claim requests.")}</td></tr>
+      `;
+      return;
+    }
+
+    // Fetch company names
+    const ids = [...new Set(rows.map(r => r.company_id).filter(Boolean).map(String))];
+    const companyMap = {};
+    if (ids.length) {
+      const { data: profs, error: pErr } = await supabaseClient
+        .from("profiles")
+        .select("id, company_name, logo_url, country, city")
+        .in("id", ids);
+
+      if (!pErr && Array.isArray(profs)) {
+        profs.forEach(p => { companyMap[String(p.id)] = p; });
+      }
+    }
+
+    listContainer.innerHTML = "";
+
+    rows.forEach(r => {
+      const p = companyMap[String(r.company_id)] || {};
+      const cName = p.company_name || "Unknown Company";
+      const iconLetter = (cName && cName[0]) ? cName[0].toUpperCase() : "?";
+      const loc = [p.city, p.country].filter(Boolean).join(", ");
+
+      const noteRaw = String(r.note || "").trim();
+      const noteSafe = _safeText(noteRaw);
+      const noteShort = noteSafe.length > 120 ? (noteSafe.slice(0, 120) + "…") : noteSafe;
+
+      const submitted = r.submitted_at ? _timeAgoI18n(r.submitted_at) : "";
+
+      listContainer.innerHTML += `
+        <tr class="hover:bg-gray-50/60">
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-slate-900/5 border border-slate-200 flex items-center justify-center font-black text-slate-700">
+                ${iconLetter}
+              </div>
+              <div>
+                <div class="font-extrabold text-slate-900">${_safeText(cName)}</div>
+                <div class="text-[11px] text-slate-500">${_safeText(loc || "")}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-6 py-4">
+            <div class="font-bold text-slate-700">${_safeText(r.requester_email || "")}</div>
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-slate-600">${noteShort || "—"}</div>
+          </td>
+          <td class="px-6 py-4">
+            <div class="text-slate-600">${_safeText(submitted)}</div>
+          </td>
+          <td class="px-6 py-4 text-right">
+            <div class="inline-flex gap-2">
+              <button class="h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] uppercase tracking-wider"
+                      onclick="adminApproveClaim('${r.id}')">
+                <i class="fa-solid fa-check mr-1"></i> ${tOr("ui_approve","Approve")}
+              </button>
+              <button class="h-9 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[11px] uppercase tracking-wider"
+                      onclick="adminRejectClaim('${r.id}')">
+                <i class="fa-solid fa-xmark mr-1"></i> ${tOr("ui_reject","Reject")}
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (e) {
+    console.error(e);
+    if (countBadge) countBadge.textContent = "0";
+    listContainer.innerHTML = `
+      <tr><td class="px-6 py-10 text-center text-rose-500 italic" colspan="5">${tOr("ui_action_failed","Action failed.")}</td></tr>
+    `;
+  }
+}
+
+async function adminApproveClaim(claimId) {
+  const ok = (typeof uiConfirm === "function")
+    ? await uiConfirm(tOr("ui_confirm_approve_claim","Approve this claim request?"))
+    : confirm(tOr("ui_confirm_approve_claim","Approve this claim request?"));
+  if (!ok) return;
+
+  try {
+    const { error } = await supabaseClient.rpc("bton_admin_approve_claim", { claim_id: claimId });
+    if (error) throw error;
+    showToast("OK", tOr("ui_claim_approved","Claim approved."), "brand");
+    loadAdminClaims();
+  } catch (e) {
+    console.error(e);
+    showToast("Error", tOr("ui_action_failed","Action failed."), "error");
+  }
+}
+
+async function adminRejectClaim(claimId) {
+  const ok = (typeof uiConfirm === "function")
+    ? await uiConfirm(tOr("ui_confirm_reject_claim","Reject this claim request?"))
+    : confirm(tOr("ui_confirm_reject_claim","Reject this claim request?"));
+  if (!ok) return;
+
+  try {
+    const { error } = await supabaseClient.rpc("bton_admin_reject_claim", { claim_id: claimId, decision_notes: null });
+    if (error) throw error;
+    showToast("OK", tOr("ui_claim_rejected","Claim rejected."), "brand");
+    loadAdminClaims();
+  } catch (e) {
+    console.error(e);
+    showToast("Error", tOr("ui_action_failed","Action failed."), "error");
+  }
+}
+
+
 async function processVerification(requestId, userId, action) {
     const ok = await uiConfirm(`Are you sure you want to ${action} this company?`, {title:'Confirm', okText:'Yes', cancelText:'Cancel'});
     if (!ok) return;
