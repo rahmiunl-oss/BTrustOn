@@ -1223,5 +1223,10 @@
   "ui_claim_approved": "Sahiplenme onaylandı.",
   "ui_claim_rejected": "Sahiplenme reddedildi.",
   "ui_approve": "Onayla",
-  "ui_reject": "Reddet"
+  "ui_reject": "Reddet",
+  "ui_claim_welcome_title": "Hoş geldiniz — sahiplik onaylandı",
+  "ui_claim_welcome_sub": "Artık bu şirket profilini yönetebilirsiniz.",
+  "ui_claim_welcome_body_fmt": "Tebrikler! {company} için sahiplik talebiniz onaylandı. Artık şirket profilini düzenleyebilirsiniz.",
+  "ui_edit_company_profile": "Şirket profilini düzenle",
+  "ui_got_it": "Tamam"
 }
