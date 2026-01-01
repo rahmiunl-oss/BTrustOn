@@ -1228,5 +1228,7 @@
   "ui_claim_welcome_sub": "You can now manage this company profile.",
   "ui_claim_welcome_body_fmt": "Congratulations! Your ownership request for {company} has been approved. You can now edit the company profile.",
   "ui_edit_company_profile": "Edit company profile",
-  "ui_got_it": "Got it"
+  "ui_got_it": "Got it",
+  "ui_company_not_claimed_cant_message": "This company profile has not been claimed yet, so you cannot send requests via the inbox.",
+  "ui_invalid_company": "Invalid company."
 }
