@@ -11718,7 +11718,7 @@ async function saveProfileData() {
     let { error } = await supabaseClient
       .from('profiles')
       .update(updates)
-      .eq('id', myCompanyIdOr(user.id));
+      .eq('id', companyId);
 
     // If the DB doesn't have a column yet, retry without it (backward compatible)
     if (error && String(error.message || "").toLowerCase().includes("does not exist")) {
@@ -20102,6 +20102,13 @@ async function submitVerificationRequest(source = 'editor') {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user || !user.id) throw new Error("Login required");
 
+        // Claim-safe company id: prefer the currently selected company profile id
+        const companyId = (typeof selectedCompany !== 'undefined' && selectedCompany && selectedCompany.id && typeof isUuid === 'function' && isUuid(selectedCompany.id))
+          ? String(selectedCompany.id)
+          : String(myCompanyIdOr(user.id));
+        try { if (companyId && typeof isUuid === 'function' && isUuid(companyId)) localStorage.setItem("BTrustOn_my_company_id", companyId); } catch(_) {}
+
+
         // 1) Update profile (single source of truth)
         const profilePayload = {
           registry_country: countryKey || null,
@@ -20115,7 +20122,7 @@ async function submitVerificationRequest(source = 'editor') {
         const { error: uErr } = await supabaseClient
           .from('profiles')
           .update(profilePayload)
-          .eq('id', myCompanyIdOr(user.id));
+          .eq('id', companyId);
 
         if (uErr) throw uErr;
 
@@ -20124,7 +20131,7 @@ async function submitVerificationRequest(source = 'editor') {
           await supabaseClient
             .from('verification_requests')
             .insert([{
-              company_id: myCompanyIdOr(user.id),
+              company_id: companyId,
               submitted_by: user.id,
               status: 'submitted',
               registry_country: profilePayload.registry_country,
@@ -20135,6 +20142,9 @@ async function submitVerificationRequest(source = 'editor') {
             }]);
         } catch(e) {
           console.warn("verification_requests insert skipped:", e);
+          try {
+            showToast((t("ui_info") || "Info"), (t("ui_admin_queue_issue") || "Request saved, but admin queue write failed. If not processed within 24h, please contact support."), "brand");
+          } catch(_) {}
         }
 
         // Local cache update
