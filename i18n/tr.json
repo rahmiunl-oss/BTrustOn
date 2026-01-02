@@ -1240,5 +1240,6 @@
   "notifications_profile_viewed_body_company": "{company} profilinizi görüntüledi.",
   "notif_profile_view_title": "Profil görüntülendi",
   "notif_profile_view_msg_guest": "Bir misafir profilinizi görüntüledi.",
-  "notif_profile_view_msg_company": "{company} profilinizi görüntüledi."
+  "notif_profile_view_msg_company": "{company} profilinizi görüntüledi.",
+  "ui_tip_services_tags_featured_5": "İpucu: Hizmetleri etiket olarak ekleyin. Sıralamayı değiştirmek için sürükleyin ve herhangi bir öğeyi <span class='font-bold'>Öne Çıkan</span> olarak işaretlemek için ⭐ simgesine tıklayın. Profil başlığında en fazla <span class='font-bold'>5</span> öne çıkan öğe gösterilir."
 }
