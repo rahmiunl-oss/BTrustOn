@@ -10475,54 +10475,6 @@ const card = document.createElement("div");
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
-/* =========================================================
-   Claim-safe viewer profile resolver
-   - Prevents stale "old claimed company viewed you" notifications
-   - Refreshes active viewer company id from DB with short TTL cache
-========================================================= */
-window.__btonViewerProfileCache = window.__btonViewerProfileCache || { uid: null, id: null, ts: 0 };
-
-async function btonGetActiveViewerProfileId(user) {
-  try {
-    if (!user || !user.id) return null;
-
-    const now = Date.now();
-    const TTL = 60 * 1000; // 60s
-    const uid = String(user.id);
-    const cache = window.__btonViewerProfileCache || { uid: null, id: null, ts: 0 };
-
-    if (cache.uid === uid && cache.id && (now - (cache.ts || 0)) < TTL) return cache.id;
-
-    // 1) Quick local snapshot
-    let id = null;
-    try { id = localStorage.getItem("BTrustOn_my_company_id"); } catch(e) {}
-    if (!(id && typeof isUuid === "function" && isUuid(id))) id = null;
-
-    // 2) Refresh from DB (claim-aware)
-    try {
-      if (typeof _fetchMyCompanyProfile === "function") {
-        const p = await _fetchMyCompanyProfile(user.id);
-        if (p && p.id && typeof isUuid === "function" && isUuid(p.id)) {
-          id = p.id;
-          try { localStorage.setItem("BTrustOn_my_company_id", id); } catch(e) {}
-        }
-      } else if (typeof btonGetMyCompanyProfileFresh === "function") {
-        const p = await btonGetMyCompanyProfileFresh(false);
-        if (p && p.id && typeof isUuid === "function" && isUuid(p.id)) {
-          id = p.id;
-          try { localStorage.setItem("BTrustOn_my_company_id", id); } catch(e) {}
-        }
-      }
-    } catch(e) {}
-
-    const finalId = id || user.id;
-    window.__btonViewerProfileCache = { uid, id: String(finalId), ts: now };
-    return finalId;
-  } catch(e) {
-    try { return user?.id || null; } catch(_) { return null; }
-  }
-}
-
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
@@ -10532,15 +10484,28 @@ async function trackProfileView(targetProfileId) {
     // ✅ Admin kullanıcı görüntülediğinde analitiğe hiç yazma / sayma
     if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
 
-    // Aktif "viewer company" (claim varsa şirket id, yoksa user.id)
-    let actorCompanyId = null;
-    // Always resolve claim-aware active viewer profile id (prevents stale localStorage)
-    try { if (user && typeof btonGetActiveViewerProfileId === "function") actorCompanyId = await btonGetActiveViewerProfileId(user); } catch(e) {}
-    if (user && !actorCompanyId) { try { if (typeof myCompanyIdOr === "function") actorCompanyId = myCompanyIdOr(user.id); } catch(e) {} }
-    if (user && !actorCompanyId) actorCompanyId = user.id;
+    // ✅ Aktif viewer profilini DB'den (claim-aware) tazele: localStorage'a güvenme
+    let actorProfileId = null;
+    if (user) {
+      try {
+        if (typeof btonGetMyCompanyProfileFresh === "function") {
+          const myP = await btonGetMyCompanyProfileFresh(false);
+          if (myP && myP.id && typeof isUuid === "function" && isUuid(myP.id)) actorProfileId = myP.id;
+        }
+      } catch(e) {}
+      if (!actorProfileId) {
+        try {
+          if (typeof getMyCompanyId === "function" && typeof isUuid === "function") {
+            const s = getMyCompanyId();
+            if (s && isUuid(s)) actorProfileId = s;
+          }
+        } catch(e) {}
+      }
+      if (!actorProfileId) actorProfileId = user.id;
+    }
 
     // A) Kendi profilime bakıyorsam hiç bir şey yapma (legacy + claim)
-    if (user && (String(user.id) === String(targetProfileId) || (actorCompanyId && String(actorCompanyId) === String(targetProfileId)))) return;
+    if (user && (String(user.id) === String(targetProfileId) || String(actorProfileId) === String(targetProfileId))) return;
 
     // B) Bugün 1 kez sayma (viewer-aware)
     const today = nowDate().toISOString().split('T')[0];
@@ -10557,7 +10522,7 @@ async function trackProfileView(targetProfileId) {
       } catch(e) {}
     }
 
-    const actorKey = user ? String(actorCompanyId || user.id) : String(guestId || "guest");
+    const actorKey = user ? String(actorProfileId || user.id) : String(guestId || "guest");
     const storageKey = `BTrustOn_view_${targetProfileId}_${actorKey}_${today}`;
 
     if (localStorage.getItem(storageKey)) {
@@ -10573,7 +10538,7 @@ async function trackProfileView(targetProfileId) {
         p_profile_id: targetProfileId,
         p_guest_fingerprint: user ? null : guestId
       };
-      if (user) args.p_viewer_profile_id = actorCompanyId || user.id;
+      if (user) args.p_viewer_profile_id = actorProfileId || user.id;
 
       const r1 = await supabaseClient.rpc('track_profile_view', args);
       error = r1?.error || null;
@@ -10581,9 +10546,8 @@ async function trackProfileView(targetProfileId) {
       // Eğer DB fonksiyonu p_viewer_profile_id'i desteklemiyorsa legacy'ye düş
       if (error && user) {
         const msg = String(error.message || error || "");
-        const looksLikeSigErr = msg.toLowerCase().includes("p_viewer_profile_id") || msg.toLowerCase().includes("function track_profile_view");
-        if (looksLikeSigErr) {
-          console.warn("track_profile_view RPC viewer paramını desteklemiyor. Legacy fallback çalıştı (DB fonksiyonunu güncellemeniz önerilir).", error);
+        const low = msg.toLowerCase();
+        if (low.includes("p_viewer_profile_id") || low.includes("does not exist") || low.includes("unknown parameter")) {
           const r2 = await supabaseClient.rpc('track_profile_view', {
             p_profile_id: targetProfileId,
             p_guest_fingerprint: null
@@ -10591,7 +10555,6 @@ async function trackProfileView(targetProfileId) {
           error = r2?.error || null;
         }
       }
-
     } catch (e) {
       error = e;
     }
@@ -10606,6 +10569,7 @@ async function trackProfileView(targetProfileId) {
     console.log("Yeni ziyaret kaydedildi.");
   }, { ttlMs:10000 });
 }
+
 
 
 /* --- UI Helper: refresh analytics Pro pill/button (no page refresh) --- */
@@ -10730,11 +10694,63 @@ if (proPill) {
 
     const partnerIds = Array.from(partnerMap.keys());
 
-    // ID'lere göre profil bilgilerini çek
+    // ✅ Claim uyumlu çözüm:
+    // viewer_id bazen owner_user_id (auth uid) gelebilir. Bu durumda, owner'a ait en güncel claim'li şirketi gösteriyoruz.
+    let ownerBest = new Map(); // owner_user_id -> best company profile row
+
+    try {
+        const { data: owned, error: oErr } = await supabaseClient
+            .from('profiles')
+            .select('id, company_name, logo_url, city, owner_user_id, claimed_at')
+            .in('owner_user_id', partnerIds);
+
+        if (!oErr && Array.isArray(owned) && owned.length) {
+            owned.forEach(p => {
+                const ownerId = p.owner_user_id ? String(p.owner_user_id) : "";
+                if (!ownerId) return;
+
+                const existing = ownerBest.get(ownerId) || null;
+
+                const curClaim = (String(p.id) !== ownerId) ? 1 : 0; // id != owner => claimed company row
+                const exClaim  = (existing && String(existing.id) !== ownerId) ? 1 : 0;
+
+                const curTs = p.claimed_at ? (new Date(p.claimed_at).getTime() || 0) : 0;
+                const exTs  = existing && existing.claimed_at ? (new Date(existing.claimed_at).getTime() || 0) : 0;
+
+                if (!existing) { ownerBest.set(ownerId, p); return; }
+                if (curClaim > exClaim) { ownerBest.set(ownerId, p); return; }
+                if (curClaim < exClaim) return;
+
+                // aynı türdeyse (ikisi de claim / ikisi de self) daha yeni claimed_at kazansın
+                if (curTs > exTs) { ownerBest.set(ownerId, p); return; }
+            });
+        }
+    } catch(e) {}
+
+    // viewer_id -> canonical_profile_id + en güncel viewed_at
+    const resolvedPartnerMap = new Map(); // canonical_profile_id -> most recent viewed_at
+    partnerMap.forEach((viewedAt, viewerId) => {
+        const vid = String(viewerId || "");
+        if (!vid) return;
+
+        const best = ownerBest.get(vid);
+        const canonicalId = (best && best.id) ? String(best.id) : vid;
+
+        const prev = resolvedPartnerMap.get(canonicalId);
+        if (!prev) { resolvedPartnerMap.set(canonicalId, viewedAt); return; }
+
+        const tPrev = new Date(prev).getTime() || 0;
+        const tCur  = new Date(viewedAt).getTime() || 0;
+        if (tCur > tPrev) resolvedPartnerMap.set(canonicalId, viewedAt);
+    });
+
+    const resolvedIds = Array.from(resolvedPartnerMap.keys());
+
+    // ID'lere göre profil bilgilerini çek (canonical ids)
     const { data: profiles, error: pErr } = await supabaseClient
         .from('profiles')
         .select('id, company_name, logo_url, city')
-        .in('id', partnerIds);
+        .in('id', resolvedIds);
 
     if (pErr) {
         console.warn("Analytics profile fetch error:", pErr);
@@ -10747,13 +10763,13 @@ if (proPill) {
 
     // Görüntüleme zamanına göre sırala (en yeni en üst)
     safeProfiles.sort((a, b) => {
-        const ta = partnerMap.get(a.id) ? new Date(partnerMap.get(a.id)).getTime() : 0;
-        const tb = partnerMap.get(b.id) ? new Date(partnerMap.get(b.id)).getTime() : 0;
+        const ta = resolvedPartnerMap.get(a.id) ? new Date(resolvedPartnerMap.get(a.id)).getTime() : 0;
+        const tb = resolvedPartnerMap.get(b.id) ? new Date(resolvedPartnerMap.get(b.id)).getTime() : 0;
         return tb - ta;
     });
 
     safeProfiles.forEach(p => {
-        const viewTime = partnerMap.get(p.id);
+        const viewTime = resolvedPartnerMap.get(p.id);
         const dateStr = viewTime ? new Date(viewTime).toLocaleDateString() : "";
         const name = p.company_name || "Unknown Company";
         const logoLetter = name.charAt(0).toUpperCase();
@@ -16653,20 +16669,69 @@ async function fetchNotificationsUnread() {
     if (!user) return;
 
     // ✅ Fetch full list so the Inbox can actually show notifications
-    const { data, error } = await supabaseClient
-      .from('notifications')
-      .select('id,title,message,created_at,is_read,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars')
-      .eq('recipient_user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    let data = null;
+    let error = null;
 
-    if (error) {
+    // Try extended schema (actor_id) first; fallback if column doesn't exist
+    const _selV2 = 'id,title,message,created_at,updated_at,is_read,recipient_user_id,actor_id,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars';
+    const _selV1 = 'id,title,message,created_at,updated_at,is_read,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars';
+
+    try {
+      const r = await supabaseClient
+        .from('notifications')
+        .select(_selV2)
+        .eq('recipient_user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      data = r?.data || null;
+      error = r?.error || null;
+
+      if (error) {
+        const msg = String(error.message || error || "");
+        const low = msg.toLowerCase();
+        if ((low.includes("column") && low.includes("actor_id")) || low.includes("actor_id does not exist")) {
+          const r2 = await supabaseClient
+            .from('notifications')
+            .select(_selV1)
+            .eq('recipient_user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          data = r2?.data || null;
+          error = r2?.error || null;
+        }
+      }
+    } catch(e) {
+      error = e;
+    }
+if (error) {
       console.warn('Notifications fetch error:', error.message);
       return;
     }
 
     const rawList = Array.isArray(data) ? data : [];
     notificationsData = (typeof _applyNotifVisibility === "function") ? _applyNotifVisibility(rawList) : rawList;
+
+    // ✅ Claim-aware actor name fix (if notifications table has actor_id)
+    try {
+      const actorIds = Array.from(new Set((notificationsData || [])
+        .map(n => (n && n.actor_id) ? String(n.actor_id) : "")
+        .filter(Boolean)
+      ));
+      if (actorIds.length && typeof _resolveViewerCompanyNames === "function") {
+        const actorMap = await _resolveViewerCompanyNames(actorIds.map(id => ({ viewer_id: id })));
+        (notificationsData || []).forEach(n => {
+          try {
+            const aid = (n && n.actor_id) ? String(n.actor_id) : "";
+            if (!aid) return;
+            const nm = actorMap ? actorMap.get(aid) : null;
+            if (nm) n.__actor_company_name = nm;
+          } catch(e) {}
+        });
+      }
+    } catch(e) {}
+
 
     // Count unread (supports boolean / 0-1 / null)
     notificationsUnreadCount = notificationsData.filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
@@ -17065,11 +17130,29 @@ function renderInboxItems() {
       try {
         if (n.message_i18n_key) {
           notifParams = (msgVars && typeof msgVars === "object") ? msgVars : {};
+
+          // ✅ Claim-aware actor override (fetchNotificationsUnread enrich eder)
+          try {
+            if (n && n.__actor_company_name) {
+              notifParams = (notifParams && typeof notifParams === "object") ? notifParams : {};
+              notifParams.company = n.__actor_company_name;
+            }
+          } catch(_) {}
+
           msgResolved = tP(n.message_i18n_key, notifParams) || (n.message || "");
         } else {
           notifParams = (parsedMsg && parsedMsg.params) ? parsedMsg.params : {};
+
+          // ✅ Claim-aware actor override (fetchNotificationsUnread enrich eder)
+          try {
+            if (n && n.__actor_company_name) {
+              notifParams = (notifParams && typeof notifParams === "object") ? notifParams : {};
+              notifParams.company = n.__actor_company_name;
+            }
+          } catch(_) {}
+
           msgResolved = (parsedMsg && parsedMsg.key)
-            ? (tP(parsedMsg.key, parsedMsg.params) || _stripNotifMarkers(msgRaw))
+            ? (tP(parsedMsg.key, notifParams) || _stripNotifMarkers(msgRaw))
             : _stripNotifMarkers(msgRaw);
         }
       } catch(e) {
@@ -20766,7 +20849,6 @@ async function goEditClaimedCompanyFromWelcome() {
 
     // Ensure "my company" points to the claimed company (UI permission checks rely on this)
     try { localStorage.setItem("BTrustOn_my_company_id", cid); } catch(e) {}
-    try { const __u = await _getAuthUserSafe(); if (__u?.id) window.__btonViewerProfileCache = { uid: String(__u.id), id: String(cid), ts: Date.now() }; } catch(e) {}
 
     try { await openProfile(cid, { tab: "overview" }); } catch(e) { try { openProfile(cid, { tab: "overview" }); } catch(_) {} }
 
@@ -20812,7 +20894,6 @@ async function checkAndTriggerClaimWelcome() {
 
     // Keep primary company pointing to claimed company
     try { localStorage.setItem("BTrustOn_my_company_id", companyId); } catch(e) {}
-    try { if (user?.id) window.__btonViewerProfileCache = { uid: String(user.id), id: String(companyId), ts: Date.now() }; } catch(e) {}
 
     openClaimWelcomeModal(companyId, companyName);
   } catch(e) {
