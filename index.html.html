@@ -10475,6 +10475,54 @@ const card = document.createElement("div");
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
+/* =========================================================
+   Claim-safe viewer profile resolver
+   - Prevents stale "old claimed company viewed you" notifications
+   - Refreshes active viewer company id from DB with short TTL cache
+========================================================= */
+window.__btonViewerProfileCache = window.__btonViewerProfileCache || { uid: null, id: null, ts: 0 };
+
+async function btonGetActiveViewerProfileId(user) {
+  try {
+    if (!user || !user.id) return null;
+
+    const now = Date.now();
+    const TTL = 60 * 1000; // 60s
+    const uid = String(user.id);
+    const cache = window.__btonViewerProfileCache || { uid: null, id: null, ts: 0 };
+
+    if (cache.uid === uid && cache.id && (now - (cache.ts || 0)) < TTL) return cache.id;
+
+    // 1) Quick local snapshot
+    let id = null;
+    try { id = localStorage.getItem("BTrustOn_my_company_id"); } catch(e) {}
+    if (!(id && typeof isUuid === "function" && isUuid(id))) id = null;
+
+    // 2) Refresh from DB (claim-aware)
+    try {
+      if (typeof _fetchMyCompanyProfile === "function") {
+        const p = await _fetchMyCompanyProfile(user.id);
+        if (p && p.id && typeof isUuid === "function" && isUuid(p.id)) {
+          id = p.id;
+          try { localStorage.setItem("BTrustOn_my_company_id", id); } catch(e) {}
+        }
+      } else if (typeof btonGetMyCompanyProfileFresh === "function") {
+        const p = await btonGetMyCompanyProfileFresh(false);
+        if (p && p.id && typeof isUuid === "function" && isUuid(p.id)) {
+          id = p.id;
+          try { localStorage.setItem("BTrustOn_my_company_id", id); } catch(e) {}
+        }
+      }
+    } catch(e) {}
+
+    const finalId = id || user.id;
+    window.__btonViewerProfileCache = { uid, id: String(finalId), ts: now };
+    return finalId;
+  } catch(e) {
+    try { return user?.id || null; } catch(_) { return null; }
+  }
+}
+
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
@@ -10486,7 +10534,9 @@ async function trackProfileView(targetProfileId) {
 
     // Aktif "viewer company" (claim varsa şirket id, yoksa user.id)
     let actorCompanyId = null;
-    try { if (user && typeof myCompanyIdOr === "function") actorCompanyId = myCompanyIdOr(user.id); } catch(e) {}
+    // Always resolve claim-aware active viewer profile id (prevents stale localStorage)
+    try { if (user && typeof btonGetActiveViewerProfileId === "function") actorCompanyId = await btonGetActiveViewerProfileId(user); } catch(e) {}
+    if (user && !actorCompanyId) { try { if (typeof myCompanyIdOr === "function") actorCompanyId = myCompanyIdOr(user.id); } catch(e) {} }
     if (user && !actorCompanyId) actorCompanyId = user.id;
 
     // A) Kendi profilime bakıyorsam hiç bir şey yapma (legacy + claim)
@@ -20716,6 +20766,7 @@ async function goEditClaimedCompanyFromWelcome() {
 
     // Ensure "my company" points to the claimed company (UI permission checks rely on this)
     try { localStorage.setItem("BTrustOn_my_company_id", cid); } catch(e) {}
+    try { const __u = await _getAuthUserSafe(); if (__u?.id) window.__btonViewerProfileCache = { uid: String(__u.id), id: String(cid), ts: Date.now() }; } catch(e) {}
 
     try { await openProfile(cid, { tab: "overview" }); } catch(e) { try { openProfile(cid, { tab: "overview" }); } catch(_) {} }
 
@@ -20761,6 +20812,7 @@ async function checkAndTriggerClaimWelcome() {
 
     // Keep primary company pointing to claimed company
     try { localStorage.setItem("BTrustOn_my_company_id", companyId); } catch(e) {}
+    try { if (user?.id) window.__btonViewerProfileCache = { uid: String(user.id), id: String(companyId), ts: Date.now() }; } catch(e) {}
 
     openClaimWelcomeModal(companyId, companyName);
   } catch(e) {
