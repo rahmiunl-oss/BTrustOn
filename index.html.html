@@ -7151,18 +7151,30 @@ async function _resolveViewerCompanyNames(viewRows=[]) {
 
 async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
   try {
-      if (window.__PV_NOTIF_DB_ONLY) return;
+    if (window.__PV_NOTIF_DB_ONLY) return;
     if (!viewRow || !__authUserId) return;
-    if (!_isProActiveForEngagement()) return;
+
+    const __pvIsPro = (typeof _isProActiveForEngagement === "function") ? _isProActiveForEngagement() : false;
 
     const viewId = String(viewRow.id || "");
     const key = "PV_" + (viewId || (String(viewRow.viewer_id || "guest") + "_" + String(viewRow.viewed_at || nowTs())));
     const viewerId = viewRow.viewer_id ? String(viewRow.viewer_id) : "";
     const isGuest = !viewerId;
 
+    // Free accounts: still notify, but never reveal the actor identity.
+    if (!__pvIsPro) {
+      await _notifySelfI18nOnce(
+        key,
+        "notif_profile_view_title",
+        "notif_profile_view_msg_locked",
+        { event_at: (viewRow.viewed_at || "") },
+        "UPGRADE"
+      );
+      return;
+    }
+
+    // Pro accounts: show guest/company normally
     if (isGuest) {
-      // Use the actual view time (viewed_at) so the notification shows e.g. "1 hour ago"
-      // even if the profile owner logs in later and notifications are synced afterwards.
       await _notifySelfI18nOnce(
         key,
         "notif_profile_view_title",
@@ -7176,7 +7188,7 @@ async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
         key,
         "notif_profile_view_title",
         "notif_profile_view_msg_company",
-        { company: (nm || "A company"), event_at: (viewRow.viewed_at || "") },
+        { company: (nm || (typeof t === "function" ? (t("ui_a_company") || "A company") : "A company")), event_at: (viewRow.viewed_at || "") },
         null
       );
     }
@@ -7187,8 +7199,7 @@ async function syncProfileViewNotifications() {
   try {
       if (window.__PV_NOTIF_DB_ONLY) return;
     if (!__authUserId) return;
-    if (!_isProActiveForEngagement()) return;
-
+    // (Pro gate removed: Free users will receive a locked notification)
     const lastKey = "BTrustOn_notif_profile_views_since";
     const lastIso = (() => { try { return localStorage.getItem(lastKey); } catch(e){ return null; } })();
     const sinceDate = lastIso ? new Date(lastIso) : new Date(nowTs() - 30*24*60*60*1000);
@@ -7234,7 +7245,8 @@ async function syncProfileViewNotifications() {
 function _toastProfileViewRealtime(row, nameMap){
   try{
     if (!row) return;
-    if (!_isProActiveForEngagement()) return;
+
+    const __pvIsPro = (typeof _isProActiveForEngagement === "function") ? _isProActiveForEngagement() : false;
 
     // Dedupe (same view id should toast once per device)
     const k = "BTrustOn_pv_toast_" + String(row.id || "");
@@ -7248,7 +7260,19 @@ function _toastProfileViewRealtime(row, nameMap){
     const when = (row.viewed_at && typeof timeAgo === "function") ? timeAgo(row.viewed_at) : "";
 
     let msg = "";
-    if (isGuest){
+    let onClick = null;
+
+    if (!__pvIsPro) {
+      // Free: do not reveal the actor; prompt upgrade
+      msg =
+        (typeof t === "function" && (t("notifications_profile_viewed_body_locked") || t("notif_profile_view_msg_locked")))
+          || (currentLang === "tr"
+                ? "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro'ya geçin."
+                : (currentLang === "es"
+                    ? "Una empresa vio tu perfil. Pásate a Pro para ver quién fue."
+                    : "A company viewed your profile. Upgrade to Pro to see who."));
+      onClick = () => { try { openUpgradeModal(); } catch(e) {} };
+    } else if (isGuest){
       msg = (typeof t === "function" ? (t("notifications_profile_viewed_body_guest") || t("notif_profile_view_msg_guest") || "A guest viewed your profile.") : "A guest viewed your profile.");
     } else {
       const nm = (nameMap && viewerId && nameMap.get(viewerId)) ? String(nameMap.get(viewerId) || "") : "";
@@ -7262,7 +7286,7 @@ function _toastProfileViewRealtime(row, nameMap){
     // Append time if template didn't include it
     if (when && msg && msg.indexOf(when) === -1) msg = msg + " • " + when;
 
-    try { if (typeof showToast === "function") showToast(title, msg, "brand"); } catch(e) {}
+    try { if (typeof showToast === "function") showToast(title, msg, "brand", onClick); } catch(e) {}
   } catch(e) {}
 }
 
@@ -7273,7 +7297,7 @@ function subscribeProfileViewsRealtime() {
       profileViewsSub = null;
     }
     if (!__authUserId) return;
-    if (!_isProActiveForEngagement()) return;
+    // (Pro gate removed: Free users still get locked profile-view toasts)
 
     const myPid = (typeof myCompanyIdOr === "function") ? myCompanyIdOr(__authUserId) : __authUserId;
     if (!myPid) return;
@@ -17163,7 +17187,7 @@ function renderInboxItems() {
       const titleRaw = (n.title || (t("ui_notification") || "Notification"));
       const msgRaw = (n.message || "");
 
-      const action = _extractNotifAction(msgRaw);
+      let action = _extractNotifAction(msgRaw);
 
       // ✅ Detect legacy profile-view notifications (DB message may be plain English)
       const __isProfileViewedNotif =
@@ -17300,6 +17324,22 @@ function renderInboxItems() {
           }
         }
       } catch(e) {}
+
+      // 🔒 Free accounts: hide who viewed the profile and prompt upgrade
+      try {
+        const __isProEng = (typeof _isProActiveForEngagement === "function") ? _isProActiveForEngagement() : false;
+        if (__isProfileViewedNotif && !__isProEng) {
+          action = "UPGRADE";
+          msgResolved =
+            (typeof t === "function" && (t("notifications_profile_viewed_body_locked") || t("notif_profile_view_msg_locked")))
+              || (currentLang === "tr"
+                    ? "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro'ya geçin."
+                    : (currentLang === "es"
+                        ? "Una empresa vio tu perfil. Pásate a Pro para ver quién fue."
+                        : "A company viewed your profile. Upgrade to Pro to see who."));
+        }
+      } catch(e) {}
+
 
       const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       let __whenBase = n.created_at || n.updated_at || null;
