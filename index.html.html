@@ -10388,15 +10388,6 @@ async function trackProfileView(targetProfileId) {
     // ✅ Admin kullanıcı görüntülediğinde analitiğe hiç yazma / sayma
     if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
 
-    // B. SPAM KONTROLÜ (LOCAL STORAGE) — günde 1 kere
-    const today = nowDate().toISOString().split('T')[0];
-    const storageKey = `BTrustOn_view_${targetProfileId}_${today}`;
-
-    if (localStorage.getItem(storageKey)) {
-      console.log("Bu profile bugün zaten bakıldı, sayaç artırılmadı.");
-      return;
-    }
-
     // C. Viewer company (claim-aware) + self-view guard
     let viewerCompanyId = null;
     let guestId = null;
@@ -10438,6 +10429,19 @@ async function trackProfileView(targetProfileId) {
         guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
         localStorage.setItem("BTrustOn_guest_id", guestId);
       }
+    }
+
+    // B. SPAM KONTROLÜ (LOCAL STORAGE) — günde 1 kere (viewer-aware)
+    // Eski anahtar (BTrustOn_view_<profile>_<date>) claim/legacy geçişlerinde yanlış kişiye kilitliyordu.
+    // Bu yüzden viewer kimliğini de ekliyoruz.
+    const viewerKey = user
+      ? String(viewerCompanyId || user.id || "user")
+      : String("guest_" + (guestId || "anon"));
+    const storageKey = `BTrustOn_view_${targetProfileId}_${viewerKey}_${today}`;
+
+    if (localStorage.getItem(storageKey)) {
+      console.log("Bu profile bugün zaten bakıldı (viewer-aware), sayaç artırılmadı.");
+      return;
     }
 
     // ✅ DB’ye düşür (RPC) — supports new param p_viewer_profile_id (claim aware)
