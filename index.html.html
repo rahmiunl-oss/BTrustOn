@@ -7161,108 +7161,10 @@ async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
     const viewerId = viewRow.viewer_id ? String(viewRow.viewer_id) : "";
     const isGuest = !viewerId;
 
-    // Free accounts: still notify, but never reveal the actor identity.
-    if (!__pvIsPro) {
-      await _notifySelfI18nOnce(
-        key,
-        "notif_profile_view_title",
-        "notif_profile_view_msg_locked",
-        { event_at: (viewRow.viewed_at || "") },
-        "UPGRADE"
-      );
-      return;
-    }
-
-    // Pro accounts: show guest/company normally
+    // Free accounts: reveal "guest" but hide company identity.
     if (isGuest) {
-      await _notifySelfI18nOnce(
-        key,
-        "notif_profile_view_title",
-        "notif_profile_view_msg_guest",
-        { event_at: (viewRow.viewed_at || "") },
-        null
-      );
-    } else {
-      const nm = (viewerNameMap && typeof viewerNameMap.get === "function") ? (viewerNameMap.get(viewerId) || "") : "";
-      await _notifySelfI18nOnce(
-        key,
-        "notif_profile_view_title",
-        "notif_profile_view_msg_company",
-        { company: (nm || (typeof t === "function" ? (t("ui_a_company") || "A company") : "A company")), event_at: (viewRow.viewed_at || "") },
-        null
-      );
-    }
-  } catch(e) {}
-}
-
-async function syncProfileViewNotifications() {
-  try {
-      if (window.__PV_NOTIF_DB_ONLY) return;
-    if (!__authUserId) return;
-    // (Pro gate removed: Free users will receive a locked notification)
-    const lastKey = "BTrustOn_notif_profile_views_since";
-    const lastIso = (() => { try { return localStorage.getItem(lastKey); } catch(e){ return null; } })();
-    const sinceDate = lastIso ? new Date(lastIso) : new Date(nowTs() - 30*24*60*60*1000);
-    const sinceIso = isNaN(sinceDate.getTime()) ? new Date(nowTs() - 30*24*60*60*1000).toISOString() : sinceDate.toISOString();
-
-    let adminProfileId = null;
-    try { if (typeof getAdminProfileId === "function") adminProfileId = await getAdminProfileId(); } catch(e) { adminProfileId = null; }
-
-    const { data: views, error } = await supabaseClient
-      .from("profile_views")
-      .select("id,viewer_id,viewed_at,profile_id")
-      .eq("profile_id", __authUserId)
-      .gt("viewed_at", sinceIso)
-      .order("viewed_at", { ascending: true })
-      .limit(50);
-
-    if (error || !views) return;
-
-    const filtered = (views || []).filter(v => {
-      if (!v) return false;
-      if (adminProfileId && v.viewer_id && String(v.viewer_id) === String(adminProfileId)) return false;
-      return true;
-    });
-
-    const nameMap = await _resolveViewerCompanyNames(filtered);
-    let newest = null;
-
-    for (const v of filtered) {
-      newest = v.viewed_at || newest;
-      await _maybeNotifyProfileView(v, nameMap);
-    }
-
-    if (newest) {
-      try { localStorage.setItem(lastKey, new Date(newest).toISOString()); } catch(e) {}
-    } else {
-      try { localStorage.setItem(lastKey, new Date().toISOString()); } catch(e) {}
-    }
-  } catch(e) {
-    console.warn("Profile view notif sync failed:", e);
-  }
-}
-
-function _toastProfileViewRealtime(row, nameMap){
-  try{
-    if (!row) return;
-
-    const __pvIsPro = (typeof _isProActiveForEngagement === "function") ? _isProActiveForEngagement() : false;
-
-    // Dedupe (same view id should toast once per device)
-    const k = "BTrustOn_pv_toast_" + String(row.id || "");
-    try { if (row.id && localStorage.getItem(k) === "1") return; } catch(e) {}
-    try { if (row.id) localStorage.setItem(k, "1"); } catch(e) {}
-
-    const viewerId = row.viewer_id ? String(row.viewer_id) : "";
-    const isGuest = !viewerId;
-
-    const title = (typeof t === "function" ? (t("notifications_profile_viewed_title") || t("notif_profile_view_title") || "Profile viewed") : "Profile viewed");
-    const when = (row.viewed_at && typeof timeAgo === "function") ? timeAgo(row.viewed_at) : "";
-
-    let msg = "";
-    let onClick = null;
-
-    if (!__pvIsPro) {
+      msg = (typeof t === "function" ? (t("notifications_profile_viewed_body_guest") || t("notif_profile_view_msg_guest") || "A guest viewed your profile.") : "A guest viewed your profile.");
+    } else if (!__pvIsPro) {
       // Free: do not reveal the actor; prompt upgrade
       msg =
         (typeof t === "function" && (t("notifications_profile_viewed_body_locked") || t("notif_profile_view_msg_locked")))
@@ -7272,12 +7174,12 @@ function _toastProfileViewRealtime(row, nameMap){
                     ? "Una empresa vio tu perfil. Pásate a Pro para ver quién fue."
                     : "A company viewed your profile. Upgrade to Pro to see who."));
       onClick = () => { try { openUpgradeModal(); } catch(e) {} };
-    } else if (isGuest){
-      msg = (typeof t === "function" ? (t("notifications_profile_viewed_body_guest") || t("notif_profile_view_msg_guest") || "A guest viewed your profile.") : "A guest viewed your profile.");
     } else {
       const nm = (nameMap && viewerId && nameMap.get(viewerId)) ? String(nameMap.get(viewerId) || "") : "";
       const fallbackName = (typeof t === "function" ? (t("ui_a_company") || "A company") : "A company");
-      const tpl = (typeof t === "function" ? (t("notifications_profile_viewed_body_company") || t("notif_profile_view_msg_company") || "{company} viewed your profile.") : "{company} viewed your profile.");
+      const tpl = (typeof t === "function"
+        ? (t("notifications_profile_viewed_body_company") || t("notif_profile_view_msg_company") || "{company} viewed your profile.")
+        : "{company} viewed your profile.");
       msg = String(tpl)
         .replace(/\{\{\s*company\s*\}\}/g, nm || fallbackName)
         .replace(/\{company\}/g, nm || fallbackName);
@@ -17196,6 +17098,11 @@ function renderInboxItems() {
         /profilinizi\s+görüntüledi/i.test(String(msgRaw||"")) ||
         /\bvio\s+tu\s+perfil\b/i.test(String(msgRaw||""));
 
+      const __isGuestProfileViewNotif =
+        /\bguest\b/i.test(String(msgRaw||"")) ||
+        /misafir/i.test(String(msgRaw||"")) ||
+        /invitad/i.test(String(msgRaw||""));
+
 
       // ✅ DB-backed i18n support (title_i18n_key/message_i18n_key + vars)
       const titleVars = (typeof _normNotifVars === "function") ? _normNotifVars(n.title_i18n_vars) : (n.title_i18n_vars || {});
@@ -17329,14 +17236,25 @@ function renderInboxItems() {
       try {
         const __isProEng = (typeof _isProActiveForEngagement === "function") ? _isProActiveForEngagement() : false;
         if (__isProfileViewedNotif && !__isProEng) {
-          action = "UPGRADE";
-          msgResolved =
-            (typeof t === "function" && (t("notifications_profile_viewed_body_locked") || t("notif_profile_view_msg_locked")))
+          if (__isGuestProfileViewNotif) {
+            action = null;
+            msgResolved =
+              (typeof t === "function" && (t("notifications_profile_viewed_body_guest") || t("notif_profile_view_msg_guest")))
+              || (currentLang === "tr"
+                    ? "Bir misafir profilinizi inceledi."
+                    : (currentLang === "es"
+                        ? "Un invitado vio tu perfil."
+                        : "A guest viewed your profile."));
+          } else {
+            action = "UPGRADE";
+            msgResolved =
+              (typeof t === "function" && (t("notifications_profile_viewed_body_locked") || t("notif_profile_view_msg_locked")))
               || (currentLang === "tr"
                     ? "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro'ya geçin."
                     : (currentLang === "es"
                         ? "Una empresa vio tu perfil. Pásate a Pro para ver quién fue."
                         : "A company viewed your profile. Upgrade to Pro to see who."));
+          }
         }
       } catch(e) {}
 
