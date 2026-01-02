@@ -1241,5 +1241,8 @@
   "notif_profile_view_title": "Perfil visto",
   "notif_profile_view_msg_guest": "Un invitado vio tu perfil.",
   "notif_profile_view_msg_company": "{company} vio tu perfil.",
-  "ui_tip_services_tags_featured_5": "Consejo: Añade servicios como etiquetas. Arrastra para reordenar y haz clic en ⭐ para marcar cualquier elemento como <span class='font-bold'>Destacado</span>. Mostramos hasta <span class='font-bold'>5</span> elementos destacados en el encabezado del perfil."
+  "ui_tip_services_tags_featured_5": "Consejo: Añade servicios como etiquetas. Arrastra para reordenar y haz clic en ⭐ para marcar cualquier elemento como <span class='font-bold'>Destacado</span>. Mostramos hasta <span class='font-bold'>5</span> elementos destacados en el encabezado del perfil.",
+  "pro_trial_active_until": "Tu prueba Pro está activa hasta {date}.",
+  "toast_pro_activated_title": "¡Pro activado!",
+  "toast_pro_active_until": "{label} activo hasta {date}."
 }
