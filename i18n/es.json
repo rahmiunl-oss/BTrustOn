@@ -1240,5 +1240,6 @@
   "notifications_profile_viewed_body_company": "{company} vio tu perfil.",
   "notif_profile_view_title": "Perfil visto",
   "notif_profile_view_msg_guest": "Un invitado vio tu perfil.",
-  "notif_profile_view_msg_company": "{company} vio tu perfil."
+  "notif_profile_view_msg_company": "{company} vio tu perfil.",
+  "ui_tip_services_tags_featured_5": "Consejo: Añade servicios como etiquetas. Arrastra para reordenar y haz clic en ⭐ para marcar cualquier elemento como <span class='font-bold'>Destacado</span>. Mostramos hasta <span class='font-bold'>5</span> elementos destacados en el encabezado del perfil."
 }
