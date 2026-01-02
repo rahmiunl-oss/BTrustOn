@@ -1246,5 +1246,6 @@
   "toast_pro_activated_title": "Pro aktif!",
   "toast_pro_active_until": "{label} • {date} tarihine kadar.",
   "notif_profile_view_msg_locked": "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro’ya geçin.",
-  "notifications_profile_viewed_body_locked": "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro’ya geçin."
+  "notifications_profile_viewed_body_locked": "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro’ya geçin.",
+  "notifications_profile_viewed_body_guest": "Bir misafir profilinizi inceledi."
 }
