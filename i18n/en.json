@@ -1244,5 +1244,7 @@
   "ui_tip_services_tags_featured_5": "Tip: Add services as tags. Drag to reorder, and click ⭐ to mark any item as <span class='font-bold'>Featured</span>. We show up to <span class='font-bold'>5</span> featured items on the profile header.",
   "pro_trial_active_until": "Your Pro trial is active until {date}.",
   "toast_pro_activated_title": "Pro activated!",
-  "toast_pro_active_until": "{label} active until {date}."
+  "toast_pro_active_until": "{label} active until {date}.",
+  "notif_profile_view_msg_locked": "A company viewed your profile. Upgrade to Pro to see who.",
+  "notifications_profile_viewed_body_locked": "A company viewed your profile. Upgrade to Pro to see who."
 }
