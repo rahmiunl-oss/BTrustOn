@@ -16663,50 +16663,58 @@ function subscribeToMessages() {
 
 // --- Notifications: fetch + realtime subscribe ---
 // --- Notifications fetch + realtime subscribe ---
+
 async function fetchNotificationsUnread() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // ✅ Fetch full list so the Inbox can actually show notifications
+    // ✅ Robust schema fallback: try richer selects first, then degrade gracefully.
+    const selectCandidates = [
+      // richest (no updated_at to avoid schema mismatch)
+      'id,title,message,created_at,is_read,recipient_user_id,actor_id,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars',
+      // without i18n vars
+      'id,title,message,created_at,is_read,recipient_user_id,actor_id',
+      // minimal with recipient
+      'id,title,message,created_at,is_read,recipient_user_id',
+      // absolute minimal
+      'id,title,message,created_at,is_read'
+    ];
+
     let data = null;
-    let error = null;
+    let lastErr = null;
 
-    // Try extended schema (actor_id) first; fallback if column doesn't exist
-    const _selV2 = 'id,title,message,created_at,updated_at,is_read,recipient_user_id,actor_id,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars';
-    const _selV1 = 'id,title,message,created_at,updated_at,is_read,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars';
+    for (const sel of selectCandidates) {
+      try {
+        const r = await supabaseClient
+          .from('notifications')
+          .select(sel)
+          .eq('recipient_user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-    try {
-      const r = await supabaseClient
-        .from('notifications')
-        .select(_selV2)
-        .eq('recipient_user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      data = r?.data || null;
-      error = r?.error || null;
-
-      if (error) {
-        const msg = String(error.message || error || "");
-        const low = msg.toLowerCase();
-        if ((low.includes("column") && low.includes("actor_id")) || low.includes("actor_id does not exist")) {
-          const r2 = await supabaseClient
-            .from('notifications')
-            .select(_selV1)
-            .eq('recipient_user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-          data = r2?.data || null;
-          error = r2?.error || null;
+        if (!r?.error) {
+          data = r?.data || [];
+          lastErr = null;
+          break;
         }
+
+        // If schema mismatch (missing column), continue to next candidate
+        lastErr = r.error;
+        const msg = String(r.error?.message || r.error || '').toLowerCase();
+        if (msg.includes('does not exist') || msg.includes('column') || msg.includes('not found')) {
+          continue;
+        } else {
+          // Non-schema errors should stop here (RLS, permissions, etc.)
+          break;
+        }
+      } catch (e) {
+        lastErr = e;
       }
-    } catch(e) {
-      error = e;
     }
-if (error) {
-      console.warn('Notifications fetch error:', error.message);
+
+    if (lastErr) {
+      console.warn('Notifications fetch error:', lastErr.message || lastErr);
       return;
     }
 
@@ -16732,9 +16740,8 @@ if (error) {
       }
     } catch(e) {}
 
-
     // Count unread (supports boolean / 0-1 / null)
-    notificationsUnreadCount = notificationsData.filter(n => (n.is_read === false || n.is_read === 0 || n.is_read === null)).length;
+    notificationsUnreadCount = (notificationsData || []).filter(n => (n && (n.is_read === false || n.is_read === 0 || n.is_read === null))).length;
 
     // Refresh badges + lists
     if (typeof renderInboxItems === "function") {
