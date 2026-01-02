@@ -10591,6 +10591,10 @@ function refreshAnalyticsPlanUI() {
 
 // 2. İSTATİSTİKLERİ ÇEK VE GÖSTER
 async function loadProfileAnalytics(profileId) {
+    // Render guard: prevent duplicate list items if this function is triggered multiple times quickly
+    window.__btonAnalyticsNonce = (window.__btonAnalyticsNonce || 0) + 1;
+    const analyticsNonce = window.__btonAnalyticsNonce;
+
     // A. UI Sıfırla (Yükleniyor...)
     const partnerCountEl = document.getElementById("stat-partner-count");
     const guestCountEl = document.getElementById("stat-guest-count");
@@ -10756,7 +10760,10 @@ if (proPill) {
         console.warn("Analytics profile fetch error:", pErr);
     }
 
-    const safeProfiles = Array.isArray(profiles) ? profiles : [];
+    const safeProfilesRaw = Array.isArray(profiles) ? profiles : [];
+
+    // Deduplicate profiles defensively (legacy data can resolve to the same company twice)
+    const safeProfiles = Array.from(new Map(safeProfilesRaw.map(p => [String(p.id), p])).values());
 
     // ✅ Partner sayısını "gerçekte bulunan profil" sayısına göre düzelt (silinen/bozuk kayıtlar şişirmesin)
     if (partnerCountEl) partnerCountEl.textContent = String(safeProfiles.length);
@@ -10768,7 +10775,11 @@ if (proPill) {
         return tb - ta;
     });
 
-    safeProfiles.forEach(p => {
+        // If a newer analytics load started, abort this render to avoid duplicates
+    if (analyticsNonce !== window.__btonAnalyticsNonce) return;
+    if (listContainer) listContainer.innerHTML = "";
+
+safeProfiles.forEach(p => {
         const viewTime = resolvedPartnerMap.get(p.id);
         const dateStr = viewTime ? new Date(viewTime).toLocaleDateString() : "";
         const name = p.company_name || "Unknown Company";
