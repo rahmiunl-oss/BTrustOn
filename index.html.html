@@ -17147,6 +17147,14 @@ function renderInboxItems() {
 
       const action = _extractNotifAction(msgRaw);
 
+      // ✅ Detect legacy profile-view notifications (DB message may be plain English)
+      const __isProfileViewedNotif =
+        /\bprofile\s+viewed\b/i.test(String(titleRaw||"")) ||
+        /\bviewed\s+your\s+profile\b/i.test(String(msgRaw||"")) ||
+        /profilinizi\s+görüntüledi/i.test(String(msgRaw||"")) ||
+        /\bvio\s+tu\s+perfil\b/i.test(String(msgRaw||""));
+
+
       // ✅ DB-backed i18n support (title_i18n_key/message_i18n_key + vars)
       const titleVars = (typeof _normNotifVars === "function") ? _normNotifVars(n.title_i18n_vars) : (n.title_i18n_vars || {});
       const msgVars   = (typeof _normNotifVars === "function") ? _normNotifVars(n.message_i18n_vars) : (n.message_i18n_vars || {});
@@ -17164,6 +17172,17 @@ function renderInboxItems() {
           if (out) titleResolved = out;
         }
       } catch(e) {}
+
+      // ✅ i18n override for Profile Viewed title (history list)
+      try {
+        if (__isProfileViewedNotif) {
+          const __pvTitle = (typeof t === "function")
+            ? (t("notifications_profile_viewed_title") || t("notif_profile_view_title"))
+            : null;
+          if (__pvTitle) titleResolved = __pvTitle;
+        }
+      } catch(e) {}
+
       const title = String(titleResolved || (t("ui_notification") || "Notification")).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
       let msgResolved = "";
@@ -17216,6 +17235,53 @@ function renderInboxItems() {
           }
         }
       } catch(_) {}
+
+
+      // ✅ i18n override for legacy Profile Viewed message (history list)
+      try {
+        if (__isProfileViewedNotif) {
+          const stripped = (typeof _stripNotifMarkers === "function") ? _stripNotifMarkers(msgRaw) : String(msgRaw||"");
+          let actor = "";
+          let m = null;
+
+          // Prefer server-enriched actor company name if present
+          try {
+            if (n && n.__actor_company_name) actor = String(n.__actor_company_name || "").trim();
+          } catch(_) {}
+
+          if (!actor) {
+            m = stripped.match(/^(.+?)\s+viewed\s+your\s+profile\.?$/i);
+            if (m && m[1]) actor = String(m[1]).trim();
+          }
+          if (!actor) {
+            m = stripped.match(/^(.+?)\s+profilinizi\s+görüntüledi\.?$/i);
+            if (m && m[1]) actor = String(m[1]).trim();
+          }
+          if (!actor) {
+            m = stripped.match(/^(.+?)\s+vio\s+tu\s+perfil\.?$/i);
+            if (m && m[1]) actor = String(m[1]).trim();
+          }
+
+          const actorLower = (actor || "").toLowerCase();
+          const isGuest = (!actor) || actorLower === "a guest" || actorLower === "guest" || actorLower === "someone" ||
+                          actorLower.includes("misafir") || actorLower.includes("invitado");
+
+          if (isGuest) {
+            msgResolved = (typeof t === "function")
+              ? (t("notifications_profile_viewed_body_guest") || t("notif_profile_view_msg_guest") || msgResolved)
+              : msgResolved;
+          } else {
+            const key = "notifications_profile_viewed_body_company";
+            const key2 = "notif_profile_view_msg_company";
+            if (typeof tP === "function") {
+              msgResolved = tP(key, { company: actor }) || tP(key2, { company: actor }) || msgResolved;
+            } else if (typeof t === "function") {
+              const tpl = t(key) || t(key2);
+              if (tpl) msgResolved = String(tpl).split("{company}").join(actor);
+            }
+          }
+        }
+      } catch(e) {}
 
       const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       let __whenBase = n.created_at || n.updated_at || null;
