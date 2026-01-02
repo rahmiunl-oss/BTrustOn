@@ -1241,5 +1241,8 @@
   "notif_profile_view_title": "Profil görüntülendi",
   "notif_profile_view_msg_guest": "Bir misafir profilinizi görüntüledi.",
   "notif_profile_view_msg_company": "{company} profilinizi görüntüledi.",
-  "ui_tip_services_tags_featured_5": "İpucu: Hizmetleri etiket olarak ekleyin. Sıralamayı değiştirmek için sürükleyin ve herhangi bir öğeyi <span class='font-bold'>Öne Çıkan</span> olarak işaretlemek için ⭐ simgesine tıklayın. Profil başlığında en fazla <span class='font-bold'>5</span> öne çıkan öğe gösterilir."
+  "ui_tip_services_tags_featured_5": "İpucu: Hizmetleri etiket olarak ekleyin. Sıralamayı değiştirmek için sürükleyin ve herhangi bir öğeyi <span class='font-bold'>Öne Çıkan</span> olarak işaretlemek için ⭐ simgesine tıklayın. Profil başlığında en fazla <span class='font-bold'>5</span> öne çıkan öğe gösterilir.",
+  "pro_trial_active_until": "Pro denemeniz {date} tarihine kadar aktif.",
+  "toast_pro_activated_title": "Pro aktif!",
+  "toast_pro_active_until": "{label} • {date} tarihine kadar."
 }
