@@ -7080,16 +7080,74 @@ function _isProActiveForEngagement() {
 async function _resolveViewerCompanyNames(viewRows=[]) {
   const map = new Map();
   try {
-    const ids = Array.from(new Set((viewRows || []).map(v => v && v.viewer_id ? String(v.viewer_id) : "").filter(Boolean)));
+    const ids = Array.from(new Set((viewRows || [])
+      .map(v => v && v.viewer_id ? String(v.viewer_id) : "")
+      .filter(Boolean)
+    ));
     if (!ids.length) return map;
-    const { data } = await supabaseClient
-      .from("profiles")
-      .select("id,company_name")
-      .in("id", ids);
-    (data || []).forEach(p => { if (p && p.id) map.set(String(p.id), p.company_name || ""); });
+
+    // 1) Direkt profile.id eşleşmesi (claim company id veya legacy profile id)
+    let byId = [];
+    try {
+      const r = await supabaseClient
+        .from("profiles")
+        .select("id,company_name")
+        .in("id", ids);
+      byId = Array.isArray(r.data) ? r.data : [];
+      (byId || []).forEach(p => {
+        if (p && p.id) map.set(String(p.id), p.company_name || "");
+      });
+    } catch(e) {}
+
+    // 2) Eğer viewer_id user.id (auth uid) ise ve claim edilmiş şirketi varsa onu göster (owner_user_id üzerinden)
+// ⚠️ Not: Bazı kullanıcılarda legacy profil kaydı (id=user.id) da olduğu için,
+// map zaten dolu görünse bile yine de owner_user_id üzerinden claim şirketini "prefer" etmeliyiz.
+    try {
+      const r2 = await supabaseClient
+        .from("profiles")
+        .select("id,company_name,owner_user_id,claimed_at")
+        .in("owner_user_id", ids);
+
+      const rows = Array.isArray(r2.data) ? r2.data : [];
+
+      // owner_user_id başına en iyi şirketi seç (claim olanı / en yeni claimed_at)
+      const best = new Map(); // ownerId -> profile row
+      rows.forEach(p => {
+        if (!p || !p.owner_user_id) return;
+        const ownerId = String(p.owner_user_id);
+
+        // prefer: claimed olan + en yeni claimed_at
+        const existing = best.get(ownerId);
+        const curClaim = p.claimed_at ? 1 : 0;
+        const exClaim = existing && existing.claimed_at ? 1 : 0;
+
+        const curTs = p.claimed_at ? new Date(p.claimed_at).getTime() : 0;
+        const exTs  = existing && existing.claimed_at ? new Date(existing.claimed_at).getTime() : 0;
+
+        if (!existing) { best.set(ownerId, p); return; }
+
+        // claimed > not-claimed
+        if (curClaim > exClaim) { best.set(ownerId, p); return; }
+        if (curClaim < exClaim) return;
+
+        // newer claimed_at wins
+        if (curTs > exTs) { best.set(ownerId, p); return; }
+      });
+
+      // Override map for owner ids if a claimed company exists (id != owner id)
+      ids.forEach(ownerId => {
+        const oid = String(ownerId);
+        const p = best.get(oid);
+        if (p && p.company_name && String(p.id) !== oid) {
+          map.set(oid, p.company_name);
+        }
+      });
+    } catch(e) {}
+
   } catch(e) {}
   return map;
 }
+
 
 async function _maybeNotifyProfileView(viewRow, viewerNameMap) {
   try {
@@ -7173,9 +7231,43 @@ async function syncProfileViewNotifications() {
   }
 }
 
+function _toastProfileViewRealtime(row, nameMap){
+  try{
+    if (!row) return;
+    if (!_isProActiveForEngagement()) return;
+
+    // Dedupe (same view id should toast once per device)
+    const k = "BTrustOn_pv_toast_" + String(row.id || "");
+    try { if (row.id && localStorage.getItem(k) === "1") return; } catch(e) {}
+    try { if (row.id) localStorage.setItem(k, "1"); } catch(e) {}
+
+    const viewerId = row.viewer_id ? String(row.viewer_id) : "";
+    const isGuest = !viewerId;
+
+    const title = (typeof t === "function" ? (t("notif_profile_view_title") || "Profile viewed") : "Profile viewed");
+    const when = (row.viewed_at && typeof timeAgo === "function") ? timeAgo(row.viewed_at) : "";
+
+    let msg = "";
+    if (isGuest){
+      msg = (typeof t === "function" ? (t("notif_profile_view_msg_guest") || "A guest viewed your profile.") : "A guest viewed your profile.");
+    } else {
+      const nm = (nameMap && viewerId && nameMap.get(viewerId)) ? String(nameMap.get(viewerId) || "") : "";
+      const fallbackName = (typeof t === "function" ? (t("ui_a_company") || "A company") : "A company");
+      const tpl = (typeof t === "function" ? (t("notif_profile_view_msg_company") || "{company} viewed your profile.") : "{company} viewed your profile.");
+      msg = String(tpl)
+        .replace(/\{\{\s*company\s*\}\}/g, nm || fallbackName)
+        .replace(/\{company\}/g, nm || fallbackName);
+    }
+
+    // Append time if template didn't include it
+    if (when && msg && msg.indexOf(when) === -1) msg = msg + " • " + when;
+
+    try { if (typeof showToast === "function") showToast(title, msg, "brand"); } catch(e) {}
+  } catch(e) {}
+}
+
 function subscribeProfileViewsRealtime() {
   try {
-      if (window.__PV_NOTIF_DB_ONLY) return;
     if (profileViewsSub) {
       try { supabaseClient.removeChannel(profileViewsSub); } catch(e) {}
       profileViewsSub = null;
@@ -7183,9 +7275,12 @@ function subscribeProfileViewsRealtime() {
     if (!__authUserId) return;
     if (!_isProActiveForEngagement()) return;
 
+    const myPid = (typeof myCompanyIdOr === "function") ? myCompanyIdOr(__authUserId) : __authUserId;
+    if (!myPid) return;
+
     profileViewsSub = supabaseClient
       .channel("profile-views")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "profile_views", filter: `profile_id=eq.${__authUserId}` }, async payload => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "profile_views", filter: `profile_id=eq.${myPid}` }, async payload => {
         const row = payload && payload.new ? payload.new : null;
         if (!row) return;
 
@@ -7195,7 +7290,7 @@ function subscribeProfileViewsRealtime() {
         if (adminProfileId && row.viewer_id && String(row.viewer_id) === String(adminProfileId)) return;
 
         const nameMap = await _resolveViewerCompanyNames([row]);
-        await _maybeNotifyProfileView(row, nameMap);
+        _toastProfileViewRealtime(row, nameMap);
       })
       .subscribe();
   } catch(e) {
@@ -7217,7 +7312,8 @@ async function btonInitEngagementNotifications() {
     // Followed updates (all users)
     try { await _ensureHomeFollowSet(user.id); } catch(e) {}
     try { syncFollowedUpdateNotifications(); } catch(e) {}
-    // Profile views: DB-driven (trigger creates notifications) — client-side PV notification sync disabled
+    // Profile views: realtime toast (company-aware)
+    try { subscribeProfileViewsRealtime(); } catch(e) {}
   } catch(e) {}
 }
 
@@ -10388,99 +10484,74 @@ async function trackProfileView(targetProfileId) {
     // ✅ Admin kullanıcı görüntülediğinde analitiğe hiç yazma / sayma
     if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
 
-    // C. Viewer company (claim-aware) + self-view guard
-    let viewerCompanyId = null;
-    let guestId = null;
+    // Aktif "viewer company" (claim varsa şirket id, yoksa user.id)
+    let actorCompanyId = null;
+    try { if (user && typeof myCompanyIdOr === "function") actorCompanyId = myCompanyIdOr(user.id); } catch(e) {}
+    if (user && !actorCompanyId) actorCompanyId = user.id;
 
-    if (user) {
-      // Resolve active viewer company (claim-aware, robust)
+    // A) Kendi profilime bakıyorsam hiç bir şey yapma (legacy + claim)
+    if (user && (String(user.id) === String(targetProfileId) || (actorCompanyId && String(actorCompanyId) === String(targetProfileId)))) return;
+
+    // B) Bugün 1 kez sayma (viewer-aware)
+    const today = nowDate().toISOString().split('T')[0];
+
+    // Guest id gerekiyorsa önce üret
+    let guestId = null;
+    if (!user) {
       try {
-        if (typeof btonResolveCompanyByOwnerId === "function") {
-          const best = await btonResolveCompanyByOwnerId(user.id);
-          if (best && best.id) {
-            viewerCompanyId = best.id;
-            try { localStorage.setItem("BTrustOn_my_company_id", String(best.id)); } catch(e) {}
-          }
+        guestId = localStorage.getItem("BTrustOn_guest_id");
+        if (!guestId) {
+          guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
+          localStorage.setItem("BTrustOn_guest_id", guestId);
         }
       } catch(e) {}
-
-      // Fallback: cached my company fetcher, then localStorage, then auth uid
-      if (!viewerCompanyId) {
-        try {
-          if (typeof btonGetMyCompanyProfileFresh === "function") {
-            const my = await btonGetMyCompanyProfileFresh(false);
-            if (my && my.id) viewerCompanyId = my.id;
-          }
-        } catch(e) {}
-      }
-
-      if (!viewerCompanyId) {
-        try { viewerCompanyId = (typeof myCompanyIdOr === "function") ? myCompanyIdOr(user.id) : user.id; } catch(e) { viewerCompanyId = user.id; }
-      }
-
-      // Self-view (company-to-company)
-      if (viewerCompanyId && String(viewerCompanyId) === String(targetProfileId)) return;
-      // Legacy self-view fallback
-      if (String(user.id) === String(targetProfileId)) return;
-    } else {
-      // Guest id (tarayıcıda kalıcı)
-      guestId = localStorage.getItem("BTrustOn_guest_id");
-      if (!guestId) {
-        guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
-        localStorage.setItem("BTrustOn_guest_id", guestId);
-      }
     }
 
-    // B. SPAM KONTROLÜ (LOCAL STORAGE) — günde 1 kere (viewer-aware)
-    // Eski anahtar (BTrustOn_view_<profile>_<date>) claim/legacy geçişlerinde yanlış kişiye kilitliyordu.
-    // Bu yüzden viewer kimliğini de ekliyoruz.
-    const viewerKey = user
-      ? String(viewerCompanyId || user.id || "user")
-      : String("guest_" + (guestId || "anon"));
-    const today = new Date().toISOString().slice(0, 10);
-    const storageKey = `BTrustOn_view_${targetProfileId}_${viewerKey}_${today}`;
+    const actorKey = user ? String(actorCompanyId || user.id) : String(guestId || "guest");
+    const storageKey = `BTrustOn_view_${targetProfileId}_${actorKey}_${today}`;
 
     if (localStorage.getItem(storageKey)) {
       console.log("Bu profile bugün zaten bakıldı (viewer-aware), sayaç artırılmadı.");
       return;
     }
 
-    // ✅ DB’ye düşür (RPC) — supports new param p_viewer_profile_id (claim aware)
-    let rpcRes = null;
+    // C) DB'ye yaz (önce claim-aware RPC dene)
+    let error = null;
+
     try {
-      const args = { p_profile_id: targetProfileId, p_guest_fingerprint: user ? null : guestId };
-      if (user && viewerCompanyId) args.p_viewer_profile_id = viewerCompanyId;
+      const args = {
+        p_profile_id: targetProfileId,
+        p_guest_fingerprint: user ? null : guestId
+      };
+      if (user) args.p_viewer_profile_id = actorCompanyId || user.id;
 
-      rpcRes = await supabaseClient.rpc('track_profile_view', args);
+      const r1 = await supabaseClient.rpc('track_profile_view', args);
+      error = r1?.error || null;
 
-      if (rpcRes?.error) {
-        // If DB function is not updated to accept p_viewer_profile_id, we MUST stop here (otherwise viewer will look like the legacy user)
-        const msg = String(rpcRes.error.message || rpcRes.error.details || "").toLowerCase();
-        const code = String(rpcRes.error.code || "");
-        const looksLikeParamMismatch =
-          msg.includes("p_viewer_profile_id") || msg.includes("does not exist") || msg.includes("unknown") ||
-          code === "42883" || code === "PGRST202";
-
-        if (looksLikeParamMismatch) {
-          try {
-            showToast(
-              "DB function missing",
-              "Update Supabase RPC track_profile_view to accept p_viewer_profile_id (claim-aware viewer).",
-              "warning"
-            );
-          } catch(_) {}
+      // Eğer DB fonksiyonu p_viewer_profile_id'i desteklemiyorsa legacy'ye düş
+      if (error && user) {
+        const msg = String(error.message || error || "");
+        const looksLikeSigErr = msg.toLowerCase().includes("p_viewer_profile_id") || msg.toLowerCase().includes("function track_profile_view");
+        if (looksLikeSigErr) {
+          console.warn("track_profile_view RPC viewer paramını desteklemiyor. Legacy fallback çalıştı (DB fonksiyonunu güncellemeniz önerilir).", error);
+          const r2 = await supabaseClient.rpc('track_profile_view', {
+            p_profile_id: targetProfileId,
+            p_guest_fingerprint: null
+          });
+          error = r2?.error || null;
         }
       }
+
     } catch (e) {
-      rpcRes = { error: e };
+      error = e;
     }
 
-    if (rpcRes && rpcRes.error) {
-      console.warn('trackProfileView upsert failed:', rpcRes.error);
+    if (error) {
+      console.warn('trackProfileView upsert failed:', error);
       return;
     }
 
-    // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
+    // D) Başarılıysa tarayıcıya "bugün baktı" işaretini koy
     try { localStorage.setItem(storageKey, "true"); } catch(e) {}
     console.log("Yeni ziyaret kaydedildi.");
   }, { ttlMs:10000 });
@@ -10755,18 +10826,13 @@ try {
       if (!isSeed) return; // only refresh seed directory profiles
       const { data } = await supabaseClient
         .from("profiles")
-        .select("*")
+        .select("owner_user_id, claimed_at, verification_status, is_listed")
         .eq("id", obj.id)
         .maybeSingle();
       if (!data) return;
       obj.owner_user_id = data.owner_user_id || null;
       obj.claimed_at = data.claimed_at || null;
       if (typeof data.verification_status !== "undefined") obj.verification_status = data.verification_status || obj.verification_status;
-      if (typeof data.blue_tick !== "undefined") obj.blue_tick = data.blue_tick;
-      if (typeof data.is_verified !== "undefined") obj.is_verified = data.is_verified;
-      if (typeof data.verified !== "undefined") obj.verified = data.verified;
-      if (typeof data.is_verified_company !== "undefined") obj.is_verified_company = data.is_verified_company;
-
       if (typeof data.is_listed !== "undefined") obj.is_listed = data.is_listed;
     } catch(e) {}
   };
@@ -10800,11 +10866,6 @@ try {
               verification_status: profile.verification_status || "none",
               owner_user_id: profile.owner_user_id || null,
               claimed_at: profile.claimed_at || null,
-              blue_tick: (typeof profile.blue_tick !== "undefined") ? profile.blue_tick : undefined,
-              is_verified: (typeof profile.is_verified !== "undefined") ? profile.is_verified : undefined,
-              verified: (typeof profile.verified !== "undefined") ? profile.verified : undefined,
-              is_verified_company: (typeof profile.is_verified_company !== "undefined") ? profile.is_verified_company : undefined,
-
               tax_id: profile.tax_id || "",
               duns_number: profile.duns_number || "",
               country: profile.country || "Turkey",
@@ -11336,10 +11397,6 @@ if (servicesGrid) {
   // Yetki Kontrolü
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
-  
-  // 🎉 Celebration check (runs when YOUR company becomes verified, including claim-based companies)
-  try { if (isMyProfile && typeof checkAndTriggerCelebration === "function") checkAndTriggerCelebration(company); } catch(e) {}
-
   
   const btnEdit = document.getElementById("btn-edit-profile");
   const btnAddAsset = document.getElementById("btn-add-asset");
@@ -13966,15 +14023,6 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     trial_end_date: profile.trial_end_date || null,
     created_at: profile.created_at || null,
     verification_status: profile.verification_status || 'none',
-    owner_user_id: profile.owner_user_id || null,
-    claimed_at: profile.claimed_at || null,
-    // Verification flags (supports multiple schemas)
-    blue_tick: (typeof profile.blue_tick !== "undefined") ? profile.blue_tick : undefined,
-    is_verified: (typeof profile.is_verified !== "undefined") ? profile.is_verified : undefined,
-    verified: (typeof profile.verified !== "undefined") ? profile.verified : undefined,
-    is_verified_company: (typeof profile.is_verified_company !== "undefined") ? profile.is_verified_company : undefined,
-    verification_celebrated: (typeof profile.verification_celebrated !== "undefined") ? profile.verification_celebrated : undefined,
-
     tax_id: profile.tax_id || "",
     duns_number: profile.duns_number || "",  
     tagline: profile.tagline || "",
@@ -14304,6 +14352,9 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     
     // ✅ Keep auth id + follow UI in sync
     try { __authUserId = session?.user?.id || null; } catch(e) { try { __authUserId = null; } catch(_) {} }
+    // ✅ Local storage cleanup if user switched (prevents old viewer/company leaks)
+    try { if (typeof btonCleanupLocalStorageForUser === "function") btonCleanupLocalStorageForUser(__authUserId); } catch(e) {}
+
     try { if (typeof touchLastActive === 'function') touchLastActive(session); } catch(e) {}
     try { if (__authUserId) _ensureHomeFollowSet(__authUserId); } catch(e) {}
     try { updateFollowButtonsUI(); } catch(e) {}
@@ -15100,6 +15151,33 @@ function myCompanyIdOr(uid) {
     return uid;
   }
 }
+/* --- LOCAL STATE CLEANUP (multi-account testing safe) ---
+   If you log in with another user in the same browser, old localStorage can
+   "stick" (my_company_id + view dedupe keys) and cause wrong viewer/company names.
+*/
+function btonCleanupLocalStorageForUser(uid){
+  try{
+    const newUid = uid ? String(uid) : "";
+    const lastUid = String(localStorage.getItem("BTrustOn_last_auth_uid") || "");
+    // User switched in same browser -> clear claim/view caches
+    if (lastUid && newUid && lastUid !== newUid){
+      const toRemove = [];
+      for (let i=0; i<localStorage.length; i++){
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k === "BTrustOn_my_company_id") { toRemove.push(k); continue; }
+        if (k === "BTrustOn_notif_profile_views_since") { toRemove.push(k); continue; }
+        if (k.startsWith("BTrustOn_view_") || k.startsWith("BTrustOn_pv_toast_") || k.startsWith("PV_")) { toRemove.push(k); continue; }
+        if (k.startsWith("BTrustOn_follow_start_")) { toRemove.push(k); continue; }
+      }
+      toRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+    }
+    if (newUid) localStorage.setItem("BTrustOn_last_auth_uid", newUid);
+  } catch(e){}
+}
+// Manual cleanup helper (optional):
+try { window.BTrustOnCleanLocal = () => btonCleanupLocalStorageForUser(String((window.__authUserId||""))); } catch(e){}
+
 
 
 
@@ -21566,87 +21644,72 @@ async function __getAuthUserId() {
   }
 }
 
-async function __fetchCelebrationSeen(companyProfileId) {
-  // Returns true if celebration has already been shown for THIS company profile.
-  // Prefer DB flag (cross-device). Fallback to localStorage.
-  if (!companyProfileId) return false; // fail-open: allow celebration rather than hiding it forever
-  const lsKey = "BTrustOn_celebrated_" + String(companyProfileId);
+async function __fetchCelebrationSeen(userId) {
+  if (!userId) return true; // güvenli varsayım: tekrar göstermeyelim
   try {
-    // local quick guard
-    try { if (localStorage.getItem(lsKey) === "true") return true; } catch(e) {}
-
-    const { data, error } = await supabaseClient
+    // 1) primary key = id
+    let { data, error } = await supabaseClient
       .from("profiles")
       .select("verification_celebrated")
-      .eq("id", companyProfileId)
+      .eq("id", userId)
       .maybeSingle();
 
-    if (error) {
-      // DB/RLS/column issue -> fail-open but keep local guard
-      return false;
+    // 2) bazı şemalarda auth uid ayrı kolonda olabilir: user_id
+    if ((error || !data) && typeof userId === "string") {
+      const fallback = await supabaseClient
+        .from("profiles")
+        .select("verification_celebrated")
+        .eq("user_id", userId)
+        .maybeSingle();
+      data = fallback.data;
+      error = fallback.error;
     }
-    return !!(data && data.verification_celebrated);
+
+    // Eğer okuma hatası varsa tekrar göstermeyelim (cross-device tekrar riskini önler)
+    if (error) return true;
+
+    return !!data?.verification_celebrated;
   } catch (e) {
-    return false; // fail-open
+    return true;
   }
 }
 
-async function __setCelebrationSeen(companyProfileId) {
-  if (!companyProfileId) return;
-  const lsKey = "BTrustOn_celebrated_" + String(companyProfileId);
-  try { localStorage.setItem(lsKey, "true"); } catch(e) {}
+async function __setCelebrationSeen(userId) {
+  if (!userId) return;
+  const nowIso = nowDate().toISOString();
 
-  try {
-    const nowIso = nowDate().toISOString();
-    // Try by id (company profile row)
-    let { error } = await supabaseClient
+  // id üzerinden dene
+  let { error } = await supabaseClient
+    .from("profiles")
+    .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
+    .eq("id", userId);
+
+  // user_id fallback
+  if (error) {
+    await supabaseClient
       .from("profiles")
       .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
-      .eq("id", companyProfileId);
-
-    // If update blocked by RLS, we still keep localStorage flag (prevents repeats).
-    if (error) return;
-  } catch (e) {
-    // ignore
+      .eq("user_id", userId);
   }
 }
 
 async function checkAndTriggerCelebration(company) {
   try {
     const userId = await __getAuthUserId();
-    if (!userId || !company) return;
+    if (!userId) return;
 
-    // Verified detection (supports multiple schemas/labels)
-    const vs = String(company.verification_status || "").toLowerCase().trim();
-    const boolTrue = (x) => (x === true || x === 1 || x === "true" || x === "1");
-    const isVerified =
-      (vs === "verified" || vs === "approved")
-      || boolTrue(company.is_verified) || boolTrue(company.verified)
-      || boolTrue(company.blue_tick) || boolTrue(company.is_verified_company);
+    // Sadece kendi profilinde ve verified ise çalışsın
+    if (!company || company.verification_status !== "verified") return;
+    if (String(company.id) !== String(userId)) return;
 
-    if (!isVerified) return;
-
-    // Ownership (claim-aware)
-    const ownerId = company.owner_user_id || company.ownerUserId || company.user_id || company.userId || null;
-    const myCompanyId = (typeof myCompanyIdOr === "function") ? myCompanyIdOr(userId) : userId;
-
-    const isOwner =
-      (String(company.id) === String(userId)) ||                               // legacy
-      (ownerId && String(ownerId) === String(userId)) ||                        // claim owner
-      (myCompanyId && String(myCompanyId) === String(company.id));              // active company
-
-    if (!isOwner) return;
-
-    const hasSeen = await __fetchCelebrationSeen(company.id);
+    const hasSeen = await __fetchCelebrationSeen(userId);
     if (hasSeen) return;
 
-    // Mark seen before opening (prevents duplicates across tabs/devices as best-effort)
-    try { window.__celebrationCompanyId = company.id; } catch(_) {}
-
-    __setCelebrationSeen(company.id).catch(() => {});
+    // Modalı açmadan önce DB'ye yaz: başka cihazlarda tekrar çıkmasın
+    __setCelebrationSeen(userId).catch(() => {});
     openCelebrationModal();
   } catch (e) {
-    // no-op
+    // hiçbir şey yapma
   }
 }
 
@@ -21674,8 +21737,8 @@ async function closeCelebration() {
 
   // Ek güvenlik: modal kapatılırken de DB'ye "seen" yaz
   try {
-    const cid = (window.__celebrationCompanyId || null);
-    if (cid) await __setCelebrationSeen(cid);
+    const userId = await __getAuthUserId();
+    if (userId) await __setCelebrationSeen(userId);
   } catch (e) {}
 }
 
