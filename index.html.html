@@ -3033,7 +3033,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <input id="edit-services-featured" type="hidden"/>
 <div class="mt-3">
 <div class="flex items-center justify-between mb-2">
-<div class="text-[11px] text-gray-400"><span data-i18n="ui_tip_add_services_as_tags_a9d576">Tip: Add services as tags.</span><span class="font-bold" data-i18n="ui_drag_b8a4d4">Drag</span><span data-i18n="ui_to_reorder_and_click_to_mark_any_ed0079">to reorder, and click ⭐ to mark any item as</span><span class="font-bold" data-i18n="svc_featured">Featured</span><span data-i18n="ui_we_show_up_to_17909e">. We show up to</span><span class="font-bold">5</span><span data-i18n="ui_featured_items_on_the_profile_he_b9fe8e">featured items on the profile header.</span></div>
+<div class="text-[11px] text-gray-400"><span data-i18n="ui_tip_services_tags_featured_5">Tip: Add services as tags. Drag to reorder, and click ⭐ to mark any item as Featured. We show up to <span class='font-bold'>5</span> featured items on the profile header.</span></div>
 <button class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition" data-i18n="ui_clear_dc30bc" onclick="clearServiceTags()" type="button">
               Clear
             </button>
@@ -7244,16 +7244,16 @@ function _toastProfileViewRealtime(row, nameMap){
     const viewerId = row.viewer_id ? String(row.viewer_id) : "";
     const isGuest = !viewerId;
 
-    const title = (typeof t === "function" ? (t("notif_profile_view_title") || "Profile viewed") : "Profile viewed");
+    const title = (typeof t === "function" ? (t("notifications_profile_viewed_title") || t("notif_profile_view_title") || "Profile viewed") : "Profile viewed");
     const when = (row.viewed_at && typeof timeAgo === "function") ? timeAgo(row.viewed_at) : "";
 
     let msg = "";
     if (isGuest){
-      msg = (typeof t === "function" ? (t("notif_profile_view_msg_guest") || "A guest viewed your profile.") : "A guest viewed your profile.");
+      msg = (typeof t === "function" ? (t("notifications_profile_viewed_body_guest") || t("notif_profile_view_msg_guest") || "A guest viewed your profile.") : "A guest viewed your profile.");
     } else {
       const nm = (nameMap && viewerId && nameMap.get(viewerId)) ? String(nameMap.get(viewerId) || "") : "";
       const fallbackName = (typeof t === "function" ? (t("ui_a_company") || "A company") : "A company");
-      const tpl = (typeof t === "function" ? (t("notif_profile_view_msg_company") || "{company} viewed your profile.") : "{company} viewed your profile.");
+      const tpl = (typeof t === "function" ? (t("notifications_profile_viewed_body_company") || t("notif_profile_view_msg_company") || "{company} viewed your profile.") : "{company} viewed your profile.");
       msg = String(tpl)
         .replace(/\{\{\s*company\s*\}\}/g, nm || fallbackName)
         .replace(/\{company\}/g, nm || fallbackName);
@@ -10590,18 +10590,27 @@ function refreshAnalyticsPlanUI() {
 }
 
 // 2. İSTATİSTİKLERİ ÇEK VE GÖSTER
-async function loadProfileAnalytics(profileId) {
+async function loadProfileAnalytics(profileId, opts = {}) {
     // Render guard: prevent duplicate list items if this function is triggered multiple times quickly
     window.__btonAnalyticsNonce = (window.__btonAnalyticsNonce || 0) + 1;
     const analyticsNonce = window.__btonAnalyticsNonce;
+
+    const soft = !!(opts && opts.soft);
 
     // A. UI Sıfırla (Yükleniyor...)
     const partnerCountEl = document.getElementById("stat-partner-count");
     const guestCountEl = document.getElementById("stat-guest-count");
     const listContainer = document.getElementById("stat-partner-list");
-    if (partnerCountEl) partnerCountEl.textContent = "-";
-    if (guestCountEl) guestCountEl.textContent = "-";
-    if (listContainer) listContainer.innerHTML = '<div class="p-3 text-center"><i class="fa-solid fa-spinner fa-spin text-cyan-500"></i></div>';
+    if (!soft) {
+      if (partnerCountEl) partnerCountEl.textContent = "-";
+      if (guestCountEl) guestCountEl.textContent = "-";
+      if (listContainer) listContainer.innerHTML = '<div class="p-3 text-center"><i class="fa-solid fa-spinner fa-spin text-cyan-500"></i></div>';
+    } else {
+      // Soft refresh: keep current UI to avoid flicker
+      if (listContainer && !String(listContainer.innerHTML || "").trim()) {
+        listContainer.innerHTML = '<div class="p-3 text-center"><i class="fa-solid fa-spinner fa-spin text-cyan-500"></i></div>';
+      }
+    }
 
     // B. Pro kontrolü (kimin baktığı listesi sadece Pro)
     const isPro = (selectedCompany && selectedCompany.subscription_tier === 'pro');
@@ -10805,6 +10814,59 @@ safeProfiles.forEach(p => {
     });
 }
 
+/* --- Realtime: Auto-refresh Profile Analytics (no manual refresh) --- */
+let __analyticsViewsSub = null;
+let __analyticsRtTimer = null;
+let __analyticsRtProfileId = null;
+
+function stopAnalyticsRealtime() {
+  try {
+    if (__analyticsRtTimer) { clearTimeout(__analyticsRtTimer); __analyticsRtTimer = null; }
+    if (__analyticsViewsSub) {
+      try { supabaseClient.removeChannel(__analyticsViewsSub); } catch(e) {}
+      __analyticsViewsSub = null;
+    }
+    __analyticsRtProfileId = null;
+  } catch(e) {}
+}
+
+function startAnalyticsRealtime(profileId) {
+  try {
+    if (!profileId) return;
+    const pid = String(profileId);
+    if (__analyticsRtProfileId === pid && __analyticsViewsSub) return;
+
+    stopAnalyticsRealtime();
+    __analyticsRtProfileId = pid;
+
+    __analyticsViewsSub = supabaseClient
+      .channel("analytics-profile-views-" + pid)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "profile_views", filter: `profile_id=eq.${pid}` },
+        (payload) => {
+          try {
+            if (!payload || payload.eventType === "DELETE") return;
+
+            // Only refresh if we are still on this profile + analytics is visible
+            const analyticsCard = document.getElementById("profile-analytics-card");
+            if (!analyticsCard || analyticsCard.classList.contains("hidden")) return;
+            if (!selectedCompany || String(selectedCompany.id) !== pid) return;
+
+            if (__analyticsRtTimer) clearTimeout(__analyticsRtTimer);
+            __analyticsRtTimer = setTimeout(() => {
+              try { loadProfileAnalytics(pid, { soft: true }); } catch(e) {}
+            }, 350);
+          } catch(e) {}
+        }
+      )
+      .subscribe();
+  } catch(e) {
+    console.warn("Analytics realtime subscribe failed:", e);
+  }
+}
+
+
+
 
 // Yardımcı: Sayı Animasyonu
 function animateValue(id, start, end, duration) {
@@ -10933,6 +10995,7 @@ try {
           if (error || !profile) {
               showToast("Error", "Profile not found or deleted.", "error");
               try { hideProfileSkeleton(); } catch(e) {}
+      try { stopAnalyticsRealtime(); } catch(e) {}
               return;
           }
 
@@ -11725,10 +11788,12 @@ try {
           
           // B. Verileri veritabanından çek ve doldur
           loadProfileAnalytics(company.id);
+          try { startAnalyticsRealtime(company.id); } catch(e) {}
       } else {
           // A. Başkasının profiliyse kartı gizle
           analyticsCard.classList.add("hidden");
-          
+          try { stopAnalyticsRealtime(); } catch(e) {}
+
           // B. Veri çekme işlemini yapma (Gereksiz yük olmasın)
       }
   }
@@ -12073,6 +12138,7 @@ try {
     }
 /* --- EKSİK OLAN FONKSİYON: Editör Ekranını Göster --- */
 function showEditorView() {
+  try { stopAnalyticsRealtime(); } catch(e) {}
   const viewDashboard = document.getElementById("view-dashboard");
   const viewProfile = document.getElementById("view-profile");
   const viewEditor = document.getElementById("view-editor");
@@ -17248,7 +17314,9 @@ function renderInboxItems() {
   // Kartları Oluştur
   filteredData.forEach(item => {
     const safeTitle = item.title.replace(/'/g, "\\'");
-    const directionLabel = currentInboxView === 'sent' ? 'To:' : 'From:';
+    const directionLabel = currentInboxView === 'sent'
+      ? ((typeof t==="function" ? (t("messages_to") || t("messages.to") || "To") : "To") + ":")
+      : ((typeof t==="function" ? (t("messages_from") || t("messages.from") || "From") : "From") + ":");
     const previewText = item.desc.replace(/^You:\s*/, '');
 
     // --- RENK VE STİL AYARI ---
@@ -19826,7 +19894,16 @@ async function handleQuoteSubmit() {
 
     if (error) throw error;
 
-    showToast("Success", `Request sent to ${targetName}. They will contact you via email.`, "success");
+    showToast(
+      (typeof t==="function" ? (t("toast_request_sent_title") || "Request sent") : "Request sent"),
+      (function(){
+        const tpl = (typeof t==="function" ? (t("toast_request_sent_body") || "Request sent to {company}. They will contact you via email.") : "Request sent to {company}. They will contact you via email.");
+        return String(tpl)
+          .replace(/\{\{\s*company\s*\}\}/g, targetName)
+          .replace(/\{company\}/g, targetName);
+      })(),
+      "success"
+    );
     toggleModal('modal-quote');
     document.querySelector("#modal-quote form").reset();
     document.getElementById('quote-file-name').textContent = ""; 
