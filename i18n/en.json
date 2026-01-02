@@ -1230,5 +1230,15 @@
   "ui_edit_company_profile": "Edit company profile",
   "ui_got_it": "Got it",
   "ui_company_not_claimed_cant_message": "This company profile has not been claimed yet, so you cannot send requests via the inbox.",
-  "ui_invalid_company": "Invalid company."
+  "ui_invalid_company": "Invalid company.",
+  "toast_request_sent_title": "Request sent",
+  "toast_request_sent_body": "Request sent to {company}. They will contact you via email.",
+  "messages_from": "From",
+  "messages_to": "To",
+  "notifications_profile_viewed_title": "Profile viewed",
+  "notifications_profile_viewed_body_guest": "A guest viewed your profile.",
+  "notifications_profile_viewed_body_company": "{company} viewed your profile.",
+  "notif_profile_view_title": "Profile viewed",
+  "notif_profile_view_msg_guest": "A guest viewed your profile.",
+  "notif_profile_view_msg_company": "{company} viewed your profile."
 }
