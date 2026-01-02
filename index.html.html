@@ -7949,10 +7949,12 @@ async function refreshPricingSection() {
         if (status === "active_trial" && profile.trial_end_date) {
           const d = new Date(profile.trial_end_date);
           if (!isNaN(d.getTime()) && d > now) {
-            proDesc.textContent =
-              (currentLang === "tr")
-                ? `Pro denemeniz ${d.toLocaleDateString()} tarihine kadar aktif.`
-                : `Your Pro trial is active until ${d.toLocaleDateString()}.`;
+            {
+            const __dateStr = d.toLocaleDateString();
+            const __tpl = (typeof t === "function" ? (t("pro_trial_active_until") || t("toast_pro_trial_active_until")) : "") 
+              || "Your Pro trial is active until {date}.";
+            proDesc.textContent = String(__tpl).replace(/\{date\}/g, __dateStr);
+          }
           } else {
             proDesc.textContent = _i18n("pricing_pro_active_desc", "Your plan is active.");
           }
@@ -10510,27 +10512,43 @@ async function trackProfileView(targetProfileId) {
     // B) Bugün 1 kez sayma (viewer-aware)
     const today = nowDate().toISOString().split('T')[0];
 
-    // Guest id gerekiyorsa önce üret
+    // Guest id gerekiyorsa önce üret (localStorage çalışmazsa bile)
     let guestId = null;
     if (!user) {
-      try {
-        guestId = localStorage.getItem("BTrustOn_guest_id");
-        if (!guestId) {
-          guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
-          localStorage.setItem("BTrustOn_guest_id", guestId);
+      // in-memory fallback
+      guestId = window.__btonGuestId || null;
+
+      // localStorage try
+      if (!guestId) {
+        try { guestId = localStorage.getItem("BTrustOn_guest_id"); } catch(e) {}
+      }
+
+      // generate if still missing
+      if (!guestId) {
+        try {
+          guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
+        } catch(e) {
+          guestId = "g_" + Date.now() + "_" + Math.random().toString(16).slice(2);
         }
-      } catch(e) {}
+        window.__btonGuestId = guestId;
+        try { localStorage.setItem("BTrustOn_guest_id", guestId); } catch(e) {}
+      }
     }
 
     const actorKey = user ? String(actorProfileId || user.id) : String(guestId || "guest");
     const storageKey = `BTrustOn_view_${targetProfileId}_${actorKey}_${today}`;
 
-    if (localStorage.getItem(storageKey)) {
-      console.log("Bu profile bugün zaten bakıldı (viewer-aware), sayaç artırılmadı.");
-      return;
+    // Dedupe check (localStorage blocked olabilir)
+    try {
+      if (localStorage.getItem(storageKey)) {
+        console.log("Bu profile bugün zaten bakıldı (viewer-aware), sayaç artırılmadı.");
+        return;
+      }
+    } catch(e) {
+      // localStorage erişilemiyorsa dedupe yapma
     }
-
-    // C) DB'ye yaz (önce claim-aware RPC dene)
+// C) DB'ye yaz (önce claim-aware RPC dene)
     let error = null;
 
     try {
@@ -21434,13 +21452,14 @@ async function startProTrialDirect(companyRow, opts = {}) {
     try { refreshPricingSection(); } catch(_) {}
 
     const niceDate = endDate.toLocaleDateString();
-    showToast(
-      currentLang === "tr" ? "Pro aktif!" : "Pro activated!",
-      (currentLang === "tr")
-        ? `${label} • ${niceDate} tarihine kadar.`
-        : `${label} active until ${niceDate}.`,
-      "success"
-    );
+    {
+    const __title = (typeof t === "function" ? (t("toast_pro_activated_title") || t("toast_welcome_pro")) : "") 
+      || (currentLang === "tr" ? "Pro aktif!" : "Pro activated!");
+    const __tpl = (typeof t === "function" ? t("toast_pro_active_until") : "") 
+      || "{label} active until {date}.";
+    const __msg = String(__tpl).replace(/\{label\}/g, label).replace(/\{date\}/g, niceDate);
+    showToast(__title, __msg, "success");
+  }
 
     // Keep user inside profile and guide to verification if available
     try {
@@ -21654,9 +21673,11 @@ const offerEl = document.getElementById("upgrade-offer-text");
 
       if (pill) pill.style.display = ""; // show something
       if (offerEl) {
-        offerEl.textContent = (currentLang === "tr")
-          ? `Pro denemeniz ${ds} tarihine kadar aktif.`
-          : `Your Pro trial is active until ${ds}.`;
+        {
+        const __tpl = (typeof t === "function" ? (t("pro_trial_active_until") || t("toast_pro_trial_active_until")) : "") 
+          || "Your Pro trial is active until {date}.";
+        offerEl.textContent = String(__tpl).replace(/\{date\}/g, ds);
+      }
       }
       if (ctaLbl) ctaLbl.textContent = _i18n("upgrade_btn_ok", "OK");
     }
@@ -21879,7 +21900,12 @@ try { if (typeof refreshAnalyticsPlanUI === "function") refreshAnalyticsPlanUI()
         
         // 6. Kullanıcıyı Bilgilendir
         const niceDate = endDate.toLocaleDateString(); 
-        showToast("Welcome to Pro!", `${label} active until ${niceDate}`, "success");
+        {
+        const __title = (typeof t === "function" ? (t("toast_welcome_pro") || t("toast_pro_activated_title")) : "") || "Welcome to Pro!";
+        const __tpl = (typeof t === "function" ? t("toast_pro_active_until") : "") || "{label} active until {date}.";
+        const __msg = String(__tpl).replace(/\{label\}/g, label).replace(/\{date\}/g, niceDate);
+        showToast(__title, __msg, "success");
+      }
         
         
 
