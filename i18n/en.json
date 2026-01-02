@@ -1246,5 +1246,6 @@
   "toast_pro_activated_title": "Pro activated!",
   "toast_pro_active_until": "{label} active until {date}.",
   "notif_profile_view_msg_locked": "A company viewed your profile. Upgrade to Pro to see who.",
-  "notifications_profile_viewed_body_locked": "A company viewed your profile. Upgrade to Pro to see who."
+  "notifications_profile_viewed_body_locked": "A company viewed your profile. Upgrade to Pro to see who.",
+  "notifications_profile_viewed_body_guest": "A guest viewed your profile."
 }
