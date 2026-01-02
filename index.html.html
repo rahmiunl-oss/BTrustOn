@@ -10403,6 +10403,34 @@ const card = document.createElement("div");
 
 /* --- YENİ: PROFİL ANALİTİĞİ SİSTEMİ (GÜNDE 1 KEZ SAYMA) --- */
 
+// Owner cache helper (used to prevent "self view" rows on claimed profiles and to filter legacy rows)
+window.__btonProfileOwnerCache = window.__btonProfileOwnerCache || {};
+async function _btonGetProfileOwnerId(profileId) {
+  try {
+    const key = String(profileId || "");
+    if (!key) return null;
+    if (Object.prototype.hasOwnProperty.call(window.__btonProfileOwnerCache, key)) {
+      return window.__btonProfileOwnerCache[key] || null;
+    }
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("owner_user_id")
+      .eq("id", key)
+      .maybeSingle();
+    const owner = (!error && data && data.owner_user_id) ? String(data.owner_user_id) : null;
+    window.__btonProfileOwnerCache[key] = owner || null;
+    return owner || null;
+  } catch (e) {
+    return null;
+  }
+}
+async function _btonIsProfileOwnedByUser(profileId, userId) {
+  const owner = await _btonGetProfileOwnerId(profileId);
+  if (!owner) return false;
+  return String(owner) === String(userId);
+}
+
+
 // 1. ZİYARETİ KAYDET (SPAM KORUMALI)
 async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
@@ -10415,8 +10443,15 @@ async function trackProfileView(targetProfileId) {
     // ✅ Aktif viewer profilini DB'den (claim-aware) tazele: localStorage'a güvenme
     let actorProfileId = null;
     if (user) {
+      // Prefer server-truth claimed company profile (owner_user_id) first (prevents self-view rows on claimed profiles)
       try {
-        if (typeof btonGetMyCompanyProfileFresh === "function") {
+        if (typeof _fetchMyCompanyProfile === "function" && typeof isUuid === "function") {
+          const myP0 = await _fetchMyCompanyProfile(user.id);
+          if (myP0 && myP0.id && isUuid(myP0.id)) actorProfileId = myP0.id;
+        }
+      } catch(e) {}
+      try {
+        if (!actorProfileId && typeof btonGetMyCompanyProfileFresh === "function") {
           const myP = await btonGetMyCompanyProfileFresh(false);
           if (myP && myP.id && typeof isUuid === "function" && isUuid(myP.id)) actorProfileId = myP.id;
         }
@@ -10433,7 +10468,24 @@ async function trackProfileView(targetProfileId) {
     }
 
     // A) Kendi profilime bakıyorsam hiç bir şey yapma (legacy + claim)
-    if (user && (String(user.id) === String(targetProfileId) || String(actorProfileId) === String(targetProfileId))) return;
+    if (user) {
+      // 1) If the viewed profile is owned by the logged-in user, do NOT count it as a view
+      let owned = false;
+      try {
+        if (typeof selectedCompany !== "undefined" && selectedCompany &&
+            String(selectedCompany.id) === String(targetProfileId) &&
+            String(selectedCompany.owner_user_id || "") === String(user.id)) {
+          owned = true;
+        }
+      } catch(_) {}
+      if (!owned) {
+        try { owned = await _btonIsProfileOwnedByUser(targetProfileId, user.id); } catch(_) { owned = false; }
+      }
+      if (owned) return;
+
+      // 2) Legacy safety: same uuid
+      if (String(user.id) === String(targetProfileId) || String(actorProfileId) === String(targetProfileId)) return;
+    }
 
     // B) Bugün 1 kez sayma (viewer-aware)
     const today = nowDate().toISOString().split('T')[0];
@@ -10594,9 +10646,26 @@ if (proPill) {
     let adminProfileId = null;
     try { adminProfileId = await getAdminProfileId(); } catch(e) { adminProfileId = null; }
 
+    // Also filter self-views:
+    // - viewer_id == profileId (claimed profile id)
+    // - viewer_id == owner_user_id (legacy rows that used auth.uid)
+    let ownerUserId = null;
+    try {
+      if (typeof selectedCompany !== "undefined" && selectedCompany &&
+          String(selectedCompany.id) === String(profileId) &&
+          selectedCompany.owner_user_id) {
+        ownerUserId = String(selectedCompany.owner_user_id);
+      }
+    } catch(_) {}
+    if (!ownerUserId) {
+      try { ownerUserId = await _btonGetProfileOwnerId(profileId); } catch(e) { ownerUserId = null; }
+    }
+
     const filteredViews = (views || []).filter(v => {
         if (!v) return false;
         if (adminProfileId && v.viewer_id && String(v.viewer_id) === String(adminProfileId)) return false;
+        if (v.viewer_id && String(v.viewer_id) === String(profileId)) return false;
+        if (ownerUserId && v.viewer_id && String(v.viewer_id) === String(ownerUserId)) return false;
         return true;
     });
 
@@ -10904,9 +10973,10 @@ try {
   const __refreshClaimFields = async (obj) => {
     try {
       if (!obj || !obj.id) return;
-      const em = String(obj.email || obj.contact_email || "").toLowerCase();
-      const isSeed = em.includes("@btruston.seed");
-      if (!isSeed) return; // only refresh seed directory profiles
+      // NOTE: Previously we refreshed only seed directory profiles (@btruston.seed).
+      // That prevented claim UI from updating for directory entries with empty emails.
+      // We now refresh claim-related fields for any profile.
+
       const { data } = await supabaseClient
         .from("profiles")
         .select("owner_user_id, claimed_at, verification_status, is_listed")
@@ -11040,7 +11110,9 @@ if (nameEl) {
     const isVerified = String(company.verification_status || '').toLowerCase() === 'verified';
     const __emailL = String(company.email || company.contact_email || "").toLowerCase();
     const isSeedDirectory = (__emailL.endsWith("@btruston.seed") || __emailL.includes("@btruston.seed"));
-    const isUnclaimed = isSeedDirectory && (!company.owner_user_id || String(company.owner_user_id).trim()==='');
+    // A profile is claimable when it has no owner_user_id (directory entry / unclaimed profile).
+    const hasOwner = !!(company.owner_user_id && String(company.owner_user_id).trim() !== "");
+    const isUnclaimed = !hasOwner;
 
 
     // 3. Rozet Seçimi
