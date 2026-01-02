@@ -10552,13 +10552,13 @@ async function trackProfileView(targetProfileId) {
     let error = null;
 
     try {
-      const args = {
-        p_profile_id: targetProfileId,
-        p_guest_fingerprint: user ? null : guestId
-      };
-      if (user) args.p_viewer_profile_id = actorProfileId || user.id;
-
-      const r1 = await supabaseClient.rpc('track_profile_view', args);
+      const args = { p_profile_id: targetProfileId };
+      if (user) {
+        args.p_viewer_profile_id = (actorProfileId || user.id);
+      } else {
+        args.p_guest_fingerprint = guestId;
+      }
+const r1 = await supabaseClient.rpc('track_profile_view', args);
       error = r1?.error || null;
 
       // Eğer DB fonksiyonu p_viewer_profile_id'i desteklemiyorsa legacy'ye düş
