@@ -16811,6 +16811,7 @@ function subscribeNotifications() {
               id: n.id,
               title: n.title || (t("ui_notification") || "Notification"),
               message: n.message || "",
+              actor_id: (n.actor_id != null ? n.actor_id : null),
               title_i18n_key: n.title_i18n_key || null,
               title_i18n_vars: n.title_i18n_vars || null,
               message_i18n_key: n.message_i18n_key || null,
@@ -17166,6 +17167,23 @@ function renderInboxItems() {
         msgResolved = _stripNotifMarkers(msgRaw);
         notifParams = {};
       }
+
+      // ✅ Legacy plain-text fix: if DB message includes old user label (e.g. "test6 viewed your profile.")
+      // and we resolved a claimed company name for the actor, rewrite the visible message safely.
+      try {
+        if (!n.message_i18n_key && n && n.__actor_company_name && typeof msgResolved === "string" && msgResolved) {
+          const __c = String(n.__actor_company_name).trim();
+          if (__c) {
+            // English
+            msgResolved = msgResolved.replace(/^(.+?)\s+viewed\s+your\s+profile\.?$/i, `${__c} viewed your profile.`);
+            // Turkish
+            msgResolved = msgResolved.replace(/^(.+?)\s+profilinizi\s+görüntüledi\.?$/i, `${__c} profilinizi görüntüledi.`);
+            // Spanish
+            msgResolved = msgResolved.replace(/^(.+?)\s+vio\s+tu\s+perfil\.?$/i, `${__c} vio tu perfil.`);
+          }
+        }
+      } catch(_) {}
+
       const msg = String(msgResolved || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       let __whenBase = n.created_at || n.updated_at || null;
       try {
