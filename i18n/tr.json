@@ -1230,5 +1230,15 @@
   "ui_edit_company_profile": "Şirket profilini düzenle",
   "ui_got_it": "Tamam",
   "ui_company_not_claimed_cant_message": "Bu şirket profili henüz sahiplenilmediği için inbox üzerinden talep gönderemezsiniz.",
-  "ui_invalid_company": "Geçersiz şirket hedefi."
+  "ui_invalid_company": "Geçersiz şirket hedefi.",
+  "toast_request_sent_title": "Talep gönderildi",
+  "toast_request_sent_body": "Talep {company} şirketine gönderildi. Sizinle e-posta üzerinden iletişime geçecekler.",
+  "messages_from": "Kimden",
+  "messages_to": "Kime",
+  "notifications_profile_viewed_title": "Profil görüntülendi",
+  "notifications_profile_viewed_body_guest": "Bir misafir profilinizi görüntüledi.",
+  "notifications_profile_viewed_body_company": "{company} profilinizi görüntüledi.",
+  "notif_profile_view_title": "Profil görüntülendi",
+  "notif_profile_view_msg_guest": "Bir misafir profilinizi görüntüledi.",
+  "notif_profile_view_msg_company": "{company} profilinizi görüntüledi."
 }
