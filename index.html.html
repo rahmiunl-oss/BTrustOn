@@ -7390,25 +7390,15 @@ async function loadMyRecentUpdates(){
     const now = new Date();
     const since = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
 
-    const myCid = myCompanyIdOr(user.id);
-
-    let q = supabaseClient
+    const { data, error } = await supabaseClient
       .from("company_updates")
       .select("id,created_at,area,entity_title,template_code,note,company_id")
+      .eq("company_id", user.id)
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(12);
 
-    // Claim sonrası: company_updates.company_id artık profile/company UUID olabilir.
-    // Geriye dönük uyumluluk için (legacy) user.id ile atılan kayıtları da dahil ediyoruz.
-    if (String(myCid) && String(myCid) !== String(user.id)) {
-      q = q.or(`company_id.eq.${myCid},company_id.eq.${user.id}`);
-    } else {
-      q = q.eq("company_id", myCid);
-    }
-
-    const { data, error } = await q;
-if (error) throw error;
+    if (error) throw error;
     _renderMyRecentUpdatesList(data || []);
   } catch(e){
     console.warn("loadMyRecentUpdates error:", e);
@@ -7490,22 +7480,24 @@ async function deleteCompanyUpdate(updateId){
   if (!ok) return;
 
   try{
-    // Ownership / permission is enforced by RLS. We only filter by id here to avoid company_id mismatch issues after claim.
+    const targetCompanyId = (__postCompany?.id || selectedCompany?.id || user.id);
+
     const { data: delRows, error } = await supabaseClient
       .from("company_updates")
       .delete()
       .eq("id", updateId)
+      .eq("company_id", targetCompanyId)
       .select("id");
 
     if (error) throw error;
 
-    // PostgREST can return 0 rows without an error if RLS blocks DELETE or the row doesn't exist.
+    // If RLS blocks DELETE (or company_id mismatch), PostgREST can return 0 rows without an error.
     if (!delRows || delRows.length === 0){
       showToast(
         "Error",
         (currentLang==="tr")
-          ? "Silinemedi. Bu paylaşım size ait olmayabilir veya zaten silinmiş olabilir. Eğer size ait olması gerekiyorsa Supabase'te company_updates için DELETE RLS policy ekleyin."
-          : "Delete failed. This update may not belong to you or it may already be deleted. If it should, add a DELETE RLS policy on company_updates.",
+          ? "Silinemedi. Yetki (RLS) veya şirket kimliği eşleşmiyor. Supabase'te company_updates için DELETE policy eklemeniz gerekebilir."
+          : "Delete failed. Permission (RLS) or company id mismatch. You may need a DELETE policy on company_updates.",
         "error"
       );
       return;
@@ -10392,55 +10384,100 @@ async function trackProfileView(targetProfileId) {
   return btonWithLock("trackProfileView:"+String(targetProfileId), async () => {
     const { data: sessionData } = await supabaseClient.auth.getSession();
     const user = sessionData?.session?.user || null;
-// ✅ Admin kullanıcı (rahmiunl@gmail.com) görüntülediğinde analitiğe hiç yazma / sayma
-    if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
-    
-    // A. Kendi profilime bakıyorsam HİÇBİR ŞEY YAPMA
-    if (user && user.id === targetProfileId) return;
 
-    // B. SPAM KONTROLÜ (LOCAL STORAGE)
-    // Anahtar: "view_PROFILID_TARIH" (Örn: view_12345_2025-12-12)
-    const today = nowDate().toISOString().split('T')[0]; 
+    // ✅ Admin kullanıcı görüntülediğinde analitiğe hiç yazma / sayma
+    if (user && (typeof ADMIN_EMAIL !== "undefined") && user.email === ADMIN_EMAIL) return;
+
+    // B. SPAM KONTROLÜ (LOCAL STORAGE) — günde 1 kere
+    const today = nowDate().toISOString().split('T')[0];
     const storageKey = `BTrustOn_view_${targetProfileId}_${today}`;
 
-    // Eğer tarayıcıda "Bugün baktı" işareti varsa dur (Veritabanına gitme)
     if (localStorage.getItem(storageKey)) {
-        console.log("Bu profile bugün zaten bakıldı, sayaç artırılmadı.");
-        return;
+      console.log("Bu profile bugün zaten bakıldı, sayaç artırılmadı.");
+      return;
     }
 
-    // C. Veritabanına Kaydet (DB’ye düşer → trigger ile notifications üretilebilir)
-    // Login varsa: viewer_id = user.id
-    // Guest ise: viewer_id = null, guest_fingerprint = stable localStorage id
-    let payload = null;
-    let onConflict = null; // legacy (no longer used)
+    // C. Viewer company (claim-aware) + self-view guard
+    let viewerCompanyId = null;
     let guestId = null;
 
     if (user) {
-        payload = { profile_id: targetProfileId, viewer_id: user.id, view_day: today, is_guest: false, guest_fingerprint: null };
-        onConflict = "profile_id,viewer_id,view_day";
-    } else {
-        // Guest id (tarayıcıda kalıcı)
-        guestId = localStorage.getItem("BTrustOn_guest_id");
-        if (!guestId) {
-            guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
-            localStorage.setItem("BTrustOn_guest_id", guestId);
+      // Resolve active viewer company (claim-aware, robust)
+      try {
+        if (typeof btonResolveCompanyByOwnerId === "function") {
+          const best = await btonResolveCompanyByOwnerId(user.id);
+          if (best && best.id) {
+            viewerCompanyId = best.id;
+            try { localStorage.setItem("BTrustOn_my_company_id", String(best.id)); } catch(e) {}
+          }
         }
-        payload = { profile_id: targetProfileId, viewer_id: null, view_day: today, is_guest: true, guest_fingerprint: guestId };
-        onConflict = "profile_id,guest_fingerprint,view_day";
+      } catch(e) {}
+
+      // Fallback: cached my company fetcher, then localStorage, then auth uid
+      if (!viewerCompanyId) {
+        try {
+          if (typeof btonGetMyCompanyProfileFresh === "function") {
+            const my = await btonGetMyCompanyProfileFresh(false);
+            if (my && my.id) viewerCompanyId = my.id;
+          }
+        } catch(e) {}
+      }
+
+      if (!viewerCompanyId) {
+        try { viewerCompanyId = (typeof myCompanyIdOr === "function") ? myCompanyIdOr(user.id) : user.id; } catch(e) { viewerCompanyId = user.id; }
+      }
+
+      // Self-view (company-to-company)
+      if (viewerCompanyId && String(viewerCompanyId) === String(targetProfileId)) return;
+      // Legacy self-view fallback
+      if (String(user.id) === String(targetProfileId)) return;
+    } else {
+      // Guest id (tarayıcıda kalıcı)
+      guestId = localStorage.getItem("BTrustOn_guest_id");
+      if (!guestId) {
+        guestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("g_" + Date.now() + "_" + Math.random().toString(16).slice(2));
+        localStorage.setItem("BTrustOn_guest_id", guestId);
+      }
     }
 
-    const { error } = await supabaseClient.rpc('track_profile_view', {
-      p_profile_id: targetProfileId,
-      p_guest_fingerprint: user ? null : guestId
-    });
-    if (error) { console.warn('trackProfileView upsert failed:', error); }
-// D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
-    if (!error) {
-        localStorage.setItem(storageKey, "true");
-        console.log("Yeni ziyaret kaydedildi.");
+    // ✅ DB’ye düşür (RPC) — supports new param p_viewer_profile_id (claim aware)
+    let rpcRes = null;
+    try {
+      const args = { p_profile_id: targetProfileId, p_guest_fingerprint: user ? null : guestId };
+      if (user && viewerCompanyId) args.p_viewer_profile_id = viewerCompanyId;
+
+      rpcRes = await supabaseClient.rpc('track_profile_view', args);
+
+      if (rpcRes?.error) {
+        // If DB function is not updated to accept p_viewer_profile_id, we MUST stop here (otherwise viewer will look like the legacy user)
+        const msg = String(rpcRes.error.message || rpcRes.error.details || "").toLowerCase();
+        const code = String(rpcRes.error.code || "");
+        const looksLikeParamMismatch =
+          msg.includes("p_viewer_profile_id") || msg.includes("does not exist") || msg.includes("unknown") ||
+          code === "42883" || code === "PGRST202";
+
+        if (looksLikeParamMismatch) {
+          try {
+            showToast(
+              "DB function missing",
+              "Update Supabase RPC track_profile_view to accept p_viewer_profile_id (claim-aware viewer).",
+              "warning"
+            );
+          } catch(_) {}
+        }
+      }
+    } catch (e) {
+      rpcRes = { error: e };
     }
 
+    if (rpcRes && rpcRes.error) {
+      console.warn('trackProfileView upsert failed:', rpcRes.error);
+      return;
+    }
+
+    // D. Başarılıysa Tarayıcıya "Bugün Baktı" İşaretini Koy
+    try { localStorage.setItem(storageKey, "true"); } catch(e) {}
+    console.log("Yeni ziyaret kaydedildi.");
   }, { ttlMs:10000 });
 }
 
@@ -10713,13 +10750,18 @@ try {
       if (!isSeed) return; // only refresh seed directory profiles
       const { data } = await supabaseClient
         .from("profiles")
-        .select("owner_user_id, claimed_at, verification_status, is_listed")
+        .select("owner_user_id, claimed_at, verification_status, is_listed, blue_tick, is_verified, verified, is_verified_company")
         .eq("id", obj.id)
         .maybeSingle();
       if (!data) return;
       obj.owner_user_id = data.owner_user_id || null;
       obj.claimed_at = data.claimed_at || null;
       if (typeof data.verification_status !== "undefined") obj.verification_status = data.verification_status || obj.verification_status;
+      if (typeof data.blue_tick !== "undefined") obj.blue_tick = data.blue_tick;
+      if (typeof data.is_verified !== "undefined") obj.is_verified = data.is_verified;
+      if (typeof data.verified !== "undefined") obj.verified = data.verified;
+      if (typeof data.is_verified_company !== "undefined") obj.is_verified_company = data.is_verified_company;
+
       if (typeof data.is_listed !== "undefined") obj.is_listed = data.is_listed;
     } catch(e) {}
   };
@@ -10753,6 +10795,11 @@ try {
               verification_status: profile.verification_status || "none",
               owner_user_id: profile.owner_user_id || null,
               claimed_at: profile.claimed_at || null,
+              blue_tick: (typeof profile.blue_tick !== "undefined") ? profile.blue_tick : undefined,
+              is_verified: (typeof profile.is_verified !== "undefined") ? profile.is_verified : undefined,
+              verified: (typeof profile.verified !== "undefined") ? profile.verified : undefined,
+              is_verified_company: (typeof profile.is_verified_company !== "undefined") ? profile.is_verified_company : undefined,
+
               tax_id: profile.tax_id || "",
               duns_number: profile.duns_number || "",
               country: profile.country || "Turkey",
@@ -11285,6 +11332,10 @@ if (servicesGrid) {
   const myCurrentId = localStorage.getItem("BTrustOn_my_company_id");
   const isMyProfile = (myCurrentId && String(company.id) === String(myCurrentId));
   
+  // 🎉 Celebration check (runs when YOUR company becomes verified, including claim-based companies)
+  try { if (isMyProfile && typeof checkAndTriggerCelebration === "function") checkAndTriggerCelebration(company); } catch(e) {}
+
+  
   const btnEdit = document.getElementById("btn-edit-profile");
   const btnAddAsset = document.getElementById("btn-add-asset");
   const btnQuote = document.getElementById("btn-req-quote");
@@ -11718,7 +11769,7 @@ async function saveProfileData() {
     let { error } = await supabaseClient
       .from('profiles')
       .update(updates)
-      .eq('id', companyId);
+      .eq('id', myCompanyIdOr(user.id));
 
     // If the DB doesn't have a column yet, retry without it (backward compatible)
     if (error && String(error.message || "").toLowerCase().includes("does not exist")) {
@@ -13910,6 +13961,15 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     trial_end_date: profile.trial_end_date || null,
     created_at: profile.created_at || null,
     verification_status: profile.verification_status || 'none',
+    owner_user_id: profile.owner_user_id || null,
+    claimed_at: profile.claimed_at || null,
+    // Verification flags (supports multiple schemas)
+    blue_tick: (typeof profile.blue_tick !== "undefined") ? profile.blue_tick : undefined,
+    is_verified: (typeof profile.is_verified !== "undefined") ? profile.is_verified : undefined,
+    verified: (typeof profile.verified !== "undefined") ? profile.verified : undefined,
+    is_verified_company: (typeof profile.is_verified_company !== "undefined") ? profile.is_verified_company : undefined,
+    verification_celebrated: (typeof profile.verification_celebrated !== "undefined") ? profile.verification_celebrated : undefined,
+
     tax_id: profile.tax_id || "",
     duns_number: profile.duns_number || "",  
     tagline: profile.tagline || "",
@@ -20102,13 +20162,6 @@ async function submitVerificationRequest(source = 'editor') {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user || !user.id) throw new Error("Login required");
 
-        // Claim-safe company id: prefer the currently selected company profile id
-        const companyId = (typeof selectedCompany !== 'undefined' && selectedCompany && selectedCompany.id && typeof isUuid === 'function' && isUuid(selectedCompany.id))
-          ? String(selectedCompany.id)
-          : String(myCompanyIdOr(user.id));
-        try { if (companyId && typeof isUuid === 'function' && isUuid(companyId)) localStorage.setItem("BTrustOn_my_company_id", companyId); } catch(_) {}
-
-
         // 1) Update profile (single source of truth)
         const profilePayload = {
           registry_country: countryKey || null,
@@ -20122,7 +20175,7 @@ async function submitVerificationRequest(source = 'editor') {
         const { error: uErr } = await supabaseClient
           .from('profiles')
           .update(profilePayload)
-          .eq('id', companyId);
+          .eq('id', myCompanyIdOr(user.id));
 
         if (uErr) throw uErr;
 
@@ -20131,7 +20184,7 @@ async function submitVerificationRequest(source = 'editor') {
           await supabaseClient
             .from('verification_requests')
             .insert([{
-              company_id: companyId,
+              company_id: myCompanyIdOr(user.id),
               submitted_by: user.id,
               status: 'submitted',
               registry_country: profilePayload.registry_country,
@@ -20142,9 +20195,6 @@ async function submitVerificationRequest(source = 'editor') {
             }]);
         } catch(e) {
           console.warn("verification_requests insert skipped:", e);
-          try {
-            showToast((t("ui_info") || "Info"), (t("ui_admin_queue_issue") || "Request saved, but admin queue write failed. If not processed within 24h, please contact support."), "brand");
-          } catch(_) {}
         }
 
         // Local cache update
@@ -21511,72 +21561,87 @@ async function __getAuthUserId() {
   }
 }
 
-async function __fetchCelebrationSeen(userId) {
-  if (!userId) return true; // güvenli varsayım: tekrar göstermeyelim
+async function __fetchCelebrationSeen(companyProfileId) {
+  // Returns true if celebration has already been shown for THIS company profile.
+  // Prefer DB flag (cross-device). Fallback to localStorage.
+  if (!companyProfileId) return false; // fail-open: allow celebration rather than hiding it forever
+  const lsKey = "BTrustOn_celebrated_" + String(companyProfileId);
   try {
-    // 1) primary key = id
-    let { data, error } = await supabaseClient
+    // local quick guard
+    try { if (localStorage.getItem(lsKey) === "true") return true; } catch(e) {}
+
+    const { data, error } = await supabaseClient
       .from("profiles")
       .select("verification_celebrated")
-      .eq("id", userId)
+      .eq("id", companyProfileId)
       .maybeSingle();
 
-    // 2) bazı şemalarda auth uid ayrı kolonda olabilir: user_id
-    if ((error || !data) && typeof userId === "string") {
-      const fallback = await supabaseClient
-        .from("profiles")
-        .select("verification_celebrated")
-        .eq("user_id", userId)
-        .maybeSingle();
-      data = fallback.data;
-      error = fallback.error;
+    if (error) {
+      // DB/RLS/column issue -> fail-open but keep local guard
+      return false;
     }
-
-    // Eğer okuma hatası varsa tekrar göstermeyelim (cross-device tekrar riskini önler)
-    if (error) return true;
-
-    return !!data?.verification_celebrated;
+    return !!(data && data.verification_celebrated);
   } catch (e) {
-    return true;
+    return false; // fail-open
   }
 }
 
-async function __setCelebrationSeen(userId) {
-  if (!userId) return;
-  const nowIso = nowDate().toISOString();
+async function __setCelebrationSeen(companyProfileId) {
+  if (!companyProfileId) return;
+  const lsKey = "BTrustOn_celebrated_" + String(companyProfileId);
+  try { localStorage.setItem(lsKey, "true"); } catch(e) {}
 
-  // id üzerinden dene
-  let { error } = await supabaseClient
-    .from("profiles")
-    .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
-    .eq("id", userId);
-
-  // user_id fallback
-  if (error) {
-    await supabaseClient
+  try {
+    const nowIso = nowDate().toISOString();
+    // Try by id (company profile row)
+    let { error } = await supabaseClient
       .from("profiles")
       .update({ verification_celebrated: true, verification_celebrated_at: nowIso })
-      .eq("user_id", userId);
+      .eq("id", companyProfileId);
+
+    // If update blocked by RLS, we still keep localStorage flag (prevents repeats).
+    if (error) return;
+  } catch (e) {
+    // ignore
   }
 }
 
 async function checkAndTriggerCelebration(company) {
   try {
     const userId = await __getAuthUserId();
-    if (!userId) return;
+    if (!userId || !company) return;
 
-    // Sadece kendi profilinde ve verified ise çalışsın
-    if (!company || company.verification_status !== "verified") return;
-    if (String(company.id) !== String(userId)) return;
+    // Verified detection (supports multiple schemas/labels)
+    const vs = String(company.verification_status || "").toLowerCase().trim();
+    const boolTrue = (x) => (x === true || x === 1 || x === "true" || x === "1");
+    const isVerified =
+      (vs === "verified" || vs === "approved")
+      || boolTrue(company.is_verified) || boolTrue(company.verified)
+      || boolTrue(company.blue_tick) || boolTrue(company.is_verified_company);
 
-    const hasSeen = await __fetchCelebrationSeen(userId);
+    if (!isVerified) return;
+
+    // Ownership (claim-aware)
+    const ownerId = company.owner_user_id || company.ownerUserId || company.user_id || company.userId || null;
+    const myCompanyId = (typeof myCompanyIdOr === "function") ? myCompanyIdOr(userId) : userId;
+
+    const isOwner =
+      (String(company.id) === String(userId)) ||                               // legacy
+      (ownerId && String(ownerId) === String(userId)) ||                        // claim owner
+      (myCompanyId && String(myCompanyId) === String(company.id));              // active company
+
+    if (!isOwner) return;
+
+    const hasSeen = await __fetchCelebrationSeen(company.id);
     if (hasSeen) return;
 
-    // Modalı açmadan önce DB'ye yaz: başka cihazlarda tekrar çıkmasın
-    __setCelebrationSeen(userId).catch(() => {});
+    // Mark seen before opening (prevents duplicates across tabs/devices as best-effort)
+    try { window.__celebrationCompanyId = company.id; } catch(_) {}
+
+    __setCelebrationSeen(company.id).catch(() => {});
     openCelebrationModal();
   } catch (e) {
-    // hiçbir şey yapma
+    // no-op
   }
 }
 
@@ -21604,8 +21669,8 @@ async function closeCelebration() {
 
   // Ek güvenlik: modal kapatılırken de DB'ye "seen" yaz
   try {
-    const userId = await __getAuthUserId();
-    if (userId) await __setCelebrationSeen(userId);
+    const cid = (window.__celebrationCompanyId || null);
+    if (cid) await __setCelebrationSeen(cid);
   } catch (e) {}
 }
 
