@@ -3408,10 +3408,6 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="min-w-0">
 <div class="text-[13px] font-extrabold text-slate-800" data-i18n="ui_no_assets_found_73e934">No assets found</div>
 <div class="mt-1 text-[11px] text-slate-500" data-i18n="ui_this_company_hasn_t_listed_any_a_410cda">This company hasn’t listed any assets yet.</div>
-<button class="bton-empty-action hidden" id="p-assets-empty-cta" type="button" onclick="openAssetModal()">
-  <i class="fa-solid fa-plus"></i>
-  <span data-i18n="empty_add_asset_btn">Add asset</span>
-</button>
 </div>
 </div>
 </div>
@@ -19702,29 +19698,54 @@ let __searchDebounceTimer = null;
     // 2. Ülke Kutusunu Doldur
     /* --- GÜNCELLENMİŞ: populateCountryFilter (DİREKT VERİDEN) --- */
 function populateCountryFilter() {
-    const countrySet = new Set();
-    
-    // Veritabanındaki "country" alanlarını topla
-    database.forEach(c => {
-        if(c.country) countrySet.add(c.country);
-    });
+  const select = document.getElementById("country-filter");
+  if (!select) return;
 
-    const select = document.getElementById("country-filter");
-    if(select) {
-        const prev = select.value;
-        select.innerHTML = '<option value="all">' + (t("filter_all_countries") || "All Countries") + '</option>';
-        
-        Array.from(countrySet)
-          .sort((a,b) => String(localizeCountryName(a)).localeCompare(String(localizeCountryName(b)), currentLang || 'en'))
-          .forEach(country => {
-            const option = document.createElement("option");
-            option.value = country;
-            option.textContent = localizeCountryName(country);
-            select.appendChild(option);
-          });
-        try { if (prev) select.value = prev; } catch(e) {}
-    }
+  // Only include countries that actually exist among currently searchable/listed companies
+  let source = [];
+  try {
+    if (typeof getSearchableCompanies === "function") source = getSearchableCompanies();
+    else if (Array.isArray(database)) source = database;
+  } catch (e) {
+    source = Array.isArray(database) ? database : [];
+  }
+
+  // Normalize (prefer ISO2 codes) so duplicates like "Turkey" vs "TR" collapse into one option
+  const uniq = new Map(); // key -> canonicalValue
+  (source || []).forEach(c => {
+    const raw = (c && c.country != null) ? String(c.country).trim() : "";
+    if (!raw) return;
+    const iso = countryNameToISO2(raw);
+    const key = iso ? ("ISO:" + iso) : ("RAW:" + raw.toLowerCase());
+    if (!uniq.has(key)) uniq.set(key, iso || raw);
+  });
+
+  const prev = select.value;
+  const prevNorm = prev ? (countryNameToISO2(prev) || String(prev).trim()) : "";
+
+  select.innerHTML = '<option value="all">' + (t("filter_all_countries") || "All Countries") + '</option>';
+
+  const values = Array.from(uniq.values())
+    .filter(Boolean)
+    .sort((a, b) => String(localizeCountryName(a)).localeCompare(String(localizeCountryName(b)), currentLang || "en"));
+
+  values.forEach(v => {
+    const iso = countryNameToISO2(v);
+    const option = document.createElement("option");
+    option.value = iso || v;
+    option.textContent = localizeCountryName(v);
+    select.appendChild(option);
+  });
+
+  // Restore selection if still available; otherwise fall back to "all"
+  try {
+    const wanted = prevNorm || "all";
+    const exists = Array.from(select.options).some(o => o.value === wanted);
+    select.value = exists ? wanted : "all";
+    try { currentCountryFilter = select.value || "all"; } catch (e) {}
+  } catch (e) {}
 }
+
 
     // 3. Ülke Değişince Çalışır
     function handleCountryChange(countryVal) {
