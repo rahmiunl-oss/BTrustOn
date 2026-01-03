@@ -52,12 +52,6 @@ export default async function CompanyPage({ params }) {
     } : undefined,
   };
 
-  const tags = (company.expertise || '')
-    .split(/[,;|]/g)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .slice(0, 12);
-
   return (
     <main className="grid" style={{ gap: 14 }}>
       <div className="card">
@@ -93,12 +87,6 @@ export default async function CompanyPage({ params }) {
             <div className="muted" style={{ marginTop: 8, lineHeight: 1.65 }}>
               Server-rendered for Google visibility. Interactive experience lives at <b>/app</b>.
             </div>
-
-            {tags.length ? (
-              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {tags.map((t) => <span key={t} className="pill">⚡ {t}</span>)}
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
