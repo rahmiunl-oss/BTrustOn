@@ -65,7 +65,7 @@ export default async function CompanyPage({ params }) {
           <div style={{ minWidth: 260 }}>
             <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15 }}>
               {company.company_name || '—'}
-              {(company.is_verified || company.verified) ? <span className="pill" style={{ marginLeft: 10 }}>🛡️ Verified</span> : null}
+              
             </div>
 
             <div className="muted" style={{ marginTop: 10, lineHeight: 1.6 }}>
