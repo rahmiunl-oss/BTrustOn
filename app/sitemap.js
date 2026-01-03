@@ -1,3 +1,4 @@
+export const revalidate = 3600; // 1 saat
 import { getCompanies } from '@/lib/data';
 
 export default async function sitemap() {
