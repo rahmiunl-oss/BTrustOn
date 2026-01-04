@@ -1267,5 +1267,14 @@
   "auth_password_min": "Şifre en az 6 karakter olmalı.",
   "auth_password_updated": "Şifreniz başarıyla güncellendi.",
   "auth_reset_link_invalid": "Sıfırlama bağlantısı geçersiz veya süresi dolmuş.",
-  "auth_generic_error": "Bir hata oluştu."
+  "auth_generic_error": "Bir hata oluştu.",
+  "footer_contact": "İletişim",
+  "contact_title": "İletişim",
+  "contact_subtitle": "İş birliği, destek veya satış için bize ulaşın.",
+  "contact_hello_title": "Genel",
+  "contact_hello_desc": "İş birlikleri, kayıt/kurulum ve genel sorular.",
+  "contact_support_title": "Destek",
+  "contact_support_desc": "Teknik yardım ve hesap sorunları.",
+  "contact_sales_title": "Satış",
+  "contact_sales_desc": "Fiyatlandırma, paketler ve kurumsal talepler."
 }
