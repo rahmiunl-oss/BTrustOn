@@ -1706,6 +1706,28 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     const SUPABASE_URL = "https://ncssozhpwzvzeneaumlz.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jc3Nvemhwd3p2emVuZWF1bWx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MzkyMjgsImV4cCI6MjA4MDQxNTIyOH0.pk9p8_KRcmcbzhulo4dA06uk_3FOFXwVT1vNiYOEfck";
 
+
+    // Capture auth return params early (before Supabase may clean URL)
+    try {
+      const raw = String((window.location.hash || "") + (window.location.search || ""));
+      if (/type=recovery|error=access_denied|otp_expired|access_token=|refresh_token=/.test(raw)) {
+        sessionStorage.setItem("bton_auth_return_raw", raw);
+        try { window.__BTON_RECOVERY_ACTIVE = /type=recovery/i.test(raw); } catch(e) {}
+
+        // If auth link landed on a non-/app path, reroute to /app once (keeps reset modal flow consistent)
+        try {
+          if (location.hostname && location.hostname.endsWith("btruston.com") && !String(location.pathname||"").startsWith("/app")) {
+            const once = sessionStorage.getItem("bton_recovery_reroute") || "";
+            if (!once) {
+              sessionStorage.setItem("bton_recovery_reroute","1");
+              location.replace("/app" + (window.location.search || "") + (window.location.hash || ""));
+            }
+          }
+        } catch(e) {}
+
+      }
+    } catch(e) {}
+
     const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
@@ -5428,7 +5450,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     if (err) {
       err.classList.add("hidden");
       err.textContent = "";
-    }/* =========================
+    }
+  }
+
+/* =========================
    Password Reset (Premium)
    ========================= */
 function openResetModal(mode = "request") {
@@ -5452,6 +5477,9 @@ function closeResetModal() {
   modal.classList.add("hidden");
   modal.classList.remove("flex");
 
+  // Exit recovery mode if user closes the modal
+  try { window.__BTON_RECOVERY_ACTIVE = false; sessionStorage.removeItem("bton_recovery_reroute"); } catch(e) {}
+
   // Clear transient messages
   const ids = [
     "reset-request-success","reset-request-error",
@@ -5470,7 +5498,7 @@ function closeResetModal() {
 }
 
 // Make reset modal close callable from inline onclick handlers
-try { window.closeResetModal = closeResetModal; } catch (e) {}
+try { window.closeResetModal = closeResetModal; window.openResetModal = openResetModal; } catch (e) {}
 
 
 function showResetMode(mode) {
@@ -5488,49 +5516,49 @@ function showResetMode(mode) {
 
 async function btonHandleRecoveryFromUrl() {
   try {
-    const h = window.location.hash || "";
-    // If Supabase redirected here with an error (e.g. otp_expired), show a friendly message
-    if (h.includes("error=")) {
-      const pErr = new URLSearchParams(h.startsWith("#") ? h.slice(1) : h);
-      const errorCode = pErr.get("error_code") || "";
-      const errorDesc = pErr.get("error_description") || "";
-      if (errorCode || errorDesc) {
-        openResetModal("request");
-        const errEl = document.getElementById("reset-request-error");
-        if (errEl) {
-          errEl.textContent = (typeof t === "function" ? t("auth_reset_link_invalid") : "Reset link is invalid or expired.") + (errorCode ? ` (${errorCode})` : "");
-          errEl.classList.remove("hidden");
-        }
-        // Clean the URL so it doesn't keep the error state
-        try {
-          const clean = window.location.pathname + window.location.search;
-          history.replaceState(null, "", clean);
-        } catch (_) {}
-        return;
-      }
-    }
-    if (!h.includes("type=recovery")) return;
+    const rawHash = window.location.hash || "";
+    const rawSearch = window.location.search || "";
+    const stored = (() => { try { return sessionStorage.getItem("bton_auth_return_raw") || ""; } catch(e){ return ""; } })();
+    const raw = String((rawHash + rawSearch) || stored || "");
 
-    const params = new URLSearchParams(h.startsWith("#") ? h.slice(1) : h);
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-    const type = params.get("type");
+    // Mark so other boot logic doesn't hijack the flow
+    try { window.__BTON_RECOVERY_ACTIVE = /type=recovery/i.test(raw); } catch(e) {}
 
-    if (type !== "recovery") return;
-
-    if (access_token && refresh_token) {
-      // establish session for updateUser
-      try { await supabaseClient.auth.setSession({ access_token, refresh_token }); } catch (_) {}
-      openResetModal("update");
-    } else {
-      // still open update, but show error
-      openResetModal("update");
-      const err = document.getElementById("reset-update-error");
+    // If Supabase redirected with an error (expired / invalid link), show a clear message
+    if (/error=access_denied/i.test(raw) || /otp_expired/i.test(raw) || /Email\+link\+is\+invalid/i.test(raw)) {
+      try { openResetModal("request"); } catch(e) {}
+      try { window.__BTON_RECOVERY_ACTIVE = false; } catch(e) {}
+      const err = document.getElementById("reset-request-error");
       if (err) {
-        err.textContent = (typeof t === "function" ? t("auth_reset_link_invalid") : "Reset link is invalid or expired.");
+        err.textContent = (typeof t==="function" ? t("auth_reset_link_invalid") : "Reset link is invalid or expired. Please request a new one.");
         err.classList.remove("hidden");
       }
+      try { sessionStorage.removeItem("bton_auth_return_raw"); } catch(e) {}
+      return;
     }
+
+    // Recovery flow
+    if (!/type=recovery/i.test(raw)) return;
+
+    const hashPart = (rawHash && rawHash.startsWith("#")) ? rawHash.slice(1) : (rawHash || "");
+    const qsHash = new URLSearchParams(hashPart);
+    const qsSearch = new URLSearchParams(rawSearch.startsWith("?") ? rawSearch.slice(1) : rawSearch);
+
+    const type = qsHash.get("type") || qsSearch.get("type") || "recovery";
+    if (type !== "recovery") return;
+
+    const access_token  = qsHash.get("access_token")  || qsSearch.get("access_token");
+    const refresh_token = qsHash.get("refresh_token") || qsSearch.get("refresh_token");
+
+    // Establish session for updateUser (if tokens present). If Supabase already set it, this is harmless.
+    if (access_token && refresh_token) {
+      try { await supabaseClient.auth.setSession({ access_token, refresh_token }); } catch (_) {}
+    }
+
+    try { openResetModal("update"); } catch(e) {}
+
+    // Clear stored raw so it doesn't reopen later
+    try { sessionStorage.removeItem("bton_auth_return_raw"); } catch(e) {}
   } catch (_) {}
 }
 
@@ -5574,8 +5602,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btn) { btn.disabled = true; btn.classList.add("opacity-70"); btn.innerHTML = (typeof t==="function" ? t("auth_sending") : "Sending..."); }
 
       try {
-        const CANONICAL_APP_URL = (window.BTON_CANONICAL_APP_URL || "https://www.btruston.com/app").replace(/\/$/, "");
-        const redirectTo = CANONICAL_APP_URL
+        const BTON_CANONICAL_APP_URL = "https://www.btruston.com/app";
+        const redirectTo = (location.hostname && location.hostname.endsWith("btruston.com"))
+          ? (location.origin.replace(/\/$/, "") + "/app")
+          : BTON_CANONICAL_APP_URL;
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
 
@@ -5629,7 +5659,9 @@ document.addEventListener("DOMContentLoaded", () => {
           ok.classList.remove("hidden");
         }
 
-        // Clean URL fragment so it doesn't reopen
+        try { window.__BTON_RECOVERY_ACTIVE = false; } catch(e) {}
+
+                // Clean URL fragment so it doesn't reopen
         try {
           const clean = window.location.pathname + window.location.search;
           history.replaceState(null, "", clean);
@@ -5654,9 +5686,6 @@ document.addEventListener("DOMContentLoaded", () => {
   btonHandleRecoveryFromUrl();
 });
 
-  }
-
-  
   // Sayfa yüklendiğinde login formunu hazırla
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("login-form");
@@ -14885,6 +14914,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 supabaseClient.auth.onAuthStateChange((event, session) => {
+  // ✅ Password recovery flow: show reset modal and avoid normal navigation
+  try {
+    if (event === 'PASSWORD_RECOVERY' || window.__BTON_RECOVERY_ACTIVE) {
+      if (typeof openResetModal === "function") openResetModal("update");
+      return;
+    }
+  } catch(e) {}
+
   if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
     // Giriş yapıldıysa
     if (typeof closeLoginModal === "function") closeLoginModal();
