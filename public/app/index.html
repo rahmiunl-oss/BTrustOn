@@ -2211,13 +2211,51 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </style>
 
 
+
+<style id="bt-premium-logo-fallback">
+/* Premium logo fallback (monogram) */
+.bt-logo-wrap{
+  position:relative;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(241,245,249,.78));
+  box-shadow: 0 1px 0 rgba(255,255,255,.65) inset, 0 8px 18px rgba(15,23,42,.05);
+}
+.bt-logo-img{ width:100%; height:100%; object-fit:cover; display:block; }
+.bt-logo-fallback{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(120% 120% at 25% 18%, rgba(255,255,255,.95) 0%, rgba(248,250,252,.92) 35%, rgba(241,245,249,.85) 100%);
+}
+.bt-logo-fallback::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  pointer-events:none;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset;
+}
+.bt-logo-mono{
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: rgba(51,65,85,.92);
+  font-size: var(--bt-logo-font, 12px);
+  line-height: 1;
+}
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
 <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9988] hidden transition-opacity opacity-0" id="saved-overlay" onclick="toggleSavedPanel()"></div>
 <div class="flex flex-col" id="saved-panel">
 <div class="bg-gradient-to-r from-BTrustOn-primary to-slate-900 text-white pt-6 px-6 shadow-lg relative overflow-hidden shrink-0 z-20">
-<div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+<div class="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 <div class="relative z-10 flex items-center justify-between">
 <div>
 <div class="text-[11px] uppercase tracking-wider text-white/70 font-bold" data-i18n="ui_my_lists_b684e8">My Lists</div>
@@ -2263,7 +2301,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   </div>
 </div>
 <div class="space-y-3" id="saved-list"></div>
-<div class="hidden text-sm text-gray-500 bg-white/70 border border-gray-200 rounded-2xl p-4" id="following-empty"><span data-i18n="ui_no_followed_companies_yet_use_th_bfe54b">No followed companies yet. Use the Follow</span><span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-900/5 border border-slate-900/10 align-middle mx-0.5"><i class="fa-solid fa-tower-broadcast text-[11px] text-slate-600"></i></span><span data-i18n="ui_icon_on_company_cards_or_profile_808d3c">icon on company cards or profiles.</span></div>
+<div class="hidden text-sm text-gray-500 bg-white/70 border border-slate-200/70 rounded-2xl p-4" id="following-empty"><span data-i18n="ui_no_followed_companies_yet_use_th_bfe54b">No followed companies yet. Use the Follow</span><span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-900/5 border border-slate-900/10 align-middle mx-0.5"><i class="fa-solid fa-tower-broadcast text-[11px] text-slate-600"></i></span><span data-i18n="ui_icon_on_company_cards_or_profile_808d3c">icon on company cards or profiles.</span></div>
 <div class="hidden space-y-3" id="following-list"></div>
 </div>
 </div>
@@ -2350,7 +2388,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <nav id="bton-nav" class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/50 h-24">
 <div class="max-w-7xl mx-auto px-4 h-full flex items-center gap-3 flex-nowrap">
 <div class="flex items-center gap-3 shrink-0" id="nav-left">
-<button class="hidden hidden-view inline-flex items-center gap-2 pr-4 mr-1 border-r border-gray-200/80 text-gray-500 hover:text-BTrustOn-primary transition px-3 py-2 rounded-lg hover:bg-gray-100" id="back-btn" onclick="showMainView()">
+<button class="hidden hidden-view inline-flex items-center gap-2 pr-4 mr-1 border-r border-slate-200/70/80 text-gray-500 hover:text-BTrustOn-primary transition px-3 py-2 rounded-lg hover:bg-gray-100" id="back-btn" onclick="showMainView()">
 <i class="fa-solid fa-arrow-left"></i>
 <span class="hidden md:inline" data-i18n="back">BACK TO LIST</span>
 </button>
@@ -2466,7 +2504,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 
         <button class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition"
                 onclick="closeMobileNavMenu(); openJoinModal('free');">
-          <span class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-700 grid place-items-center">
+          <span class="w-9 h-9 rounded-xl bg-slate-50 text-cyan-700 grid place-items-center">
             <i class="fa-solid fa-paper-plane"></i>
           </span>
           <span class="font-extrabold text-slate-800" data-i18n="join">JOIN NETWORK</span>
@@ -2544,13 +2582,13 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="hidden md:inline" id="nav-plan-label" data-i18n="updates_upgrade">Upgrade</span>
 <i class="fa-solid fa-chevron-down text-[10px] opacity-60 ml-0.5"></i>
 </button>
-<div class="hidden absolute right-0 mt-2 w-64 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60]" id="nav-plan-menu">
+<div class="hidden absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200/70 bg-white shadow-xl overflow-hidden z-[60]" id="nav-plan-menu">
 <div class="px-4 py-3 border-b border-gray-100">
 <div class="text-xs font-extrabold text-slate-900" data-i18n="attr_plan_0b6cbd" id="nav-plan-menu-title">Plan</div>
 <div class="text-[11px] text-gray-500 mt-0.5" data-i18n="ui_upgrade_to_unlock_pro_features_7bc2e8" id="nav-plan-menu-sub">Upgrade to unlock Pro features.</div>
 </div>
 <div class="p-2">
-<button class="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-cyan-50 transition text-left" id="plan-menu-upgrade" onclick="closePlanMenu(); openUpgradeModal();">
+<button class="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition text-left" id="plan-menu-upgrade" onclick="closePlanMenu(); openUpgradeModal();">
 <i class="fa-solid fa-arrow-up-right-dots text-cyan-600"></i>
 <div class="flex-1">
 <div class="text-xs font-extrabold text-slate-900" data-i18n="plan_upgrade_title">Upgrade to Pro</div>
@@ -2637,7 +2675,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </header>
 <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
-<div class="flex flex-col gap-4 mb-5 border-b border-gray-200/50 pb-4">
+<div class="flex flex-col gap-4 mb-5 border-b border-slate-200/70/50 pb-4">
 <div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
 <div id="home-updates-head" class="flex items-start justify-between gap-3 mb-3">
 <div class="min-w-0">
@@ -2647,7 +2685,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </h3>
 <div class="flex items-center gap-2 mt-1">
 <span class="bton-hide-mobile text-[11px] text-gray-400" data-i18n="updates_sub">Last 7 days • posted by companies</span>
-<div class="inline-flex items-center rounded-full border border-gray-200 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="home-updates-filter">
+<div class="inline-flex items-center rounded-full border border-slate-200/70 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="home-updates-filter">
 <button class="px-2.5 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-filter-all" onclick="setHomeUpdatesFilter('all')" type="button">
 <span data-i18n="updates_filter_all">All updates</span>
 </button>
@@ -2660,7 +2698,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span data-i18n="ui_live_f35d25"></span></span>
 </div>
 </div>
-<button class="shrink-0 inline-flex items-center gap-2 bg-white border border-gray-200 hover:border-BTrustOn-accent text-gray-700 hover:text-BTrustOn-primary text-[11px] font-extrabold px-3 py-2 rounded-xl shadow-sm transition" id="btn-open-post-update" onclick="openPostUpdateModal()">
+<button class="shrink-0 inline-flex items-center gap-2 bg-white border border-slate-200/70 hover:border-BTrustOn-accent text-gray-700 hover:text-BTrustOn-primary text-[11px] font-extrabold px-3 py-2 rounded-xl shadow-sm transition" id="btn-open-post-update" onclick="openPostUpdateModal()">
 <i class="fa-solid fa-square-plus text-BTrustOn-accent"></i>
 <span data-i18n="btn_post_update">POST UPDATE</span>
 </button>
@@ -2682,12 +2720,12 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
     </div>
   </div>
 </div>
-<div class="hidden mt-3 text-[10px] text-gray-400 flex items-center justify-between gap-2 bg-cyan-50/60 border border-cyan-100 rounded-xl px-3 py-2" id="home-updates-prohint">
+<div class="hidden mt-3 text-[10px] text-gray-400 flex items-center justify-between gap-2 bg-slate-50/60 border border-cyan-100 rounded-xl px-3 py-2" id="home-updates-prohint">
 <div class="flex items-center gap-2 min-w-0">
 <i class="fa-solid fa-lock text-cyan-500"></i>
 <span class="truncate" data-i18n="updates_pro_hint">Posting updates is a Pro feature.</span>
 </div>
-<button class="shrink-0 text-[10px] font-extrabold text-cyan-700 hover:text-cyan-900 underline underline-offset-2" data-i18n="updates_upgrade" onclick="openUpgradeModal()">Upgrade</button>
+<button class="shrink-0 text-[10px] font-extrabold text-cyan-700 hover:text-slate-700 underline underline-offset-2" data-i18n="updates_upgrade" onclick="openUpgradeModal()">Upgrade</button>
 </div>
 </div>
 </div>
@@ -2700,7 +2738,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 <i class="fa-solid fa-layer-group text-gray-400 text-xs"></i>
 </div>
-<select class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]" id="sector-filter" onchange="filterSector(this.value)">
+<select class="appearance-none bg-white border border-slate-200/70 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]" id="sector-filter" onchange="filterSector(this.value)">
 <option data-i18n="sec_all" value="all">All Sectors</option>
 <option data-i18n="sec_const" value="construction">Construction &amp; Infrastructure</option>
 <option data-i18n="sec_energy" value="energy">Energy &amp; Oil/Gas</option>
@@ -2717,7 +2755,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 <i class="fa-solid fa-earth-americas text-gray-400 text-xs"></i>
 </div>
-<select class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]" id="country-filter" onchange="handleCountryChange(this.value)">
+<select class="appearance-none bg-white border border-slate-200/70 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition min-w-[140px]" id="country-filter" onchange="handleCountryChange(this.value)">
 <option data-i18n="filter_all_countries" value="all">All Countries</option>
 </select>
 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -2728,7 +2766,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 <i class="fa-solid fa-arrow-down-short-wide text-gray-400 text-xs"></i>
 </div>
-<select class="appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition" id="sort-select" onchange="handleSortChange(this.value)">
+<select class="appearance-none bg-white border border-slate-200/70 text-gray-700 text-xs font-bold py-2.5 pl-9 pr-8 rounded-lg shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition" id="sort-select" onchange="handleSortChange(this.value)">
 <option data-i18n="sort_recommended" value="recommended">Recommended</option>
 <option data-i18n="sort_verified_first" value="verified_first">Verified: First</option>
 <option data-i18n="sort_year_oldest" value="year_oldest">Experience: Oldest First</option>
@@ -2778,7 +2816,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </li>
 <li class="flex gap-3">
-<div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center shrink-0">
+<div class="w-8 h-8 rounded-xl bg-slate-50 border border-cyan-100 flex items-center justify-center shrink-0">
 <span class="text-[11px] font-extrabold text-cyan-700">2</span>
 </div>
 <div>
@@ -2848,7 +2886,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </li>
 <li class="flex gap-3">
-<div class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center shrink-0">
+<div class="w-8 h-8 rounded-xl bg-slate-50 border border-cyan-100 flex items-center justify-center shrink-0">
 <span class="text-[11px] font-extrabold text-cyan-700">2</span>
 </div>
 <div>
@@ -2914,7 +2952,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <!-- Soft payment note -->
 <div class="max-w-5xl mx-auto mb-4 flex items-center justify-center px-4" id="pricing-pay-note">
 <div class="inline-flex items-center gap-2 rounded-2xl border border-[rgba(15,23,42,.10)] bg-white/60 backdrop-blur px-4 py-2 shadow-glass">
-<span class="w-7 h-7 rounded-full bg-cyan-50 border border-cyan-100 grid place-items-center text-cyan-700">
+<span class="w-7 h-7 rounded-full bg-slate-50 border border-cyan-100 grid place-items-center text-cyan-700">
 <i class="fa-solid fa-lock text-[11px] leading-none"></i>
 </span>
 <span class="text-[11px] font-semibold text-slate-700" data-i18n="pricing_pay_note">Simple &amp; secure payment — cancel anytime.</span>
@@ -2922,7 +2960,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <!-- If user is already Pro, show a simple status card (no prices) -->
 <div class="hidden max-w-3xl mx-auto mb-6" id="pricing-pro-state">
-<div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-6 shadow-glass flex items-start gap-4">
+<div class="rounded-2xl border border-cyan-100 bg-slate-50/60 p-6 shadow-glass flex items-start gap-4">
 <div class="w-11 h-11 rounded-2xl bg-BTrustOn-accent text-white flex items-center justify-center shadow-lg shadow-cyan-600/20 shrink-0">
 <i class="fa-solid fa-gem"></i>
 </div>
@@ -3075,14 +3113,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="max-w-4xl mx-auto px-4 -mt-8">
-<div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+<div class="bg-white rounded-2xl shadow-xl border border-slate-200/70 overflow-hidden">
 <div class="grid grid-cols-1 md:grid-cols-3 min-h-[600px]">
-<div class="bg-slate-50 border-r border-gray-200 p-6">
+<div class="bg-slate-50 border-r border-slate-200/70 p-6">
 <nav class="space-y-2 sticky top-6">
-<button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-gray-200 text-sm font-bold text-BTrustOn-primary border-l-4 border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-general')">
+<button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-slate-200/70 text-sm font-bold text-BTrustOn-primary border-l-4 border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-general')">
 <i class="fa-solid fa-building w-6 text-gray-400"></i><span data-i18n="ui_general_info_b3f8f8">General Info</span></button>
 
-<button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-gray-200 text-sm font-bold text-gray-700 border-l-4 border-l-transparent hover:border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-services')">
+<button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-slate-200/70 text-sm font-bold text-gray-700 border-l-4 border-l-transparent hover:border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-services')">
 <i class="fa-solid fa-screwdriver-wrench w-6 text-gray-400"></i><span data-i18n="ui_services_capabilities_724c56">Services &amp; Capabilities</span></button>
 
 <div class="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -3240,7 +3278,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="relative mt-3">
 <i class="fa-solid fa-plus absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
 <input autocomplete="off" class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 font-semibold focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent outline-none transition bg-white" data-i18n-placeholder="ph_svc_add_input" id="svc-add-input" oninput="serviceSuggest(this.value)" onkeydown="serviceAddKeydown(event)" placeholder="Add a service (type and press Enter)…" type="text"/>
-<div class="absolute z-30 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden hidden" id="svc-suggest"></div>
+<div class="absolute z-30 mt-2 w-full bg-white border border-slate-200/70 rounded-xl shadow-xl overflow-hidden hidden" id="svc-suggest"></div>
 </div>
 <p class="text-[10px] text-gray-400 mt-2" data-i18n="ui_examples_epc_drilling_crushing_s_a0e593">
             Examples: EPC, Drilling, Crushing &amp; Screening, Equipment Rental, Maintenance, Engineering Design.
@@ -3255,7 +3293,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <textarea class="input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition" id="edit-service-details" data-i18n-placeholder="ph_edit_service_details" placeholder="e.g. Our excavation team operates with a capacity of 5000m3/day..." rows="5"></textarea>
 </div>
 </div>
-<div class="mt-5 pt-5 border-t border-gray-200 mb-6">
+<div class="mt-5 pt-5 border-t border-slate-200/70 mb-6">
 <div class="flex items-center justify-between mb-6">
 <div>
 <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
@@ -3268,7 +3306,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="ml-3 text-xs font-bold text-gray-400 group-hover:text-gray-600 transition" data-i18n="lbl_edit_owner_toggle">Show</span>
 </label>
 </div>
-<div class="hidden space-y-5 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all relative overflow-hidden" id="owner-inputs">
+<div class="hidden space-y-5 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm transition-all relative overflow-hidden" id="owner-inputs">
 <div class="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-bl-full -mr-10 -mt-10 z-0 pointer-events-none"></div>
 <div class="flex flex-col md:flex-row items-start gap-6 relative z-10">
 <div class="shrink-0 flex flex-col items-center gap-2">
@@ -3457,17 +3495,17 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div id="p-edit-mobile-slot" class="flex justify-end"></div>
 </div>
 <div class="flex items-center gap-3 shrink-0 relative z-20">
-<button class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-gray-200 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_edit_profile_1860fb" id="btn-edit-profile" onclick="editMyProfile()" title="Edit Profile">
+<button class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-slate-200/70 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_edit_profile_1860fb" id="btn-edit-profile" onclick="editMyProfile()" title="Edit Profile">
 <i class="fa-solid fa-pen"></i>
 <span class="bton-edit-label" data-i18n="ui_edit">Edit</span>
 </button>
-<button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_save_company_ce1325" id="btn-save-company" onclick="toggleSaveCompany(selectedCompany &amp;&amp; selectedCompany.id)" title="Save company" data-i18n-title="ui_save_company">
+<button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-slate-200/70 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_save_company_ce1325" id="btn-save-company" onclick="toggleSaveCompany(selectedCompany &amp;&amp; selectedCompany.id)" title="Save company" data-i18n-title="ui_save_company">
 <i class="fa-regular fa-bookmark text-BTrustOn-accent" id="icon-save-company"></i>
 </button>
-<button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_follow_company_730ad4" id="btn-follow-company" onclick="toggleCompanyFollow(event, selectedCompany &amp;&amp; selectedCompany.id, selectedCompany &amp;&amp; (selectedCompany.name || selectedCompany.company_name || ''))" title="Follow company">
+<button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-slate-200/70 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_follow_company_730ad4" id="btn-follow-company" onclick="toggleCompanyFollow(event, selectedCompany &amp;&amp; selectedCompany.id, selectedCompany &amp;&amp; (selectedCompany.name || selectedCompany.company_name || ''))" title="Follow company">
 <i class="fa-solid fa-tower-broadcast text-BTrustOn-accent opacity-40" id="icon-follow-company"></i>
 </button>
-<button class="w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" id="btn-copy-profile-link" onclick="copyCurrentProfileLink()" title="Copy link">
+<button class="w-12 h-12 rounded-full bg-white text-gray-600 border border-slate-200/70 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" id="btn-copy-profile-link" onclick="copyCurrentProfileLink()" title="Copy link">
 <i class="fa-solid fa-link text-BTrustOn-accent"></i>
 </button>
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-5 py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-[.12em]" id="btn-req-quote" onclick="openQuoteModal(selectedCompany.id, selectedCompany.name)">
@@ -3479,20 +3517,20 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-12 gap-8">
 <div class="sm:col-span-8 space-y-8">
-<div class="bton-profile-tabbar border-b border-gray-200 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
-<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-cyan-50/50 transition whitespace-nowrap" id="tab-overview" onclick="switchProfileTab('overview')">
+<div class="bton-profile-tabbar border-b border-slate-200/70 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
+<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-slate-50/50 transition whitespace-nowrap" id="tab-overview" onclick="switchProfileTab('overview')">
 <i class="fa-solid fa-building text-[11px]"></i>
 <span data-i18n="tab_overview">OVERVIEW</span>
 </button>
-<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-cyan-50/40 transition whitespace-nowrap" id="tab-projects" onclick="switchProfileTab('projects')">
+<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-slate-50/40 transition whitespace-nowrap" id="tab-projects" onclick="switchProfileTab('projects')">
 <i class="fa-solid fa-diagram-project text-[11px]"></i>
 <span data-i18n="tab_projects">PROJECTS</span>
 </button>
-<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-cyan-50/40 transition whitespace-nowrap" id="tab-certs" onclick="switchProfileTab('certs')">
+<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-slate-50/40 transition whitespace-nowrap" id="tab-certs" onclick="switchProfileTab('certs')">
 <i class="fa-solid fa-certificate text-[11px]"></i>
 <span data-i18n="tab_certs">CERTIFICATES</span>
 </button>
-<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-cyan-50/40 transition whitespace-nowrap" id="tab-assets" onclick="switchProfileTab('assets')">
+<button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-slate-50/40 transition whitespace-nowrap" id="tab-assets" onclick="switchProfileTab('assets')">
 <i class="fa-solid fa-boxes-stacked text-[11px]"></i>
 <span data-i18n="tab_assets">ASSETS</span>
 </button>
@@ -3646,18 +3684,18 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="space-y-3">
 <div>
   <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_reg_no">Registration No.</label>
-  <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-no" placeholder="Registration / Entity number" type="text"/>
+  <input class="w-full border border-slate-200/70 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-no" placeholder="Registration / Entity number" type="text"/>
   <p class="text-[9px] text-gray-400 mt-1 leading-snug" id="widget-regno-help"></p>
 </div>
 
 <div id="widget-regregion-wrap" class="hidden">
   <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" id="widget-regregion-label">State</label>
-  <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-region" placeholder="e.g., Delaware" type="text"/>
+  <input class="w-full border border-slate-200/70 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-region" placeholder="e.g., Delaware" type="text"/>
 </div>
 
 <div>
   <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_registry_link_optional">Registry link (optional)</label>
-  <input class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-url" placeholder="Official registry URL (optional)" type="text"/>
+  <input class="w-full border border-slate-200/70 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-url" placeholder="Official registry URL (optional)" type="text"/>
 </div>
 <button class="w-full bg-slate-800 text-white py-2.5 rounded-lg text-[10px] font-bold hover:bg-slate-900 transition" data-i18n="ui_submit_82b1fb" id="btn-widget-submit" onclick="submitVerificationRequest('widget')" type="button">
                             SUBMIT
@@ -3666,7 +3704,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="hidden bg-white rounded-2xl p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-visible group hover:shadow-[0_20px_50px_-20px_rgba(6,182,212,0.15)] transition-all duration-500" id="profile-analytics-card">
-<div class="absolute top-0 right-0 w-64 h-64 bg-cyan-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
+<div class="absolute top-0 right-0 w-64 h-64 bg-slate-50/50 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
 <div class="relative z-10">
 <div class="flex items-center justify-between mb-6">
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -3683,7 +3721,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="text-[10px] font-bold text-cyan-600 uppercase tracking-wide" data-i18n="ui_partners_fd6df3">Partners</div>
 <div class="text-[9px] text-gray-400 mt-1" data-i18n="ui_registered_companies_d7e0de">Registered Companies</div>
 </div>
-<div class="absolute left-0 bottom-full mb-3 w-64 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-xl shadow-2xl opacity-0 invisible group-hover/list:opacity-100 group-hover/list:visible transition-all duration-300 transform translate-y-2 group-hover/list:translate-y-0 z-50 overflow-hidden">
+<div class="absolute left-0 bottom-full mb-3 w-64 bg-white/95 backdrop-blur-xl border border-slate-200/70 rounded-xl shadow-2xl opacity-0 invisible group-hover/list:opacity-100 group-hover/list:visible transition-all duration-300 transform translate-y-2 group-hover/list:translate-y-0 z-50 overflow-hidden">
 <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
 <span class="text-[10px] font-bold text-gray-500 uppercase" data-i18n="ui_recent_viewers_31361c">Recent Viewers</span>
 <i class="fa-solid fa-eye text-cyan-400 text-xs"></i>
@@ -3691,7 +3729,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="max-h-48 overflow-y-auto custom-scrollbar p-1" id="stat-partner-list">
 <div class="p-3 text-center text-[10px] text-gray-400 italic" data-i18n="ui_no_views_yet_a35854">No views yet.</div>
 </div>
-<div class="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-gray-200 transform rotate-45"></div>
+<div class="absolute -bottom-2 left-8 w-4 h-4 bg-white border-b border-r border-slate-200/70 transform rotate-45"></div>
 </div>
 </div>
 <div class="bg-white border border-gray-100 p-4 rounded-xl text-center">
@@ -3757,24 +3795,24 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 overflow-y-auto">
 <div class="md:col-span-8">
-<div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden h-[72vh] md:h-[76vh] flex items-center justify-center">
+<div class="bg-gray-50 border border-slate-200/70 rounded-2xl overflow-hidden h-[72vh] md:h-[76vh] flex items-center justify-center">
 <img alt="Crop" class="max-w-full max-h-full block" id="cropper-image"/>
 </div>
 </div>
 <div class="md:col-span-4 space-y-4">
-<div class="bg-white border border-gray-200 rounded-2xl p-4">
+<div class="bg-white border border-slate-200/70 rounded-2xl p-4">
 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2" data-i18n="cropper_cancel">Preview</div>
-<div class="cropper-preview w-36 h-36 rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden" id="cropper-preview-square"></div>
-<div class="cropper-preview w-full rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden hidden" id="cropper-preview-rect" style="aspect-ratio: 16 / 9;"></div>
-<div class="cropper-preview w-36 h-36 rounded-full border border-gray-200 bg-gray-50 overflow-hidden hidden" id="cropper-preview-circle"></div>
+<div class="cropper-preview w-36 h-36 rounded-2xl border border-slate-200/70 bg-gray-50 overflow-hidden" id="cropper-preview-square"></div>
+<div class="cropper-preview w-full rounded-2xl border border-slate-200/70 bg-gray-50 overflow-hidden hidden" id="cropper-preview-rect" style="aspect-ratio: 16 / 9;"></div>
+<div class="cropper-preview w-36 h-36 rounded-full border border-slate-200/70 bg-gray-50 overflow-hidden hidden" id="cropper-preview-circle"></div>
 <div class="mt-4">
 <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider" data-i18n="cropper_save">Zoom</label>
 <input class="w-full mt-2" id="cropper-zoom" max="100" min="0" oninput="onCropperZoom(this.value)" type="range" value="0"/>
 </div>
 <div class="mt-4 flex items-center gap-2">
-<button class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" onclick="cropperRotate(-90)" type="button">
+<button class="flex-1 px-3 py-2 rounded-lg border border-slate-200/70 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" onclick="cropperRotate(-90)" type="button">
 <i class="fa-solid fa-rotate-left mr-1"></i><span data-i18n="ui_rotate_8d2de5">Rotate</span></button>
-<button class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" onclick="cropperReset()" type="button">
+<button class="flex-1 px-3 py-2 rounded-lg border border-slate-200/70 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" onclick="cropperReset()" type="button">
 <i class="fa-solid fa-arrow-rotate-left mr-1"></i><span data-i18n="ui_reset_526d68">Reset</span></button>
 </div>
 <p class="mt-4 text-[10px] text-gray-500 leading-relaxed" data-i18n="ui_tip_choose_a_clear_image_we_ll_c_d09c5d" id="cropper-tip">Tip: Choose a clear image. We'll crop it to fit.</p>
@@ -3782,7 +3820,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-end gap-3">
-<button class="px-5 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" data-i18n="btn_cancel" onclick="closeCropperModal()" type="button">
+<button class="px-5 py-2.5 rounded-xl border border-slate-200/70 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" data-i18n="btn_cancel" onclick="closeCropperModal()" type="button">
           Cancel
         </button>
 <button class="px-6 py-2.5 rounded-xl bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white text-xs font-bold shadow-lg shadow-cyan-500/25 transition" data-i18n="ui_crop_save_eee98f" onclick="confirmCropper()" type="button">
@@ -3797,7 +3835,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="py-8 px-8">
 <div class="flex justify-between items-start pb-4 border-b border-gray-100 mb-6">
 <div class="flex items-start gap-3">
-<div class="w-11 h-11 rounded-2xl bg-cyan-50/80 border border-cyan-100 grid place-items-center shadow-sm">
+<div class="w-11 h-11 rounded-2xl bg-slate-50/80 border border-cyan-100 grid place-items-center shadow-sm">
 <i class="fa-solid fa-paper-plane text-cyan-700"></i>
 </div>
 <div>
@@ -3809,34 +3847,34 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       </p>
 </div>
 </div>
-<button aria-label="Close" class="w-10 h-10 rounded-xl bg-white/80 border border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-red-500 grid place-items-center transition" data-i18n-aria="attr_close_d3d2e6" onclick="toggleModal('modal-join')" type="button">
+<button aria-label="Close" class="w-10 h-10 rounded-xl bg-white/80 border border-slate-200/70 hover:bg-gray-50 text-gray-400 hover:text-red-500 grid place-items-center transition" data-i18n-aria="attr_close_d3d2e6" onclick="toggleModal('modal-join')" type="button">
 <i class="fa-solid fa-xmark text-lg"></i>
 </button>
 </div>
 <form class="space-y-5" id="join-form" onsubmit="event.preventDefault(); handleJoin();">
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_company">Company Name</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-companyName" required="" type="text">
+<input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-companyName" required="" type="text">
 </input></div>
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_email">Email</label><input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-email" required="" type="email">
+<label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_email">Email</label><input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-email" required="" type="email">
 </input></div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_password">Password</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_password" id="join-password" placeholder="******" required="" type="password" autocomplete="new-password" oninput="validateJoinPasswords()">
+<input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_password" id="join-password" placeholder="******" required="" type="password" autocomplete="new-password" oninput="validateJoinPasswords()">
 </input></div>
 </div>
 
 <div>
   <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_confirm_password">Confirm Password</label>
-  <input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-password2" type="password" placeholder="******" required autocomplete="new-password" oninput="validateJoinPasswords()">
+  <input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-password2" type="password" placeholder="******" required autocomplete="new-password" oninput="validateJoinPasswords()">
   <p class="text-xs text-red-500 mt-2 hidden" id="join-password2-error"></p>
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_primary_sector">Primary Sector</label>
-<select class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" id="join-sector">
+<select class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" id="join-sector">
 <option data-i18n="join_sector_construction" value="construction">Construction &amp; Infrastructure</option>
 <option data-i18n="join_sector_energy" value="energy">Energy &amp; Oil/Gas</option>
 <option data-i18n="join_sector_mining" value="mining">Mining &amp; Metals</option>
@@ -3849,7 +3887,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="join_field_business_type">Business Type</label>
-<select class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" id="join-type">
+<select class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" id="join-type">
 <option data-i18n="join_type_operator" value="Operator">Operator / Asset Owner</option>
 <option data-i18n="join_type_contractor" value="EPC Contractor">EPC / General Contractor</option>
 <option data-i18n="join_type_subcontractor" value="Subcontractor">Subcontractor / Specialist</option>
@@ -3864,18 +3902,18 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="grid grid-cols-2 gap-4 mt-4">
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="join_field_country">Country</label>
-<select class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" id="join-country" required="">
+<select class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none cursor-pointer text-gray-700" id="join-country" required="">
 </select>
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_state_city">State/Province &amp; City</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_state_city" id="join-city" placeholder="e.g., San Francisco, CA" required="" type="text">
+<input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_state_city" id="join-city" placeholder="e.g., San Francisco, CA" required="" type="text">
 </input>
 <p class="text-[10px] text-gray-400 mt-1 leading-tight" data-i18n="help_state_city_join">Use city + state/province abbreviation when available.</p></div>
 </div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_services">Core Services</label>
-<textarea class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-services" placeholder="EPC, Excavation..." rows="2"></textarea>
+<textarea class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-services" placeholder="EPC, Excavation..." rows="2"></textarea>
 </div>
 <div class="flex items-start gap-3 mt-4 mb-2">
 <div class="flex items-center h-5">
@@ -3916,25 +3954,25 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <input id="input-target-company" name="target_company" type="hidden">
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_your_name">Your Name</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="name" required="" type="text">
+<input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="name" required="" type="text">
 </input></div>
 <div id="quote-email-row">
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="join_field_email">Email</label>
-<input id="quote-email-input" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="email" required="" type="email">
+<input id="quote-email-input" class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="email" required="" type="email">
 </input></div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="lbl_quote_subject">Subject</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none font-bold text-gray-700" data-i18n-placeholder="ph_quote_subject" id="quote-subject" name="subject" placeholder="e.g. Excavator Rental Request" required="" type="text">
+<input class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none font-bold text-gray-700" data-i18n-placeholder="ph_quote_subject" id="quote-subject" name="subject" placeholder="e.g. Excavator Rental Request" required="" type="text">
 </input></div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="ui_details_3ec365">Details</label>
-<textarea class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="message" required="" rows="4"></textarea>
+<textarea class="w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none" name="message" required="" rows="4"></textarea>
 </div>
 <div class="mt-3">
 <label class="block text-xs font-bold text-gray-600 mb-1.5">
 <i class="fa-solid fa-paperclip mr-1 text-gray-400"></i><span data-i18n="lbl_quote_file">Attach Document (Optional)</span></label>
 <div class="flex items-center gap-3">
-<label class="cursor-pointer bg-white border border-gray-200 rounded-lg px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-50 hover:border-BTrustOn-accent transition flex items-center gap-2">
+<label class="cursor-pointer bg-white border border-slate-200/70 rounded-lg px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-50 hover:border-BTrustOn-accent transition flex items-center gap-2">
 <span data-i18n="quote_select_file">Select File</span>
 <input class="hidden" id="quote-file" onchange="document.getElementById('quote-file-name').textContent = this.files[0]?.name || ''" type="file"/>
 </label>
@@ -3950,7 +3988,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 </div>
-<footer class="border-t border-gray-200 bg-white/80 mt-4">
+<footer class="border-t border-slate-200/70 bg-white/80 mt-4">
 <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
 <div class="flex items-center gap-2 shrink-0">
 <span class="font-header font-bold text-BTrustOn-primary text-sm">BTrustOn</span>
@@ -3971,7 +4009,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="relative bg-white/90 backdrop-blur-xl w-11/12 max-w-sm mx-auto rounded-2xl shadow-2xl border border-white/70 overflow-hidden animate-fade-in">
 <div class="px-6 py-5 border-b border-gray-100 flex items-start justify-between">
 <div class="flex items-start gap-3">
-<div class="w-11 h-11 rounded-2xl bg-white/80 border border-gray-200 grid place-items-center shadow-sm">
+<div class="w-11 h-11 rounded-2xl bg-white/80 border border-slate-200/70 grid place-items-center shadow-sm">
 <i class="fa-solid fa-key text-cyan-700"></i>
 </div>
 <div>
@@ -3979,7 +4017,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <p class="text-[11px] text-gray-500 mt-0.5" data-i18n="login_desc">Access your company dashboard.</p>
 </div>
 </div>
-<button aria-label="Close" class="w-10 h-10 rounded-xl bg-white/80 border border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-red-500 grid place-items-center transition" data-i18n-aria="attr_close_d3d2e6" onclick="closeLoginModal()" type="button">
+<button aria-label="Close" class="w-10 h-10 rounded-xl bg-white/80 border border-slate-200/70 hover:bg-gray-50 text-gray-400 hover:text-red-500 grid place-items-center transition" data-i18n-aria="attr_close_d3d2e6" onclick="closeLoginModal()" type="button">
 <i class="fa-solid fa-xmark text-lg"></i>
 </button>
 </div>
@@ -3995,7 +4033,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </input></div>
 <p class="text-xs text-red-500 hidden" id="login-error"></p>
 <div class="flex justify-end gap-2 pt-2">
-<button class="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-extrabold text-gray-600 hover:bg-gray-50 transition" onclick="closeLoginModal()" type="button"><span data-i18n="btn_cancel">Cancel</span></button>
+<button class="px-4 py-2.5 rounded-xl border border-slate-200/70 text-xs font-extrabold text-gray-600 hover:bg-gray-50 transition" onclick="closeLoginModal()" type="button"><span data-i18n="btn_cancel">Cancel</span></button>
 <button class="px-4 py-2.5 rounded-xl bg-BTrustOn-primary hover:bg-BTrustOn-accent text-white text-xs font-extrabold shadow-lg shadow-slate-900/15 hover:shadow-cyan-500/20 transition" type="submit"><span data-i18n="btn_login">Login</span></button>
 </div>
 
@@ -4218,7 +4256,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div>
 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_proj_cover_input">Cover Image</label>
 <div class="flex items-center gap-3">
-<div class="relative w-16 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden group" id="cover-preview">
+<div class="relative w-16 h-12 rounded-lg bg-gray-100 border border-slate-200/70 flex items-center justify-center overflow-hidden group" id="cover-preview">
 <i class="fa-solid fa-image text-gray-400"></i>
 <button class="hidden absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer" data-i18n-title="attr_remove_cover_1bbd4b" onclick="removeProjectCover()" title="Remove Cover" type="button">
 <i class="fa-solid fa-trash text-xs"></i>
@@ -4320,7 +4358,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </a>
 </div>
 <div class="pt-4 flex gap-3">
-<button class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 transition" data-i18n="post_cancel" onclick="closeCertModal()" type="button">
+<button class="flex-1 px-4 py-3 rounded-xl border border-slate-200/70 text-gray-600 font-bold text-xs hover:bg-gray-50 transition" data-i18n="post_cancel" onclick="closeCertModal()" type="button">
             CANCEL
           </button>
 <button class="flex-1 px-4 py-3 rounded-xl bg-BTrustOn-accent text-white font-bold text-xs hover:bg-BTrustOn-darkAccent transition shadow-lg shadow-cyan-500/20" data-i18n="ui_save_certificate_ab3f4d" type="submit">
@@ -4343,7 +4381,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
         Do you really want to delete this item? This process cannot be undone.
       </p>
 <div class="flex gap-3">
-<button class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50 transition" data-i18n="post_cancel" onclick="closeDeleteModal()">
+<button class="flex-1 px-4 py-3 rounded-xl border border-slate-200/70 text-gray-600 font-bold text-xs hover:bg-gray-50 transition" data-i18n="post_cancel" onclick="closeDeleteModal()">
           CANCEL
         </button>
 <button class="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition shadow-lg shadow-red-500/30" data-i18n="ui_yes_delete_2aefa7" id="btn-confirm-delete">
@@ -4356,7 +4394,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-[9990] hidden transition-opacity opacity-0" id="inbox-overlay" onclick="toggleInbox()"></div>
 <div class="flex flex-col" id="inbox-panel">
 <div class="bg-gradient-to-r from-BTrustOn-primary to-slate-800 flex flex-col pt-6 px-6 shadow-lg relative overflow-hidden shrink-0 z-20">
-<div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+<div class="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 <div class="relative z-10 flex justify-between items-center mb-4">
 <div>
 <h2 class="text-white font-header text-xl tracking-wide flex items-center gap-2"><span data-i18n="ui_messages_b47a73">MESSAGES</span><span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-glow hidden" id="inbox-badge-count">0</span>
@@ -4381,20 +4419,20 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2 bg-slate-50/50" id="inbox-content">
 </div>
-<div class="p-4 border-t border-gray-200 bg-white/90 backdrop-blur-sm grid grid-cols-2 gap-3 shrink-0">
-<button class="py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-[10px] font-bold hover:bg-white hover:border-BTrustOn-accent hover:text-BTrustOn-accent transition flex items-center justify-center gap-2 group" onclick="markAllInboxRead()">
+<div class="p-4 border-t border-slate-200/70 bg-white/90 backdrop-blur-sm grid grid-cols-2 gap-3 shrink-0">
+<button class="py-3 rounded-xl bg-gray-50 border border-slate-200/70 text-gray-600 text-[10px] font-bold hover:bg-white hover:border-BTrustOn-accent hover:text-BTrustOn-accent transition flex items-center justify-center gap-2 group" onclick="markAllInboxRead()">
 <i class="fa-solid fa-check-double text-gray-400 group-hover:text-BTrustOn-accent"></i><span data-i18n="ui_mark_read_00e098">MARK READ</span></button>
-<button class="py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-[10px] font-bold hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition flex items-center justify-center gap-2 group" onclick="deleteAllInbox()">
+<button class="py-3 rounded-xl bg-gray-50 border border-slate-200/70 text-gray-600 text-[10px] font-bold hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition flex items-center justify-center gap-2 group" onclick="deleteAllInbox()">
 <i class="fa-solid fa-trash text-gray-400 group-hover:text-red-500"></i><span data-i18n="ui_delete_all_0761dd">DELETE ALL</span></button>
 </div>
 </div>
 <div class="hidden-view fixed inset-0 z-[10000] bg-slate-50 flex flex-col h-[100dvh]" id="view-message">
-<div class="shrink-0 bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex justify-between items-center shadow-sm z-20">
+<div class="shrink-0 bg-white border-b border-slate-200/70 px-4 md:px-6 py-3 flex justify-between items-center shadow-sm z-20">
 <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
 <button class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition" onclick="closeMessageView()">
 <i class="fa-solid fa-arrow-left"></i>
 </button>
-<div class="w-10 h-10 rounded-lg bg-cyan-50 border border-cyan-100 grid place-items-center text-lg font-bold text-BTrustOn-accent shrink-0" data-i18n="ui_a_7fc562" id="msg-logo">
+<div class="w-10 h-10 rounded-lg bg-slate-50 border border-cyan-100 grid place-items-center text-lg font-bold text-BTrustOn-accent shrink-0" data-i18n="ui_a_7fc562" id="msg-logo">
                 A
             </div>
 <div class="min-w-0">
@@ -4407,10 +4445,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="flex gap-2 shrink-0">
-<button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-BTrustOn-accent hover:bg-cyan-50 hover:border-BTrustOn-accent transition flex items-center justify-center" data-i18n-title="attr_mark_unread_94324c" onclick="markAsUnreadCurrentMessage()" title="Mark Unread" data-i18n-title="inbox_mark_unread">
+<button class="w-9 h-9 rounded-full border border-slate-200/70 text-gray-400 hover:text-BTrustOn-accent hover:bg-slate-50 hover:border-BTrustOn-accent transition flex items-center justify-center" data-i18n-title="attr_mark_unread_94324c" onclick="markAsUnreadCurrentMessage()" title="Mark Unread" data-i18n-title="inbox_mark_unread">
 <i class="fa-solid fa-envelope-open text-sm"></i>
 </button>
-<button class="w-9 h-9 rounded-full border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" data-i18n-title="attr_delete_conversation_90dd01" onclick="deleteCurrentMessage()" title="Delete Conversation" data-i18n-title="inbox_delete_conversation">
+<button class="w-9 h-9 rounded-full border border-slate-200/70 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition flex items-center justify-center" data-i18n-title="attr_delete_conversation_90dd01" onclick="deleteCurrentMessage()" title="Delete Conversation" data-i18n-title="inbox_delete_conversation">
 <i class="fa-solid fa-trash-can text-sm"></i>
 </button>
 </div>
@@ -4420,8 +4458,8 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span class="bg-gray-200 text-gray-600 text-[10px] px-3 py-1 rounded-full uppercase tracking-wide font-bold" data-i18n="ui_loading_chat_2c1244">Loading Chat...</span>
 </div>
 </div>
-<div class="shrink-0 bg-white border-t border-gray-200 p-3 md:p-4 z-20">
-<div class="hidden mb-2 flex items-center justify-between bg-cyan-50 border border-cyan-100 rounded-lg p-2 mx-1" id="attachment-preview">
+<div class="shrink-0 bg-white border-t border-slate-200/70 p-3 md:p-4 z-20">
+<div class="hidden mb-2 flex items-center justify-between bg-slate-50 border border-cyan-100 rounded-lg p-2 mx-1" id="attachment-preview">
 <div class="flex items-center gap-2 overflow-hidden">
 <div class="w-8 h-8 rounded bg-white flex items-center justify-center text-BTrustOn-accent shadow-sm shrink-0">
 <i class="fa-solid fa-file-lines"></i>
@@ -4437,10 +4475,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="flex items-end gap-2 md:gap-3 max-w-5xl mx-auto">
 <input id="reply-file-input" onchange="handleFileSelect(this)" style="display: none;" type="file">
-<button class="h-10 w-10 md:w-12 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center border border-gray-200 shrink-0" onclick="document.getElementById('reply-file-input').click()" type="button">
+<button class="h-10 w-10 md:w-12 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center border border-slate-200/70 shrink-0" onclick="document.getElementById('reply-file-input').click()" type="button">
 <i class="fa-solid fa-paperclip text-lg"></i>
 </button>
-<textarea class="flex-1 bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:bg-white focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition resize-none max-h-32 min-h-[44px]" id="reply-input" data-i18n-placeholder="inbox_type_message" placeholder="" rows="1"></textarea>
+<textarea class="flex-1 bg-gray-50 border border-slate-200/70 text-gray-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:bg-white focus:border-BTrustOn-accent focus:ring-1 focus:ring-BTrustOn-accent transition resize-none max-h-32 min-h-[44px]" id="reply-input" data-i18n-placeholder="inbox_type_message" placeholder="" rows="1"></textarea>
 <button class="h-10 px-4 md:px-6 bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white rounded-xl font-bold text-xs tracking-wide transition shadow-lg shadow-cyan-500/20 shrink-0 flex items-center gap-2" onclick="sendReply()">
 <span data-i18n="ui_send_548e51">SEND</span>
 <i class="fa-solid fa-paper-plane"></i>
@@ -4466,7 +4504,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <div class="max-w-6xl mx-auto px-4 -mt-6">
-<div class="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+<div class="bg-white rounded-xl shadow-xl border border-slate-200/70 overflow-hidden">
 <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
 <h3 class="font-bold text-gray-700" data-i18n="ui_verification_requests_443d20">Verification Requests</h3>
 <button class="text-xs text-BTrustOn-accent font-bold hover:underline" onclick="loadAdminData(); loadAdminClaims();">
@@ -4474,7 +4512,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="overflow-x-auto">
 <table class="w-full text-left text-sm text-gray-600">
-<thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-gray-200">
+<thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-slate-200/70">
 <tr>
 <th class="px-6 py-4" data-i18n="ui_company_1c76cb">Company</th>
 <th class="px-6 py-4" data-i18n="ui_reg_no_info">Registration / Registry</th>
@@ -4492,7 +4530,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 
 <!-- CLAIM REQUESTS (Ownership) -->
-<div class="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden mt-6">
+<div class="bg-white rounded-xl shadow-xl border border-slate-200/70 overflow-hidden mt-6">
   <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
     <h3 class="font-bold text-gray-700" data-i18n="ui_claim_requests_title">Claim Requests</h3>
     <div class="flex items-center gap-3">
@@ -4507,7 +4545,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
   </div>
   <div class="overflow-x-auto">
     <table class="w-full text-left text-sm text-gray-600">
-      <thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-gray-200">
+      <thead class="bg-gray-50 text-xs uppercase font-bold text-gray-400 border-b border-slate-200/70">
         <tr>
           <th class="px-6 py-4" data-i18n="ui_company_1c76cb">Company</th>
           <th class="px-6 py-4" data-i18n="ui_claim_requester">Requester</th>
@@ -4625,19 +4663,19 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div>
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-2" data-i18n="post_choose_area">Select area</div>
 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-<button class="upd-area-btn px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="general" type="button">
+<button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="general" type="button">
 <i class="fa-solid fa-bullhorn text-slate-500"></i>
 <span data-i18n="post_area_general">General</span>
 </button>
-<button class="upd-area-btn px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="projects" type="button">
+<button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="projects" type="button">
 <i class="fa-solid fa-diagram-project text-cyan-500"></i>
 <span data-i18n="post_area_projects">Projects</span>
 </button>
-<button class="upd-area-btn px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="certificates" type="button">
+<button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="certificates" type="button">
 <i class="fa-solid fa-certificate text-amber-500"></i>
 <span data-i18n="post_area_certs">Certificates</span>
 </button>
-<button class="upd-area-btn px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="assets" type="button">
+<button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="assets" type="button">
 <i class="fa-solid fa-boxes-stacked text-emerald-500"></i>
 <span data-i18n="post_area_assets">Assets</span>
 </button>
@@ -4647,7 +4685,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div id="upd-entity-wrap">
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-2" data-i18n="post_select_item">Select item</div>
 <div class="relative">
-<select class="w-full appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-3 pl-3 pr-10 rounded-xl shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition" id="upd-entity">
+<select class="w-full appearance-none bg-white border border-slate-200/70 text-gray-700 text-xs font-bold py-3 pl-3 pr-10 rounded-xl shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition" id="upd-entity">
 <option data-i18n="ui_26aeab" disabled="" selected="" value="">—</option>
 </select>
 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -4660,7 +4698,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div>
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-2" data-i18n="post_select_update">Update type</div>
 <div class="relative">
-<select class="w-full appearance-none bg-white border border-gray-200 text-gray-700 text-xs font-bold py-3 pl-3 pr-10 rounded-xl shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition" id="upd-signal">
+<select class="w-full appearance-none bg-white border border-slate-200/70 text-gray-700 text-xs font-bold py-3 pl-3 pr-10 rounded-xl shadow-sm hover:border-BTrustOn-accent focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent cursor-pointer transition" id="upd-signal">
 <option data-i18n="ui_26aeab" disabled="" selected="" value="">—</option>
 </select>
 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -4674,14 +4712,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider" data-i18n="field_note">Additional Notes</div>
 <div class="text-[10px] text-gray-400"><span id="upd-note-count">0</span>/160</div>
 </div>
-<textarea class="w-full border border-gray-200 rounded-xl p-3 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none" id="upd-note" maxlength="160" placeholder="" rows="3"></textarea>
+<textarea class="w-full border border-slate-200/70 rounded-xl p-3 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none" id="upd-note" maxlength="160" placeholder="" rows="3"></textarea>
 <div class="mt-1 text-[10px] text-gray-400" data-i18n="post_note_hint">Max 160 characters</div>
 </div>
 <!-- My recent updates (manage) -->
 <div class="mt-4 pt-4 border-t border-gray-100">
 <div class="flex items-center justify-between">
 <div class="text-[12px] font-semibold text-gray-700" data-i18n="post_my_recent">Your recent updates</div>
-<button class="text-[11px] px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition" onclick="loadMyRecentUpdates()" type="button">
+<button class="text-[11px] px-2.5 py-1 rounded-lg border border-slate-200/70 text-gray-600 hover:bg-gray-50 transition" onclick="loadMyRecentUpdates()" type="button">
 <i class="fa-solid fa-rotate-right mr-1"></i><span data-i18n="refresh">Refresh</span>
 </button>
 </div>
@@ -4690,7 +4728,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <!-- Actions -->
 <div class="flex items-center justify-end gap-2 pt-2">
-<button class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-extrabold text-gray-600 transition" data-i18n="post_cancel" onclick="openPostUpdateModal()">CANCEL</button>
+<button class="px-4 py-2 rounded-xl border border-slate-200/70 hover:bg-gray-50 text-xs font-extrabold text-gray-600 transition" data-i18n="post_cancel" onclick="openPostUpdateModal()">CANCEL</button>
 <button class="px-4 py-2 rounded-xl bg-BTrustOn-accent hover:bg-BTrustOn-darkAccent text-white text-xs font-extrabold transition shadow-lg shadow-cyan-500/20" data-i18n="post_publish" id="btn-publish-update" onclick="submitCompanyUpdate()">PUBLISH</button>
 </div>
 </div>
@@ -4754,7 +4792,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div class="text-xs font-extrabold text-BTrustOn-primary uppercase tracking-wider" data-i18n="about_how_title">How BTrustOn works</div>
 <div class="mt-1 text-[12px] text-gray-500" data-i18n="about_how_sub">A simple workflow designed for procurement speed and credibility.</div>
 </div>
-<div class="hidden md:block text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-white/70 border border-gray-200 text-gray-600" data-i18n="about_how_tagline">
+<div class="hidden md:block text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-white/70 border border-slate-200/70 text-gray-600" data-i18n="about_how_tagline">
             Minimal. Structured. B2B.
           </div>
 </div>
@@ -4787,7 +4825,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </ul>
 </div>
 <div class="flex flex-col sm:flex-row gap-3 justify-end">
-<button class="px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-extrabold text-gray-700 transition" data-i18n="about_cta_free" onclick="toggleModal('modal-about'); openJoinModal('free');">
+<button class="px-5 py-2.5 rounded-xl border border-slate-200/70 hover:bg-gray-50 text-xs font-extrabold text-gray-700 transition" data-i18n="about_cta_free" onclick="toggleModal('modal-about'); openJoinModal('free');">
           Start Free
         </button>
 <button class="px-5 py-2.5 rounded-xl bg-BTrustOn-primary hover:bg-BTrustOn-accent text-white text-xs font-extrabold transition shadow-lg shadow-cyan-500/15" data-i18n="about_cta_pro" onclick="toggleModal('modal-about'); openJoinModal('pro');">
@@ -4819,10 +4857,10 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <div>
 <div class="text-[10px] font-extrabold tracking-widest uppercase text-gray-500" data-i18n="pricing_plan_starter">Starter</div>
 <div class="mt-1 text-xl font-header font-extrabold text-slate-900" data-i18n="pricing_plan_free">Free</div>
-<div class="mt-1 inline-flex items-center gap-2 text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-600">
+<div class="mt-1 inline-flex items-center gap-2 text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-gray-50 border border-slate-200/70 text-gray-600">
 <i class="fa-solid fa-circle-check text-[11px] text-gray-500"></i><span data-i18n="pricing_no_payment">No payment</span></div>
 </div>
-<div class="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-200 grid place-items-center">
+<div class="w-12 h-12 rounded-2xl bg-gray-50 border border-slate-200/70 grid place-items-center">
 <i class="fa-solid fa-leaf text-gray-600 text-[14px]"></i>
 </div>
 </div>
@@ -4833,7 +4871,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <li class="flex gap-2"><span class="text-gray-400" data-i18n="ui_53fe08">•</span><span data-i18n="pricing_free_b4">Limited uploads &amp; features compared to Pro.</span></li>
 </ul>
 <div class="mt-6 flex justify-end">
-<button class="px-5 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-extrabold text-gray-700 transition" data-i18n="about_cta_free" onclick="toggleModal('modal-pricing'); openJoinModal('free');">
+<button class="px-5 py-2.5 rounded-xl border border-slate-200/70 hover:bg-gray-50 text-xs font-extrabold text-gray-700 transition" data-i18n="about_cta_free" onclick="toggleModal('modal-pricing'); openJoinModal('free');">
                 Start Free
               </button>
 </div>
@@ -5088,7 +5126,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 <div class="p-6">
 <div class="flex items-center gap-2 mb-4">
-<div class="w-10 h-10 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-700 shrink-0">
+<div class="w-10 h-10 rounded-2xl bg-slate-50 border border-cyan-100 flex items-center justify-center text-cyan-700 shrink-0">
 <i class="fa-solid fa-gem text-[12px]"></i>
 </div>
 <div class="text-xs font-extrabold text-slate-900" data-i18n="upgrade_benefits_title">What you get with Pro</div>
@@ -5134,7 +5172,7 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <!-- Offer -->
 <div class="rounded-2xl border border-[rgba(15,23,42,.10)] bg-white/70 backdrop-blur px-4 py-3 mb-6 shadow-glass">
 <div class="flex items-center gap-3">
-<div class="w-9 h-9 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-700 shrink-0">
+<div class="w-9 h-9 rounded-2xl bg-slate-50 border border-cyan-100 flex items-center justify-center text-cyan-700 shrink-0">
 <i class="fa-solid fa-lock text-[12px] leading-none"></i>
 </div>
 <div class="min-w-0">
@@ -5944,6 +5982,7 @@ async function partnerLogout() {
     if (typeof messageChannel !== 'undefined' && messageChannel) {
         supabaseClient.removeChannel(messageChannel);
     }
+    try { if (typeof profilesListsSub !== 'undefined' && profilesListsSub) { supabaseClient.removeChannel(profilesListsSub); profilesListsSub = null; } } catch(e) {}
 
     // 1. Supabase oturumunu kapat
     await supabaseClient.auth.signOut();
@@ -6903,13 +6942,7 @@ function renderHomeUpdates(list) {
         <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-full bton-upd-bar ${_signalMeta(area, templateCode).bar}"></div>
 
         <div class="relative flex items-start gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm overflow-hidden shrink-0 grid place-items-center">
-            ${logo ? `
-              <img src="${logo}" class="w-full h-full object-cover" alt="logo" loading="lazy" decoding="async" referrerpolicy="no-referrer"
-                onerror="this.classList.add('hidden'); if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
-              <span class="text-sm font-extrabold text-slate-500 hidden">${letter}</span>
-            ` : `<span class="text-sm font-extrabold text-slate-500">${letter}</span>`}
-          </div>
+          ${btRenderLogoHTML(logo, companyName, "w-10 h-10", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0")}
 
           <div class="min-w-0 flex-1 flex flex-col">
             <div class="flex items-start justify-between gap-2">
@@ -7893,7 +7926,7 @@ async function openPostUpdateModal() {
     const area = btn.getAttribute("data-area");
     const active = (area === __updArea);
     btn.classList.toggle("border-BTrustOn-accent", active);
-    btn.classList.toggle("bg-cyan-50/60", active);
+    btn.classList.toggle("bg-slate-50/60", active);
   });
 
   // reset selects
@@ -7920,7 +7953,7 @@ async function openPostUpdateModal() {
         const a2 = b2.getAttribute("data-area");
         const act = (a2 === __updArea);
         b2.classList.toggle("border-BTrustOn-accent", act);
-        b2.classList.toggle("bg-cyan-50/60", act);
+        b2.classList.toggle("bg-slate-50/60", act);
       });
       _populateUpdateEntitySelect(__updArea);
       _populateUpdateSignalSelect();
@@ -8028,7 +8061,7 @@ function _renderMyRecentUpdatesList(rows){
             </div>
             <button type="button"
               onclick="deleteCompanyUpdate('${escapeHtml(u.id)}')"
-              class="shrink-0 text-[11px] px-2.5 py-1.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+              class="shrink-0 text-[11px] px-2.5 py-1.5 rounded-xl border border-slate-200/70 text-gray-700 hover:bg-gray-50 transition">
               <i class="fa-regular fa-trash-can mr-1"></i>${(currentLang==="tr") ? "Sil" : "Delete"}
             </button>
           </div>
@@ -8170,7 +8203,7 @@ document.addEventListener("click", (e) => {
     const a = b.getAttribute("data-area");
     const active = (a === __updArea);
     b.classList.toggle("border-BTrustOn-accent", active);
-    b.classList.toggle("bg-cyan-50/60", active);
+    b.classList.toggle("bg-slate-50/60", active);
   });
 
   _populateUpdateEntitySelect(__updArea);
@@ -8576,8 +8609,8 @@ function __renderAssetFileList(){
       : (t("lbl_asset_file_input") || "Attach File (Max 5MB)");
   }
   if(labelEl){
-    if(total) labelEl.classList.add("border-BTrustOn-accent", "bg-cyan-50");
-    else labelEl.classList.remove("border-BTrustOn-accent", "bg-cyan-50");
+    if(total) labelEl.classList.add("border-BTrustOn-accent", "bg-slate-50");
+    else labelEl.classList.remove("border-BTrustOn-accent", "bg-slate-50");
   }
   if(removeBtn){
     if(total) removeBtn.classList.remove("hidden");
@@ -8844,7 +8877,7 @@ function renderExistingGalleryPreviews() {
 
     tempExistingGalleryUrls.forEach(url => {
         const div = document.createElement("div");
-        div.className = "relative flex-shrink-0 w-12 h-12 rounded border border-gray-200 overflow-hidden group";
+        div.className = "relative flex-shrink-0 w-12 h-12 rounded border border-slate-200/70 overflow-hidden group";
         div.innerHTML = `
             <img src="${url}" class="w-full h-full object-cover">
             <button type="button" onclick="removeExistingGalleryImage('${url}')" class="absolute top-0 right-0 bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-bl text-[8px] hover:bg-red-600 transition">
@@ -9364,7 +9397,7 @@ function getTrustBadge(company) {
   if (!isCompanyVerified(company)) return "";
   const tip = (typeof escapeHtml === "function") ? escapeHtml(_verifiedTipText()) : _verifiedTipText();
   return `
-    <span class="bg-cyan-50 text-cyan-800 border border-cyan-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm bton-tip" data-tip="${tip}">
+    <span class="bg-slate-50 text-cyan-800 border border-cyan-200 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm bton-tip" data-tip="${tip}">
       <i class="fa-solid fa-circle-check text-cyan-600"></i>
       <span>${t("badge_verified") || "VERIFIED"}</span>
     </span>
@@ -9379,17 +9412,60 @@ function getVerifiedMark(company){
   return `<span class="bton-tip" data-tip="${tip}"><i class="fa-solid fa-circle-check text-cyan-500 text-[13px] ml-1 align-middle bton-verified-icon"></i></span>`;
 }
 
+
+/* =========================
+   Premium logo fallback
+   ========================= */
+function btGetInitials(name){
+  const s = String(name || "").trim();
+  if (!s) return "C";
+  const parts = s.split(/\s+/).filter(Boolean);
+  const a = (parts[0] || "").charAt(0);
+  const b = (parts.length > 1 ? (parts[parts.length-1] || "").charAt(0) : (parts[0] || "").charAt(1));
+  return (a + (b || "")).toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,2) || "C";
+}
+window.__btLogoError = function(img){
+  try{
+    img.classList.add("hidden");
+    const wrap = img.closest(".bt-logo-wrap");
+    if (wrap){
+      const fb = wrap.querySelector(".bt-logo-fallback");
+      if (fb) fb.classList.remove("hidden");
+    }else if (img.nextElementSibling){
+      img.nextElementSibling.classList.remove("hidden");
+    }
+  }catch(e){}
+};
+function btRenderLogoHTML(url, name, sizeClass, radiusClass, extraClass){
+  const initials = btGetInitials(name);
+  const hasUrl = !!(url && String(url).trim());
+  const sc = String(sizeClass||"");
+  const font = sc.includes("w-8") ? 11 : (sc.includes("w-12") ? 13 : 12);
+  return `
+    <div class="${(sizeClass||'w-10 h-10')} ${(radiusClass||'rounded-2xl')} bt-logo-wrap ${(extraClass||'')}" style="--bt-logo-font:${font}px;">
+      ${hasUrl ? `<img src="${url}" alt="" class="bt-logo-img" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="window.__btLogoError(this)">` : ``}
+      <div class="bt-logo-fallback ${hasUrl ? 'hidden' : ''}"><span class="bt-logo-mono">${initials}</span></div>
+    </div>
+  `;
+}
+function btWireLogoFallbacks(root){
+  try{
+    (root || document).querySelectorAll(".bt-logo-wrap img").forEach(img=>{
+      if (img.dataset.btLogoWired) return;
+      img.dataset.btLogoWired = "1";
+      img.addEventListener("error", ()=>window.__btLogoError(img));
+    });
+  }catch(e){}
+}
+document.addEventListener("DOMContentLoaded", ()=>btWireLogoFallbacks(document));
+
 function getCompanyLogoThumb(company){
   const url = company?.logo_url;
   const name = String(company?.name || "").trim();
-  const letter = (name ? name[0].toUpperCase() : "C");
-  if (url){
-    return `<img src="${url}" alt="Logo" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">`;
-  }
-  return `<div class="w-full h-full bg-slate-50 flex items-center justify-center">
-            <span class="text-sm font-extrabold text-slate-500">${letter}</span>
-          </div>`;
+  // Returns a full wrapper (consistent everywhere)
+  return btRenderLogoHTML(url, name, "w-full h-full", "rounded-none", "");
 }
+
 
 // 👇 YENİ FONKSİYON: Şirket Tipine Göre Rozet Üretir 👇
     /* --- GÜNCELLENMİŞ: getCompanyTypeBadge (YENİ TİPLER) --- */
@@ -9398,7 +9474,7 @@ function getCompanyTypeBadge(rawType) {
   let label = rawType;
   let icon = "fa-building";
   // Varsayılan Renk (Gri)
-  let colorClass = "bg-gray-50 text-gray-500 border-gray-200";
+  let colorClass = "bg-gray-50 text-gray-500 border-slate-200/70";
 
   // 1. Üreticiler (Mor)
   if (type.includes("manufacturer") || type.includes("oem")) {
@@ -10325,7 +10401,7 @@ function renderAssetsCards(company, isMyProfile){
 
 
     const viewAction = !isMyProfile ? `
-      <button onclick="event.stopPropagation(); openAssetViewer(${a.id})" class="bton-view-hint inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[11px] font-extrabold text-slate-700 hover:bg-cyan-50/50 hover:border-cyan-200 hover:text-BTrustOn-primary" title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
+      <button onclick="event.stopPropagation(); openAssetViewer(${a.id})" class="bton-view-hint inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50/50 hover:border-cyan-200 hover:text-BTrustOn-primary" title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
         ${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}
       </button>
     ` : ``;
@@ -10657,10 +10733,10 @@ function _bindCertControlsOnce() {
       window.__certUI.filter = btn.getAttribute("data-filter") || "all";
       // Visual active state (premium)
       controls.querySelectorAll(".cert-filter-btn").forEach(b => {
-        b.classList.remove("bg-cyan-50", "border-cyan-200", "text-BTrustOn-primary", "shadow-md", "ring-1", "ring-cyan-100");
+        b.classList.remove("bg-slate-50", "border-cyan-200", "text-BTrustOn-primary", "shadow-md", "ring-1", "ring-cyan-100");
         try { b.setAttribute("aria-pressed", "false"); } catch(_) {}
       });
-      btn.classList.add("bg-cyan-50", "border-cyan-200", "text-BTrustOn-primary", "shadow-md", "ring-1", "ring-cyan-100");
+      btn.classList.add("bg-slate-50", "border-cyan-200", "text-BTrustOn-primary", "shadow-md", "ring-1", "ring-cyan-100");
       try { btn.setAttribute("aria-pressed", "true"); } catch(_) {}
 try { if (selectedCompany) renderCertificates(selectedCompany); } catch(e) {}
     });
@@ -10845,7 +10921,7 @@ function renderCertificates(company) {
       const isImg = lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp");
       if (isImg) {
         thumb = `
-          <div class="w-12 h-12 rounded-2xl overflow-hidden border border-gray-200 shadow-sm shrink-0 bg-white">
+          <div class="w-12 h-12 rounded-2xl overflow-hidden border border-slate-200/70 shadow-sm shrink-0 bg-white">
             <img src="${fileUrl}" class="w-full h-full object-cover">
           </div>`;
       } else {
@@ -10893,7 +10969,7 @@ function renderCertificates(company) {
            <i class="fa-regular fa-file"></i> ${t("btn_view") || "View"} </button>`;
 const ownerActions = isOwner ? `
       <div class="flex gap-2">
-        <button type="button" onclick="openCertModal(${id})" class="w-9 h-9 rounded-xl bg-cyan-50 text-BTrustOn-accent border border-cyan-100 hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="${t("ui_edit") || "Edit"}">
+        <button type="button" onclick="openCertModal(${id})" class="w-9 h-9 rounded-xl bg-slate-50 text-BTrustOn-accent border border-cyan-100 hover:bg-BTrustOn-accent hover:text-white flex items-center justify-center transition shadow-sm" title="${t("ui_edit") || "Edit"}">
           <i class="fa-solid fa-pen text-[11px]"></i>
         </button>
         <button type="button" onclick="deleteCert(${id}, '${String(name).replace(/'/g, "\\'")}')" class="w-9 h-9 rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white flex items-center justify-center transition shadow-sm" title="${t("ui_delete") || "Delete"}">
@@ -11374,13 +11450,11 @@ safeProfiles.forEach(p => {
         const logoLetter = name.charAt(0).toUpperCase();
 
         const item = document.createElement("div");
-        item.className = "flex items-center gap-3 p-2 hover:bg-cyan-50 rounded-lg transition cursor-pointer border-b border-gray-50 last:border-0";
+        item.className = "flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition cursor-pointer border-b border-gray-50 last:border-0";
         item.onclick = () => openProfile(p.id);
 
         item.innerHTML = `
-            <div class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-BTrustOn-accent font-bold text-xs shadow-sm shrink-0 overflow-hidden">
-                ${p.logo_url ? `<img src="${p.logo_url}" class="w-full h-full object-cover">` : logoLetter}
-            </div>
+            ${btRenderLogoHTML(p.logo_url, name, "w-8 h-8", "rounded-lg", "bg-white border border-slate-200/70 flex items-center justify-center text-BTrustOn-accent font-bold text-xs shadow-sm shrink-0 overflow-hidden")}
             <div class="min-w-0 flex-1">
                 <div class="text-[11px] font-bold text-gray-700 truncate">${name}</div>
                 <div class="text-[9px] text-gray-400 flex justify-between">
@@ -11907,9 +11981,9 @@ if (servicesGrid) {
 
   if (tags.length === 0) {
     servicesGrid.innerHTML = `
-      <div class="w-full py-6 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50">
+      <div class="w-full py-6 text-center border border-dashed border-slate-200/70 rounded-2xl bg-gray-50">
         <p class="text-sm text-gray-400 italic">${t("svc_no_tags") || "No service tags yet."}</p>
-        ${isOwner ? `<button type="button" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-cyan-50 hover:border-cyan-200 transition" onclick="editMyProfile('section-services')">
+        ${isOwner ? `<button type="button" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200/70 text-xs font-bold text-gray-600 hover:bg-slate-50 hover:border-cyan-200 transition" onclick="editMyProfile('section-services')">
           <i class="fa-solid fa-pen"></i> ${t("ui_add_services_btn_3d0ce2") || "Add services"}
         </button>` : ``}
       </div>`;
@@ -11929,7 +12003,7 @@ if (servicesGrid) {
     card.innerHTML = `
       <div class="flex items-center justify-between gap-3 mb-4">
         <div class="flex items-center gap-2 shrink-0">
-          <span class="w-8 h-8 rounded-xl bg-cyan-50 border border-cyan-100 text-BTrustOn-accent flex items-center justify-center">
+          <span class="w-8 h-8 rounded-xl bg-slate-50 border border-cyan-100 text-BTrustOn-accent flex items-center justify-center">
             <i class="fa-solid fa-layer-group"></i>
           </span>
           <div class="min-w-0">
@@ -11952,7 +12026,7 @@ if (servicesGrid) {
           <div id="svc-featured-wrap" class="flex flex-wrap gap-2">
             ${featuredVisible.map((s) => `
               <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 backdrop-blur-sm border border-[rgba(6,182,212,.20)]">
-                <span class="w-5 h-5 rounded-lg bg-cyan-50 text-BTrustOn-accent border border-cyan-100 flex items-center justify-center">
+                <span class="w-5 h-5 rounded-lg bg-slate-50 text-BTrustOn-accent border border-cyan-100 flex items-center justify-center">
                   <i class="fa-solid fa-star text-[10px]"></i>
                 </span>
                 <span class="text-xs font-extrabold text-gray-700">${svcEscape(svcDisplayLabel(s))}</span>
@@ -11963,7 +12037,7 @@ if (servicesGrid) {
           ${featuredMany ? `<div id="svc-featured-hidden-wrap" class="flex flex-wrap gap-2 mt-2 hidden">
             ${featuredHidden.map((s) => `
               <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 backdrop-blur-sm border border-[rgba(6,182,212,.20)]">
-                <span class="w-5 h-5 rounded-lg bg-cyan-50 text-BTrustOn-accent border border-cyan-100 flex items-center justify-center">
+                <span class="w-5 h-5 rounded-lg bg-slate-50 text-BTrustOn-accent border border-cyan-100 flex items-center justify-center">
                   <i class="fa-solid fa-star text-[10px]"></i>
                 </span>
                 <span class="text-xs font-extrabold text-gray-700">${svcEscape(svcDisplayLabel(s))}</span>
@@ -11985,7 +12059,7 @@ if (servicesGrid) {
 
           <div id="svc-other-wrap" class="flex flex-wrap gap-2">
             ${otherVisible.map((s) => `
-              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200/70 hover:border-cyan-200 hover:bg-slate-50/40 transition">
                 <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
                   <i class="fa-solid fa-check text-[10px]"></i>
                 </span>
@@ -11996,7 +12070,7 @@ if (servicesGrid) {
 
           ${otherMany ? `<div id="svc-hidden-wrap" class="flex flex-wrap gap-2 mt-2 hidden">
             ${otherHidden.map((s) => `
-              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:border-cyan-200 hover:bg-cyan-50/40 transition">
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200/70 hover:border-cyan-200 hover:bg-slate-50/40 transition">
                 <span class="w-5 h-5 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center">
                   <i class="fa-solid fa-check text-[10px]"></i>
                 </span>
@@ -13640,7 +13714,7 @@ function renderServiceTags() {
 
   if (tags.length === 0) {
     wrap.innerHTML = `
-      <div class="w-full px-4 py-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-center">
+      <div class="w-full px-4 py-4 rounded-2xl border border-dashed border-slate-200/70 bg-gray-50 text-center">
         <div class="text-xs text-gray-400 italic">${t("svc_no_tags") || "No service tags yet."}</div>
         <div class="text-[10px] text-gray-400 mt-1">${t("svc_add_tag_hint") || "Add a tag below (press Enter)."}</div>
       </div>`;
@@ -13649,7 +13723,7 @@ function renderServiceTags() {
 
   tags.forEach((tag, idx) => {
     const chip = document.createElement("div");
-    chip.className = "group inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-cyan-200 hover:bg-cyan-50/40 transition cursor-grab";
+    chip.className = "group inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200/70 shadow-sm hover:border-cyan-200 hover:bg-slate-50/40 transition cursor-grab";
     chip.setAttribute("draggable", "true");
     chip.dataset.idx = String(idx);
 
@@ -13664,7 +13738,7 @@ function renderServiceTags() {
       <button type="button" class="svc-star ml-1 w-7 h-7 rounded-lg border border-amber-200 bg-amber-50 text-amber-600 flex items-center justify-center transition opacity-85 group-hover:opacity-100" title="${t("svc_toggle_featured") || "Toggle Featured"}" aria-pressed="${isFeatured ? "true" : "false"}">
         <i class="${isFeatured ? "fa-solid" : "fa-regular"} fa-star text-[11px]"></i>
       </button>
-      ${isFeatured ? `<span class="ml-1 text-[9px] font-extrabold px-2 py-1 rounded-lg bg-cyan-50 border border-cyan-100 text-BTrustOn-accent uppercase">${t("badge_featured") || "Featured"}</span>` : ``}
+      ${isFeatured ? `<span class="ml-1 text-[9px] font-extrabold px-2 py-1 rounded-lg bg-slate-50 border border-cyan-100 text-BTrustOn-accent uppercase">${t("badge_featured") || "Featured"}</span>` : ``}
 
       <button type="button" class="svc-remove ml-1 w-7 h-7 rounded-lg bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 hover:border-red-200 hover:text-red-700 flex items-center justify-center transition opacity-80 group-hover:opacity-100" title="${t("svc_remove") || "Remove"}">
         <i class="fa-solid fa-xmark text-[11px]"></i>
@@ -13856,7 +13930,7 @@ function toggleModal(id) {
           btn.classList.add(
             "border-BTrustOn-accent",
             "text-BTrustOn-primary",
-            "bg-cyan-50/50"
+            "bg-slate-50/50"
           );
           btn.classList.remove("border-transparent");
           content.classList.remove("hidden-view");
@@ -13864,7 +13938,7 @@ function toggleModal(id) {
           btn.classList.remove(
             "border-BTrustOn-accent",
             "text-BTrustOn-primary",
-            "bg-cyan-50/50"
+            "bg-slate-50/50"
           );
           btn.classList.add("border-transparent");
           content.classList.add("hidden-view");
@@ -14557,7 +14631,7 @@ function deleteCert(certId, certName) {
 <!-- ✅ PROJECT VIEWER MODAL (click any project card) -->
 <div class="hidden fixed inset-0 z-[99990]" id="project-viewer">
 <div class="absolute inset-0 bg-slate-900/60" onclick="closeProjectViewer()"></div>
-<div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+<div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-slate-200/70 overflow-hidden">
 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 <div>
 <div class="text-sm font-extrabold text-BTrustOn-primary" id="pv-title"></div>
@@ -14568,7 +14642,7 @@ function deleteCert(certId, certName) {
 </button>
 </div>
 <div class="p-5">
-<button class="w-full rounded-xl overflow-hidden border border-gray-200 bg-slate-50 focus:outline-none" id="pv-cover-btn">
+<button class="w-full rounded-xl overflow-hidden border border-slate-200/70 bg-slate-50 focus:outline-none" id="pv-cover-btn">
 <img alt="" class="w-full h-[320px] object-cover" id="pv-cover"/>
 </button>
 <div class="text-sm text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere" id="pv-desc"></div>
@@ -14936,6 +15010,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     if(mobileGuestGroup) { mobileGuestGroup.classList.remove("hidden"); mobileGuestGroup.classList.add("flex"); }
     if(mobileUserGroup) { mobileUserGroup.classList.add("hidden"); mobileUserGroup.classList.remove("flex"); }
     if(mobileQuickCompany) { mobileQuickCompany.classList.add("hidden"); }
+    try { if (typeof unsubscribeProfilesRealtimeForLists === "function") unsubscribeProfilesRealtimeForLists(); } catch(e) {}
     return; 
   } else {
     if(guestGroup) { guestGroup.classList.add("hidden"); guestGroup.classList.remove("flex"); }
@@ -14950,6 +15025,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     try { if (typeof subscribeToMessages === "function") subscribeToMessages(); } catch(e){ console.warn("subscribeToMessages:", e); }
     try { if (typeof fetchNotificationsUnread === "function") fetchNotificationsUnread(); } catch(e){ console.warn("fetchNotificationsUnread:", e); }
     try { if (typeof subscribeNotifications === "function") subscribeNotifications(); } catch(e){ console.warn("subscribeNotifications:", e); }
+    try { if (typeof subscribeProfilesRealtimeForLists === "function") subscribeProfilesRealtimeForLists(); } catch(e) {}
 
   }
 
@@ -16078,6 +16154,164 @@ let _followingLastError = "";
 let _followingLoadedOnce = false;
 let savedPanelTab = "saved";
 
+let profilesListsSub = null;
+let _listsRealtimeRefreshTimer = null;
+
+function _scheduleListsPanelRerender() {
+  try {
+    if (_listsRealtimeRefreshTimer) return;
+    _listsRealtimeRefreshTimer = setTimeout(() => {
+      _listsRealtimeRefreshTimer = null;
+      try {
+        const panel = document.getElementById("saved-panel");
+        if (panel && panel.classList.contains("open")) {
+          if (typeof renderSavedPanelActive === "function") renderSavedPanelActive();
+        }
+      } catch(e) {}
+    }, 140);
+  } catch(e) {}
+}
+
+function _applyProfilePatchToCompanyObj(c, p) {
+  if (!c) c = {};
+  try {
+    if (p.company_name) c.name = p.company_name;
+    if (Object.prototype.hasOwnProperty.call(p, "logo_url")) c.logo_url = p.logo_url || null;
+    if (p.city) c.city = p.city;
+    if (p.country) c.country = p.country;
+    if (p.country_code) c.country_code = p.country_code;
+    if (p.company_type) { c.company_type = p.company_type; c.business_type = p.company_type; }
+    if (Object.prototype.hasOwnProperty.call(p, "verification_status")) c.verification_status = p.verification_status || null;
+
+    // Recompute verified tick consistently (safe fallback)
+    try {
+      const v = (typeof isCompanyVerified === "function")
+        ? isCompanyVerified(Object.assign({}, c, p))
+        : (String(c.verification_status || "").trim().toLowerCase() === "approved" || String(c.verification_status || "").trim().toLowerCase() === "verified");
+      c.is_verified = !!v; c.verified = !!v; c.blue_tick = !!v;
+    } catch(e) {}
+  } catch(e) {}
+  return c;
+}
+
+function _applyProfileUpdateToListCaches(p) {
+  const id = String(p?.id || "").trim();
+  if (!id) return;
+
+  let touched = false;
+
+  try {
+    if (Array.isArray(savedCompaniesData) && savedCompaniesData.length) {
+      let any = false;
+      savedCompaniesData = savedCompaniesData.map(item => {
+        if (!item || !item.company || String(item.company.id) !== id) return item;
+        any = true;
+        const c = _applyProfilePatchToCompanyObj(Object.assign({}, item.company), p);
+        return Object.assign({}, item, { company: c });
+      });
+      if (any) touched = true;
+    }
+  } catch(e) {}
+
+  try {
+    if (Array.isArray(followingCompaniesData) && followingCompaniesData.length) {
+      let any = false;
+      followingCompaniesData = followingCompaniesData.map(item => {
+        const cid = String(item?.company?.id || "");
+        if (cid !== id) return item;
+        any = true;
+        const c = _applyProfilePatchToCompanyObj(Object.assign({}, item.company || {}), p);
+        return Object.assign({}, item, { company: c });
+      });
+      if (any) touched = true;
+    }
+  } catch(e) {}
+
+  // Keep home/company caches fresh (best-effort)
+  try {
+    if (Array.isArray(database) && database.length) {
+      const idx = database.findIndex(x => x && String(x.id) === id);
+      if (idx > -1) {
+        const cur = Object.assign({}, database[idx]);
+        if (p.company_name) cur.name = p.company_name;
+        if (Object.prototype.hasOwnProperty.call(p, "logo_url")) cur.logo_url = p.logo_url || null;
+        if (p.city) cur.city = p.city;
+        if (p.country) cur.country = p.country;
+        if (p.company_type) cur.type_label = p.company_type;
+        if (Object.prototype.hasOwnProperty.call(p, "verification_status")) cur.verification_status = p.verification_status || cur.verification_status;
+        if (p.updated_at) cur.updated_at = p.updated_at;
+        database[idx] = cur;
+      }
+    }
+  } catch(e) {}
+
+  try {
+    if (typeof selectedCompany !== "undefined" && selectedCompany && String(selectedCompany.id) === id) {
+      selectedCompany = _applyProfilePatchToCompanyObj(Object.assign({}, selectedCompany), p);
+      // Avoid forcing a full profile re-open; list rerender is enough.
+    }
+  } catch(e) {}
+
+  // Update snapshot cache (used when saving)
+  try {
+    if (typeof normalizeCompanySnapshot === "function" && typeof companySnapshotById === "object" && companySnapshotById) {
+      const snap = normalizeCompanySnapshot({
+        id,
+        company_name: p.company_name,
+        logo_url: p.logo_url,
+        city: p.city,
+        country: p.country || p.country_code,
+        company_type: p.company_type,
+        verification_status: p.verification_status
+      });
+      if (snap) companySnapshotById[id] = snap;
+    }
+  } catch(e) {}
+
+  if (touched) _scheduleListsPanelRerender();
+}
+
+function subscribeProfilesRealtimeForLists() {
+  try {
+    if (profilesListsSub) return;
+
+    profilesListsSub = supabaseClient
+      .channel("lists-profiles")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, payload => {
+        const p = payload && payload.new ? payload.new : null;
+        if (!p || !p.id) return;
+
+        const id = String(p.id);
+        let inSaved = false;
+        let inFollow = false;
+
+        try { inSaved = (savedCompanyIds && typeof savedCompanyIds.has === "function") ? savedCompanyIds.has(id) : false; } catch(e) {}
+        try { inFollow = (followingCompanyIds && typeof followingCompanyIds.has === "function") ? followingCompanyIds.has(id) : false; } catch(e) {}
+        try {
+          if (!inFollow && typeof homeFollowSet !== "undefined" && homeFollowSet && typeof homeFollowSet.has === "function") {
+            inFollow = homeFollowSet.has(id);
+          }
+        } catch(e) {}
+
+        if (!inSaved && !inFollow) return;
+
+        _applyProfileUpdateToListCaches(p);
+      })
+      .subscribe();
+  } catch(e) {
+    console.warn("subscribeProfilesRealtimeForLists:", e);
+  }
+}
+
+function unsubscribeProfilesRealtimeForLists() {
+  try {
+    if (profilesListsSub) {
+      try { supabaseClient.removeChannel(profilesListsSub); } catch(e) {}
+      profilesListsSub = null;
+    }
+  } catch(e) {}
+}
+
 // Saved snapshots indexed from rendered cards (safe: used only to enrich saved insert payload)
 const companySnapshotById = {};
 function normalizeCompanySnapshot(c) {
@@ -16348,10 +16582,10 @@ async function fetchSavedCompanies() {
       };
     });
 
-    // Optional enrich: try to pull live business type from public profiles (if policies allow).
-    // This fixes older saved rows where saved_company_type was stored as "Company".
+        // Best-effort enrich from profiles so Saved list always shows the latest name/logo/meta.
+    // (Falls back silently if profiles RLS blocks reads; snapshot fields will still render.)
     try {
-      const ids = Array.from(savedCompanyIds || []);
+      const ids = Array.from(savedCompanyIds || []).slice(0, 400);
       if (ids.length) {
         let profs = null;
         let pErr = null;
@@ -16359,17 +16593,27 @@ async function fetchSavedCompanies() {
         try {
           let r = await supabaseClient
             .from('profiles')
-            .select('id, company_type, verification_status')
+            .select('id, company_name, logo_url, company_type, city, country, country_code, verification_status, last_active_at, updated_at')
             .in('id', ids);
 
-          // Fallback if boolean columns don't exist (common schema)
+          // Fallbacks for schemas without last_active_at / updated_at
           if (r.error) {
             const msg = String(r.error?.message || r.error?.details || r.error || "");
             const low = msg.toLowerCase();
             if (low.includes("does not exist") || low.includes("column") || low.includes("schema cache") || low.includes("pgrst")) {
               r = await supabaseClient
                 .from('profiles')
-                .select('id, company_type, verification_status')
+                .select('id, company_name, logo_url, company_type, city, country, country_code, verification_status, updated_at')
+                .in('id', ids);
+            }
+          }
+          if (r.error) {
+            const msg2 = String(r.error?.message || r.error?.details || r.error || "");
+            const low2 = msg2.toLowerCase();
+            if (low2.includes("does not exist") || low2.includes("column") || low2.includes("schema cache") || low2.includes("pgrst")) {
+              r = await supabaseClient
+                .from('profiles')
+                .select('id, company_name, logo_url, company_type, city, country, country_code, verification_status')
                 .in('id', ids);
             }
           }
@@ -16381,47 +16625,46 @@ async function fetchSavedCompanies() {
           profs = null;
         }
 
-        if (!pErr && Array.isArray(profs)) {
-          const metaMap = {};
-          profs.forEach(p => {
-            metaMap[String(p.id)] = {
-              company_type: (p.company_type || null),
-              verification_status: (p.verification_status || null),
-              is_verified: (p.is_verified || p.verified || p.blue_tick || (String(p.verification_status||'').toLowerCase()==='approved') || (String(p.verification_status||'').toLowerCase()==='verified'))
-            };
-          });
+        if (!pErr && Array.isArray(profs) && profs.length) {
+          const mp = new Map(profs.map(p => [String(p.id), p]));
 
           savedCompaniesData = (savedCompaniesData || []).map(item => {
             const cid = String(item?.company?.id || "");
-            const m = metaMap[cid] || {};
-            const t = m.company_type;
-            {
-              const tt = (t && String(t).trim() && String(t).trim().toLowerCase() !== "company") ? String(t).trim() : null;
-              const cur = (item.company.business_type || item.company.company_type || "");
-              const curNorm = String(cur).trim().toLowerCase();
-              if (tt) {
-                // Prefer profiles.company_type as the single source of truth for Saved cards
-                item.company.company_type = tt;
-                item.company.business_type = tt; // backward compatibility with older UI code
+            const p = mp.get(cid);
+            if (!p) return item;
 
-                // Verified meta (best-effort)
-                try {
-                  if (m && (m.verification_status || m.is_verified)) {
-                    item.company.verification_status = m.verification_status || (m.is_verified ? "approved" : "");
-                    item.company.is_verified = !!m.is_verified;
-                    item.company.verified = !!m.is_verified;
-                    item.company.blue_tick = !!m.is_verified;
-                  }
-                } catch(e) {}
+            const c = Object.assign({}, item.company || {});
 
+            // Prefer fresh profile fields (safe fallbacks)
+            if (p.company_name) c.name = p.company_name;
+            if (Object.prototype.hasOwnProperty.call(p, "logo_url")) c.logo_url = p.logo_url || null;
+            if (p.city) c.city = p.city;
+            if (p.country) c.country = p.country;
+            if (p.country_code) c.country_code = p.country_code;
+            if (p.company_type) { c.company_type = p.company_type; c.business_type = p.company_type; }
+            if (Object.prototype.hasOwnProperty.call(p, "verification_status")) c.verification_status = p.verification_status || null;
 
-                // If this saved row previously had a useless default (e.g., "Company"), persist the real type for offline-safe rendering
-                if (!cur || curNorm === "company" || curNorm === "—") {
-                  try { supabaseClient.from('saved_companies').update({ saved_company_type: tt }).eq('id', item.rowId); } catch(e) {}
-                }
+            // Verified (recompute consistently)
+            try {
+              const v = (typeof isCompanyVerified === "function")
+                ? isCompanyVerified(Object.assign({}, c, p))
+                : (String(c.verification_status || "").trim().toLowerCase() === "approved" || String(c.verification_status || "").trim().toLowerCase() === "verified");
+              c.is_verified = !!v;
+              c.verified = !!v;
+              c.blue_tick = !!v;
+            } catch(e) {}
+
+            // If this saved row previously had a useless default (e.g., "Company"), persist the real type for offline-safe rendering
+            try {
+              const tt = (c.company_type && String(c.company_type).trim() && String(c.company_type).trim().toLowerCase() !== "company") ? String(c.company_type).trim() : null;
+              const cur = (item.company && (item.company.business_type || item.company.company_type)) ? (item.company.business_type || item.company.company_type) : "";
+              const curNorm = String(cur || "").trim().toLowerCase();
+              if (tt && (!cur || curNorm === "company" || curNorm === "—")) {
+                try { supabaseClient.from('saved_companies').update({ saved_company_type: tt }).eq('id', item.rowId); } catch(e) {}
               }
-            }
-            return item;
+            } catch(e) {}
+
+            return Object.assign({}, item, { company: c });
           });
         }
       }
@@ -16665,9 +16908,7 @@ function renderSavedCompanies() {
 
     const initials = (displayName || "C").trim().slice(0, 1).toUpperCase();
     const logoUrl = ((c.logo_url || rc.logo_url || "") + "").trim();
-    const logo = logoUrl
-      ? `<img src="${logoUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-gray-200 bg-white" referrerpolicy="no-referrer" />`
-      : `<div class="w-10 h-10 rounded-xl bg-cyan-50 border border-gray-200 grid place-items-center font-bold text-[12px] text-cyan-900">${initials}</div>`;
+    const logo = btRenderLogoHTML(logoUrl, (c.name || c.company_name || c.title || ""), "w-10 h-10", "rounded-xl", "border border-slate-200/70 bg-white");
 
     const ver = (typeof getVerifiedMark === "function")
       ? getVerifiedMark(Object.assign({}, rc, c))
@@ -16689,7 +16930,7 @@ function renderSavedCompanies() {
 
 
     return `
-      <div class="saved-item rounded-2xl p-3 bg-white border border-gray-200 shadow-sm">
+      <div class="saved-item rounded-2xl p-3 bg-white border border-slate-200/70 shadow-sm">
         <div class="flex items-start gap-3">
           <div class="shrink-0 cursor-pointer" onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
             ${logo}
@@ -16710,7 +16951,7 @@ function renderSavedCompanies() {
               </div>
 
               <button
-                class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-red-600 transition flex items-center justify-center"
+                class="w-8 h-8 rounded-lg border border-slate-200/70 text-gray-500 hover:bg-gray-50 hover:text-red-600 transition flex items-center justify-center"
                 title="${t("svc_remove") || "Remove"}"
                 onclick="event.stopPropagation(); removeSavedRow('${item.rowId}', '${item.saved_company_id}')"
               >
@@ -16721,7 +16962,7 @@ function renderSavedCompanies() {
             <div class="mt-2">
               <label class="sr-only">${_i18n("saved_note_label", "Note")}</label>
               <textarea
-                class="w-full min-h-[44px] rounded-xl border border-gray-200 bg-white/80 text-[12px] p-2 leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-300"
+                class="w-full min-h-[44px] rounded-xl border border-slate-200/70 bg-white/80 text-[12px] p-2 leading-snug resize-none focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-300"
                 placeholder="${_i18n("saved_note_optional_ph", "Note (optional)…")}"
                 onkeydown="event.stopPropagation()"
                 onclick="event.stopPropagation()"
@@ -17046,7 +17287,7 @@ function renderFollowingCompanies() {
     emptyEl.classList.add("hidden");
     listEl.classList.remove("hidden");
     listEl.innerHTML = `
-      <div class="bg-white/90 border border-gray-200 rounded-2xl p-4 shadow-sm animate-pulse">
+      <div class="bg-white/90 border border-slate-200/70 rounded-2xl p-4 shadow-sm animate-pulse">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-xl bg-gray-200"></div>
           <div class="flex-1">
@@ -17055,7 +17296,7 @@ function renderFollowingCompanies() {
           </div>
         </div>
       </div>
-      <div class="bg-white/90 border border-gray-200 rounded-2xl p-4 shadow-sm animate-pulse">
+      <div class="bg-white/90 border border-slate-200/70 rounded-2xl p-4 shadow-sm animate-pulse">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-xl bg-gray-200"></div>
           <div class="flex-1">
@@ -17064,7 +17305,7 @@ function renderFollowingCompanies() {
           </div>
         </div>
       </div>
-      <div class="bg-white/90 border border-gray-200 rounded-2xl p-4 shadow-sm animate-pulse">
+      <div class="bg-white/90 border border-slate-200/70 rounded-2xl p-4 shadow-sm animate-pulse">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-xl bg-gray-200"></div>
           <div class="flex-1">
@@ -17096,7 +17337,7 @@ function renderFollowingCompanies() {
       emptyEl.innerHTML = `
         <div class="font-black text-gray-800 mb-1">${(currentLang === "tr") ? "Following yüklenemedi" : "Could not load Following"}</div>
         <div class="text-[12px] text-gray-600 break-words">${escapeHtml(_followingLastError)}</div>
-        <button class="mt-3 text-xs font-black px-3 py-1.5 rounded-full border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition"
+        <button class="mt-3 text-xs font-black px-3 py-1.5 rounded-full border border-slate-200/70 hover:border-gray-300 hover:bg-gray-50 transition"
           onclick="(async()=>{ await fetchFollowingCompanies(); if(savedPanelTab==='following') renderFollowingCompanies(); })()">
           <i class="fa-solid fa-rotate-right mr-1"></i> ${(currentLang === "tr") ? "Yenile" : "Retry"}
         </button>
@@ -17136,9 +17377,7 @@ const displayName = (c.name || "").trim() || (rc.name || "").trim() || "—";
 
 const initials = (displayName || "C").trim().slice(0, 1).toUpperCase();
 const logoUrl = (c.logo_url || rc.logo_url || "").trim();
-const logo = logoUrl
-  ? `<img src="${logoUrl}" alt="" class="w-10 h-10 rounded-xl object-cover border border-gray-200 bg-white" referrerpolicy="no-referrer" />`
-  : `<div class="w-10 h-10 rounded-xl bg-cyan-50 border border-gray-200 grid place-items-center font-bold text-[12px] text-cyan-900">${initials}</div>`;
+const logo = btRenderLogoHTML(logoUrl, (c.name || c.company_name || c.title || ""), "w-10 h-10", "rounded-xl", "border border-slate-200/70 bg-white");
 
 const metaTypeRaw = (c.business_type || c.company_type || c.type || c.type_label || "").toString().trim() || (rc.business_type || rc.company_type || rc.type || rc.type_label || "").toString().trim();
 const metaType = (metaTypeRaw && metaTypeRaw.toLowerCase() !== "company") ? translateCompanyType(metaTypeRaw) : "—";
@@ -17160,7 +17399,7 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
       : "";
 
     return `
-      <div class="bg-white/90 border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+      <div class="bg-white/90 border border-slate-200/70 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
         <div class="flex items-start gap-3">
           <div class="shrink-0 cursor-pointer" onclick="openProfile('${c.id}', { reserveScroll: true, preserveTab: true }); toggleSavedPanel();">
             ${logo}
@@ -17172,7 +17411,7 @@ const loc = [metaCity, metaCountry].filter(Boolean).join(", ");
                 <span class="truncate min-w-0" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
                 <span class="shrink-0 flex items-center gap-1">${ver}${missingBadge}${activeHtml ? `<span class=\"ml-1\">${activeHtml}</span>` : ""}</span>
               </div>
-              <button class="text-xs font-black px-3 py-1.5 rounded-full border border-gray-200 hover:border-rose-300 hover:bg-rose-50 transition"
+              <button class="text-xs font-black px-3 py-1.5 rounded-full border border-slate-200/70 hover:border-rose-300 hover:bg-rose-50 transition"
                 onclick="toggleCompanyFollow(event, '${c.id}', '${escapeHtml((c.name||'') + '')}')"
                 title="${_i18n("action_unfollow","Unfollow")}">
                 <i class="fa-solid fa-tower-broadcast mr-1"></i> ${_i18n("action_unfollow","Unfollow")}
@@ -18165,7 +18404,7 @@ function renderInboxItems() {
 
 
       const card = document.createElement("div");
-      card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-gray-200 transition-all duration-200 cursor-pointer group`;
+      card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-slate-200/70 transition-all duration-200 cursor-pointer group`;
       card.onclick = () => {
         if (isUnread) markNotificationRead(n.id);
         if (action === 'UPGRADE') { try { openUpgradeModal(); } catch(e) {} }
@@ -18193,7 +18432,7 @@ function renderInboxItems() {
       };
 
       card.innerHTML = `
-        <button type="button" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition" title="${t("ui_delete") || "Delete"}" onclick="event.stopPropagation(); deleteNotification('${nidSafe}')">
+        <button type="button" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 border border-slate-200/70 text-gray-400 hover:text-red-500 hover:border-red-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition" title="${t("ui_delete") || "Delete"}" onclick="event.stopPropagation(); deleteNotification('${nidSafe}')">
           <i class="fa-solid fa-trash text-[11px]"></i>
         </button>
         <div class="flex items-start gap-3">
@@ -18273,14 +18512,14 @@ function renderInboxItems() {
     else {
         // --- STANDART (BEYAZ/GRİ) TASARIMI ---
         const bg = item.unread ? "bg-white unread shadow-sm" : "bg-white/60 opacity-90";
-        cardClasses = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-gray-200 ${bg} transition-all duration-200 cursor-pointer group`;
+        cardClasses = `inbox-item relative p-4 mb-2 rounded-xl border border-transparent hover:border-slate-200/70 ${bg} transition-all duration-200 cursor-pointer group`;
         
         iconBg = "bg-gray-100 text-gray-500";
         iconName = "fa-building";
         
         // Eğer Teklif ise (Lead değil ama kayıtlı üyeden teklif)
         if(item.type === 'quote') { 
-            iconBg = "bg-cyan-50 text-BTrustOn-accent"; 
+            iconBg = "bg-slate-50 text-BTrustOn-accent"; 
             iconName = "fa-file-invoice-dollar"; 
         }
     }
@@ -18325,7 +18564,7 @@ function renderInboxItems() {
               </span>
            </div>
            
-           <p class="text-[10px] text-gray-500 leading-relaxed line-clamp-1 italic border-l-2 ${isLead ? 'border-amber-200' : 'border-gray-200'} pl-2">
+           <p class="text-[10px] text-gray-500 leading-relaxed line-clamp-1 italic border-l-2 ${isLead ? 'border-amber-200' : 'border-slate-200/70'} pl-2">
              "${previewText}"
            </p>
            
@@ -18696,7 +18935,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
 
             return `
                 <div class="mt-3 group">
-                    <div class="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-BTrustOn-accent hover:shadow-md transition-all">
+                    <div class="flex items-center gap-3 p-3 bg-white border border-slate-200/70 rounded-xl hover:border-BTrustOn-accent hover:shadow-md transition-all">
                         <div onclick="window.open('${fileUrl}', '_blank')" class="cursor-pointer w-10 h-10 rounded-lg bg-gray-50 text-BTrustOn-accent grid place-items-center text-lg group-hover:bg-BTrustOn-accent group-hover:text-white transition-colors">
                             <i class="fa-solid ${icon}"></i>
                         </div>
@@ -18716,7 +18955,7 @@ async function loadMessageThread(cleanSubject, partnerId) {
         bubble.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-fade-in`;
         
         bubble.innerHTML = `
-            <div class="max-w-[85%] ${isMe ? 'bg-cyan-50 border border-cyan-100 rounded-tr-none' : 'bg-white border border-gray-200 rounded-tl-none'} p-4 rounded-xl shadow-sm">
+            <div class="max-w-[85%] ${isMe ? 'bg-slate-50 border border-cyan-100 rounded-tr-none' : 'bg-white border border-slate-200/70 rounded-tl-none'} p-4 rounded-xl shadow-sm">
                 <div class="flex justify-between items-center mb-1 gap-4">
                     ${displayNameHtml}
                     <span class="text-[9px] text-gray-400">${formatMsgClock(m.created_at)}</span>
@@ -20113,7 +20352,7 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                   </button>
                   ` : ``}
                 </div>
-                <button class="text-[11px] font-extrabold text-BTrustOn-accent inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-cyan-50/60 border border-cyan-100 hover:bg-cyan-50 transition">
+                <button class="text-[11px] font-extrabold text-BTrustOn-accent inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-slate-50/60 border border-cyan-100 hover:bg-slate-50 transition">
                   <span>${t("btn_view")}</span> <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
                 </button>
               </div>
@@ -21221,7 +21460,7 @@ function appendLocalMessage(content) {
     bubble.className = `flex justify-end mb-4 animate-fade-in`; // Biz gönderdiğimiz için hep sağda (justify-end)
     
     bubble.innerHTML = `
-        <div class="max-w-[85%] bg-cyan-50 border border-cyan-100 rounded-tr-none p-4 rounded-xl shadow-sm">
+        <div class="max-w-[85%] bg-slate-50 border border-cyan-100 rounded-tr-none p-4 rounded-xl shadow-sm">
             <div class="flex justify-between items-center mb-1 gap-4">
                 <span class="text-[10px] font-bold text-BTrustOn-accent">${(t("inbox_me_label") || "ME")}</span>
                 <span class="text-[9px] text-gray-400">${time}</span>
@@ -21276,7 +21515,7 @@ function getStatusBadgeLegacy(status) {
     const s = (status || "").toLowerCase();
     
     // Varsayılan (Gri)
-    let classes = "bg-gray-50 text-gray-600 border-gray-200"; 
+    let classes = "bg-gray-50 text-gray-600 border-slate-200/70"; 
 
     // 1. Müsait (Yeşil)
     if (s.includes("available") || s.includes("müsait")) {
@@ -22606,7 +22845,7 @@ function renderNavPlanButton(company = null) {
   if (isPro) {
     btn.className = baseBtn + " bg-white/80 backdrop-blur text-slate-800 border-cyan-200 hover:bg-white hover:shadow-md";
     if (icon) icon.className = "fa-solid fa-gem text-BTrustOn-accent";
-    if (iconWrap) iconWrap.className = "w-6 h-6 rounded-lg flex items-center justify-center bg-cyan-50 border border-cyan-200 shadow-sm";
+    if (iconWrap) iconWrap.className = "w-6 h-6 rounded-lg flex items-center justify-center bg-slate-50 border border-cyan-200 shadow-sm";
     if (label) label.textContent = "PRO";
     if (mTitle) mTitle.textContent = tOr("ui_pro_plan_title","Pro Plan");
     if (mSub) mSub.textContent = tOr("ui_pro_plan_active_sub","Your plan is active. You can cancel anytime.");
@@ -23782,7 +24021,7 @@ function handleCertFileSelect(input) {
         }
         currentCertFile = input.files[0];
         document.getElementById("cert-file-text").textContent = currentCertFile.name;
-        document.getElementById("cert-file-label").classList.add("border-BTrustOn-accent", "bg-cyan-50");
+        document.getElementById("cert-file-label").classList.add("border-BTrustOn-accent", "bg-slate-50");
     }
 }
 
@@ -23791,7 +24030,7 @@ function removeCertFile() {
     existingCertFileUrl = null;
     document.getElementById("cert-file-input").value = "";
     document.getElementById("cert-file-text").textContent = (t("ui_attach_proof_max_5mb_81863c") || "Attach Proof (Max 5MB)");
-    document.getElementById("cert-file-label").classList.remove("border-BTrustOn-accent", "bg-cyan-50");
+    document.getElementById("cert-file-label").classList.remove("border-BTrustOn-accent", "bg-slate-50");
     document.getElementById("btn-remove-cert-file").classList.add("hidden");
     document.getElementById("current-cert-link").classList.add("hidden");
 }
@@ -23937,7 +24176,7 @@ if(btnGal){
     if(urls.length){
       urls.slice(0, 12).forEach(u => {
         const b = document.createElement("button");
-        b.className = "rounded-lg overflow-hidden border border-gray-200 hover:border-BTrustOn-accent transition";
+        b.className = "rounded-lg overflow-hidden border border-slate-200/70 hover:border-BTrustOn-accent transition";
         b.innerHTML = `<img src="${u}" class="w-full h-16 object-cover">`;
         b.onclick = () => openGallery(title, urls);
         thumbs.appendChild(b);
@@ -23997,7 +24236,7 @@ function sortProjectsUI(mode){
 
 <div class="hidden fixed inset-0 z-[99990]" id="asset-viewer">
 <div class="absolute inset-0 bg-slate-900/60" onclick="closeAssetViewer()"></div>
-<div class="relative max-w-3xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+<div class="relative max-w-3xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-slate-200/70 overflow-hidden">
 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 <div class="min-w-0">
 <div class="text-sm font-extrabold text-BTrustOn-primary truncate" id="av-title"></div>
@@ -24019,7 +24258,7 @@ function sortProjectsUI(mode){
 <div class="mt-2" id="av-file"></div>
 </div>
 <div class="md:col-span-4">
-<div class="rounded-xl border border-gray-200 bg-slate-50 p-4">
+<div class="rounded-xl border border-slate-200/70 bg-slate-50 p-4">
 <div class="text-[11px] text-gray-400" data-i18n="ui_quantity_694e8d">Quantity</div>
 <div class="text-xl font-extrabold text-gray-800 mt-1" id="av-qty"></div>
 <div class="mt-4 text-[11px] text-gray-400" data-i18n="ui_last_updated_ffbb33"></div>
@@ -24319,5 +24558,115 @@ function sortProjectsUI(mode){
     </div>
   </div>
 </div>
+
+
+
+<!-- =========================
+     Keyboard shortcuts
+     /   -> focus global search
+     ESC -> clear active search/input (when applicable)
+========================= -->
+<script>
+(function(){
+  try{
+    function isEditable(el){
+      if(!el) return false;
+      const tag = (el.tagName || '').toUpperCase();
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if(el.isContentEditable) return true;
+      return false;
+    }
+
+    function isVisible(el){
+      if(!el) return false;
+      // hidden via display:none or detached
+      if(el.offsetParent === null && el.getClientRects().length === 0) return false;
+      const st = window.getComputedStyle(el);
+      if(st.visibility === 'hidden' || st.display === 'none' || st.opacity === '0') return false;
+      return true;
+    }
+
+    function focusGlobalSearch(){
+      const el = document.getElementById('search-input');
+      if(!isVisible(el)) return false;
+      try{ el.focus({ preventScroll: true }); }catch(_){ try{ el.focus(); }catch(__){} }
+      try{ if(typeof el.select === 'function') el.select(); }catch(_){ }
+      // If it's offscreen, softly bring it into view.
+      try{
+        const r = el.getBoundingClientRect();
+        if(r.top < 0 || r.bottom > window.innerHeight){
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }catch(_){ }
+      return true;
+    }
+
+    function clearInput(el){
+      if(!el || typeof el.value !== 'string') return false;
+      if(!el.value) return false;
+      el.value = '';
+
+      // Trigger the app's handlers where relevant
+      try{
+        if(el.id === 'search-input' && typeof handleSearchInput === 'function'){
+          handleSearchInput('');
+        }
+        if(el.id === 'saved-search' && typeof renderSavedPanelActive === 'function'){
+          renderSavedPanelActive();
+        }
+        if(el.id === 'proj-search' && typeof filterProjectsUI === 'function'){
+          filterProjectsUI();
+        }
+        if(el.id === 'cert-search' && typeof filterCertificatesUI === 'function'){
+          filterCertificatesUI();
+        }
+        if(el.id === 'asset-search' && typeof filterAssetsUI === 'function'){
+          filterAssetsUI();
+        }
+      }catch(_){ }
+
+      // Also fire common events for any listeners
+      try{ el.dispatchEvent(new Event('input', { bubbles: true })); }catch(_){ }
+      try{ el.dispatchEvent(new Event('keyup', { bubbles: true })); }catch(_){ }
+      return true;
+    }
+
+    document.addEventListener('keydown', function(e){
+      if(e.defaultPrevented) return;
+      if(e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const active = document.activeElement;
+      const editable = isEditable(active);
+
+      // '/' focuses the main search (when not typing)
+      if(e.key === '/' && !editable){
+        e.preventDefault();
+        focusGlobalSearch();
+        return;
+      }
+
+      // ESC clears current input (preferred) or the global search
+      if(e.key === 'Escape'){
+        if(editable){
+          if(clearInput(active)){
+            e.preventDefault();
+            return;
+          }
+          // If empty, just blur
+          try{ active.blur(); }catch(_){ }
+          return;
+        }
+
+        // Not in an input: clear the global search if it has a value
+        const globalSearch = document.getElementById('search-input');
+        if(globalSearch && globalSearch.value){
+          clearInput(globalSearch);
+          e.preventDefault();
+        }
+      }
+    }, true);
+  }catch(_){ }
+})();
+</script>
 
 </body></html>
