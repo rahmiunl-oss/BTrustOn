@@ -154,7 +154,170 @@
   .bton-inbox-tab-icon{display:none !important;}
 }
 </style>
+<style id="bton-auth-premium-skin">
+  /* ============================
+     Minimal Premium Auth Modals
+     (calm, monochrome, no turquoise focus borders)
+     ============================ */
+  :root{
+    --bton-auth-ink: rgba(2,6,23,.92);
+    --bton-auth-sub: rgba(15,23,42,.66);
+    --bton-auth-border: rgba(15,23,42,.12);
+  }
+
+  .bton-auth-modal{ padding: 18px 0; }
+
+  /* Calm overlay: dark + blur (no colorful gradients) */
+  .bton-auth-overlay{
+    background: rgba(2,6,23,.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Card: soft glass */
+  .bton-auth-card{
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 22px 60px rgba(2,6,23,.38);
+    background: rgba(255,255,255,.90);
+  }
+
+  /* Header: deep navy, subtle highlight */
+  .bton-auth-header{
+    position: relative;
+    background:
+      radial-gradient(700px 240px at 30% 0%, rgba(255,255,255,.12), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  }
+  .bton-auth-header::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-1px; height:1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.26), rgba(255,255,255,0));
+    pointer-events:none;
+  }
+
+  .bton-auth-icon{
+    width: 46px; height: 46px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 8px 22px rgba(0,0,0,.18) inset;
+    display:grid; place-items:center;
+  }
+
+  .bton-auth-title{
+    letter-spacing: -.01em;
+    font-weight: 900;
+  }
+  .bton-auth-subtitle{
+    color: rgba(255,255,255,.78);
+  }
+  .bton-auth-body{ color: var(--bton-auth-ink); }
+
+  /* Inputs: neutral slate (no turquoise on focus) */
+  .bton-auth-input{
+    border-color: rgba(148,163,184,.42) !important;
+    background: rgba(255,255,255,.74) !important;
+  }
+  .bton-auth-input:focus,
+  .bton-auth-input:focus-visible{
+    border-color: rgba(100,116,139,.55) !important;   /* slate */
+    box-shadow: 0 0 0 3px rgba(15,23,42,.06) !important; /* soft gray ring */
+    background: rgba(255,255,255,.92) !important;
+  }
+
+  .bton-auth-field-icon{
+    position:absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: rgba(15,23,42,.48);
+    font-size: 14px;
+    pointer-events:none;
+  }
+
+  .bton-auth-eye{
+    position:absolute;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(15,23,42,.10);
+    background: rgba(255,255,255,.72);
+    display:grid; place-items:center;
+    color: rgba(15,23,42,.58);
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .bton-auth-eye:hover{
+    background: rgba(255,255,255,.86);
+    border-color: rgba(15,23,42,.14);
+    transform: translateY(-50%) scale(1.02);
+  }
+
+  .bton-auth-link{
+    color: rgba(15,23,42,.66);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .bton-auth-link:hover{ color: rgba(15,23,42,.86); }
+
+  .bton-auth-note{
+    border: 1px solid rgba(15,23,42,.10);
+    background: rgba(248,250,252,1);
+    border-radius: 16px;
+  }
+
+  .bton-auth-btn{
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-weight: 900;
+    letter-spacing: .01em;
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .bton-auth-btn:active{ transform: translateY(1px); }
+
+  .bton-auth-btn-ghost{
+    border: 1px solid rgba(15,23,42,.12);
+    background: rgba(255,255,255,.66);
+    color: rgba(15,23,42,.78);
+  }
+  .bton-auth-btn-ghost:hover{
+    background: rgba(255,255,255,.86);
+    border-color: rgba(15,23,42,.16);
+  }
+
+  /* Primary CTA: match Login button (solid dark → turquoise on hover) */
+.bton-auth-btn-primary{
+  color:#fff;
+  background-color:#0F172A; /* BTrustOn primary */
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 12px 28px rgba(2,6,23,.20);
+  transition:
+    background-color .28s cubic-bezier(.16,1,.3,1),
+    box-shadow .28s cubic-bezier(.16,1,.3,1),
+    border-color .28s cubic-bezier(.16,1,.3,1),
+    transform .15s ease;
+}
+.bton-auth-btn-primary:hover{
+  background-color:#06b6d4; /* BTrustOn accent */
+  border-color: rgba(6,182,212,.40);
+  box-shadow: 0 14px 30px rgba(6,182,212,.22);
+}
+.bton-auth-btn-primary:focus-visible{
+  outline:none;
+  box-shadow:
+    0 14px 30px rgba(6,182,212,.18),
+    0 0 0 4px rgba(6,182,212,.18);
+}
+
+/* Soft entry animation */
+  #reset-modal.flex .bton-auth-card{ animation: btonPop .18s ease-out both; }
+  @keyframes btonPop{
+    from{ transform: translateY(6px) scale(.985); opacity: 0; }
+    to{ transform: translateY(0) scale(1); opacity: 1; }
+  }
+</style>
 <style id="bton-apple-premium-skin">
+
   :root{
     --bton-apple-bg:#f5f5f7;
     --bton-apple-text:#1d1d1f;
@@ -3844,18 +4007,18 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </div>
 </div>
 <!-- Password Reset Modal -->
-<div class="fixed inset-0 z-[65] hidden items-center justify-center" id="reset-modal">
-  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeResetModal()"></div>
+<div class="fixed inset-0 z-[65] hidden items-center justify-center bton-auth-modal" id="reset-modal">
+  <div class="absolute inset-0 bton-auth-overlay" onclick="closeResetModal()"></div>
 
-  <div class="bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all">
-    <div class="px-6 py-4 text-white bg-gradient-to-r from-slate-900 via-slate-800 to-BTrustOn-primary flex items-start justify-between gap-4">
+  <div class="bton-auth-card w-full max-w-md mx-4 rounded-2xl z-10 overflow-hidden">
+    <div class="bton-auth-header px-6 py-4 text-white flex items-start justify-between gap-4">
       <div class="flex items-start gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-white/10 border border-white/15 grid place-items-center">
+        <div class="bton-auth-icon">
           <i class="fa-solid fa-unlock-keyhole text-white"></i>
         </div>
         <div>
-          <h3 class="text-base font-extrabold tracking-tight leading-tight" data-i18n="auth_reset_title">Reset password</h3>
-          <p class="text-[11px] text-white/80 mt-0.5 leading-snug" data-i18n="auth_reset_subtitle">We’ll email you a secure reset link.</p>
+          <h3 class="text-[15px] leading-tight bton-auth-title" data-i18n="auth_reset_title">Reset password</h3>
+          <p class="text-[11px] mt-0.5 leading-snug bton-auth-subtitle" data-i18n="auth_reset_subtitle">We’ll email you a secure reset link.</p>
         </div>
       </div>
       <button aria-label="Close" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 grid place-items-center transition" onclick="closeResetModal()" type="button">
@@ -3863,27 +4026,33 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       </button>
     </div>
 
-    <div class="p-6">
+    <div class="p-6 bton-auth-body">
       <!-- Request link -->
       <form id="reset-request-form" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="field_email">Email</label>
-          <input id="reset-email" type="email" autocomplete="email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-BTrustOn-primary/30 focus:border-BTrustOn-primary bg-white text-slate-900" placeholder="name@company.com"/>
+          <div class="relative">
+            <i class="fa-regular fa-envelope bton-auth-field-icon"></i>
+            <input id="reset-email" type="email" autocomplete="email"
+              class="bton-login-input bton-auth-input pl-11"
+              data-i18n-placeholder="attr_name_company_com_8c0cb4"
+              placeholder="name@company.com"/>
+          </div>
         </div>
 
         <p class="text-xs text-emerald-700 hidden" id="reset-request-success"></p>
         <p class="text-xs text-red-500 hidden" id="reset-request-error"></p>
 
         <div class="flex items-center justify-between pt-2">
-          <button type="button" id="btn-reset-back-login" class="text-xs font-semibold text-slate-600 hover:text-BTrustOn-primary underline underline-offset-4">
+          <button type="button" id="btn-reset-back-login" class="text-xs bton-auth-link">
             <span data-i18n="auth_back_to_login">Back to login</span>
           </button>
 
           <div class="flex justify-end gap-2">
-            <button class="px-4 py-2.5 rounded-xl border border-gray-200 text-slate-700 hover:bg-gray-50 transition" onclick="closeResetModal()" type="button">
+            <button class="bton-auth-btn bton-auth-btn-ghost text-xs" onclick="closeResetModal()" type="button">
               <span data-i18n="btn_cancel">Cancel</span>
             </button>
-            <button class="px-4 py-2.5 rounded-xl bg-BTrustOn-primary hover:bg-BTrustOn-primary/90 text-white font-bold shadow-sm transition" type="submit" id="btn-send-reset-link">
+            <button class="bton-auth-btn bton-auth-btn-primary text-xs" type="submit" id="btn-send-reset-link">
               <span data-i18n="auth_send_reset_link">Send reset link</span>
             </button>
           </div>
@@ -3892,33 +4061,47 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 
       <!-- Update password (recovery session) -->
       <form id="reset-update-form" class="space-y-4 hidden">
-        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <div class="bton-auth-note p-4">
           <p class="text-xs text-slate-700" data-i18n="auth_set_new_password_hint">Set a new password for your account.</p>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="auth_new_password">New password</label>
-          <input id="reset-new-password" type="password" autocomplete="new-password" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-BTrustOn-primary/30 focus:border-BTrustOn-primary bg-white text-slate-900"/>
+          <div class="relative">
+            <i class="fa-solid fa-lock bton-auth-field-icon"></i>
+            <input id="reset-new-password" type="password" autocomplete="new-password"
+              class="bton-login-input bton-auth-input pl-11 pr-11"/>
+            <button type="button" class="bton-auth-eye" data-toggle-password="reset-new-password" aria-label="Toggle password">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="auth_confirm_new_password">Confirm new password</label>
-          <input id="reset-confirm-password" type="password" autocomplete="new-password" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-BTrustOn-primary/30 focus:border-BTrustOn-primary bg-white text-slate-900"/>
+          <div class="relative">
+            <i class="fa-solid fa-lock bton-auth-field-icon"></i>
+            <input id="reset-confirm-password" type="password" autocomplete="new-password"
+              class="bton-login-input bton-auth-input pl-11 pr-11"/>
+            <button type="button" class="bton-auth-eye" data-toggle-password="reset-confirm-password" aria-label="Toggle password">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
         </div>
 
         <p class="text-xs text-emerald-700 hidden" id="reset-update-success"></p>
         <p class="text-xs text-red-500 hidden" id="reset-update-error"></p>
 
         <div class="flex items-center justify-between pt-2">
-          <button type="button" id="btn-reset-back-login-2" class="text-xs font-semibold text-slate-600 hover:text-BTrustOn-primary underline underline-offset-4">
+          <button type="button" id="btn-reset-back-login-2" class="text-xs bton-auth-link">
             <span data-i18n="auth_back_to_login">Back to login</span>
           </button>
 
           <div class="flex justify-end gap-2">
-            <button class="px-4 py-2.5 rounded-xl border border-gray-200 text-slate-700 hover:bg-gray-50 transition" onclick="closeResetModal()" type="button">
+            <button class="bton-auth-btn bton-auth-btn-ghost text-xs" onclick="closeResetModal()" type="button">
               <span data-i18n="btn_cancel">Cancel</span>
             </button>
-            <button class="px-4 py-2.5 rounded-xl bg-BTrustOn-primary hover:bg-BTrustOn-primary/90 text-white font-bold shadow-sm transition" type="submit" id="btn-update-password">
+            <button class="bton-auth-btn bton-auth-btn-primary text-xs" type="submit" id="btn-update-password">
               <span data-i18n="auth_update_password">Update password</span>
             </button>
           </div>
@@ -5578,6 +5761,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (b) b.addEventListener("click", () => {
       closeResetModal();
       try { openLoginModal(); } catch (_) {}
+    });
+  });
+
+
+  // Show/hide password toggles (premium UX)
+  document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-toggle-password");
+      const input = document.getElementById(id);
+      if (!input) return;
+      const isPwd = input.type === "password";
+      input.type = isPwd ? "text" : "password";
+      const icon = btn.querySelector("i");
+      if (icon) icon.className = isPwd ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
     });
   });
 
