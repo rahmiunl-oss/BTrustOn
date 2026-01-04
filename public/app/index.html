@@ -15,6 +15,9 @@
 <title>BtrustOn</title>
 <!-- UX STABILITY FIXES (prevents horizontal jump on refresh / scroll lock) -->
 <style id="ux-stability-fixes">
+/* Hide Profile Analytics upgrade/go pro button (removed) */
+#btn-card-upgrade{display:none !important;}
+
 /* Layout: bring content slightly closer to the edges (outer container only) */
 :root{
   --bton-shell-max: 85rem;   /* was Tailwind 7xl = 80rem */
@@ -3483,12 +3486,6 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <span data-i18n="profile_analytics">Profile Analytics</span>
 </h3>
 <div class="flex items-center gap-2">
-<button class="hidden items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-extrabold border border-slate-700 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 text-white shadow-sm hover:shadow-md hover:scale-[1.01] transition transform" id="btn-card-upgrade" onclick="openUpgradeModal()">
-<span class="w-6 h-6 rounded-lg flex items-center justify-center bg-white/10 border border-white/15 shadow-sm">
-<i class="fa-solid fa-gem text-emerald-200 text-[11px]"></i>
-</span>
-<span class="tracking-wide" data-i18n="btn_upgrade_pro">GO PRO</span>
-</button>
 </div>
 </div>
 <div class="grid grid-cols-2 gap-4">
@@ -3639,8 +3636,14 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 </input></div>
 <div>
 <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_password">Password</label>
-<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_password" id="join-password" placeholder="******" required="" type="password">
+<input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" data-i18n-placeholder="ph_join_password" id="join-password" placeholder="******" required="" type="password" autocomplete="new-password" oninput="validateJoinPasswords()">
 </input></div>
+</div>
+
+<div>
+  <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="field_confirm_password">Confirm Password</label>
+  <input class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 outline-none" id="join-password2" type="password" placeholder="******" required autocomplete="new-password" oninput="validateJoinPasswords()">
+  <p class="text-xs text-red-500 mt-2 hidden" id="join-password2-error"></p>
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div>
@@ -9349,6 +9352,8 @@ function filterSector(sector, btnEl) {
       // 2. Arama ve Listeleme Mantığı
       const searchInput = document.getElementById("search-input");
       const value = searchInput ? searchInput.value : "";
+      try { updateHomeFilterOptions(value); } catch (e) {}
+
       
       if (sector === "all" && value.trim() === "") {
           isSearchActive = false;
@@ -13304,6 +13309,7 @@ if (activeBtn) {
 
   // Refresh country dropdown labels (localized)
   try { if (typeof populateCountryFilter === "function") populateCountryFilter(); } catch(e) {}
+  try { if (typeof updateHomeFilterOptions === "function") updateHomeFilterOptions(document.getElementById("search-input") ? document.getElementById("search-input").value : ""); } catch(e) {}
   try { if (typeof populateCountrySelects === "function") populateCountrySelects(); } catch(e) {}
 
   // If editor is open, re-render service chips (so labels switch language cleanly)
@@ -13862,6 +13868,38 @@ function TT(key, fallback){
 // 1. YENİ KAYIT (JOIN) İŞLEMİ
 // GÜNCELLENMİŞ KAYIT FONKSİYONU (Type Bilgisini Kaydeder)
 /* --- GÜNCELLENMİŞ handleJoin (Toast'lı) --- */
+
+function validateJoinPasswords(force) {
+  try {
+    const p1 = document.getElementById("join-password");
+    const p2 = document.getElementById("join-password2");
+    const err = document.getElementById("join-password2-error");
+    if (!p1 || !p2) return true;
+
+    const v1 = p1.value || "";
+    const v2 = p2.value || "";
+
+    // Don't show error while confirm is empty unless forced (on submit).
+    const shouldShow = !!force || (v2 && v1 !== v2);
+
+    if (err) {
+      if (!shouldShow) {
+        err.classList.add("hidden");
+        err.textContent = "";
+      } else {
+        err.textContent = TT(
+          "join_password_mismatch",
+          (currentLang === "tr" ? "Şifreler eşleşmiyor." : (currentLang === "es" ? "Las contraseñas no coinciden." : "Passwords do not match."))
+        );
+        err.classList.remove("hidden");
+      }
+    }
+    return v1 === v2;
+  } catch (e) {
+    return true;
+  }
+}
+
 async function handleJoin() {
   const btn = document.querySelector("#join-form button");
   const originalText = btn.textContent;
@@ -13875,6 +13913,17 @@ async function handleJoin() {
   try {
     const email = (document.getElementById("join-email")?.value || "").trim();
     const password = (document.getElementById("join-password")?.value || "").trim();
+    const password2 = (document.getElementById("join-password2")?.value || "").trim();
+    if (!validateJoinPasswords(true)) {
+      // keep original button state
+      const errEl2 = document.getElementById("join-error");
+      if (errEl2) errEl2.classList.add("hidden");
+      btn.textContent = originalText;
+      btn.disabled = false;
+      document.getElementById("join-password2")?.focus();
+      return;
+    }
+
     const companyName = (document.getElementById("join-companyName")?.value || "").trim();
     const sector = (document.getElementById("join-sector")?.value || "").trim();
     const typeVal = (document.getElementById("join-type")?.value || "").trim();
@@ -18988,7 +19037,7 @@ owner_name: p.owner_name,
 
   // 3. Filtreleri ve Ekranı Yenile
   dedupeDatabasePreferReal();
-  populateCountryFilter(); // <-- Artık verilerde 'country' olduğu için burası çalışacak
+  updateHomeFilterOptions(document.getElementById("search-input") ? document.getElementById("search-input").value : ""); // <-- refresh facet filters
   
   if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
       renderShowcase(); 
@@ -19676,7 +19725,8 @@ let __searchDebounceTimer = null;
                 /* Mobile: feed-first. No showcase unless user searches. */
                 try { btonSetMobileSearchActive(false); } catch (e) {}
                 if (btonIsMobile()) return;
-                renderShowcase();
+                                try { updateHomeFilterOptions(""); } catch (e) {}
+renderShowcase();
                 return;
             }
 
@@ -19687,7 +19737,8 @@ let __searchDebounceTimer = null;
             try { if (__searchDebounceTimer) clearTimeout(__searchDebounceTimer); } catch (e) {}
             __searchDebounceTimer = setTimeout(() => {
                 try {
-                    renderSearchResults(__searchLastQuery);
+                                        try { updateHomeFilterOptions(__searchLastQuery); } catch (e) {}
+renderSearchResults(__searchLastQuery);
                 } catch (e) {
                     try { btonDbg("renderSearchResults error:", e); } catch(_) {}
                 }
@@ -19716,20 +19767,21 @@ let __searchDebounceTimer = null;
 
     // 2. Ülke Kutusunu Doldur
     /* --- GÜNCELLENMİŞ: populateCountryFilter (DİREKT VERİDEN) --- */
-function populateCountryFilter() {
+function populateCountryFilter(sourceOverride) {
   const select = document.getElementById("country-filter");
   if (!select) return;
 
-  // Only include countries that actually exist among currently searchable/listed companies
-  let source = [];
+  // Only include countries that actually exist among (optionally) provided list
+let source = Array.isArray(sourceOverride) ? sourceOverride : [];
+if (!source.length) {
   try {
     if (typeof getSearchableCompanies === "function") source = getSearchableCompanies();
     else if (Array.isArray(database)) source = database;
   } catch (e) {
     source = Array.isArray(database) ? database : [];
   }
-
-  // Normalize (prefer ISO2 codes) so duplicates like "Turkey" vs "TR" collapse into one option
+}
+// Normalize (prefer ISO2 codes) so duplicates like "Turkey" vs "TR" collapse into one option
   const uniq = new Map(); // key -> canonicalValue
   (source || []).forEach(c => {
     const raw = (c && c.country != null) ? String(c.country).trim() : "";
@@ -19765,6 +19817,199 @@ function populateCountryFilter() {
   } catch (e) {}
 }
 
+/* --- ITERATIVE FACET FILTERS (Sector/Country) --- */
+function __bton_t(key, fallback) {
+  try {
+    const v = (typeof t === "function") ? t(key) : "";
+    return v || fallback || "";
+  } catch (e) {
+    return fallback || "";
+  }
+}
+
+const __BTON_SECTOR_KEYS = {
+  "construction": "sec_const",
+  "energy": "sec_energy",
+  "mining": "sec_mine",
+  "manufacturing": "sec_manu",
+  "technology": "sec_tech",
+  "logistics": "sec_logi",
+  "engineering": "sec_eng"
+};
+
+const __BTON_SECTOR_FALLBACK_EN = {
+  "construction": "Construction & Infrastructure",
+  "energy": "Energy & Oil/Gas",
+  "mining": "Mining & Metals",
+  "manufacturing": "Manufacturing & Machinery",
+  "technology": "Technology & Automation",
+  "logistics": "Logistics & Trade",
+  "engineering": "Engineering & Services"
+};
+
+const __BTON_SECTOR_ORDER = [
+  "construction","energy","mining","manufacturing","technology","logistics","engineering"
+];
+
+function __bton_sectorLabel(sectorValue) {
+  const v = String(sectorValue || "").trim();
+  if (!v) return "";
+  const key = __BTON_SECTOR_KEYS[v];
+  const fb = __BTON_SECTOR_FALLBACK_EN[v] || v;
+  if (key) return __bton_t(key, fb);
+  return fb;
+}
+
+function populateSectorFilterDynamic(sourceOverride) {
+  const select = document.getElementById("sector-filter");
+  if (!select) return;
+
+  const prev = (select.value || (typeof currentSector !== "undefined" ? currentSector : "all") || "all");
+
+  // Source list (optionally provided)
+  let source = Array.isArray(sourceOverride) ? sourceOverride : [];
+  if (!source.length) {
+    try {
+      if (typeof getSearchableCompanies === "function") source = getSearchableCompanies();
+      else if (Array.isArray(database)) source = database;
+    } catch (e) {
+      source = Array.isArray(database) ? database : [];
+    }
+  }
+
+  const set = new Set();
+  (source || []).forEach(c => {
+    const raw = (c && c.sector != null) ? String(c.sector).trim() : "";
+    if (raw) set.add(raw);
+  });
+
+  const ordered = __BTON_SECTOR_ORDER.filter(v => set.has(v));
+  const rest = Array.from(set).filter(v => !ordered.includes(v)).sort((a,b) => a.localeCompare(b));
+  let vals = ordered.concat(rest);
+
+  // Keep current selection visible even if it yields 0 results
+  if (prev && prev !== "all" && !vals.includes(prev)) vals = [prev].concat(vals);
+
+  // Rebuild options
+  select.innerHTML = "";
+
+  const optAll = document.createElement("option");
+  optAll.value = "all";
+  optAll.setAttribute("data-i18n", "sec_all");
+  optAll.textContent = __bton_t("sec_all", "All Sectors");
+  select.appendChild(optAll);
+
+  vals.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    const key = __BTON_SECTOR_KEYS[v];
+    if (key) opt.setAttribute("data-i18n", key);
+    opt.textContent = __bton_sectorLabel(v);
+    select.appendChild(opt);
+  });
+
+  // Restore selection
+  select.value = prev || "all";
+  if (!select.value) select.value = "all";
+
+  try { currentSector = select.value || "all"; } catch (e) {}
+}
+
+function __btonComputeFilteredCompanies(query, opts) {
+  opts = opts || {};
+  const ignoreSector = !!opts.ignoreSector;
+  const ignoreCountry = !!opts.ignoreCountry;
+  const q = (query || "").toLowerCase().trim();
+
+  let list = [];
+  try {
+    if (typeof getSearchableCompanies === "function") list = getSearchableCompanies();
+    else if (Array.isArray(database)) list = database;
+  } catch (e) {
+    list = Array.isArray(database) ? database : [];
+  }
+
+  return (list || []).filter((company) => {
+    // Sector filter
+    if (!ignoreSector) {
+      try {
+        if (typeof currentSector !== "undefined" && currentSector !== "all") {
+          if (String(company.sector || "") !== String(currentSector)) return false;
+        }
+      } catch (e) {}
+    }
+
+    // Country filter
+    if (!ignoreCountry) {
+      try {
+        if (typeof currentCountryFilter !== "undefined" && currentCountryFilter !== "all") {
+          const want = String(currentCountryFilter || "").trim();
+          const have = String(company.country || "").trim();
+          const wantISO = (typeof countryNameToISO2 === "function") ? countryNameToISO2(want) : "";
+          const haveISO = (typeof countryNameToISO2 === "function") ? countryNameToISO2(have) : "";
+          if (wantISO && haveISO) {
+            if (haveISO !== wantISO) return false;
+          } else {
+            if (have.toLowerCase() !== want.toLowerCase()) return false;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Search text
+    if (!q) return true;
+
+    const baseInfo = [
+      company.name,
+      company.company_name,
+      company.city,
+      company.country,
+      company.sector,
+      company.type_label,
+      company.desc,
+      company.tagline
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    const servicesText = Array.isArray(company.services)
+      ? company.services.join(" ").toLowerCase()
+      : String(company.services || "").toLowerCase();
+
+    const assetsText = Array.isArray(company.assets)
+      ? company.assets.map(a => `${a?.type || ""} ${a?.spec || a?.specs || ""} ${a?.location || ""}`).join(" ").toLowerCase()
+      : "";
+
+    const projectsText = Array.isArray(company.projects)
+      ? company.projects.map(p => `${p?.title || ""} ${p?.desc || p?.description || ""} ${p?.loc || p?.location || ""}`).join(" ").toLowerCase()
+      : "";
+
+    const certsText = Array.isArray(company.certificates)
+      ? company.certificates.map(c => `${c?.title || ""} ${c?.issuer || ""} ${c?.issued || c?.date || ""}`).join(" ").toLowerCase()
+      : "";
+
+    const fullHaystack = `${baseInfo} ${servicesText} ${assetsText} ${projectsText} ${certsText}`;
+    return fullHaystack.includes(q);
+  });
+}
+
+function updateHomeFilterOptions(query) {
+  try {
+    const q = (query != null)
+      ? String(query)
+      : (document.getElementById("search-input") ? document.getElementById("search-input").value : "");
+
+    // Country options should reflect current Search + Sector (ignore country itself)
+    const forCountry = __btonComputeFilteredCompanies(q, { ignoreCountry: true });
+
+    // Sector options should reflect current Search + Country (ignore sector itself)
+    const forSector = __btonComputeFilteredCompanies(q, { ignoreSector: true });
+
+    try { if (typeof populateCountryFilter === "function") populateCountryFilter(forCountry); } catch (e) {}
+    try { populateSectorFilterDynamic(forSector); } catch (e) {}
+  } catch (e) {}
+}
+
+
+
 
     // 3. Ülke Değişince Çalışır
     function handleCountryChange(countryVal) {
@@ -19772,6 +20017,9 @@ function populateCountryFilter() {
 
         const searchInput = document.getElementById("search-input");
         const query = searchInput ? searchInput.value.trim() : "";
+
+        try { updateHomeFilterOptions(query); } catch (e) {}
+
 
         const noFilters = (!query && currentSector === "all" && currentCountryFilter === "all" && currentSortOption === "recommended");
         if (noFilters) {
