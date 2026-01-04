@@ -5489,6 +5489,26 @@ function showResetMode(mode) {
 async function btonHandleRecoveryFromUrl() {
   try {
     const h = window.location.hash || "";
+    // If Supabase redirected here with an error (e.g. otp_expired), show a friendly message
+    if (h.includes("error=")) {
+      const pErr = new URLSearchParams(h.startsWith("#") ? h.slice(1) : h);
+      const errorCode = pErr.get("error_code") || "";
+      const errorDesc = pErr.get("error_description") || "";
+      if (errorCode || errorDesc) {
+        openResetModal("request");
+        const errEl = document.getElementById("reset-request-error");
+        if (errEl) {
+          errEl.textContent = (typeof t === "function" ? t("auth_reset_link_invalid") : "Reset link is invalid or expired.") + (errorCode ? ` (${errorCode})` : "");
+          errEl.classList.remove("hidden");
+        }
+        // Clean the URL so it doesn't keep the error state
+        try {
+          const clean = window.location.pathname + window.location.search;
+          history.replaceState(null, "", clean);
+        } catch (_) {}
+        return;
+      }
+    }
     if (!h.includes("type=recovery")) return;
 
     const params = new URLSearchParams(h.startsWith("#") ? h.slice(1) : h);
@@ -5554,7 +5574,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btn) { btn.disabled = true; btn.classList.add("opacity-70"); btn.innerHTML = (typeof t==="function" ? t("auth_sending") : "Sending..."); }
 
       try {
-        const redirectTo = window.location.origin + "/app";
+        const CANONICAL_APP_URL = (window.BTON_CANONICAL_APP_URL || "https://www.btruston.com/app").replace(/\/$/, "");
+        const redirectTo = CANONICAL_APP_URL
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
 
