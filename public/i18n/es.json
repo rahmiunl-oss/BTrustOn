@@ -1267,5 +1267,14 @@
   "auth_password_min": "La contraseña debe tener al menos 6 caracteres.",
   "auth_password_updated": "Contraseña actualizada correctamente.",
   "auth_reset_link_invalid": "El enlace es inválido o ha expirado.",
-  "auth_generic_error": "Algo salió mal."
+  "auth_generic_error": "Algo salió mal.",
+  "footer_contact": "Contacto",
+  "contact_title": "Contacto",
+  "contact_subtitle": "Escríbenos para alianzas, soporte o ventas.",
+  "contact_hello_title": "General",
+  "contact_hello_desc": "Alianzas, onboarding y consultas generales.",
+  "contact_support_title": "Soporte",
+  "contact_support_desc": "Ayuda técnica y problemas de cuenta.",
+  "contact_sales_title": "Ventas",
+  "contact_sales_desc": "Precios, planes y consultas empresariales."
 }
