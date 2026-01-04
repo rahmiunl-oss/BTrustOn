@@ -10580,10 +10580,19 @@ function refreshAnalyticsPlanUI() {
     const isPro = !!(selectedCompany && String(selectedCompany.subscription_tier || "free").toLowerCase() === "pro");
     const upgradeBtn = document.getElementById("btn-card-upgrade");
     const proPill = document.getElementById("card-pro-pill");
+
+    // IMPORTANT: Tailwind class precedence can keep a button visible if both 'hidden' and 'flex' exist.
+    // So we always toggle BOTH.
     if (upgradeBtn) {
-      if (isPro) upgradeBtn.classList.add("hidden");
-      else upgradeBtn.classList.remove("hidden");
+      if (isPro) {
+        upgradeBtn.classList.add("hidden");
+        upgradeBtn.classList.remove("flex");
+      } else {
+        upgradeBtn.classList.remove("hidden");
+        upgradeBtn.classList.add("flex");
+      }
     }
+
     if (proPill) {
       if (isPro) proPill.classList.remove("hidden");
       else proPill.classList.add("hidden");
