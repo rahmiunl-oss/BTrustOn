@@ -14939,11 +14939,16 @@ function _getCompanyIdFromLastRoute() {
 }
 
 // Runs first: decides which view should be visible before the homepage renders.
-async function restoreInitialRoute() {
+async function restoreInitialRoute(opts = {}) {
   const companyFromHash = _getCompanyIdFromHash();
   const tabFromHash = _getCompanyTabFromHash();
   const focusFromHash = _getCompanyFocusFromHash();
-  const companyId = companyFromHash || _getCompanyIdFromLastRoute();
+  // IMPORTANT:
+  // - On INITIAL BOOT we may restore the last visited company route (nice UX on refresh).
+  // - On browser Back/Forward (popstate/hashchange) we must NOT auto-restore last_route,
+  //   otherwise Back from a profile keeps reopening the same profile and never returns Home.
+  const allowLastRoute = !!(opts && opts.allowLastRoute);
+  const companyId = companyFromHash || (allowLastRoute ? _getCompanyIdFromLastRoute() : null);
   if (companyId) {
     // ✅ Boot route flags (avoid double-render + iOS reload crash)
     try { window.__BTON_BOOT_COMPANY_ID = String(companyId); window.__BTON_BOOT_OPENED_COMPANY = false; } catch(e) {}
@@ -14981,7 +14986,7 @@ async function restoreInitialRoute() {
         if (hasCompany) showProfileSkeleton();
         else hideProfileSkeleton();
       } catch(e) {}
-      await restoreInitialRoute();
+      await restoreInitialRoute({ allowLastRoute: false });
     } finally {
       syncing = false;
     }
@@ -15045,7 +15050,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Restore last view after language is ready (never brick boot)
     try {
-      await restoreInitialRoute();
+      await restoreInitialRoute({ allowLastRoute: true });
     } catch (e) {
       console.error("restoreInitialRoute (boot) failed:", e);
       // Bad route can brick refresh; clear it and fall back to Home
