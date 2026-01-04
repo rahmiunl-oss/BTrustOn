@@ -1267,5 +1267,14 @@
   "auth_password_min": "Password must be at least 6 characters.",
   "auth_password_updated": "Password updated successfully.",
   "auth_reset_link_invalid": "Reset link is invalid or expired.",
-  "auth_generic_error": "Something went wrong."
+  "auth_generic_error": "Something went wrong.",
+  "footer_contact": "Contact",
+  "contact_title": "Contact",
+  "contact_subtitle": "Reach us for partnerships, support, or sales.",
+  "contact_hello_title": "General",
+  "contact_hello_desc": "Partnerships, onboarding and general questions.",
+  "contact_support_title": "Support",
+  "contact_support_desc": "Technical help and account issues.",
+  "contact_sales_title": "Sales",
+  "contact_sales_desc": "Pricing, plans and enterprise inquiries."
 }
