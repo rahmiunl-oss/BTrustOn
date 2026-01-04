@@ -1247,5 +1247,7 @@
   "toast_pro_active_until": "{label} activo hasta {date}.",
   "notif_profile_view_msg_locked": "Una empresa vio tu perfil. Pásate a Pro para ver quién fue.",
   "notifications_profile_viewed_body_locked": "Una empresa vio tu perfil. Pásate a Pro para ver quién fue.",
-   "notifications_profile_viewed_body_guest": "Un invitado vio tu perfil."
+   "notifications_profile_viewed_body_guest": "Un invitado vio tu perfil.",
+  "field_confirm_password": "Confirmar contraseña",
+  "join_password_mismatch": "Las contraseñas no coinciden."
 }
