@@ -3467,6 +3467,9 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
 <button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_follow_company_730ad4" id="btn-follow-company" onclick="toggleCompanyFollow(event, selectedCompany &amp;&amp; selectedCompany.id, selectedCompany &amp;&amp; (selectedCompany.name || selectedCompany.company_name || ''))" title="Follow company">
 <i class="fa-solid fa-tower-broadcast text-BTrustOn-accent opacity-40" id="icon-follow-company"></i>
 </button>
+<button class="w-12 h-12 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" id="btn-copy-profile-link" onclick="copyCurrentProfileLink()" title="Copy link">
+<i class="fa-solid fa-link text-BTrustOn-accent"></i>
+</button>
 <button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-5 py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-[.12em]" id="btn-req-quote" onclick="openQuoteModal(selectedCompany.id, selectedCompany.name)">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-paper-plane"></i></span>
 <span class="bton-pill-label" data-i18n="req_quote">REQUEST QUOTE</span>
@@ -11492,6 +11495,14 @@ async function openProfile(companyId, opts = {}) {
 
 
   // --- ROUTE + FAST UI SWITCH (prevents 1-2s dashboard flash on refresh) ---
+  // ✅ Save dashboard state (scroll + filters) before leaving Home → Profile
+  try {
+    const vd = document.getElementById("view-dashboard");
+    const leavingHome = !!(vd && !vd.classList.contains("hidden-view"));
+    if (leavingHome && !(opts && opts.__fromRestore)) {
+      btonSaveHomeState();
+    }
+  } catch (e) {}
   try { localStorage.setItem("BTrustOn_last_route", `company:${companyId}`); } catch(e) {}
 
   // Keep URL in sync (so refresh stays on the same company)
@@ -12680,7 +12691,181 @@ function hideProfileSkeleton() {
   window.__suppressProfileLoadingToasts = false;
 }
 
+
+/* =========================
+   Home state restore (scroll + filters)
+   - Save current dashboard state before opening a profile
+   - Restore it when returning Home via browser Back / UI Back
+========================= */
+function btonCaptureHomeState() {
+  try {
+    const qEl = document.getElementById("search-input");
+    const sectorEl = document.getElementById("sector-filter");
+    const countryEl = document.getElementById("country-filter");
+    const sortEl = document.getElementById("sort-select");
+
+    return {
+      y: window.scrollY || 0,
+      filters: {
+        q: qEl ? (qEl.value || "") : "",
+        sector: sectorEl ? (sectorEl.value || "all") : (typeof currentSector !== "undefined" ? currentSector : "all"),
+        country: countryEl ? (countryEl.value || "all") : (typeof currentCountryFilter !== "undefined" ? currentCountryFilter : "all"),
+        sort: sortEl ? (sortEl.value || "recommended") : (typeof currentSortOption !== "undefined" ? currentSortOption : "recommended"),
+        updates: (typeof homeUpdatesFilter !== "undefined" ? homeUpdatesFilter : "all")
+      },
+      ts: Date.now()
+    };
+  } catch (e) { return null; }
+}
+
+function btonSaveHomeState() {
+  try {
+    const st = btonCaptureHomeState();
+    if (!st) return;
+    localStorage.setItem("BTrustOn_home_state", JSON.stringify(st));
+  } catch (e) {}
+}
+
+function btonApplyHomeFilters(filters) {
+  try {
+    if (!filters || typeof filters !== "object") return;
+
+    // Update UI controls first
+    const qEl = document.getElementById("search-input");
+    if (qEl) qEl.value = (filters.q != null ? String(filters.q) : "");
+
+    const sectorEl = document.getElementById("sector-filter");
+    if (sectorEl) sectorEl.value = (filters.sector || "all");
+
+    const sortEl = document.getElementById("sort-select");
+    if (sortEl) sortEl.value = (filters.sort || "recommended");
+
+    const countryEl = document.getElementById("country-filter");
+    if (countryEl) countryEl.value = (filters.country || "all");
+
+    // Update globals (single source of truth for filtering)
+    try { currentSector = (filters.sector || "all"); } catch (e) {}
+    try { currentSortOption = (filters.sort || "recommended"); } catch (e) {}
+    try { currentCountryFilter = (filters.country || "all"); } catch (e) {}
+
+    // Home updates filter (UI only; avoid extra fetch on back)
+    try {
+      if (typeof homeUpdatesFilter !== "undefined") {
+        homeUpdatesFilter = (filters.updates === "followed") ? "followed" : "all";
+        try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch (e) {}
+      }
+    } catch (e) {}
+
+    // Re-render list/showcase based on the restored state
+    const q = (filters.q != null ? String(filters.q) : "").trim();
+
+    // Use existing controller (debounced) but force a quick render
+    try {
+      if (typeof handleSearchInput === "function") handleSearchInput(q);
+    } catch (e) {}
+
+    // If debounce exists, ensure we render quickly
+    try {
+      if (typeof renderSearchResults === "function" && typeof renderShowcase === "function") {
+        const isDefault = (!q && currentSector === "all" && currentCountryFilter === "all" && currentSortOption === "recommended");
+        if (isDefault) {
+          // Desktop default: showcase. Mobile default: keep feed-first behavior.
+          if (!(typeof btonIsMobile === "function" && btonIsMobile())) {
+            isSearchActive = false;
+            renderShowcase();
+          }
+        } else {
+          isSearchActive = true;
+          renderSearchResults(q);
+        }
+      }
+    } catch (e) {}
+
+    // Refresh dynamic filter option lists (countries/sectors)
+    try { if (typeof updateHomeFilterOptions === "function") updateHomeFilterOptions(q); } catch (e) {}
+  } catch (e) {}
+}
+
+function btonRestoreHomeState() {
+  try {
+    const raw = localStorage.getItem("BTrustOn_home_state") || "";
+    if (!raw) return false;
+    const st = JSON.parse(raw);
+    if (!st || typeof st !== "object") return false;
+
+    // Safety: ignore very old snapshots
+    if (st.ts && (Date.now() - st.ts) > (1000 * 60 * 60 * 12)) return false;
+
+    const filters = st.filters || {};
+    btonApplyHomeFilters(filters);
+
+    // Some selects (country options) may populate after async data; retry once
+    setTimeout(() => { try { btonApplyHomeFilters(filters); } catch (e) {} }, 260);
+
+    const y = Number(st.y || 0);
+
+    // Restore scroll after DOM has a moment to paint
+    setTimeout(() => {
+      try { window.scrollTo({ top: Math.max(y, 0), left: 0, behavior: "auto" }); }
+      catch (e) { try { window.scrollTo(0, Math.max(y, 0)); } catch (_) {} }
+    }, 320);
+
+    return true;
+  } catch (e) { return false; }
+}
+
+/* Copy current profile link (share) */
+async function copyCurrentProfileLink() {
+  try {
+    const cid = (selectedCompany && selectedCompany.id) ? String(selectedCompany.id) : (typeof _getCompanyIdFromHash === "function" ? (_getCompanyIdFromHash() || "") : "");
+    if (!cid) {
+      try { showToast((currentLang==="tr" ? "Hata" : (currentLang==="es" ? "Error" : "Error")), (currentLang==="tr" ? "Profil bulunamadı." : (currentLang==="es" ? "No se encontró el perfil." : "Profile not found.")), "error"); } catch (e) {}
+      return;
+    }
+
+    const tab = (window.__profileActiveTab ? `&tab=${encodeURIComponent(String(window.__profileActiveTab))}` : "");
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}#company=${encodeURIComponent(cid)}${tab}`;
+
+    let ok = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        ok = true;
+      }
+    } catch (e) {}
+
+    if (!ok) {
+      // Fallback copy
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      ta.style.left = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      try { ta.remove(); } catch (e) {}
+    }
+
+    const title = (currentLang === "tr") ? "Kopyalandı" : (currentLang === "es" ? "Copiado" : "Copied");
+    const msg   = (currentLang === "tr") ? "Profil bağlantısı kopyalandı." : (currentLang === "es" ? "Enlace del perfil copiado." : "Profile link copied.");
+    if (ok) {
+      try { showToast(title, msg, "success"); } catch (e) {}
+    } else {
+      try { showToast((currentLang==="tr" ? "Hata" : (currentLang==="es" ? "Error" : "Error")), (currentLang==="tr" ? "Kopyalanamadı." : (currentLang==="es" ? "No se pudo copiar." : "Could not copy.")), "error"); } catch (e) {}
+    }
+  } catch (e) {}
+}
+
 function showMainView() {
+
+      // If user is returning from a profile, we will restore dashboard state (scroll + filters)
+      try {
+        const vp = document.getElementById("view-profile");
+        const fromProfileNow = !!(vp && !vp.classList.contains("hidden-view"));
+        if (fromProfileNow) window.__BTON_HOME_RESTORE_ON_NEXT_SHOW = true;
+      } catch(e) {}
 
       // Ensure profile loader is off on Home
       try { hideProfileSkeleton(); } catch(e) {}
@@ -12711,8 +12896,17 @@ try {
       if (viewProfile) viewProfile.classList.add("hidden-view");
       if (viewEditor) viewEditor.classList.add("hidden-view");
       if (backBtn) backBtn.classList.add("hidden", "hidden-view");
-// ✅ Always start Home at top
-      try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
+// ✅ Home landing behavior:
+// - If returning from a profile, restore scroll + filters
+// - Otherwise start at top
+      try {
+        const shouldRestore = !!window.__BTON_HOME_RESTORE_ON_NEXT_SHOW;
+        window.__BTON_HOME_RESTORE_ON_NEXT_SHOW = false;
+        const didRestore = shouldRestore ? btonRestoreHomeState() : false;
+        if (!didRestore) {
+          try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
+        }
+      } catch(e) { try { window.scrollTo(0,0); } catch(_) {} }
 
     }
 /* --- EKSİK OLAN FONKSİYON: Editör Ekranını Göster --- */
@@ -14976,12 +15170,18 @@ async function restoreInitialRoute(opts = {}) {
 // Keep browser Back/Forward (popstate) and hash changes perfectly in sync with the UI
 (function () {
   let syncing = false;
+  let lastHadCompany = /^#company=/.test(window.location.hash || "");
 
   async function syncRoute() {
     if (syncing) return;
     syncing = true;
     try {
       const hasCompany = /^#company=/.test(window.location.hash || "");
+      try {
+        if (lastHadCompany && !hasCompany) window.__BTON_HOME_RESTORE_ON_NEXT_SHOW = true;
+        lastHadCompany = hasCompany;
+      } catch(e) {}
+
       try {
         if (hasCompany) showProfileSkeleton();
         else hideProfileSkeleton();
