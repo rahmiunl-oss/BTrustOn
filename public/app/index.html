@@ -22131,7 +22131,7 @@ async function loadAdminData() {
                         ${iconLetter}
                     </div>
                     <div>
-                        <div class="font-bold text-gray-800">${cName}</div>
+                        <a href="#company=${String(req.company_id)}" class="font-bold text-gray-800 hover:underline underline-offset-4">${_safeText(cName)}</a>
                         <div class="text-[10px] text-gray-400">${cEmail}</div>
                     </div>
                 </div>
@@ -22433,7 +22433,7 @@ async function loadAdminClaims() {
                 ${iconLetter}
               </div>
               <div>
-                <div class="font-extrabold text-slate-900">${_safeText(cName)}</div>
+                <a href="#company=${String(r.company_id)}" class="font-extrabold text-slate-900 hover:underline underline-offset-4">${_safeText(cName)}</a>
                 <div class="text-[11px] text-slate-500">${_safeText(loc || "")}</div>
               </div>
             </div>
