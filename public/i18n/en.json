@@ -1295,5 +1295,7 @@
   "admin_pro_activated_toast": "Pro activated until {date}.",
   "admin_pro_downgraded_toast": "Company set to Free.",
   "ui_access_denied": "Access denied",
-  "ui_admin_only": "Admin access only."
+  "ui_admin_only": "Admin access only.",
+  "theme_to_dark": "Switch to Dark Mode",
+  "theme_to_light": "Switch to Light Mode"
 }
