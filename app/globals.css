@@ -29,3 +29,67 @@
 .companyFooter{margin-top:18px;color:rgba(234,240,255,0.5);font-size:12px}
 .verifiedPill{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.24)}
 @media(max-width:860px){.companyLayout{grid-template-columns:1fr}.companyH{font-size:30px}}
+
+/* ===== Premium polish overrides (public pages) ===== */
+.btn.primary{
+  background:linear-gradient(135deg, rgba(143,94,255,.35), rgba(56,189,248,.22));
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 10px 30px rgba(143,94,255,.10), 0 2px 10px rgba(0,0,0,.25);
+}
+.btn.primary:hover{
+  background:linear-gradient(135deg, rgba(143,94,255,.45), rgba(56,189,248,.28));
+  border-color:rgba(255,255,255,.18);
+  transform:translateY(-1px);
+}
+.btn.ghost{
+  border-color:rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);
+}
+.btn.ghost:hover{ background:rgba(255,255,255,.06); }
+.card{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.04);
+}
+.companyHero{
+  background:linear-gradient(135deg, rgba(143,94,255,.18), rgba(56,189,248,.10));
+}
+.companyHero:before{
+  opacity:.55;
+}
+
+/* === Public company page polish (v6) === */
+.verifiedBadge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);background:linear-gradient(135deg,rgba(34,197,94,0.18),rgba(56,189,248,0.10));box-shadow:0 10px 30px rgba(0,0,0,0.25);font-size:12px;letter-spacing:0.2px}
+.verifiedBadge svg{opacity:0.95}
+
+.companyHero{position:relative;overflow:hidden;border-radius:26px;border:1px solid rgba(255,255,255,0.10);background:linear-gradient(135deg,rgba(143,94,255,0.18),rgba(56,189,248,0.08));box-shadow:0 30px 90px rgba(0,0,0,0.35)}
+.companyHeroInner{position:relative;z-index:2;padding:22px}
+@media(min-width:860px){.companyHeroInner{padding:28px}}
+.companyHeroBg{position:absolute;inset:0;opacity:0.9}
+.companyHeroBg::before{content:"";position:absolute;inset:0;background:radial-gradient(1200px 600px at 0% 0%,rgba(143,94,255,0.32),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(56,189,248,0.24),transparent 55%),radial-gradient(1000px 700px at 40% 120%,rgba(255,255,255,0.08),transparent 60%)}
+.companyHeroBg::after{content:"";position:absolute;inset:-2px;background:linear-gradient(180deg,rgba(7,10,18,0.10),rgba(7,10,18,0.78));}
+.companyHeroLogoWrap{display:flex;align-items:center;gap:14px}
+.companyLogo{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);box-shadow:0 18px 60px rgba(0,0,0,0.35);overflow:hidden}
+@media(min-width:860px){.companyLogo{width:62px;height:62px;border-radius:18px}}
+.companyLogo img{width:100%;height:100%;object-fit:cover}
+.companyLogo .fallback{font-weight:800;font-size:18px;letter-spacing:0.4px}
+
+.factsGrid{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.fact{padding:12px 12px;border-radius:16px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04)}
+.factLabel{font-size:12px;color:rgba(234,240,255,0.70);margin-bottom:4px}
+.factValue{font-size:14px;font-weight:700;line-height:1.2}
+
+.coverLogoBg{position:absolute;inset:0;overflow:hidden}
+.coverLogoBg img{width:100%;height:100%;object-fit:cover;filter:blur(24px);transform:scale(1.12);opacity:0.18}
+
+/* Directory card header */
+.cardHeader{display:flex;align-items:flex-start;gap:14px}
+.mark{width:44px;height:44px;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.16);background:linear-gradient(135deg,rgba(139,92,246,0.22),rgba(34,211,238,0.10));box-shadow:0 12px 30px rgba(0,0,0,0.25);flex:none}
+.markImg{width:100%;height:100%;object-fit:cover}
+.markText{font-weight:700;letter-spacing:0.2px}
+.cardTitleWrap{flex:1;min-width:0}
+.cardTitleRow{display:flex;align-items:center;gap:10px;justify-content:space-between}
+
+/* Company logo avatar */
+.logoFrame{width:76px;height:76px;border-radius:24px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.16);background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(34,211,238,0.12));box-shadow:0 16px 40px rgba(0,0,0,0.35)}
+.logoImg{width:100%;height:100%;object-fit:cover}
+.logoText{font-weight:800;font-size:28px;letter-spacing:0.2px}
