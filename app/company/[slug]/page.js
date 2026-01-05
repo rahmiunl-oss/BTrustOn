@@ -101,14 +101,15 @@ export default async function CompanyPage({ params }) {
     <main className="page">
       <div className="topbar">
         <div className="brand">
-          <div className="mark" aria-hidden />
           <div>
             <div className="brandName">BTrustOn</div>
             <div className="brandSub">Professional web + SEO</div>
           </div>
         </div>
         <div className="topActions">
-          <Link className="btn ghost" href="/app">App</Link>
+          <Link className="btn ghost" href="/app" aria-label="Discover the B2B network in BTrustOn">
+            Discover B2B Network
+          </Link>
           {/* Sitemap link intentionally removed from UI (still accessible at /sitemap.xml) */}
         </div>
       </div>
