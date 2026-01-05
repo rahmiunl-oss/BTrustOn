@@ -19,20 +19,24 @@ export default function RootLayout({ children }) {
               }} />
               <div>
                 <div style={{ fontWeight: 800, letterSpacing: 0.2 }}>BTrustOn</div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>Professional web + SEO</div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>Business partner network</div>
               </div>
             </a>
 
             <nav style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a className="btn" href="/app">App</a>
-              <a className="btn" href="/sitemap.xml" target="_blank" rel="noreferrer">Sitemap</a>
+              <a className="btn" href="/">Directory</a>
+              <a className="btn primary" href="/app">Open app</a>
             </nav>
           </header>
 
           {children}
 
-          <footer className="muted" style={{ padding: '28px 0 10px', fontSize: 12 }}>
-            © {new Date().getFullYear()} BTrustOn • Directory & company pages are server-rendered.
+          <footer className="muted" style={{ padding: '28px 0 10px', fontSize: 12, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div>© {new Date().getFullYear()} BTrustOn</div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span>Directory & company pages are public for discovery.</span>
+              <a href="/sitemap.xml" className="muted" style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>Sitemap</a>
+            </div>
           </footer>
         </div>
       </body>
