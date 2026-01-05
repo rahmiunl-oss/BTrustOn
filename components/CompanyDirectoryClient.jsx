@@ -1,83 +1,143 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
-function normalize(s) { return (s || '').toString().toLowerCase(); }
+function clean(s) {
+  return String(s || '').trim();
+}
+
+function getInitials(name) {
+  const n = clean(name);
+  if (!n) return 'B';
+  const parts = n.split(/\s+/).filter(Boolean);
+  return (parts[0]?.[0] || 'B').toUpperCase();
+}
+
+function pill(label) {
+  const v = clean(label);
+  if (!v) return null;
+  return <span className="pill">{v}</span>;
+}
 
 export default function CompanyDirectoryClient({ companies = [] }) {
   const [q, setQ] = useState('');
+  const [country, setCountry] = useState('');
+  const [sector, setSector] = useState('');
 
   const filtered = useMemo(() => {
-    const qq = normalize(q).trim();
-    if (!qq) return companies;
+    const query = q.toLowerCase().trim();
     return companies.filter((c) => {
-      const hay = [c.company_name, c.slug, c.sector, c.company_type, c.city, c.country]
-        .map(normalize).join(' | ');
-      return hay.includes(qq);
+      const name = (c.company_name || '').toLowerCase();
+      const sec = (c.sector || '').toLowerCase();
+      const typ = (c.company_type || '').toLowerCase();
+      const ctry = (c.country || '').toLowerCase();
+      const city = (c.city || '').toLowerCase();
+
+      const matchesQuery = !query || [name, sec, typ, ctry, city].some((x) => x.includes(query));
+      const matchesCountry = !country || clean(c.country) === country;
+      const matchesSector = !sector || clean(c.sector) === sector;
+      return matchesQuery && matchesCountry && matchesSector;
     });
-  }, [companies, q]);
+  }, [companies, q, country, sector]);
+
+  // Iterative filters: derive available options from CURRENT filtered set
+  const { countries, sectors } = useMemo(() => {
+    const setCountries = new Set();
+    const setSectors = new Set();
+    for (const c of filtered) {
+      const cc = clean(c.country);
+      const ss = clean(c.sector);
+      if (cc) setCountries.add(cc);
+      if (ss) setSectors.add(ss);
+    }
+    return {
+      countries: Array.from(setCountries).sort((a, b) => a.localeCompare(b)),
+      sectors: Array.from(setSectors).sort((a, b) => a.localeCompare(b)),
+    };
+  }, [filtered]);
 
   return (
-    <>
-      <div className="card" style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Company Directory</div>
-          <div className="muted" style={{ marginTop: 4 }}>SSR directory for SEO + investors. Full app remains at <b>/app</b>.</div>
+    <div className="page">
+      <div className="topRow">
+        <div className="searchWrap">
+          <input
+            className="search"
+            placeholder="Search company, sector, country..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <span className="count">{filtered.length}/{companies.length}</span>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <a className="btn primary" href="/app">Open the app</a>
-          <a className="btn" href="/sitemap.xml" target="_blank" rel="noreferrer">Sitemap</a>
+
+        <div className="filters">
+          <select className="select" value={sector} onChange={(e) => setSector(e.target.value)}>
+            <option value="">All sectors</option>
+            {sectors.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          <select className="select" value={country} onChange={(e) => setCountry(e.target.value)}>
+            <option value="">All countries</option>
+            {countries.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div style={{ height: 14 }} />
+      <div className="grid">
+        {filtered.map((c) => {
+          const name = clean(c.company_name) || 'Company';
+          const loc = [clean(c.city), clean(c.country)].filter(Boolean).join(', ');
+          const industry = clean(c.sector) || clean(c.company_type);
 
-      <div className="card" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <span className="pill">🔎 Search</span>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Company, sector, country…"
-          style={{
-            flex: 1,
-            minWidth: 220,
-            padding: '10px 12px',
-            borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.12)',
-            background: 'rgba(0,0,0,0.2)',
-            color: '#EAF0FF'
-          }}
-        />
-        <span className="muted" style={{ fontSize: 12 }}>{filtered.length}/{companies.length}</span>
+          return (
+            <div className="card" key={c.id}>
+              <div className="cardHeader">
+                <div className="mark">
+                  {c.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="markImg" src={c.logo_url} alt={name} loading="lazy" />
+                  ) : (
+                    <span className="markText">{getInitials(name)}</span>
+                  )}
+                </div>
+
+                <div className="cardTitleWrap">
+                  <div className="cardTitleRow">
+                    <div className="cardTitle">{name}</div>
+                    <VerifiedBadge company={c} />
+                  </div>
+                  {clean(c.tagline) ? <div className="cardSubtitle">{c.tagline}</div> : null}
+                </div>
+              </div>
+
+              <div className="pillRow">
+                {industry ? pill(industry) : null}
+                {loc ? pill(loc) : null}
+                {clean(c.company_size) ? pill(`${c.company_size}`) : null}
+                {clean(c.founded_year) ? pill(`Founded ${c.founded_year}`) : null}
+              </div>
+
+              <div className="actions">
+                <Link className="btn" href={`/company/${c.slug}`}>
+                  View company page
+                </Link>
+                <Link className="btnSecondary" href={`/app#company=${encodeURIComponent(c.id)}`}>
+                  Open in app
+                </Link>
+              </div>
+            </div>
+          );
+        })}
       </div>
-
-      <div style={{ height: 14 }} />
-
-      <div className="grid cols3">
-        {filtered.map((c) => (
-          <div key={c.id} className="card">
-            <div style={{ fontWeight: 750, fontSize: 16, lineHeight: 1.2 }}>
-              {c.company_name || '—'}
-              {(c.is_verified || c.verified) ? <span className="pill" style={{ marginLeft: 10 }}>🛡️ Verified</span> : null}
-            </div>
-
-            <div className="muted" style={{ marginTop: 8, minHeight: 36 }}>
-              {c.tagline || [c.sector, c.company_type].filter(Boolean).join(' • ') || '—'}
-            </div>
-
-            <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {c.country ? <span className="pill">🌍 {c.country}</span> : null}
-              {c.city ? <span className="pill">📍 {c.city}</span> : null}
-              {c.sector ? <span className="pill">🏷️ {c.sector}</span> : null}
-            </div>
-
-            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a className="btn primary" href={`/company/${encodeURIComponent(c.slug)}`}>View company page</a>
-              <a className="btn" href={`/app/#company=${encodeURIComponent(c.id)}`}>Open in app</a>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
+    </div>
   );
 }
