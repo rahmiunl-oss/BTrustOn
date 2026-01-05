@@ -1,97 +1,268 @@
 import { notFound } from 'next/navigation';
 import { getCompanyBySlug } from '@/lib/data';
 
-export const revalidate = 3600;
+export const revalidate = 600; // 10 minutes
 
-function cleanText(s, max = 160) {
-  const t = (s || '').toString().replace(/\s+/g, ' ').trim();
-  if (!t) return '';
-  return t.length > max ? t.slice(0, max - 1) + '…' : t;
+const SITE_NAME = 'BTrustOn';
+const SITE_URL = 'https://btruston.com';
+
+function cleanWebsite(url) {
+  if (!url) return null;
+  const u = String(url).trim();
+  if (!u) return null;
+  if (u.startsWith('http://') || u.startsWith('https://')) return u;
+  return `https://${u}`;
+}
+
+function splitTags(raw) {
+  if (!raw) return [];
+  const s = String(raw);
+  return s
+    .split(/[,;\n\t|]+/g)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .slice(0, 24);
+}
+
+function isVerifiedCompany(company) {
+  const status = String(company?.verification_status || '').toLowerCase();
+  return Boolean(
+    company?.verified ||
+      company?.is_verified ||
+      company?.blue_tick ||
+      status === 'verified' ||
+      status === 'approved'
+  );
 }
 
 export async function generateMetadata({ params }) {
   const company = await getCompanyBySlug(params.slug);
-  if (!company) return { title: 'Company not found — BTrustOn' };
+  if (!company) return {};
 
-  const title = `BTrustOn — ${company.company_name || company.slug}`;
+  const title = `${company.company_name || 'Company'} | ${SITE_NAME}`;
   const description =
-    cleanText(company.tagline, 160) ||
-    cleanText(company.description, 160) ||
-    `Company profile for ${company.company_name || company.slug} on BTrustOn.`;
+    company.tagline ||
+    company.description ||
+    `View ${company.company_name || 'this company'} on ${SITE_NAME}.`;
 
-  const siteUrl = process.env.SITE_URL || '';
-  const url = siteUrl ? `${siteUrl.replace(/\/$/, '')}/company/${company.slug}` : undefined;
+  const ogImage = company.logo_url ? [company.logo_url] : undefined;
 
   return {
     title,
     description,
-    alternates: url ? { canonical: url } : undefined,
-    openGraph: { title, description, type: 'website', url },
-    twitter: { card: 'summary_large_image', title, description },
+    alternates: {
+      canonical: `${SITE_URL}/company/${company.slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/company/${company.slug}`,
+      siteName: SITE_NAME,
+      type: 'website',
+      images: ogImage,
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: ogImage,
+    },
   };
 }
 
-export default async function CompanyPage({ params }) {
+export default async function CompanyPublicPage({ params }) {
   const company = await getCompanyBySlug(params.slug);
   if (!company) notFound();
 
-  const siteUrl = process.env.SITE_URL || '';
-  const canonical = siteUrl ? `${siteUrl.replace(/\/$/, '')}/company/${company.slug}` : '';
+  const website = cleanWebsite(company.website);
+  const tags = splitTags(company.services || company.expertise || company.capabilities);
+  const verified = isVerifiedCompany(company);
+
+  const city = company.city ? String(company.city).trim() : '';
+  const country = company.country ? String(company.country).trim() : '';
+  const location = [city, country].filter(Boolean).join(', ');
+
+  const appHref = `/app/#company=${encodeURIComponent(company.id)}`;
 
   const orgJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: company.company_name || company.slug,
-    url: company.website || canonical || undefined,
-    description: company.tagline || company.description || undefined,
-    address: company.country || company.city || company.address ? {
-      '@type': 'PostalAddress',
-      addressCountry: company.country || undefined,
-      addressLocality: company.city || undefined,
-      streetAddress: company.address || undefined,
-    } : undefined,
+    name: company.company_name || undefined,
+    url: `${SITE_URL}/company/${company.slug}`,
+    logo: company.logo_url || undefined,
+    description: company.description || company.tagline || undefined,
+    sameAs: website ? [website] : undefined,
+    address: location
+      ? {
+          '@type': 'PostalAddress',
+          addressLocality: city || undefined,
+          addressCountry: country || undefined,
+        }
+      : undefined,
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Companies',
+        item: SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: company.company_name || company.slug,
+        item: `${SITE_URL}/company/${company.slug}`,
+      },
+    ],
   };
 
   return (
-    <main className="grid" style={{ gap: 14 }}>
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-          <div style={{ minWidth: 260 }}>
-            <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15 }}>
-              {company.company_name || '—'}
-              
+    <main className="wrap">
+      <header className="topnav">
+        <a className="brand" href="/" aria-label={`${SITE_NAME} home`}>
+          <span className="logoDot" aria-hidden="true" />
+          <span className="brandText">
+            <strong>{SITE_NAME}</strong>
+            <small>Company profile</small>
+          </span>
+        </a>
+        <nav className="navBtns">
+          <a className="btn ghost" href="/">
+            Directory
+          </a>
+          <a className="btn" href={appHref}>
+            Open in app
+          </a>
+        </nav>
+      </header>
+
+      <section className="companyHero">
+        <div className="companyHeroLeft">
+          <div className="avatar">
+            {company.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={company.logo_url} alt={`${company.company_name || 'Company'} logo`} />
+            ) : (
+              <span className="avatarFallback" aria-hidden="true">
+                {(company.company_name || 'C').slice(0, 1).toUpperCase()}
+              </span>
+            )}
+          </div>
+
+          <div className="companyTitle">
+            <h1>
+              {company.company_name || 'Company'}
+              {verified ? <span className="verified">Verified</span> : null}
+            </h1>
+            {company.tagline ? <p className="tagline">{company.tagline}</p> : null}
+
+            <div className="metaRow">
+              {company.sector ? <span className="pill">{company.sector}</span> : null}
+              {company.company_type ? <span className="pill">{company.company_type}</span> : null}
+              {location ? <span className="pill">{location}</span> : null}
+              {company.founded_year ? <span className="pill">Founded {company.founded_year}</span> : null}
             </div>
 
-            <div className="muted" style={{ marginTop: 10, lineHeight: 1.6 }}>
-              {company.tagline || company.description || 'Company landing page (SSR) for Google visibility.'}
-            </div>
-
-            <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {company.country ? <span className="pill">🌍 {company.country}</span> : null}
-              {company.city ? <span className="pill">📍 {company.city}</span> : null}
-              {company.sector ? <span className="pill">🏷️ {company.sector}</span> : null}
-              {company.company_type ? <span className="pill">🏢 {company.company_type}</span> : null}
-              {company.founded_year ? <span className="pill">⏳ Founded {company.founded_year}</span> : null}
-            </div>
-
-            <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <a className="btn primary" href={`/app/#company=${encodeURIComponent(company.id)}`}>Open full profile in app</a>
-              {company.website ? (
-                <a className="btn" href={company.website} target="_blank" rel="noreferrer">Visit website</a>
+            <div className="ctaRow">
+              <a className="btn" href={appHref}>
+                Open full profile in app
+              </a>
+              {website ? (
+                <a className="btn ghost" href={website} target="_blank" rel="noreferrer">
+                  Visit website
+                </a>
               ) : null}
             </div>
           </div>
+        </div>
 
-          <div className="card" style={{ flex: 1, minWidth: 260, background: 'rgba(0,0,0,0.18)' }}>
-            <div style={{ fontWeight: 800 }}>Highlights</div>
-            <div className="muted" style={{ marginTop: 8, lineHeight: 1.65 }}>
-              Server-rendered for Google visibility. Interactive experience lives at <b>/app</b>.
+        <aside className="companyHeroRight">
+          <div className="card">
+            <h3>Overview</h3>
+            <ul className="facts">
+              {company.company_size ? (
+                <li>
+                  <span>Company size</span>
+                  <strong>{company.company_size}</strong>
+                </li>
+              ) : null}
+              {company.city || company.country ? (
+                <li>
+                  <span>Location</span>
+                  <strong>{location || '-'}</strong>
+                </li>
+              ) : null}
+              {company.address ? (
+                <li>
+                  <span>Address</span>
+                  <strong className="muted">{company.address}</strong>
+                </li>
+              ) : null}
+            </ul>
+
+            <div className="subtle">
+              For messaging, quotes, and partner requests, use the full experience in the app.
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
+      </section>
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+      <section className="grid">
+        <article className="card">
+          <h2>About</h2>
+          <p className="about">
+            {company.description
+              ? company.description
+              : company.tagline
+              ? company.tagline
+              : 'This company has not added a public description yet.'}
+          </p>
+        </article>
+
+        <article className="card">
+          <h2>Services</h2>
+          {tags.length ? (
+            <div className="tagGrid">
+              {tags.map((t) => (
+                <span key={t} className="tag">
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">No services listed yet.</p>
+          )}
+        </article>
+      </section>
+
+      <footer className="footer">
+        <span>© {new Date().getFullYear()} {SITE_NAME}</span>
+        <span className="dot" aria-hidden="true">•</span>
+        <a className="footerLink" href={appHref}>
+          Open in app
+        </a>
+      </footer>
+
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
     </main>
   );
 }
