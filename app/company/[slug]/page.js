@@ -128,23 +128,7 @@ export default async function CompanyPublicPage({ params }) {
 
   return (
     <main className="wrap">
-      <header className="topnav">
-        <a className="brand" href="/" aria-label={`${SITE_NAME} home`}>
-          <span className="logoDot" aria-hidden="true" />
-          <span className="brandText">
-            <strong>{SITE_NAME}</strong>
-            <small>Company profile</small>
-          </span>
-        </a>
-        <nav className="navBtns">
-          <a className="btn ghost" href="/">
-            Directory
-          </a>
-          <a className="btn" href={appHref}>
-            Open in app
-          </a>
-        </nav>
-      </header>
+      {/* Global header lives in app/layout.js */}
 
       <section className="companyHero">
         <div className="companyHeroLeft">
@@ -175,21 +159,36 @@ export default async function CompanyPublicPage({ params }) {
 
             <div className="ctaRow">
               <a className="btn" href={appHref}>
-                Open full profile in app
+                Open full profile in BTrustOn
               </a>
               {website ? (
                 <a className="btn ghost" href={website} target="_blank" rel="noreferrer">
                   Visit website
                 </a>
               ) : null}
+              <a className="btn ghost" href="/">
+                Back to directory
+              </a>
             </div>
           </div>
         </div>
 
         <aside className="companyHeroRight">
           <div className="card">
-            <h3>Overview</h3>
+            <h3>Key details</h3>
             <ul className="facts">
+              {company.sector ? (
+                <li>
+                  <span>Sector</span>
+                  <strong>{company.sector}</strong>
+                </li>
+              ) : null}
+              {company.company_type ? (
+                <li>
+                  <span>Type</span>
+                  <strong>{company.company_type}</strong>
+                </li>
+              ) : null}
               {company.company_size ? (
                 <li>
                   <span>Company size</span>
@@ -202,6 +201,12 @@ export default async function CompanyPublicPage({ params }) {
                   <strong>{location || '-'}</strong>
                 </li>
               ) : null}
+              {company.founded_year ? (
+                <li>
+                  <span>Founded</span>
+                  <strong>{company.founded_year}</strong>
+                </li>
+              ) : null}
               {company.address ? (
                 <li>
                   <span>Address</span>
@@ -211,7 +216,7 @@ export default async function CompanyPublicPage({ params }) {
             </ul>
 
             <div className="subtle">
-              For messaging, quotes, and partner requests, use the full experience in the app.
+              For messaging, RFQs and partner requests, open the full profile in BTrustOn.
             </div>
           </div>
         </aside>
