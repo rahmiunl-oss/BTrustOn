@@ -58,7 +58,7 @@ export default function CompanyDirectoryClient({ companies = [] }) {
           <div key={c.id} className="card">
             <div style={{ fontWeight: 750, fontSize: 16, lineHeight: 1.2 }}>
               {c.company_name || '—'}
-          
+              {(c.is_verified || c.verified) ? <span className="pill" style={{ marginLeft: 10 }}>🛡️ Verified</span> : null}
             </div>
 
             <div className="muted" style={{ marginTop: 8, minHeight: 36 }}>
