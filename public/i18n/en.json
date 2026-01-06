@@ -1297,5 +1297,21 @@
   "ui_access_denied": "Access denied",
   "ui_admin_only": "Admin access only.",
   "theme_to_dark": "Switch to Dark Mode",
-  "theme_to_light": "Switch to Light Mode"
+  "theme_to_light": "Switch to Light Mode",
+  "post_add_image_label": "Add image (optional)",
+  "post_image_rules": "16:9 • 1 image",
+  "post_add_image_btn": "Choose image",
+  "post_image_remove": "Remove",
+  "post_image_hint": "Optional. Image is cropped to 16:9 and shown compact in the feed.",
+  "updates_photo": "Photo",
+  "updates_more_in_profile": "More in profile",
+  "updates_view": "View",
+  "post_uploading_image_title": "Uploading",
+  "post_uploading_image": "Uploading image…",
+  "post_image_upload_failed_title": "Image",
+  "post_image_upload_failed": "Image upload failed. Publishing without image.",
+  "post_image_needs_db_title": "Setup",
+  "post_image_needs_db": "To attach images, add an image_url column to company_updates (text).",
+  "post_image_prepared_title": "Ready",
+  "post_image_prepared": "Image prepared. Click Publish to post."
 }
