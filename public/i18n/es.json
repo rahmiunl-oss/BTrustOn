@@ -1297,5 +1297,21 @@
   "ui_access_denied": "Acceso denegado",
   "ui_admin_only": "Solo acceso de admin.",
    "theme_to_dark": "Activar modo oscuro",
-  "theme_to_light": "Activar modo claro"
+  "theme_to_light": "Activar modo claro",
+  "post_add_image_label": "Agregar imagen (opcional)",
+  "post_image_rules": "16:9 • 1 imagen",
+  "post_add_image_btn": "Elegir imagen",
+  "post_image_remove": "Quitar",
+  "post_image_hint": "Opcional. La imagen se recorta a 16:9 y se muestra compacta en el feed.",
+  "updates_photo": "Foto",
+  "updates_more_in_profile": "Más en el perfil",
+  "updates_view": "Ver",
+  "post_uploading_image_title": "Subiendo",
+  "post_uploading_image": "Subiendo imagen…",
+  "post_image_upload_failed_title": "Imagen",
+  "post_image_upload_failed": "No se pudo subir la imagen. Publicando sin imagen.",
+  "post_image_needs_db_title": "Configuración",
+  "post_image_needs_db": "Para adjuntar imágenes, agrega una columna image_url a company_updates (text).",
+  "post_image_prepared_title": "Listo",
+  "post_image_prepared": "Imagen lista. Haz clic en Publicar."
 }
