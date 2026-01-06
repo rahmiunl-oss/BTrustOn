@@ -3825,28 +3825,40 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 
 
 <style id="bton-v32-mobile_mycompany_menu_fix">
-/* BTrustOn – v32 Mobile fix: hide redundant pills in My Company view so hamburger stays visible */
+/* BTrustOn – v32 Mobile header fit
+   Goal: In BOTH "My Company" and "Profile (other company)" views,
+   keep the hamburger menu in the same position and always tappable. */
 @media (max-width: 768px){
-  body.bton-mycompany-view #user-actions, body.bton-profile-view #user-actions{ display:none !important; }
-  body.bton-mycompany-view #guest-actions, body.bton-profile-view #guest-actions{ display:none !important; }
+  /* Hide wide action pills that can overflow the header on small screens */
+  body.bton-mycompany-view #user-actions,
+  body.bton-profile-view #user-actions{ display:none !important; }
 
-  /* Key fix: in My Company profile view, remove the redundant "My Company" quick icon
-     so the Hamburger (Menu) fits on-screen and stays tappable. */
-  body.bton-mycompany-view #mobile-quick-my-company, body.bton-profile-view #mobile-quick-my-company{ display:none !important; }
+  body.bton-mycompany-view #guest-actions,
+  body.bton-profile-view #guest-actions{ display:none !important; }
+
+  /* Remove redundant quick icon so the Menu fits on-screen */
+  body.bton-mycompany-view #mobile-quick-my-company,
+  body.bton-profile-view #mobile-quick-my-company{ display:none !important; }
 
   /* Keep spacing tight so nothing gets pushed off-screen */
-  body.bton-mycompany-view #bton-nav > .max-w-7xl{ padding-right: 12px !important; }
-  body.bton-mycompany-view #nav-right{ gap: 10px !important; }
+  body.bton-mycompany-view #bton-nav > .max-w-7xl,
+  body.bton-profile-view  #bton-nav > .max-w-7xl{ padding-right: 12px !important; }
+
+  body.bton-mycompany-view #nav-right,
+  body.bton-profile-view  #nav-right{ gap: 10px !important; }
 
   /* Ensure hamburger is visible and not collapsed */
-  body.bton-mycompany-view #mobile-nav{ display:block !important; flex: 0 0 auto !important; }
-  body.bton-mycompany-view #mobile-nav-toggle{ display:grid !important; }
+  body.bton-mycompany-view #mobile-nav,
+  body.bton-profile-view  #mobile-nav{ display:block !important; flex: 0 0 auto !important; }
 
+  body.bton-mycompany-view #mobile-nav-toggle,
+  body.bton-profile-view  #mobile-nav-toggle{ display:grid !important; }
 }
 
-/* Extra safety on very small phones: shrink the logo slot a bit in My Company view so the Menu icon never gets clipped */
+/* Extra safety on very small phones: shrink the logo slot a bit so the Menu icon never gets clipped */
 @media (max-width: 390px){
-  body.bton-mycompany-view #nav-left .bton-logo-slot{
+  body.bton-mycompany-view #nav-left .bton-logo-slot,
+  body.bton-profile-view  #nav-left .bton-logo-slot{
     width: 142px !important;
     height: 36px !important;
   }
