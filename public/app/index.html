@@ -1,5 +1,48 @@
 <html lang="en">
 <head>
+<script>
+/* BTrustOn – Storage Safety Net (iOS/Safari private mode can throw on storage access) */
+(function(){
+  function ensureSafeStorage(name){
+    try{
+      var s = window[name];
+      if(!s) return;
+      var k="__bton_test__"+Math.random().toString(16).slice(2);
+      s.setItem(k,"1"); s.removeItem(k);
+      // Patch prototype methods to never throw
+      try{
+        var proto = Object.getPrototypeOf(s);
+        if(proto && !proto.__btonSafePatched){
+          ["getItem","setItem","removeItem","clear","key"].forEach(function(fn){
+            var orig = proto[fn];
+            if(typeof orig !== "function") return;
+            proto[fn] = function(){
+              try{ return orig.apply(this, arguments); }
+              catch(e){ return (fn==="getItem"||fn==="key") ? null : undefined; }
+            };
+          });
+          proto.__btonSafePatched = true;
+        }
+      }catch(_){}
+    }catch(e){
+      // Fallback to in-memory storage
+      var mem = {};
+      var api = {
+        getItem: function(k){ return Object.prototype.hasOwnProperty.call(mem,k) ? mem[k] : null; },
+        setItem: function(k,v){ mem[k]=String(v); },
+        removeItem: function(k){ delete mem[k]; },
+        clear: function(){ mem={}; },
+        key: function(i){ return Object.keys(mem)[i] || null; }
+      };
+      try{ Object.defineProperty(api,"length",{ get:function(){ return Object.keys(mem).length; }}); }catch(_){}
+      try{ Object.defineProperty(window, name, { value: api, configurable: true }); }
+      catch(_){ try{ window[name]=api; }catch(__){} }
+    }
+  }
+  ensureSafeStorage("localStorage");
+  ensureSafeStorage("sessionStorage");
+})();
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -3784,12 +3827,12 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 <style id="bton-v32-mobile_mycompany_menu_fix">
 /* BTrustOn – v32 Mobile fix: hide redundant pills in My Company view so hamburger stays visible */
 @media (max-width: 768px){
-  body.bton-mycompany-view #user-actions{ display:none !important; }
-  body.bton-mycompany-view #guest-actions{ display:none !important; }
+  body.bton-mycompany-view #user-actions, body.bton-profile-view #user-actions{ display:none !important; }
+  body.bton-mycompany-view #guest-actions, body.bton-profile-view #guest-actions{ display:none !important; }
 
   /* Key fix: in My Company profile view, remove the redundant "My Company" quick icon
      so the Hamburger (Menu) fits on-screen and stays tappable. */
-  body.bton-mycompany-view #mobile-quick-my-company{ display:none !important; }
+  body.bton-mycompany-view #mobile-quick-my-company, body.bton-profile-view #mobile-quick-my-company{ display:none !important; }
 
   /* Keep spacing tight so nothing gets pushed off-screen */
   body.bton-mycompany-view #bton-nav > .max-w-7xl{ padding-right: 12px !important; }
@@ -3806,6 +3849,57 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
   body.bton-mycompany-view #nav-left .bton-logo-slot{
     width: 142px !important;
     height: 36px !important;
+  }
+}
+</style>
+
+
+<style id="bton-v36-mobile_edit_copy_order">
+/* v36: Mobile — swap Edit (pen) and Copy Link (chain) order */
+@media (max-width: 640px){
+  #p-edit-mobile-slot{
+    display:flex !important;
+    flex-direction: row-reverse !important;   /* visual order swap */
+    justify-content: flex-start !important;  /* in row-reverse, start = right */
+    align-items: center !important;
+    gap: 12px !important;
+  }
+}
+</style>
+
+<style id="bton-v39-profile_action_order_quote_right">
+/* =========================================================
+   BTrustOn – v39 Profile action ordering (Desktop + Mobile)
+   Goal:
+   - Request Quote is ALWAYS the terminal action (far right)
+   - Copy (link) stays left of Request Quote
+   - Works even if utility classes or older CSS add margins/orders
+   ========================================================= */
+
+#profile-action-row{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:nowrap !important;
+}
+
+/* Keep deterministic ordering */
+#profile-action-row #btn-save-company{ order: 30 !important; }
+#profile-action-row #btn-follow-company{ order: 40 !important; }
+#profile-action-row #btn-profile-link{ order: 60 !important; margin-left: 0 !important; }
+#profile-action-row #btn-edit-profile{ order: 70 !important; }
+
+/* Request Quote last + pinned to far right */
+#profile-action-row #btn-request-quote{
+  order: 999 !important;
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+}
+
+/* Mobile: keep quote button comfortably tappable */
+@media (max-width: 640px){
+  #profile-action-row #btn-request-quote{
+    flex: 1 1 auto !important;
+    justify-content: center !important;
   }
 }
 </style>
@@ -4996,7 +5090,7 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 </div>
 <div class="flex justify-end" id="p-edit-mobile-slot"></div>
 </div>
-<div class="flex items-center gap-3 shrink-0 relative z-20">
+<div id="profile-action-row" class="flex items-center gap-3 shrink-0 relative z-20">
 <button class="hidden-view w-12 h-12 rounded-full bg-white text-gray-500 border border-slate-200/70 hover:bg-BTrustOn-accent hover:text-white hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_edit_profile_1860fb" id="btn-edit-profile" onclick="editMyProfile()" title="Edit Profile">
 <i class="fa-solid fa-pen"></i>
 <span class="bton-edit-label" data-i18n="ui_edit">Edit</span>
@@ -5007,10 +5101,10 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 <button class="hidden w-12 h-12 rounded-full bg-white text-gray-600 border border-slate-200/70 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" data-i18n-title="attr_follow_company_730ad4" id="btn-follow-company" onclick="toggleCompanyFollow(event, selectedCompany &amp;&amp; selectedCompany.id, selectedCompany &amp;&amp; (selectedCompany.name || selectedCompany.company_name || ''))" title="Follow company">
 <i class="fa-solid fa-tower-broadcast text-BTrustOn-accent opacity-40" id="icon-follow-company"></i>
 </button>
-<button class="w-12 h-12 rounded-full bg-white text-gray-600 border border-slate-200/70 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" id="btn-copy-profile-link" onclick="copyCurrentProfileLink()" title="Copy link">
+<button class="w-12 h-12 rounded-full bg-white text-gray-600 border border-slate-200/70 hover:bg-slate-50 hover:border-BTrustOn-accent transition shadow-sm flex items-center justify-center text-lg group relative" id="btn-profile-link" onclick="copyCurrentProfileLink()" title="Copy link">
 <i class="fa-solid fa-link text-BTrustOn-accent"></i>
 </button>
-<button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-5 py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-[.12em]" id="btn-req-quote" onclick="openQuoteModal(selectedCompany.id, selectedCompany.name)">
+<button class="bton-nav-pill bton-pill-primary inline-flex items-center gap-3 px-5 py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-[.12em]" id="btn-request-quote" onclick="openQuoteModal(selectedCompany.id, selectedCompany.name)">
 <span class="bton-nav-mini-ic"><i class="fa-solid fa-paper-plane"></i></span>
 <span class="bton-pill-label" data-i18n="req_quote">REQUEST QUOTE</span>
 </button>
@@ -13246,6 +13340,7 @@ try {
   try {
     const myId = (function(){ try { return localStorage.getItem('BTrustOn_my_company_id'); } catch(e){ return null; } })();
     const isMine = !!(myId && String(company && company.id) === String(myId));
+    document.body.classList.add('bton-profile-view');
     document.body.classList.toggle('bton-mycompany-view', isMine);
   } catch(e) {}
 
@@ -13751,7 +13846,7 @@ if (servicesGrid) {
   
   const btnEdit = document.getElementById("btn-edit-profile");
   const btnAddAsset = document.getElementById("btn-add-asset");
-  const btnQuote = document.getElementById("btn-req-quote");
+  const btnQuote = document.getElementById("btn-request-quote");
   const btnAddProject = document.getElementById("btn-add-project");
   const btnAddCert = document.getElementById("btn-add-cert");
   const logoContainer = document.getElementById("p-logo-container");
@@ -13823,7 +13918,7 @@ if (servicesGrid) {
 // Mobile: keep profile actions together (Edit + Copy Link) under the chips (prevents ugly wrap + scattered icons)
 try {
   const slot = document.getElementById("p-edit-mobile-slot");
-  const btnCopy = document.getElementById("btn-copy-profile-link");
+  const btnCopy = document.getElementById("btn-profile-link");
   const isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
 
   // Remember original parents for restore
@@ -13852,13 +13947,13 @@ try {
 
   if (isMyProfile && isMobile && slot) {
     slot.innerHTML = "";
-    if (btnEdit) {
-      slot.appendChild(btnEdit);
-      btnEdit.classList.add("bton-edit-pill", "bton-mobile-pill");
-    }
     if (btnCopy) {
       slot.appendChild(btnCopy);
       btnCopy.classList.add("bton-mobile-pill");
+    }
+    if (btnEdit) {
+      slot.appendChild(btnEdit);
+      btnEdit.classList.add("bton-edit-pill", "bton-mobile-pill");
     }
   } else {
     if (btnEdit && window.__btonBtnEditHome) window.__btonBtnEditHome.appendChild(btnEdit);
@@ -14565,7 +14660,9 @@ function showMainView() {
   // v32: restore default header mode when leaving profile/editor
   try { document.body.classList.remove('bton-mycompany-view'); } catch(e) {}
 
-      // If user is returning from a profile, we will restore dashboard state (scroll + filters)
+      
+  try { document.body.classList.remove('bton-profile-view'); } catch(e) {}
+// If user is returning from a profile, we will restore dashboard state (scroll + filters)
       try {
         const vp = document.getElementById("view-profile");
         const fromProfileNow = !!(vp && !vp.classList.contains("hidden-view"));
