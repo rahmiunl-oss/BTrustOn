@@ -3261,6 +3261,44 @@ html[data-theme="dark"] .fa-building,
 html[data-theme="dark"] .fa-regular.fa-building{
   color: rgba(255,255,255,.28) !important;
 }
+
+
+/* -------- Editor (Profile Editor): darker logo header + readable Profile Strength -------- */
+html[data-theme="dark"] #view-editor .bton-editor-header{
+  background:
+    radial-gradient(900px 240px at 14% 0%, rgba(34,211,238,.12), rgba(2,6,23,0) 60%),
+    linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.72)) !important;
+  border-color: rgba(34,211,238,.18) !important;
+  box-shadow: 0 28px 90px -60px rgba(0,0,0,.88), 0 0 0 1px rgba(255,255,255,.03) inset !important;
+}
+html[data-theme="dark"] #view-editor #edit-logo-preview-container{
+  background: radial-gradient(120% 120% at 25% 18%, rgba(255,255,255,.06) 0%, rgba(15,23,42,.40) 45%, rgba(2,6,23,.78) 100%) !important;
+  border-color: rgba(34,211,238,.18) !important;
+  box-shadow: 0 22px 60px -55px rgba(0,0,0,.90) !important;
+}
+html[data-theme="dark"] #view-editor .bton-editor-header h4{
+  color: rgba(255,255,255,.96) !important;
+}
+html[data-theme="dark"] #view-editor .bton-editor-header p{
+  color: rgba(226,232,240,.78) !important;
+}
+
+html[data-theme="dark"] #view-editor #editor-profile-strength{
+  background: rgba(2,6,23,.62) !important;
+  border-color: rgba(34,211,238,.18) !important;
+  box-shadow: 0 18px 52px -44px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.03) inset !important;
+}
+html[data-theme="dark"] #view-editor #editor-profile-strength h4,
+html[data-theme="dark"] #view-editor #editor-profile-strength #status-percent,
+html[data-theme="dark"] #view-editor #editor-profile-strength #status-text{
+  color: rgba(255,255,255,.96) !important;
+}
+html[data-theme="dark"] #view-editor #editor-profile-strength .bg-blue-200{
+  background-color: rgba(34,211,238,.14) !important;
+}
+html[data-theme="dark"] #view-editor #editor-profile-strength #progress-bar{
+  background-color: rgba(34,211,238,.92) !important;
+}
 </style>
 <style id="bton-midnight-tune-v8">
 /* =========================================================
@@ -4733,7 +4771,7 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 <i class="fa-solid fa-building w-6 text-gray-400"></i><span data-i18n="ui_general_info_b3f8f8">General Info</span></button>
 <button class="w-full text-left px-4 py-3 rounded-lg bg-white shadow-sm border border-slate-200/70 text-sm font-bold text-gray-700 border-l-4 border-l-transparent hover:border-l-BTrustOn-accent hover:bg-gray-50 transition" onclick="scrollToSection('section-services')">
 <i class="fa-solid fa-screwdriver-wrench w-6 text-gray-400"></i><span data-i18n="ui_services_capabilities_724c56">Services &amp; Capabilities</span></button>
-<div class="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+<div id="editor-profile-strength" class="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
 <div class="flex justify-between items-center mb-2">
 <h4 class="text-xs font-bold text-blue-800" data-i18n="ui_profile_strength_6ef8db">Profile Strength</h4>
 <span class="text-xs font-bold text-blue-600" id="status-percent">0%</span>
@@ -17128,10 +17166,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 });
+/* --- DOM READY RUNNER (prevents mobile refresh timing bugs: auth events firing before DOM exists) --- */
+function btonRunWhenDomReady(fn){
+  try{
+    if (document.readyState === "complete" || document.readyState === "interactive"){
+      return setTimeout(() => { try{ fn(); }catch(e){ console.error("btonRunWhenDomReady:", e); } }, 0);
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => { try{ fn(); }catch(e){ console.error("btonRunWhenDomReady:", e); } }, 0);
+    }, { once: true });
+  }catch(e){
+    try{ fn(); }catch(_){}
+  }
+}
+
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 // Oturum durumu değişirse (Login/Logout) anında tepki ver
 supabaseClient.auth.onAuthStateChange((event, session) => {
+  btonRunWhenDomReady(() => {
+
   // ✅ Password recovery flow: show reset modal and avoid normal navigation
   try {
     if (event === 'PASSWORD_RECOVERY' || window.__BTON_RECOVERY_ACTIVE) {
@@ -17242,6 +17296,8 @@ notificationsUnreadCount = 0;
       try { window.location.reload(); } catch(_) {}
     }
   }
+
+  });
 });
 
 /* --- MY COMPANY BUTONU DÜZELTME --- */
