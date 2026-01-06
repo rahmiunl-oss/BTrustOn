@@ -1297,5 +1297,21 @@
   "ui_access_denied": "Erişim reddedildi",
   "ui_admin_only": "Sadece admin erişebilir.",
   "theme_to_dark": "Karanlık moda geç",
-  "theme_to_light": "Aydınlık moda geç"
+  "theme_to_light": "Aydınlık moda geç",
+  "post_add_image_label": "Görsel ekle (opsiyonel)",
+  "post_image_rules": "16:9 • 1 görsel",
+  "post_add_image_btn": "Görsel seç",
+  "post_image_remove": "Kaldır",
+  "post_image_hint": "İsteğe bağlı. Görsel 16:9 kırpılır ve akışta kompakt gösterilir.",
+  "updates_photo": "Fotoğraf",
+  "updates_more_in_profile": "Devamı profilde",
+  "updates_view": "Görüntüle",
+  "post_uploading_image_title": "Yükleniyor",
+  "post_uploading_image": "Görsel yükleniyor…",
+  "post_image_upload_failed_title": "Görsel",
+  "post_image_upload_failed": "Görsel yüklenemedi. Görselsiz paylaşılıyor.",
+  "post_image_needs_db_title": "Kurulum",
+  "post_image_needs_db": "Görsel eklemek için company_updates tablosuna image_url (text) kolonu ekleyin.",
+  "post_image_prepared_title": "Hazır",
+  "post_image_prepared": "Görsel hazır. Paylaş’a basın."
 }
