@@ -3786,9 +3786,27 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 @media (max-width: 768px){
   body.bton-mycompany-view #user-actions{ display:none !important; }
   body.bton-mycompany-view #guest-actions{ display:none !important; }
+
+  /* Key fix: in My Company profile view, remove the redundant "My Company" quick icon
+     so the Hamburger (Menu) fits on-screen and stays tappable. */
+  body.bton-mycompany-view #mobile-quick-my-company{ display:none !important; }
+
+  /* Keep spacing tight so nothing gets pushed off-screen */
   body.bton-mycompany-view #bton-nav > .max-w-7xl{ padding-right: 12px !important; }
   body.bton-mycompany-view #nav-right{ gap: 10px !important; }
-  body.bton-mycompany-view #mobile-nav{ display:block !important; }
+
+  /* Ensure hamburger is visible and not collapsed */
+  body.bton-mycompany-view #mobile-nav{ display:block !important; flex: 0 0 auto !important; }
+  body.bton-mycompany-view #mobile-nav-toggle{ display:grid !important; }
+
+}
+
+/* Extra safety on very small phones: shrink the logo slot a bit in My Company view so the Menu icon never gets clipped */
+@media (max-width: 390px){
+  body.bton-mycompany-view #nav-left .bton-logo-slot{
+    width: 142px !important;
+    height: 36px !important;
+  }
 }
 </style>
 
