@@ -3645,7 +3645,7 @@ body:not(.dark) html:not([data-theme="dark"]) #bton-logo-dark{ opacity: 0 !impor
     top: 20px !important; /* tweak: 1–3px if you want */
   }
   @media (max-width: 640px){
-    #bton-nav .bton-logo-slot{ top: 1px !important; }
+    #bton-nav .bton-logo-slot{ top: 20px !important; }
   }
 </style>
 
@@ -3774,10 +3774,22 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 
 /* TIP (manual): Mobile logo down-shift
    Add one of these if you want the logo slightly lower on small screens:
-   @media (max-width: 640px){ #nav-left .bton-logo-slot{ margin-top: 20px; } }
+   @media (max-width: 640px){ #nav-left .bton-logo-slot{ margin-top: 2px; } }
    OR
    @media (max-width: 640px){ #nav-left .bton-logo-slot .bton-logo-img{ top: calc(50% + 2px); } }
 */
+</style>
+
+
+<style id="bton-v32-mobile_mycompany_menu_fix">
+/* BTrustOn – v32 Mobile fix: hide redundant pills in My Company view so hamburger stays visible */
+@media (max-width: 768px){
+  body.bton-mycompany-view #user-actions{ display:none !important; }
+  body.bton-mycompany-view #guest-actions{ display:none !important; }
+  body.bton-mycompany-view #bton-nav > .max-w-7xl{ padding-right: 12px !important; }
+  body.bton-mycompany-view #nav-right{ gap: 10px !important; }
+  body.bton-mycompany-view #mobile-nav{ display:block !important; }
+}
 </style>
 
 </head>
@@ -13211,6 +13223,14 @@ try {
 
   selectedCompany = company;
 
+  // v32: Mobile header mode — viewing your own company can overflow the header.
+  // Toggle a body class so we can hide redundant pills and keep the hamburger visible.
+  try {
+    const myId = (function(){ try { return localStorage.getItem('BTrustOn_my_company_id'); } catch(e){ return null; } })();
+    const isMine = !!(myId && String(company && company.id) === String(myId));
+    document.body.classList.toggle('bton-mycompany-view', isMine);
+  } catch(e) {}
+
   try { if (typeof updateSaveButtonsUI === 'function') updateSaveButtonsUI(); try{ updateFollowButtonsUI();
   // BTON_FOLLOW_UI_DELAY_REFRESH: auth/follow set may arrive slightly later on mobile
   try { setTimeout(() => { try { updateFollowButtonsUI(); } catch(e) {} }, 220); } catch(e) {}
@@ -14523,6 +14543,9 @@ document.addEventListener("click", (ev) => {
 
 
 function showMainView() {
+
+  // v32: restore default header mode when leaving profile/editor
+  try { document.body.classList.remove('bton-mycompany-view'); } catch(e) {}
 
       // If user is returning from a profile, we will restore dashboard state (scroll + filters)
       try {
