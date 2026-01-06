@@ -2846,6 +2846,138 @@ html[data-theme="dark"] button[class*="bg-white/"]{
   background-color: rgba(15,23,42,.62) !important;
   border-color: rgba(34,211,238,.14) !important;
 }
+
+/* =========================================================
+   Verify widget – Dark mode readability fix (Profile)
+   Ensures "Verify my business" card is not white in dark mode.
+   ========================================================= */
+html[data-theme="dark"] .verify-widget-shell{
+  border-color: rgba(148,163,184,.18) !important;
+}
+
+html[data-theme="dark"] #verify-locked-view,
+html[data-theme="dark"] #verify-form-view,
+html[data-theme="dark"] #widget-form-view{
+  background: linear-gradient(180deg, rgba(2,6,23,.86) 0%, rgba(15,23,42,.88) 100%) !important;
+  color: var(--dm-text) !important;
+}
+
+
+/* Force override Tailwind gradient/background utilities inside verification widget (some mobile browsers load utilities later) */
+html[data-theme="dark"] .verify-widget-shell{
+  background: rgba(2,6,23,.58) !important;
+}
+
+html[data-theme="dark"] #verify-locked-view[class*="bg-gradient"],
+html[data-theme="dark"] #verify-locked-view{
+  background: linear-gradient(180deg, rgba(2,6,23,.90) 0%, rgba(15,23,42,.92) 100%) !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] #verify-form-view[class*="bg-blue-"],
+html[data-theme="dark"] #verify-form-view{
+  background: linear-gradient(180deg, rgba(2,6,23,.90) 0%, rgba(15,23,42,.92) 100%) !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] #verify-locked-view .text-gray-800,
+html[data-theme="dark"] #verify-form-view .text-gray-800{
+  color: var(--dm-text) !important;
+}
+
+html[data-theme="dark"] #verify-locked-view .text-gray-500,
+html[data-theme="dark"] #verify-form-view .text-gray-500,
+html[data-theme="dark"] #verify-locked-view .text-gray-400,
+html[data-theme="dark"] #verify-form-view .text-gray-400{
+  color: var(--dm-text-soft2) !important;
+}
+html[data-theme="dark"] #verify-locked-view h3,
+html[data-theme="dark"] #verify-form-view h3,
+html[data-theme="dark"] #widget-form-view h3{
+  color: var(--dm-text) !important;
+}
+
+html[data-theme="dark"] #verify-locked-view p,
+html[data-theme="dark"] #verify-form-view p,
+html[data-theme="dark"] #widget-form-view p{
+  color: var(--dm-text-soft2) !important;
+}
+
+html[data-theme="dark"] #verify-locked-view .bg-blue-100{
+  background: rgba(34,211,238,.12) !important;
+}
+html[data-theme="dark"] #verify-locked-view .text-blue-600{
+  color: var(--dm-accent) !important;
+}
+
+/* Form fields inside verification card */
+html[data-theme="dark"] #verify-form-view label,
+html[data-theme="dark"] #widget-form-view label{
+  color: rgba(248,250,252,.90) !important;
+}
+html[data-theme="dark"] #verify-form-view input,
+html[data-theme="dark"] #verify-form-view textarea,
+html[data-theme="dark"] #verify-form-view select,
+html[data-theme="dark"] #widget-form-view input,
+html[data-theme="dark"] #widget-form-view textarea,
+html[data-theme="dark"] #widget-form-view select{
+  background: rgba(2,6,23,.55) !important;
+  border-color: rgba(148,163,184,.22) !important;
+  color: #F8FAFC !important;
+}
+html[data-theme="dark"] #verify-form-view input::placeholder,
+html[data-theme="dark"] #verify-form-view textarea::placeholder,
+html[data-theme="dark"] #widget-form-view input::placeholder,
+html[data-theme="dark"] #widget-form-view textarea::placeholder{
+  color: rgba(248,250,252,.58) !important;
+}
+
+
+/* =========================================================
+   Verify widget – Dark mode fix (Profile right sidebar)
+   Targets #profile-verify-widget (My Company + viewing others)
+   ========================================================= */
+html[data-theme="dark"] #profile-verify-widget{
+  background: rgba(2,6,23,.72) !important;
+  border-color: rgba(148,163,184,.18) !important;
+}
+
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view,
+html[data-theme="dark"] #profile-verify-widget #widget-form-view{
+  background: linear-gradient(180deg, rgba(2,6,23,.90) 0%, rgba(15,23,42,.92) 100%) !important;
+  background-image: none !important;
+  color: var(--dm-text) !important;
+}
+
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view .text-gray-800,
+html[data-theme="dark"] #profile-verify-widget #widget-form-view .text-gray-800{
+  color: var(--dm-text) !important;
+}
+
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view .text-gray-500,
+html[data-theme="dark"] #profile-verify-widget #widget-form-view .text-gray-500,
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view .text-gray-400,
+html[data-theme="dark"] #profile-verify-widget #widget-form-view .text-gray-400{
+  color: var(--dm-text-soft2) !important;
+}
+
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view h3,
+html[data-theme="dark"] #profile-verify-widget #widget-form-view h3{
+  color: var(--dm-text) !important;
+}
+
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view p,
+html[data-theme="dark"] #profile-verify-widget #widget-form-view p{
+  color: var(--dm-text-soft2) !important;
+}
+
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view .bg-blue-100{
+  background: rgba(34,211,238,.12) !important;
+}
+html[data-theme="dark"] #profile-verify-widget #widget-locked-view .text-blue-600{
+  color: var(--dm-accent) !important;
+}
+
 </style>
 <style id="bton-dark-pro-v4">
 /* =========================================================
@@ -3962,6 +4094,73 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 }
 </style>
 
+<style id="bton-v48-official_badge_premium">
+/* =========================================================
+   BTrustOn – v48 Premium "BTrustOn Official" badge
+   Goal: readable + premium in both light & dark mode
+   ========================================================= */
+
+.bton-official-badge{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(245, 199, 92, .55);
+  background: linear-gradient(135deg, #FFF6D8 0%, #FFE3A6 55%, #FFD37A 100%);
+  color: #6B3F00;
+  box-shadow: 0 10px 22px rgba(0,0,0,.10);
+  user-select: none;
+}
+
+.bton-official-badge__icon{
+  font-size: 14px;
+  color: #B56A00;
+  filter: drop-shadow(0 2px 8px rgba(181,106,0,.15));
+}
+
+.bton-official-badge__text{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Subtle premium shine */
+.bton-official-badge::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.55) 45%, transparent 70%);
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .9s ease, opacity .25s ease;
+}
+
+.bton-official-badge:hover::after{
+  transform: translateX(120%);
+  opacity: .55;
+}
+
+/* Dark mode */
+html[data-theme="dark"] .bton-official-badge{
+  border-color: rgba(245, 199, 92, .35);
+  background: linear-gradient(135deg, rgba(255, 210, 92, .18) 0%, rgba(255, 168, 40, .10) 55%, rgba(255, 130, 0, .08) 100%);
+  color: rgba(255, 226, 170, .95);
+  box-shadow: 0 14px 30px rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+html[data-theme="dark"] .bton-official-badge__icon{
+  color: rgba(255, 210, 92, .95);
+  filter: drop-shadow(0 2px 10px rgba(255,190,60,.20));
+}
+</style>
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -5007,7 +5206,7 @@ html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
 </div>
 </div>
 </div>
-<div class="mt-8 border border-blue-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
+<div class="mt-8 border border-blue-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md verify-widget-shell">
 <div class="bg-gradient-to-br from-slate-50 to-white p-6 text-center" id="verify-locked-view">
 <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
 <i class="fa-solid fa-lock"></i>
@@ -13675,9 +13874,9 @@ if (nameEl) {
     if (isAdmin) {
         // --- ADMIN İÇİN: ALTIN TAÇ VE ÖZEL ETİKET ---
         nameEl.innerHTML += `
-            <span class="inline-flex items-center gap-1.5 ml-3 px-2 py-0.5 rounded bg-amber-100 border border-amber-200 align-middle">
-                <i class="fa-solid fa-crown text-amber-600 text-sm animate-pulse"></i>
-                <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wide">BTrustOn Official</span>
+            <span class="bton-official-badge ml-3 align-middle" title="BTrustOn Official">
+                <i class="fa-solid fa-crown bton-official-badge__icon" aria-hidden="true"></i>
+                <span class="bton-official-badge__text">BTrustOn Official</span>
             </span>
         `;
     } 
