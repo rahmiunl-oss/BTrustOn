@@ -10786,10 +10786,218 @@ function populateCountrySelects() {
         otherOpt.textContent = (t("ui_other_not_listed") || "Other / Not Listed");
         el.appendChild(otherOpt);
 
-        // restore previous value
-        try { if (prev) el.value = prev; } catch(e) {}
-    });
+        // restore previous value (and keep custom countries)
+        try {
+          if (prev) {
+            const hasPrev = Array.from(el.options || []).some(o => String(o.value) === String(prev));
+            if (!hasPrev) {
+              const opt = document.createElement("option");
+              opt.value = prev;
+              try { opt.textContent = (typeof localizeCountryName === "function") ? (localizeCountryName(prev) || prev) : prev; }
+              catch(_) { opt.textContent = prev; }
+              opt.setAttribute("data-bton-custom", "1");
+              const other = Array.from(el.options || []).find(o => String(o.value) === "Other");
+              if (other && other.parentNode) el.insertBefore(opt, other);
+              else el.appendChild(opt);
+            }
+            el.value = prev;
+          }
+        } catch(e) {}
+
+        // ensure "Other / Not Listed" manual input behavior
+        try { if (typeof __btonEnsureCountryOther === "function") __btonEnsureCountryOther(id); } catch(_) {}
+});
 }
+
+
+
+/* =========================================================
+   OTHER COUNTRY (Manual Input)
+   - When user selects "Other / Not Listed" in country dropdown,
+     we show a text input and save the typed value as country.
+   - Works for Join (join-country) and Profile Editor (edit-country)
+   ========================================================= */
+
+function __btonCountryOtherStrings() {
+  const lang = (typeof currentLang !== "undefined" ? String(currentLang) : "en").toLowerCase();
+  if (lang === "tr") {
+    return {
+      label: "Ülkenizi yazın",
+      placeholder: "Ülke adını yazın",
+      hint: "Bu değer profilinizde ülke olarak kaydedilir."
+    };
+  }
+  if (lang === "es") {
+    return {
+      label: "Escribe tu país",
+      placeholder: "Escribe el nombre del país",
+      hint: "Este valor se guardará como país en tu perfil."
+    };
+  }
+  return {
+    label: "Enter your country",
+    placeholder: "Type your country",
+    hint: "This value will be saved as your profile country."
+  };
+}
+
+function __btonSetCountrySelectValue(selectId, value) {
+  const el = document.getElementById(selectId);
+  const v = (value || "").toString().trim();
+  if (!el || !v) return;
+
+  // If option doesn't exist, add it (before "Other" if present)
+  const has = Array.from(el.options || []).some(o => String(o.value) === v);
+  if (!has) {
+    const opt = document.createElement("option");
+    opt.value = v;
+    // Use localization helper if available
+    try { opt.textContent = (typeof localizeCountryName === "function") ? (localizeCountryName(v) || v) : v; }
+    catch(_) { opt.textContent = v; }
+    opt.setAttribute("data-bton-custom", "1");
+
+    const otherOpt = Array.from(el.options || []).find(o => String(o.value) === "Other");
+    if (otherOpt && otherOpt.parentNode) {
+      el.insertBefore(opt, otherOpt);
+    } else {
+      el.appendChild(opt);
+    }
+  }
+
+  try { el.value = v; } catch(_) {}
+}
+
+function __btonEnsureCountryOther(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+
+  // Avoid double-binding
+  if (sel.dataset && sel.dataset.btonOtherBound === "1") {
+    // Still update strings on language changes
+    try {
+      const s = __btonCountryOtherStrings();
+      const label = document.getElementById(selectId + "-other-label");
+      const input = document.getElementById(selectId + "-other");
+      const hint = document.getElementById(selectId + "-other-hint");
+      if (label) label.textContent = s.label;
+      if (input) input.placeholder = s.placeholder;
+      if (hint) hint.textContent = s.hint;
+
+      // Re-sync visibility (value may be set programmatically)
+      const wrap = document.getElementById(selectId + "-other-wrap");
+      if (wrap && input) {
+        if (sel.value === "Other") {
+          wrap.classList.remove("hidden");
+          input.required = true;
+        } else {
+          wrap.classList.add("hidden");
+          input.required = false;
+        }
+      }
+    } catch(_) {}
+    return;
+  }
+  if (sel.dataset) sel.dataset.btonOtherBound = "1";
+
+  const wrapId = selectId + "-other-wrap";
+  let wrap = document.getElementById(wrapId);
+
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = wrapId;
+    wrap.className = "mt-3 hidden";
+
+    const s = __btonCountryOtherStrings();
+
+    const label = document.createElement("label");
+    label.id = selectId + "-other-label";
+
+    // Match styles in Join vs Editor
+    if (selectId === "join-country") {
+      label.className = "block text-xs font-bold text-gray-600 mb-1.5";
+    } else {
+      label.className = "block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1";
+    }
+    label.textContent = s.label;
+
+    const input = document.createElement("input");
+    input.id = selectId + "-other";
+    input.type = "text";
+    input.autocomplete = "country-name";
+    input.placeholder = s.placeholder;
+
+    if (selectId === "join-country") {
+      input.className = "w-full border border-slate-200/70 bg-gray-50 rounded-lg px-4 py-3 outline-none text-gray-700";
+    } else {
+      input.className = "input-field w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:outline-none transition bg-white";
+    }
+
+    const hint = document.createElement("p");
+    hint.id = selectId + "-other-hint";
+    hint.className = (selectId === "join-country") ? "text-[10px] text-gray-400 mt-1 leading-tight" : "text-[11px] text-gray-400 mt-1 leading-tight";
+    hint.textContent = s.hint;
+
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    wrap.appendChild(hint);
+
+    // Insert right after the select inside the same parent container
+    const parent = sel.parentElement;
+    if (parent) parent.appendChild(wrap);
+
+    // Commit typed country (optional UX): on blur / Enter, convert it into a real option
+    const commit = () => {
+      try {
+        if (sel.value !== "Other") return;
+        const v = (input.value || "").toString().trim();
+        if (!v) return;
+        __btonSetCountrySelectValue(selectId, v);
+        // Hide input once committed (now selected country is the typed one)
+        wrap.classList.add("hidden");
+        input.required = false;
+      } catch(_) {}
+    };
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", (e) => {
+      if (e && e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      }
+    });
+  }
+
+  const sync = () => {
+    try {
+      const input = document.getElementById(selectId + "-other");
+      if (!input) return;
+
+      if (sel.value === "Other") {
+        wrap.classList.remove("hidden");
+        input.required = true;
+        setTimeout(() => { try { input.focus({ preventScroll: false }); } catch(_) {} }, 0);
+      } else {
+        wrap.classList.add("hidden");
+        input.required = false;
+      }
+    } catch(_) {}
+  };
+
+  sel.addEventListener("change", sync);
+  sync();
+}
+
+function __btonGetCountryValue(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return "";
+  const raw = (sel.value || "").toString().trim();
+  if (raw !== "Other") return raw;
+  const input = document.getElementById(selectId + "-other");
+  return (input && input.value) ? input.value.toString().trim() : "";
+}
+
+// Ensure UI exists once countries are populated / language switches
+try { __btonEnsureCountryOther("join-country"); } catch(_) {}
+try { __btonEnsureCountryOther("edit-country"); } catch(_) {}
 
     // Top band animasyon & canlı görünüm için
     let topCompaniesOrder = [];
@@ -14264,7 +14472,25 @@ async function saveProfileData() {
     // --- 2. DİĞER STANDART VERİLER ---
     const name = document.getElementById("edit-name").value.trim();
     const city = document.getElementById("edit-city").value.trim();
-    const country = document.getElementById("edit-country").value;
+    let country = document.getElementById("edit-country").value;
+    if (String(country) === "Other") {
+      const other = (typeof __btonGetCountryValue === "function") ? __btonGetCountryValue("edit-country") : "";
+      if (!other) {
+        try {
+          showToast(
+            (currentLang === "tr" ? "Eksik Bilgi" : (currentLang === "es" ? "Falta información" : "Missing Info")),
+            (currentLang === "tr" ? "Lütfen ülkenizi yazın." : (currentLang === "es" ? "Por favor, escribe tu país." : "Please enter your country.")),
+            "error"
+          );
+        } catch(_) {}
+        // restore button
+        btn.textContent = originalText;
+        btn.disabled = false;
+        try { document.getElementById("edit-country-other")?.focus(); } catch(_) {}
+        return;
+      }
+      country = other;
+    }
     const regNo = (document.getElementById("edit-reg-no")?.value || "").trim();
     const regRegion = (document.getElementById("edit-reg-region")?.value || "").trim();
     const regUrl = (document.getElementById("edit-reg-url")?.value || "").trim();
@@ -16525,7 +16751,37 @@ async function handleJoin() {
     const sector = (document.getElementById("join-sector")?.value || "").trim();
     const typeVal = (document.getElementById("join-type")?.value || "").trim();
     const city = (document.getElementById("join-city")?.value || "").trim();
-    const country = (document.getElementById("join-country")?.value || "").trim();
+    let country = (document.getElementById("join-country")?.value || "").trim();
+    if (country === "Other") {
+      const other = (typeof __btonGetCountryValue === "function") ? __btonGetCountryValue("join-country") : "";
+      if (!other) {
+        const errEl2 = document.getElementById("join-error");
+        if (errEl2) {
+          errEl2.textContent = (currentLang === "tr"
+            ? "Lütfen ülkenizi yazın."
+            : (currentLang === "es" ? "Por favor, escribe tu país." : "Please enter your country."));
+          errEl2.classList.remove("hidden");
+        }
+
+        try {
+          showToast(
+            TT("toast_missing_info", (currentLang === "tr" ? "Eksik Bilgi" : "Missing Info")),
+            (currentLang === "tr"
+              ? "Ülke alanını doldurun."
+              : (currentLang === "es" ? "Completa el campo de país." : "Fill in the country field.")),
+            "error"
+          );
+        } catch(_) {}
+
+        // restore button
+        btn.textContent = originalText;
+        btn.disabled = false;
+
+        try { document.getElementById("join-country-other")?.focus(); } catch(_) {}
+        return;
+      }
+      country = other;
+    }
     const services = (document.getElementById("join-services")?.value || "").trim();
 
     const errEl = document.getElementById("join-error");
@@ -17394,7 +17650,7 @@ function editMyProfile(targetSectionId) {
   document.getElementById("edit-city").value = selectedCompany.city || "";
   
   // ✅ İŞTE BURASI: Eğer veri yoksa otomatik 'Turkey' seçer
-  document.getElementById("edit-country").value = selectedCompany.country || "Turkey";
+  try { __btonSetCountrySelectValue("edit-country", (selectedCompany.country || "Turkey")); } catch(_) { document.getElementById("edit-country").value = selectedCompany.country || "Turkey"; }
 document.getElementById("edit-address").value = selectedCompany.address || ""; 
 
   // Logo Gösterimi
