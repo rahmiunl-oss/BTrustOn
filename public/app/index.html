@@ -3645,7 +3645,7 @@ body:not(.dark) html:not([data-theme="dark"]) #bton-logo-dark{ opacity: 0 !impor
     top: 20px !important; /* tweak: 1–3px if you want */
   }
   @media (max-width: 640px){
-    #bton-nav .bton-logo-slot{ top: 10px !important; }
+    #bton-nav .bton-logo-slot{ top: 1px !important; }
   }
 </style>
 
@@ -3737,6 +3737,47 @@ html[data-theme="dark"] #inbox-content::-webkit-scrollbar-thumb:hover,
 html[data-theme="dark"] #saved-panel::-webkit-scrollbar-thumb:hover{
   background: rgba(148,163,184,.28);
 }
+</style>
+
+
+<style id="bton-v31-mobile-header-compact-and-profile-actions">
+/* =========================================================
+   BTrustOn – v31 Mobile polish
+   - Prevent header overflow on mobile (keep hamburger visible)
+   - Keep Edit + Copy actions side-by-side on mobile profile header
+   ========================================================= */
+
+/* Mobile header: keep it compact (use hamburger menu instead of wide pills) */
+@media (max-width: 768px){
+  /* Logged-in pills tend to overflow and hide the hamburger. Keep only the bell visible. */
+  #user-actions{ gap: 10px !important; }
+  #user-actions #nav-plan-wrap,
+  #user-actions #btn-saved-companies,
+  #user-actions #btn-my-company,
+  #user-actions > div.ml-auto{ display: none !important; }
+  #mobile-nav{ flex: 0 0 auto !important; }
+}
+
+/* Mobile profile: action pills (Edit + Copy) look consistent + sit together */
+@media (max-width: 640px){
+  #p-edit-mobile-slot{ display:flex !important; align-items:center !important; justify-content:flex-end !important; gap: 10px !important; }
+  #p-edit-mobile-slot .bton-mobile-pill{
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 9999px !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+  #p-edit-mobile-slot .bton-mobile-pill i{ font-size: 18px !important; }
+}
+
+/* TIP (manual): Mobile logo down-shift
+   Add one of these if you want the logo slightly lower on small screens:
+   @media (max-width: 640px){ #nav-left .bton-logo-slot{ margin-top: 20px; } }
+   OR
+   @media (max-width: 640px){ #nav-left .bton-logo-slot .bton-logo-img{ top: calc(50% + 2px); } }
+*/
 </style>
 
 </head>
@@ -13741,24 +13782,49 @@ if (servicesGrid) {
 
 
   
-// Mobile: move "Edit Profile" under location/sector chips (prevents ugly wrap when name is long)
+// Mobile: keep profile actions together (Edit + Copy Link) under the chips (prevents ugly wrap + scattered icons)
 try {
   const slot = document.getElementById("p-edit-mobile-slot");
+  const btnCopy = document.getElementById("btn-copy-profile-link");
+  const isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+
+  // Remember original parents for restore
+  if (btnEdit && !window.__btonBtnEditHome) window.__btonBtnEditHome = btnEdit.parentElement;
+  if (btnCopy && !window.__btonBtnCopyHome) window.__btonBtnCopyHome = btnCopy.parentElement;
+
+  // Ensure edit goes to editor (and doesn't bubble)
   if (btnEdit) {
-    if (!window.__btonBtnEditHome) window.__btonBtnEditHome = btnEdit.parentElement;
-
-    const isMobile = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
-
-    // reset
-    btnEdit.classList.remove("bton-edit-pill");
     btnEdit.onclick = (e) => { if (e) e.stopPropagation(); editMyProfile(); };
+  }
 
-    if (isMyProfile && isMobile && slot) {
+  // Ensure copy doesn't bubble; preserve existing handler if present
+  if (btnCopy && !btnCopy.__btonClickWrapped) {
+    btnCopy.__btonClickWrapped = true;
+    const prev = btnCopy.onclick;
+    btnCopy.onclick = (e) => {
+      if (e) e.stopPropagation();
+      if (typeof prev === "function") return prev.call(btnCopy, e);
+      if (typeof copyProfileLink === "function") return copyProfileLink();
+    };
+  }
+
+  // Reset styles
+  if (btnEdit) btnEdit.classList.remove("bton-edit-pill", "bton-mobile-pill");
+  if (btnCopy) btnCopy.classList.remove("bton-mobile-pill");
+
+  if (isMyProfile && isMobile && slot) {
+    slot.innerHTML = "";
+    if (btnEdit) {
       slot.appendChild(btnEdit);
-      btnEdit.classList.add("bton-edit-pill");
-    } else if (window.__btonBtnEditHome) {
-      window.__btonBtnEditHome.appendChild(btnEdit);
+      btnEdit.classList.add("bton-edit-pill", "bton-mobile-pill");
     }
+    if (btnCopy) {
+      slot.appendChild(btnCopy);
+      btnCopy.classList.add("bton-mobile-pill");
+    }
+  } else {
+    if (btnEdit && window.__btonBtnEditHome) window.__btonBtnEditHome.appendChild(btnEdit);
+    if (btnCopy && window.__btonBtnCopyHome) window.__btonBtnCopyHome.appendChild(btnCopy);
   }
 } catch (e) {}
 
