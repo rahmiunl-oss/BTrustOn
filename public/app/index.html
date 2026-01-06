@@ -4161,6 +4161,84 @@ html[data-theme="dark"] .bton-official-badge__icon{
   filter: drop-shadow(0 2px 10px rgba(255,190,60,.20));
 }
 </style>
+<style id="bton-msg-bg-dark-mesh-v3">
+/* =========================================================
+   BTrustOn — Message view background fix + subtle cubes (v3)
+   Goal: same "cubes" vibe as light mode, but much less visible
+   ========================================================= */
+
+html[data-theme="dark"] #view-message{
+  /* Opaque base prevents underlying page bleed-through */
+  background:
+    radial-gradient(1000px 540px at 20% -10%, rgba(34,211,238,.08), rgba(2,6,23,0) 60%),
+    radial-gradient(920px 520px at 85% -10%, rgba(96,165,250,.06), rgba(2,6,23,0) 58%),
+    #020617 !important;
+}
+
+/* Thread surface (opaque) */
+html[data-theme="dark"] #message-thread-container{
+  position: relative;
+  overflow: hidden;
+  /* Make the base more opaque so texture doesn't compete with text */
+  background-color: rgba(2,6,23,.945) !important;
+  /* We'll draw the texture in pseudo-layers to control opacity */
+  background-image: none !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+/* Cube texture layer (very subtle) */
+html[data-theme="dark"] #message-thread-container::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+  background-repeat: repeat;
+  opacity: .065; /* <-- cube visibility (lower = calmer) */
+  filter: brightness(.96) contrast(.90) saturate(.92);
+  transform: translateZ(0);
+}
+
+/* Isometric mesh lines (even subtler than v2) */
+html[data-theme="dark"] #message-thread-container::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg,
+      rgba(148,163,184,.095) 0 1px,
+      transparent 1px 56px),
+    repeating-linear-gradient(60deg,
+      rgba(148,163,184,.082) 0 1px,
+      transparent 1px 56px),
+    repeating-linear-gradient(120deg,
+      rgba(148,163,184,.082) 0 1px,
+      transparent 1px 56px);
+  opacity: .50; /* overall intensity */
+  transform: translateZ(0);
+}
+
+/* Keep chat content above texture */
+html[data-theme="dark"] #message-thread-container > *{
+  position: relative;
+  z-index: 1;
+}
+
+/* Top + bottom bars: ensure they are not translucent */
+html[data-theme="dark"] #view-message > .shrink-0{
+  background: rgba(2,6,23,.90) !important;
+  border-color: rgba(148,163,184,.14) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Footer bar slightly denser for typing comfort */
+html[data-theme="dark"] #view-message > .shrink-0.border-t{
+  background: rgba(2,6,23,.94) !important;
+}
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
