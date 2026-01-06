@@ -2723,6 +2723,14 @@ html[data-theme="dark"] select{
   color: var(--dm-text) !important;
   border-color: rgba(34,211,238,.14) !important;
 }
+
+/* Native dropdown list styling (fix: white list + white text on mobile) */
+html[data-theme="dark"] select option,
+html[data-theme="dark"] select optgroup{
+  background-color: rgba(2,6,23,.92) !important;
+  color: rgba(226,232,240,.98) !important;
+}
+
 html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder{
   color: rgba(248,250,252,.82) !important;
