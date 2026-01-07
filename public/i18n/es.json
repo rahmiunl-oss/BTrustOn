@@ -1313,5 +1313,9 @@
   "post_image_needs_db_title": "Configuración",
   "post_image_needs_db": "Para adjuntar imágenes, agrega una columna image_url a company_updates (text).",
   "post_image_prepared_title": "Listo",
-  "post_image_prepared": "Imagen lista. Haz clic en Publicar."
+  "post_image_prepared": "Imagen lista. Haz clic en Publicar.",
+  "notif_update_reaction_title": "Reacción a la actualización",
+  "notif_update_reaction_like": "{company} indicó Me gusta en tu actualización.",
+  "notif_update_reaction_celebrate": "{company} celebró tu actualización.",
+  "toast_self_reaction": "No puedes reaccionar a tu propia actualización."
 }
