@@ -666,7 +666,76 @@
   .bton-updates-nav-right{ right: 6px; }
 
   /* Cards */
-  .bton-upd-card{ border-radius: 18px !important; }
+  /* Slightly taller cards so the media strip can be a bit larger (keeps text readable) */
+  .bton-upd-card{ border-radius: 18px !important; height: 270px !important; }
+  .bton-upd-card > div.relative.flex{ height: 100% !important; }
+  .bton-upd-col{ height: 100% !important; }
+  .bton-upd-media-slot{ background: rgba(248,250,252,.70) !important; }
+  /* =========================================================
+     Company Updates – Post Update button (Desktop)
+     Goal: bigger, premium, subtle hover grow on desktop
+  ========================================================= */
+  @media (min-width: 641px){
+  #btn-open-post-update{
+    min-height: 44px !important;
+    padding: 11px 18px !important;
+    font-size: 13px !important;
+    letter-spacing: .03em !important;
+    border-radius: 16px !important;
+
+    /* Premium feel: slightly longer, "springy" easing */
+    transition:
+      transform .22s cubic-bezier(.16,1,.3,1),
+      box-shadow .22s cubic-bezier(.16,1,.3,1),
+      border-color .22s ease,
+      background-color .22s ease,
+      filter .22s ease !important;
+
+    will-change: transform, box-shadow, filter;
+    transform: translateZ(0);
+  }
+
+  #btn-open-post-update i{ font-size: 15.5px !important; }
+
+  #btn-open-post-update:hover{
+    transform: translateY(-2px) scale(1.06);
+    box-shadow: 0 26px 80px rgba(15,23,42,.16) !important;
+    filter: saturate(1.05) contrast(1.02);
+    border-color: rgba(34,211,238,.20) !important;
+  }
+
+  #btn-open-post-update:active{ transform: translateY(0) scale(.985); }
+
+  #btn-open-post-update:focus-visible{
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(34,211,238,.18), 0 26px 80px rgba(15,23,42,.18) !important;
+  }
+
+  html[data-theme="dark"] #btn-open-post-update{
+    background: rgba(2,6,23,.52) !important;
+    border-color: rgba(148,163,184,.20) !important;
+    color: rgba(226,232,240,.92) !important;
+  }
+
+  html[data-theme="dark"] #btn-open-post-update:hover{
+    background: rgba(2,6,23,.62) !important;
+    border-color: rgba(34,211,238,.34) !important;
+    box-shadow: 0 38px 110px rgba(0,0,0,.58) !important;
+    filter: brightness(1.06) saturate(.98);
+  }
+
+  html[data-theme="dark"] #btn-open-post-update:focus-visible{
+    box-shadow: 0 0 0 4px rgba(34,211,238,.20), 0 38px 110px rgba(0,0,0,.60) !important;
+  }
+}
+
+  @media (prefers-reduced-motion: reduce){
+    #btn-open-post-update{ transition: none !important; }
+    #btn-open-post-update:hover, #btn-open-post-update:active{ transform: none !important; }
+  }
+
+  @media (max-width: 640px){ .bton-upd-card{ height: 282px !important; } }
+
   .bton-upd-card:focus-visible{
     outline:none;
     box-shadow: 0 0 0 4px rgba(59,130,246,.14), 0 20px 45px -28px rgba(15,23,42,.60);
@@ -674,6 +743,29 @@
   .bton-upd-note{
     background: rgba(255,255,255,.86) !important;
     border-color: rgba(15,23,42,.10) !important;
+  }
+
+  /* Compact media strip for updates (keeps the feed horizontal + lightweight) */
+  .bton-upd-media{
+    background: rgba(248,250,252,.70) !important;
+    border-color: rgba(15,23,42,.10) !important;
+  }
+  .bton-upd-media img{ display:block; }
+  /* Dark mode: keep media slot subtle */
+  html[data-theme="dark"] .bton-upd-media-slot{ background: rgba(7,10,24,.55) !important; }
+  html[data-theme="dark"] .bton-upd-media{
+    background: rgba(7,10,24,.55) !important;
+    border-color: rgba(148,163,184,.18) !important;
+  }
+
+  /* Make sure media doesn't steal focus from text */
+  .bton-upd-media::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background: radial-gradient(120px 70px at 14% 20%, rgba(34,211,238,.12), transparent 60%);
+    opacity:.55;
   }
 
   
@@ -743,6 +835,94 @@
 #home-updates-left, #home-updates-right{
   display: none !important;
 }
+}
+
+
+/* =========================================================
+   Followed Update → Company posts panel (Last 7 days)
+   Used when clicking notification: "A company you follow posted..."
+========================================================= */
+#bton-company-posts7d{ align-items:center; justify-content:center; padding: 0; }
+#bton-company-posts7d:not(.hidden){ display:flex; }
+#bton-company-posts7d.hidden{ display:none !important; }
+#bton-company-posts7d .bton-cp7d-backdrop{ background: rgba(2,6,23,.32); }
+#bton-company-posts7d .bton-cp7d-panel{
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(15,23,42,.12);
+}
+#bton-company-posts7d .bton-cp7d-head{
+  background: rgba(255,255,255,.85);
+  border-bottom: 1px solid rgba(15,23,42,.10);
+}
+#bton-company-posts7d .bton-cp7d-btn{
+  background: rgba(255,255,255,.85);
+  border: 1px solid rgba(15,23,42,.10);
+}
+#bton-company-posts7d .bton-cp7d-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px -26px rgba(15,23,42,.55);
+}
+
+.bton-cp7d-card{
+  border-radius: 18px !important;
+}
+
+html[data-theme="dark"] #bton-company-posts7d .bton-cp7d-backdrop{ background: rgba(0,0,0,.55); }
+html[data-theme="dark"] #bton-company-posts7d .bton-cp7d-panel{
+  background: rgba(2,6,23,.92);
+  border-color: rgba(148,163,184,.16);
+}
+html[data-theme="dark"] #bton-company-posts7d .bton-cp7d-head{
+  background: rgba(2,6,23,.70);
+  border-bottom-color: rgba(148,163,184,.14);
+}
+html[data-theme="dark"] #bton-company-posts7d #bton-company-posts7d-title{ color: rgba(241,245,249,.96) !important; }
+html[data-theme="dark"] #bton-company-posts7d #bton-company-posts7d-sub{ color: rgba(148,163,184,.90) !important; }
+html[data-theme="dark"] #bton-company-posts7d .bton-cp7d-btn{
+  background: rgba(2,6,23,.50);
+  border-color: rgba(148,163,184,.16);
+}
+html[data-theme="dark"] #bton-company-posts7d .bton-cp7d-btn:hover{
+  border-color: rgba(34,211,238,.22);
+  box-shadow: 0 28px 80px rgba(0,0,0,.55);
+}
+
+html[data-theme="dark"] .bton-cp7d-card{
+  background: rgba(2,6,23,.55) !important;
+  border-color: rgba(148,163,184,.14) !important;
+}
+html[data-theme="dark"] .bton-cp7d-card:hover{
+  border-color: rgba(34,211,238,.18) !important;
+  box-shadow: 0 26px 70px rgba(0,0,0,.45) !important;
+}
+
+
+/* =========================================================
+   CP7D – Non-clickable cards (only media is clickable)
+========================================================= */
+.bton-cp7d-card{ cursor: default !important; }
+.bton-cp7d-card:hover{
+  transform: none !important;
+  box-shadow: inherit !important;
+  border-color: inherit !important;
+}
+
+/* Isolated media class to avoid any global click behaviors */
+.bton-cp7d-media{
+  background: rgba(248,250,252,.70) !important;
+  border-color: rgba(15,23,42,.10) !important;
+}
+html[data-theme="dark"] .bton-cp7d-media{
+  background: rgba(7,10,24,.55) !important;
+  border-color: rgba(148,163,184,.18) !important;
+}
+.bton-cp7d-media::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: radial-gradient(120px 70px at 14% 20%, rgba(34,211,238,.12), transparent 60%);
+  opacity:.55;
 }
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -980,6 +1160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .line-clamp-3,
     .line-clamp-4,
     .line-clamp-5,
+    .line-clamp-6,
     .clamp-4{
       display: -webkit-box;
       -webkit-box-orient: vertical;
@@ -992,6 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .line-clamp-3{ -webkit-line-clamp: 3; }
     .line-clamp-4, .clamp-4{ -webkit-line-clamp: 4; }
     .line-clamp-5{ -webkit-line-clamp: 5; }
+    .line-clamp-6{ -webkit-line-clamp: 6; }
 
     /* Hover hint for clickable cards */
     .bton-view-hint{
@@ -1015,6 +1197,47 @@ document.addEventListener("DOMContentLoaded", () => {
     #modal-cropper .cropper-container { touch-action: none; }
     #modal-cropper .cropper-face, #modal-cropper .cropper-view-box { cursor: grab; }
     #modal-cropper .cropper-face:active { cursor: grabbing; }
+    /* Cropper – larger working area + "wide" modes (project cover / update image) */
+    #modal-cropper .bton-crop-card{ max-width: 72rem !important; } /* ~ max-w-6xl */
+    #modal-cropper[data-crop-wide="1"] .bton-crop-card{ max-width: 80rem !important; } /* ~ max-w-7xl */
+
+    #modal-cropper .bton-crop-stage{ height: min(60vh, 560px); }
+    @media (min-width: 768px){
+      #modal-cropper .bton-crop-stage{ height: min(68vh, 760px); }
+      #modal-cropper[data-crop-wide="1"] #cropper-main-col{ grid-column: span 9 / span 9 !important; }
+      #modal-cropper[data-crop-wide="1"] #cropper-side-col{ grid-column: span 3 / span 3 !important; }
+      #modal-cropper[data-crop-wide="1"] .bton-crop-stage{ height: min(72vh, 820px); }
+    }
+
+    
+    /* Wide mode: reclaim space */
+    #modal-cropper[data-crop-wide="1"] #cropper-grid{ gap: 16px !important; padding: 18px !important; }
+    @media (min-width: 768px){
+      #modal-cropper[data-crop-wide="1"] #cropper-grid{ padding: 20px !important; }
+    }
+
+/* Wide mode: keep the sidebar compact (only 16:9 preview) */
+    #modal-cropper[data-crop-wide="1"] #cropper-preview-square,
+    #modal-cropper[data-crop-wide="1"] #cropper-preview-circle{
+      display: none !important;
+    }
+
+    /* Dark mode polish inside cropper modal */
+    html[data-theme="dark"] #modal-cropper .bton-crop-card{
+      background: #050712 !important;
+      border-color: rgba(148,163,184,.14) !important;
+    }
+    html[data-theme="dark"] #modal-cropper .bton-crop-card .border-b{
+      border-color: rgba(148,163,184,.12) !important;
+    }
+    html[data-theme="dark"] #modal-cropper .bton-crop-card .border-t{
+      border-color: rgba(148,163,184,.12) !important;
+    }
+    html[data-theme="dark"] #modal-cropper .bton-crop-stage{
+      background: rgba(2,6,23,.35) !important;
+      border-color: rgba(148,163,184,.14) !important;
+    }
+
     .dot-map-bg {
       background-image: radial-gradient(rgba(148,163,184,.55) 1px, transparent 1px);
       background-size: 32px 32px;
@@ -2758,6 +2981,16 @@ html[data-theme="dark"] .bton-card{
   box-shadow: 0 20px 60px -44px rgba(0,0,0,.92) !important;
 }
 
+/* Update media strip (image preview) — subtle in dark, so text stays front-and-center */
+html[data-theme="dark"] .bton-upd-media{
+  background: rgba(2,6,23,.46) !important;
+  border-color: rgba(34,211,238,.14) !important;
+}
+html[data-theme="dark"] .bton-upd-media::after{
+  opacity: .22;
+  background: radial-gradient(140px 80px at 14% 20%, rgba(34,211,238,.12), transparent 62%);
+}
+
 /* Updates / posts card – no white hover overlay */
 
 /* Darken any remaining light gradients (e.g., cards using from-white/.. in templates) */
@@ -4161,81 +4394,106 @@ html[data-theme="dark"] .bton-official-badge__icon{
   filter: drop-shadow(0 2px 10px rgba(255,190,60,.20));
 }
 </style>
-<style id="bton-msg-bg-dark-mesh-v3">
-/* =========================================================
-   BTrustOn — Message view background fix + subtle cubes (v3)
-   Goal: same "cubes" vibe as light mode, but much less visible
-   ========================================================= */
 
+<style id="bton-image-viewer-css">
+/* =========================================================
+   BTrustOn — Image Lightbox (Updates)
+   - Works in light + dark
+   - Prevents feed deep-link on image click
+========================================================= */
+#bton-img-viewer{ position:fixed; inset:0; z-index:10050; display:none; }
+#bton-img-viewer.bton-open{ display:flex; }
+#bton-img-viewer .bton-backdrop{ position:absolute; inset:0; background: rgba(2,6,23,.72); backdrop-filter: blur(8px); }
+#bton-img-viewer .bton-panel{ position:relative; width:min(980px, calc(100vw - 28px)); max-height: calc(100vh - 28px);
+  margin:auto; border-radius: 24px; overflow:hidden; }
+#bton-img-viewer .bton-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; }
+#bton-img-viewer .bton-title{ font-size:12px; font-weight:800; color: rgba(100,116,139,1); }
+#bton-img-viewer .bton-close{ width:36px; height:36px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid rgba(148,163,184,.22); background: rgba(255,255,255,.75); color: rgba(15,23,42,.78); }
+#bton-img-viewer .bton-close:hover{ transform: translateY(-1px); }
+#bton-img-viewer .bton-body{ background: rgba(255,255,255,.92); border:1px solid rgba(15,23,42,.10); }
+#bton-img-viewer img{ width:100%; height: auto; max-height: calc(100vh - 120px); object-fit: contain; display:block; background: transparent; }
+
+/* Dark */
+html[data-theme="dark"] #bton-img-viewer .bton-title{ color: rgba(148,163,184,.85); }
+html[data-theme="dark"] #bton-img-viewer .bton-body{ background: rgba(3,7,18,.94); border-color: rgba(148,163,184,.14); }
+html[data-theme="dark"] #bton-img-viewer .bton-close{ background: rgba(15,23,42,.65); border-color: rgba(148,163,184,.18); color: rgba(226,232,240,.92); }
+</style>
+
+
+<style id="bton-dark-message-opaque-v1">
+/* =========================================================
+   v1 — Messages view (Dark Mode) should NOT be transparent
+   Fix: #view-message + thread + header/footer surfaces
+   ========================================================= */
 html[data-theme="dark"] #view-message{
-  /* Opaque base prevents underlying page bleed-through */
-  background:
-    radial-gradient(1000px 540px at 20% -10%, rgba(34,211,238,.08), rgba(2,6,23,0) 60%),
-    radial-gradient(920px 520px at 85% -10%, rgba(96,165,250,.06), rgba(2,6,23,0) 58%),
-    #020617 !important;
+  background: var(--dm-base) !important; /* fully opaque */
 }
 
-/* Thread surface (opaque) */
+/* Top bar + composer: opaque surfaces (avoid seeing page behind) */
+html[data-theme="dark"] #view-message > .shrink-0.bg-white{
+  background: rgba(2,6,23,0.96) !important;
+  border-color: rgba(148,163,184,.18) !important;
+  box-shadow: 0 16px 60px rgba(0,0,0,.55) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-theme="dark"] #view-message > .shrink-0.bg-white.border-t{
+  background: rgba(2,6,23,0.96) !important;
+  border-color: rgba(148,163,184,.18) !important;
+  box-shadow: 0 -16px 60px rgba(0,0,0,.45) !important;
+}
+
+/* Thread background: matte + opaque */
 html[data-theme="dark"] #message-thread-container{
   position: relative;
-  overflow: hidden;
-  /* Make the base more opaque so texture doesn't compete with text */
-  background-color: rgba(2,6,23,.945) !important;
-  /* We'll draw the texture in pseudo-layers to control opacity */
-  background-image: none !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgba(34,211,238,.10), rgba(2,6,23,0) 62%),
+    radial-gradient(900px 420px at 85% 0%, rgba(96,165,250,.08), rgba(2,6,23,0) 60%),
+    rgba(2,6,23,1) !important; /* fully opaque */
 }
 
-/* Cube texture layer (very subtle) */
+/* Subtle cube texture (same vibe as light mode, but very soft) */
 html[data-theme="dark"] #message-thread-container::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
+  content: "";
+  position: absolute;
+  inset: 0;
   background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
   background-repeat: repeat;
-  opacity: .065; /* <-- cube visibility (lower = calmer) */
-  filter: brightness(.96) contrast(.90) saturate(.92);
-  transform: translateZ(0);
+  background-size: 560px 560px;
+  opacity: .055;
+  pointer-events: none;
+  mix-blend-mode: overlay;
 }
 
-/* Isometric mesh lines (even subtler than v2) */
-html[data-theme="dark"] #message-thread-container::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    repeating-linear-gradient(0deg,
-      rgba(148,163,184,.095) 0 1px,
-      transparent 1px 56px),
-    repeating-linear-gradient(60deg,
-      rgba(148,163,184,.082) 0 1px,
-      transparent 1px 56px),
-    repeating-linear-gradient(120deg,
-      rgba(148,163,184,.082) 0 1px,
-      transparent 1px 56px);
-  opacity: .50; /* overall intensity */
-  transform: translateZ(0);
-}
-
-/* Keep chat content above texture */
 html[data-theme="dark"] #message-thread-container > *{
   position: relative;
   z-index: 1;
 }
 
-/* Top + bottom bars: ensure they are not translucent */
-html[data-theme="dark"] #view-message > .shrink-0{
-  background: rgba(2,6,23,.90) !important;
-  border-color: rgba(148,163,184,.14) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Small UI blocks inside messages */
+html[data-theme="dark"] #view-message #attachment-preview{
+  background: rgba(15,23,42,.92) !important;
+  border-color: rgba(34,211,238,.16) !important;
 }
 
-/* Footer bar slightly denser for typing comfort */
-html[data-theme="dark"] #view-message > .shrink-0.border-t{
-  background: rgba(2,6,23,.94) !important;
+/* Subject/company area + badges */
+html[data-theme="dark"] #view-message #msg-subject,
+html[data-theme="dark"] #view-message #msg-company{
+  color: rgba(248,250,252,.96) !important;
+}
+html[data-theme="dark"] #view-message #msg-type-badge{
+  background: rgba(15,23,42,.85) !important;
+  border: 1px solid rgba(148,163,184,.18) !important;
+  color: rgba(248,250,252,.92) !important;
+}
+
+/* Action buttons in header */
+html[data-theme="dark"] #view-message button{
+  -webkit-tap-highlight-color: transparent;
+}
+html[data-theme="dark"] #view-message .border-slate-200\/70{
+  border-color: rgba(148,163,184,.18) !important;
 }
 </style>
 
@@ -5712,7 +5970,7 @@ html[data-theme="dark"] #view-message > .shrink-0.border-t{
        ========================= -->
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[99998]" id="modal-cropper">
 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCropperModal()"></div>
-<div class="relative bg-white w-[95%] max-w-6xl rounded-2xl shadow-2xl border border-white/50 max-h-[92vh] overflow-hidden flex flex-col">
+<div class="relative bg-white w-[95%] max-w-6xl rounded-2xl shadow-2xl border border-white/50 max-h-[92vh] overflow-hidden flex flex-col bton-crop-card" id="cropper-card">
 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white">
 <div class="min-w-0">
 <h3 class="text-sm md:text-base font-bold text-gray-900 truncate" data-i18n="cropper_title" id="cropper-title">Adjust Photo</h3>
@@ -5722,13 +5980,13 @@ html[data-theme="dark"] #view-message > .shrink-0.border-t{
 <i class="fa-solid fa-xmark"></i>
 </button>
 </div>
-<div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 overflow-y-auto">
-<div class="md:col-span-8">
-<div class="bg-gray-50 border border-slate-200/70 rounded-2xl overflow-hidden h-[72vh] md:h-[76vh] flex items-center justify-center">
+<div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 overflow-y-auto" id="cropper-grid">
+<div class="md:col-span-8" id="cropper-main-col">
+<div class="bg-gray-50 border border-slate-200/70 rounded-2xl overflow-hidden flex items-center justify-center bton-crop-stage" id="cropper-stage">
 <img alt="Crop" class="max-w-full max-h-full block" id="cropper-image"/>
 </div>
 </div>
-<div class="md:col-span-4 space-y-4">
+<div class="md:col-span-4 space-y-4" id="cropper-side-col">
 <div class="bg-white border border-slate-200/70 rounded-2xl p-4">
 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2" data-i18n="cropper_cancel">Preview</div>
 <div class="cropper-preview w-36 h-36 rounded-2xl border border-slate-200/70 bg-gray-50 overflow-hidden" id="cropper-preview-square"></div>
@@ -5741,6 +5999,8 @@ html[data-theme="dark"] #view-message > .shrink-0.border-t{
 <div class="mt-4 flex items-center gap-2">
 <button class="flex-1 px-3 py-2 rounded-lg border border-slate-200/70 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" onclick="cropperRotate(-90)" type="button">
 <i class="fa-solid fa-rotate-left mr-1"></i><span data-i18n="ui_rotate_8d2de5">Rotate</span></button>
+<button class="flex-1 px-3 py-2 rounded-lg border border-slate-200/70 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition" onclick="cropperFit()" type="button">
+<i class="fa-solid fa-arrows-to-circle mr-1"></i><span data-i18n="ui_fit_2d2a6a">Fit</span></button>
 <button class="flex-1 px-3 py-2 rounded-lg border border-slate-200/70 text-xs font-bold text-gray-600 hover:bg-gray-50 transition" onclick="cropperReset()" type="button">
 <i class="fa-solid fa-arrow-rotate-left mr-1"></i><span data-i18n="ui_reset_526d68">Reset</span></button>
 </div>
@@ -6607,6 +6867,36 @@ html[data-theme="dark"] #view-message > .shrink-0.border-t{
 </div>
 <textarea class="w-full border border-slate-200/70 rounded-xl p-3 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none" id="upd-note" maxlength="160" placeholder="" rows="3"></textarea>
 <div class="mt-1 text-[10px] text-gray-400" data-i18n="post_note_hint">Max 160 characters</div>
+</div>
+
+<!-- Image (optional) -->
+<div>
+  <div class="flex items-center justify-between mb-2">
+    <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider" data-i18n="post_add_image_label">Add image (optional)</div>
+    <div class="text-[10px] text-gray-400" data-i18n="post_image_rules">Any ratio • 1 image</div>
+  </div>
+  <input id="upd-image" type="file" accept="image/*" class="hidden" onchange="handleUpdateImagePicked(this)">
+  <div class="flex items-center gap-2">
+    <button type="button" onclick="triggerUpdateImagePick()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200/70 bg-white/80 hover:bg-gray-50 text-[12px] font-extrabold text-gray-700 transition">
+      <i class="fa-regular fa-image"></i>
+      <span data-i18n="post_add_image_btn">Add image</span>
+    </button>
+    <button id="upd-image-remove" type="button" onclick="removeUpdateImage()" class="hidden inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200/70 hover:bg-gray-50 text-[12px] font-extrabold text-gray-600 transition">
+      <i class="fa-regular fa-trash-can"></i>
+      <span data-i18n="post_image_remove">Remove</span>
+    </button>
+  </div>
+  <div id="upd-image-preview-wrap" class="hidden mt-3">
+    <div class="bton-upd-media relative rounded-2xl overflow-hidden border border-slate-200/70 bg-slate-50/60 aspect-video">
+      
+      <img id="upd-image-preview-bg" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+      <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+      <img id="upd-image-preview" alt="" class="absolute inset-0 w-full h-full object-contain">
+      <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"></div>
+      <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-1 rounded-full bg-white/85 border border-white/70 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+    </div>
+  </div>
+  <div class="mt-1 text-[10px] text-gray-400" data-i18n="post_image_hint">Optional. Shown compact in the feed; click to view full size (no manual crop).</div>
 </div>
 <!-- My recent updates (manage) -->
 <div class="mt-4 pt-4 border-t border-gray-100">
@@ -8874,14 +9164,24 @@ function renderHomeUpdates(list) {
       : _safeText(u.entity_title || u.item_title || "—");
     const templateCode = u.template_code || u.update_code || "";
     const label = _templateLabel(area, templateCode) || _safeText(u.template_label || "");
+    const lblText = _safeText(label || ((currentLang === "tr") ? "Bilgi" : (currentLang === "es" ? "Información" : "Info")));
+
+    // Image first (so note preview length can adapt when there's no image)
+    const imgRaw = String(u.image_url || u.imageUrl || u.media_url || u.photo_url || u.image || "").trim();
+    const hasImg = imgRaw.length > 0;
+    const imgUrl = escapeHtml(imgRaw);
+
     const noteRaw = String(u.note || u.message || "");
     const notePlain = noteRaw.replace(/\s+/g, " ").trim();
     const hasNote = notePlain.length > 0;
-    const noteIsLong = notePlain.length > 160;
-    const notePreview = _safeText(noteIsLong ? (notePlain.slice(0, 160).trimEnd() + "…") : notePlain);
+    const __noteLimit = hasImg ? 160 : 420;
+    const noteIsLong = notePlain.length > __noteLimit;
+    const notePreview = _safeText(noteIsLong ? (notePlain.slice(0, __noteLimit).trimEnd() + "…") : notePlain);
+
     const createdAt = u.created_at || u.createdAt;
     const age = createdAt ? _timeAgoI18n(createdAt) : "";
     const verified = !!(meta.verified || u.is_verified || u.verified || u.blue_tick);
+
 
     const icon = (area === "general")
       ? "fa-bullhorn text-slate-500"
@@ -8909,7 +9209,7 @@ function renderHomeUpdates(list) {
         <div class="relative flex items-start gap-3">
           ${btRenderLogoHTML(logo, companyName, "w-10 h-10", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0")}
 
-          <div class="min-w-0 flex-1 flex flex-col">
+          <div class="bton-upd-col min-w-0 flex-1 flex flex-col">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
@@ -8918,8 +9218,9 @@ function renderHomeUpdates(list) {
                 </div>
 
                 <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
+                  <span class="inline-block w-2 h-2 rounded-full ${_signalMeta(area, templateCode).bar}"></span>
                   <i class="fa-solid ${icon}"></i>
-                  <span class="truncate font-bold">${entityTitle}</span>
+                  <span class="truncate font-bold">${entityTitle} — ${lblText}</span>
                 </div>
               </div>
 
@@ -8928,27 +9229,29 @@ function renderHomeUpdates(list) {
               </div>
             </div>
 
-                        <div class="mt-2 flex items-center gap-2 flex-nowrap overflow-hidden">
-              ${(() => {
-                const s = _signalMeta(area, templateCode);
-                const lbl = _safeText(label || ((currentLang === "tr") ? "Bilgi" : "Info"));
-                return `
-                  <span class="inline-flex items-center gap-2 text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full border ${s.pill} shadow-sm ring-1 ring-white/60 ${s.glow}">
-                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full ${s.iconWrap}">
-                      <i class="fa-solid ${s.icon} text-[10px]"></i>
-                    </span>
-                    <span class="truncate">${lbl}</span>
-                  </span>
-                `;
-              })()}
-            </div><div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 h-[86px] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-              ${hasNote ? `<div class="text-xs text-gray-600 leading-snug break-words clamp-4">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+                        
+
+            ${hasImg ? `
+              <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)]" style="height:110px">
+                <div class="bton-upd-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}">
+                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+                  <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                  <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
+                  <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-2 py-1 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+                </div>
+              </div>
+            ` : ``}
+
+            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 78 : 170}px">
+              ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "clamp-4" : "line-clamp-8"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
               ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
-                <div class="absolute bottom-1 right-2 text-[10px] font-extrabold text-cyan-700 pointer-events-none">${(currentLang==="tr") ? "Devamı profilde" : "More in profile"}</div>` : ``}
+                <div class="absolute bottom-1 right-2 text-[10px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
             </div>
 
+
             <div class="mt-auto pt-2 flex items-center justify-end"><span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700 opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">
-                ${(currentLang === "tr") ? "Görüntüle" : "View"} <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                <span data-i18n="updates_view">View</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
               </span></div>
           </div>
         </div>
@@ -9572,7 +9875,7 @@ async function _maybeNotifyFollowedUpdate(row) {
       "notif_follow_update_title",
       "notif_follow_update_msg",
       { company: row.company_name || "A company you follow", company_id: cid, event_at: (row.created_at || "") },
-      "OPEN_HOME_FOLLOWED"
+      "OPEN_COMPANY_UPDATES_7D"
     );
   } catch (e) {}
 }
@@ -9810,6 +10113,76 @@ function btonTeardownEngagementNotifications() {
 
 /* ---------- POST MODAL FLOW ---------- */
 let __updArea = "general";
+let __updImageFile = null;
+let __updImageObjUrl = null;
+let __updImageUploadPath = null;
+
+function _resetUpdateImageUI(){
+  try {
+    __updImageFile = null;
+    __updImageUploadPath = null;
+    if (__updImageObjUrl) {
+      try { URL.revokeObjectURL(__updImageObjUrl); } catch(e) {}
+      __updImageObjUrl = null;
+    }
+    const wrap = document.getElementById("upd-image-preview-wrap");
+    const img = document.getElementById("upd-image-preview");
+    const bg = document.getElementById("upd-image-preview-bg");
+    const rm = document.getElementById("upd-image-remove");
+    if (img) img.src = "";
+    if (bg) bg.src = "";
+    if (wrap) wrap.classList.add("hidden");
+    if (rm) rm.classList.add("hidden");
+  } catch(e) {}
+}
+
+function triggerUpdateImagePick(){
+  const input = document.getElementById("upd-image");
+  if (input) input.click();
+}
+
+function handleUpdateImagePicked(input){
+  try {
+    const f = input?.files?.[0] || null;
+    if (!f) return;
+
+    // No manual crop: show a compact thumbnail in the feed, open full image on click.
+    __updImageFile = f;
+    __updImageUploadPath = null;
+
+    try {
+      if (__updImageObjUrl) {
+        try { URL.revokeObjectURL(__updImageObjUrl); } catch(e) {}
+      }
+    } catch(e) {}
+
+    __updImageObjUrl = URL.createObjectURL(f);
+
+    const wrap = document.getElementById("upd-image-preview-wrap");
+    const img = document.getElementById("upd-image-preview");
+    const bg  = document.getElementById("upd-image-preview-bg");
+    const rm  = document.getElementById("upd-image-remove");
+    if (img) img.src = __updImageObjUrl;
+    if (bg)  bg.src  = __updImageObjUrl;
+    if (wrap) wrap.classList.remove("hidden");
+    if (rm) rm.classList.remove("hidden");
+
+    try {
+      showToast(
+        _i18n("post_image_prepared_title", "Ready"),
+        _i18n("post_image_prepared", "Image attached. It will show compact in the feed; click to view full size."),
+        "success"
+      );
+    } catch(e) {}
+  } finally {
+    try { if (input) input.value = ""; } catch(e) {}
+  }
+}
+
+
+function removeUpdateImage(){
+  _resetUpdateImageUI();
+}
 
 async function _getAuthUserSafe() {
   // Robust auth check (works even if network is flaky):
@@ -9909,6 +10282,9 @@ async function openPostUpdateModal() {
     if (cnt) cnt.textContent = "0";
     note.oninput = () => { if (cnt) cnt.textContent = String(note.value.length || 0); };
   }
+
+  // reset optional image
+  _resetUpdateImageUI();
 
   // Area buttons
   document.querySelectorAll(".upd-area-btn").forEach(btn => {
@@ -10267,9 +10643,80 @@ async function submitCompanyUpdate() {
       note: note,
     };
 
-    const { error } = await supabaseClient.from("company_updates").insert([payload]);
-    if (error) {
-      console.error("Update insert error:", error);
+    // Optional image upload (keeps feed compact: cropped 16:9 via cropper)
+    let updImageUrl = "";
+    __updImageUploadPath = null;
+    if (__updImageFile) {
+      const BUCKET = "project-gallery"; // reuse existing public image bucket
+      const ext = (()=>{
+        const n = String(__updImageFile.name || "");
+        const p = n.split(".").pop();
+        return (p ? String(p).toLowerCase() : "jpg");
+      })();
+      const safeExt = (ext === "png" || ext === "webp" || ext === "jpg" || ext === "jpeg") ? ext : "jpg";
+      const rand = Math.random().toString(16).slice(2, 8);
+      __updImageUploadPath = `updates/${companyId}/${nowTs()}-${rand}.${safeExt}`;
+
+      try {
+        showToast(
+          _i18n("post_uploading_image_title", "Uploading"),
+          _i18n("post_uploading_image", "Uploading image…"),
+          "info"
+        );
+        const { error: upErr } = await supabaseClient.storage
+          .from(BUCKET)
+          .upload(__updImageUploadPath, __updImageFile, {
+            upsert: false,
+            cacheControl: "3600",
+            contentType: __updImageFile.type || "image/jpeg",
+          });
+        if (upErr) throw upErr;
+
+        const { data: pub } = supabaseClient.storage.from(BUCKET).getPublicUrl(__updImageUploadPath);
+        updImageUrl = pub?.publicUrl || "";
+        if (updImageUrl) payload.image_url = updImageUrl;
+      } catch (eImg) {
+        console.warn("Update image upload failed:", eImg);
+        // Don't block publishing the text update
+        showToast(
+          _i18n("post_image_upload_failed_title", "Image"),
+          _i18n("post_image_upload_failed", "Image upload failed. Publishing without image."),
+          "error"
+        );
+        updImageUrl = "";
+        __updImageUploadPath = null;
+      }
+    }
+
+    // Insert update (try with image_url; if schema doesn't have it, gracefully fallback)
+    let ins = await supabaseClient.from("company_updates").insert([payload]);
+    if (ins?.error && updImageUrl) {
+      const msg = String(ins.error.message || "").toLowerCase();
+      const isUnknownColumn = (msg.includes("column") && msg.includes("image_url"));
+      if (isUnknownColumn) {
+        // Clean up orphaned image if we uploaded it
+        try {
+          if (__updImageUploadPath) {
+            await supabaseClient.storage.from("project-gallery").remove([__updImageUploadPath]);
+          }
+        } catch(e) {}
+
+        // Retry without image_url
+        const payload2 = { ...payload };
+        try { delete payload2.image_url; } catch(e) {}
+        ins = await supabaseClient.from("company_updates").insert([payload2]);
+
+        // Inform the admin/dev what to add
+        showToast(
+          _i18n("post_image_needs_db_title", "Setup"),
+          _i18n("post_image_needs_db", "To attach images, add an image_url column to company_updates (text)."),
+          "info"
+        );
+      }
+    }
+
+    if (ins?.error) {
+      console.error("Update insert error:", ins.error);
       showToast(t("toast_publish_failed") || (currentLang==="tr" ? "Paylaşım başarısız." : (currentLang==="es" ? "No se pudo publicar." : "Failed to publish.")));
       if (btn) { btn.disabled = false; btn.classList.remove("opacity-70"); }
       return;
@@ -10277,6 +10724,8 @@ async function submitCompanyUpdate() {
 
     showToast(t("toast_published") || (currentLang==="tr" ? "Paylaşıldı." : (currentLang==="es" ? "Publicado." : "Published.")));
     toggleModal("modal-post-update");
+    // Reset image UI for next time
+    _resetUpdateImageUI();
 
     // Refresh immediately (realtime also handles, but this ensures older browsers)
     await fetchHomeUpdates();
@@ -10721,6 +11170,14 @@ function handleProjectCover(input) {
 
 function openCropper(imageSrc) {
     const modal = document.getElementById("modal-cropper");
+  // Wide crop modes should give more working space (covers / update images)
+  const __btonIsWideCrop = (__btonCropCtx && (__btonCropCtx.kind === "project_cover" || __btonCropCtx.kind === "update_image"));
+  try {
+    if (modal) {
+      if (__btonIsWideCrop) modal.setAttribute("data-crop-wide", "1");
+      else modal.removeAttribute("data-crop-wide");
+    }
+  } catch(_) {}
     const image = document.getElementById("cropper-img");
     
     // Resmi yükle
@@ -20739,6 +21196,13 @@ function renderInboxItems() {
       const when = __whenBase ? timeAgo(__whenBase) : "";
       const nidSafe = String(n.id).replace(/'/g, "\'");
 
+      // ✅ Followed-company post notification?
+      const __isFollowUpdateNotif =
+        (String(n.title_i18n_key || "") === "notif_follow_update_title") ||
+        (String(n.message_i18n_key || "") === "notif_follow_update_msg") ||
+        (parsedTitle && parsedTitle.key === "notif_follow_update_title") ||
+        (parsedMsg && parsedMsg.key === "notif_follow_update_msg");
+
 
       const card = document.createElement("div");
       card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-slate-200/70 transition-all duration-200 cursor-pointer group`;
@@ -20751,6 +21215,19 @@ function renderInboxItems() {
             if (cid && typeof openProfile === "function") openProfile(cid);
           } catch(e) {}
         }
+        // ✅ Open last 7 days posts for a followed company (better UX than jumping to followed feed)
+        if (action === 'OPEN_COMPANY_UPDATES_7D' || (action === 'OPEN_HOME_FOLLOWED' && __isFollowUpdateNotif)) {
+          try {
+            const cid = notifParams.company_id || notifParams.companyId || notifParams.cid || "";
+            const cname = notifParams.company || notifParams.company_name || "";
+            if (cid && typeof openCompanyUpdates7D === "function") {
+              openCompanyUpdates7D(cid, cname);
+              return;
+            }
+          } catch(e) {}
+        }
+
+        // Legacy fallback: open "Only followed" feed
         if (action === 'OPEN_HOME_FOLLOWED') {
           try {
             if (typeof showMainView === "function") showMainView();
@@ -21567,7 +22044,17 @@ function openCropperForFile(file, ctx) {
   if (!file) return;
   __btonCropCtx = ctx || { kind: "logo", mode: "edit" };
 
+  // Use the exact same zoom feel for all crop modes (matches profile photo/logo behavior)
+  __btonCropZoomSpan = 2.5;
   const modal = document.getElementById("modal-cropper");
+  // Wide crop modes should give more working space (covers / update images)
+  const __btonIsWideCrop = (__btonCropCtx && (__btonCropCtx.kind === "project_cover" || __btonCropCtx.kind === "update_image"));
+  try {
+    if (modal) {
+      if (__btonIsWideCrop) modal.setAttribute("data-crop-wide", "1");
+      else modal.removeAttribute("data-crop-wide");
+    }
+  } catch(_) {}
   const imgEl = document.getElementById("cropper-image");
   const titleEl = document.getElementById("cropper-title");
   const zoomEl = document.getElementById("cropper-zoom");
@@ -21579,11 +22066,13 @@ function openCropperForFile(file, ctx) {
   if (titleEl) {
     if (__btonCropCtx.kind === "owner") titleEl.textContent = "Adjust Contact Photo";
     else if (__btonCropCtx.kind === "project_cover") titleEl.textContent = "Adjust Project Cover";
+    else if (__btonCropCtx.kind === "update_image") titleEl.textContent = "Adjust Update Image";
     else titleEl.textContent = "Adjust Company Logo";
   }
 
   if (tipEl) {
-    tipEl.textContent = (__btonCropCtx.kind === "project_cover")
+    const isWide = (__btonCropCtx.kind === "project_cover" || __btonCropCtx.kind === "update_image");
+    tipEl.textContent = isWide
       ? "Tip: Use a wide image. We'll crop it to a 16:9 cover."
       : "Tip: For best quality, choose a clear image (min 400×400). We'll crop it to a square.";
   }
@@ -21594,7 +22083,7 @@ function openCropperForFile(file, ctx) {
       prevCi.classList.remove("hidden");
       prevSq.classList.add("hidden");
       prevRe.classList.add("hidden");
-    } else if (__btonCropCtx.kind === "project_cover") {
+    } else if (__btonCropCtx.kind === "project_cover" || __btonCropCtx.kind === "update_image") {
       prevRe.classList.remove("hidden");
       prevSq.classList.add("hidden");
       prevCi.classList.add("hidden");
@@ -21652,7 +22141,7 @@ function openCropperForFile(file, ctx) {
       }
 
       __btonCropper = new Cropper(imgEl, {
-        aspectRatio: (__btonCropCtx.kind === "project_cover" ? (16/9) : 1),
+        aspectRatio: ((__btonCropCtx.kind === "project_cover" || __btonCropCtx.kind === "update_image") ? (16/9) : 1),
         viewMode: (__btonCropContain ? 0 : 1),
         dragMode: "move",
         autoCropArea: 1,
@@ -21681,38 +22170,49 @@ function openCropperForFile(file, ctx) {
           // - Auto-zoom so the image comfortably fills the crop frame
           try {
             const c = __btonCropper.getContainerData();
-            const isCover = (__btonCropCtx && __btonCropCtx.kind === "project_cover");
-            const aspect = isCover ? (16/9) : 1;
+            const isWide = (__btonCropCtx && (__btonCropCtx.kind === "project_cover" || __btonCropCtx.kind === "update_image"));
+            const startCover = (__btonCropCtx && (__btonCropCtx.kind === "project_cover"));
+            const aspect = isWide ? (16/9) : 1;
 
             let targetW, targetH;
 
-            if (!isCover) {
+            if (!isWide) {
               // Square (logo / profile / owner)
               const base = Math.min(c.width, c.height) * 0.86;
               const size = Math.max(360, Math.min(780, base));
               targetW = size;
               targetH = size;
             } else {
-              // 16:9 cover (project)
-              let w = c.width * 0.94;
-              let h = w / aspect;
-              const maxH = c.height * 0.72;
+              // 16:9 cover (project / update) — same "feel" as profile cropper (not overly wide)
+              const aspect = 16 / 9;
+
+              // Size the crop frame based on container, but keep it comfortably centered
+              const maxW = Math.min(c.width * 0.90, 820);
+              const maxH = Math.min(c.height * 0.72, 420);
+
+              // Start from height (so it never becomes "too wide")
+              let h = Math.max(200, Math.min(maxH, Math.min(c.width, c.height) * 0.44));
+              let w = h * aspect;
+
+              // Respect container limits
+              if (w > maxW) { w = maxW; h = w / aspect; }
               if (h > maxH) { h = maxH; w = h * aspect; }
-              targetW = Math.max(360, w);
-              targetH = Math.max(200, h);
+
+              targetW = w;
+              targetH = h;
             }
 
             // Adjust initial zoom:
             // - Default: "cover" (fill the crop box)
             // - For very wide/tall logos: "contain" (fit the whole logo inside the square, allowing padding)
             const img0 = __btonCropper.getImageData();
-            const containLogo = (!!__btonCropContain && !isCover && (__btonCropCtx && __btonCropCtx.kind === "logo"));
+            const containLogo = (!!__btonCropContain && !isWide && (__btonCropCtx && __btonCropCtx.kind === "logo"));
 
             let factor;
             if (containLogo) {
               factor = Math.min(targetW / img0.width, targetH / img0.height);
             } else {
-              factor = Math.max(targetW / img0.width, targetH / img0.height, 1);
+              factor = startCover ? Math.max(targetW / img0.width, targetH / img0.height) : Math.max(targetW / img0.width, targetH / img0.height, 1);
             }
 
             if (Number.isFinite(factor) && factor > 0) {
@@ -21852,6 +22352,25 @@ function cropperReset() {
   });
 }
 
+
+function cropperFit() {
+  // Fit (return to the best “filled frame” view) without resetting rotation.
+  if (!__btonCropper) return;
+  const zoomEl = document.getElementById("cropper-zoom");
+  if (zoomEl) zoomEl.value = 0;
+  try {
+    // If we captured a baseline (best fit), restore it.
+    if (typeof __btonRestoreCropBaseline === "function") {
+      __btonRestoreCropBaseline();
+      return;
+    }
+  } catch (_) {}
+  // Fallback: zoom to current min ratio
+  try {
+    if (__btonCropMinRatio) __btonCropper.zoomTo(__btonCropMinRatio);
+  } catch (_) {}
+}
+
 async function confirmCropper() {
   if (!__btonCropper || !__btonCropCtx) return;
 
@@ -21861,7 +22380,7 @@ async function confirmCropper() {
   const ctx = { ...__btonCropCtx };
 
   // Produce a high quality crop
-  const isCover = (ctx.kind === "project_cover");
+  const isCover = (ctx.kind === "project_cover" || ctx.kind === "update_image");
   const targetW = isCover ? 1200 : 512;
   const targetH = isCover ? 675 : 512;
 
@@ -21913,6 +22432,30 @@ async function confirmCropper() {
           if (icon) icon.classList.add("hidden");
           showToast("Ready", (t("ui_photo_prepared_publish") || "Photo prepared. Click Save & Preview to publish."), "success");
         }
+      }
+
+      else if (ctx.kind === "update_image") {
+        // Update image: keep for submitCompanyUpdate()
+        __updImageFile = croppedFile;
+        try {
+          if (__updImageObjUrl) {
+            try { URL.revokeObjectURL(__updImageObjUrl); } catch(e) {}
+          }
+        } catch(e) {}
+        __updImageObjUrl = URL.createObjectURL(croppedFile);
+        const wrap = document.getElementById("upd-image-preview-wrap");
+        const img = document.getElementById("upd-image-preview");
+        const bg = document.getElementById("upd-image-preview-bg");
+        const rm = document.getElementById("upd-image-remove");
+        if (img) img.src = __updImageObjUrl;
+        if (bg) bg.src = __updImageObjUrl;
+        if (wrap) wrap.classList.remove("hidden");
+        if (rm) rm.classList.remove("hidden");
+        showToast(
+          _i18n("post_image_prepared_title", "Ready"),
+          _i18n("post_image_prepared", "Image prepared. Click Publish to post."),
+          "success"
+        );
       }
 
       else if (ctx.kind === "project_cover") {
@@ -27077,4 +27620,443 @@ function sortProjectsUI(mode){
   });
 })();
 </script>
+
+<!-- BTrustOn — Image Viewer (Updates) -->
+<div id="bton-img-viewer" aria-hidden="true">
+  <div class="bton-backdrop" onclick="closeBtonImageLightbox()"></div>
+  <div class="bton-panel">
+    <div class="bton-body">
+      <div class="bton-head">
+        <div class="bton-title" data-i18n="updates_photo">Photo</div>
+        <button type="button" class="bton-close transition" aria-label="Close" data-i18n-aria="attr_close_d3d2e6" onclick="closeBtonImageLightbox(event)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div style="padding: 0 14px 14px 14px;">
+        <img id="bton-img-viewer-img" alt="">
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- =========================================================
+     Followed company posts (Last 7 days) – overlay panel
+     Opens when user clicks the "company you follow posted" notification
+========================================================= -->
+<div id="bton-company-posts7d" class="hidden fixed inset-0" style="z-index:10000">
+  <div class="bton-cp7d-backdrop absolute inset-0 backdrop-blur-sm" onclick="closeCompanyUpdates7D()"></div>
+
+  <div class="bton-cp7d-panel relative w-full h-full sm:max-w-2xl sm:mx-auto sm:my-6 sm:h-[calc(100%-3rem)] rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+    <div class="bton-cp7d-head px-4 sm:px-6 py-4 flex items-center gap-3">
+      <button type="button" class="bton-cp7d-btn w-10 h-10 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-center" onclick="closeCompanyUpdates7D()" aria-label="Back">
+        <i class="fa-solid fa-arrow-left text-slate-600"></i>
+      </button>
+
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <div id="bton-company-posts7d-logo" class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200/70 shadow-sm grid place-items-center overflow-hidden"></div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <div id="bton-company-posts7d-title" class="text-sm sm:text-base font-extrabold text-slate-900 truncate">Company</div>
+            <span id="bton-company-posts7d-verified" class="hidden"><i class="fa-solid fa-circle-check text-cyan-500"></i></span>
+          </div>
+          <div id="bton-company-posts7d-sub" class="text-[11px] text-slate-500 font-bold">All posts from the last 7 days</div>
+        </div>
+      </div>
+
+      <button type="button" class="bton-cp7d-btn w-10 h-10 rounded-2xl shadow-sm hover:shadow transition flex items-center justify-center" onclick="closeCompanyUpdates7D()" aria-label="Close">
+        <i class="fa-solid fa-xmark text-slate-600"></i>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <div id="bton-company-posts7d-list" class="p-3 sm:p-4 space-y-2"></div>
+    </div>
+  </div>
+</div>
+
+<script id="bton-image-lightbox-js">
+/* =========================================================
+   BTrustOn — Update image lightbox (global, works with inline onclick)
+   Fix: openBtonImageLightbox was not defined because main app JS may run in module scope.
+========================================================= */
+
+
+/* =========================================================
+   Followed company updates panel (last 7 days)
+   - Triggered by notification click: OPEN_COMPANY_UPDATES_7D
+========================================================= */
+let __btonCompanyUpdates7DOpen = false;
+let __btonCompanyUpdates7DLastCid = null;
+
+function _cp7dSetNoScroll(on){
+  try{
+    if(on){
+      document.documentElement.classList.add('bton-no-scroll');
+      document.body.classList.add('bton-no-scroll');
+    }else{
+      document.documentElement.classList.remove('bton-no-scroll');
+      document.body.classList.remove('bton-no-scroll');
+    }
+  }catch(e){}
+}
+
+function closeCompanyUpdates7D(){
+  try{
+    const panel = document.getElementById('bton-company-posts7d');
+    if(panel) panel.classList.add('hidden');
+    __btonCompanyUpdates7DOpen = false;
+    __btonCompanyUpdates7DLastCid = null;
+
+    // if image lightbox is open, keep no-scroll
+    try{
+      const imgWrap = document.getElementById('bton-img-viewer');
+      if(imgWrap && imgWrap.classList.contains('bton-open')) return;
+    }catch(e){}
+
+    _cp7dSetNoScroll(false);
+  }catch(e){}
+}
+
+function _cp7dRenderLogo(el, name, logo){
+  try{
+    const nm = String(name||"").trim();
+    const letter = (nm.charAt(0) || "C").toUpperCase();
+    const url = String(logo||"").trim();
+    if(url){
+      el.innerHTML = `<img src="${escapeHtml(url)}" alt="" class="w-full h-full object-contain" />`;
+    } else {
+      el.innerHTML = `<div class="w-full h-full grid place-items-center text-slate-700 font-extrabold">${escapeHtml(letter)}</div>`;
+    }
+  }catch(e){
+    try{ el.textContent = ""; }catch(_){}
+  }
+}
+
+function renderCompanyUpdates7DSkeleton(count=4){
+  const n = Math.max(2, Math.min(8, count|0));
+  let out = "";
+  for(let i=0;i<n;i++){
+    out += `
+      <div class="bton-cp7d-card rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm p-3 animate-pulse">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-slate-200/60"></div>
+          <div class="flex-1 min-w-0">
+            <div class="h-3 w-48 bg-slate-200/60 rounded"></div>
+            <div class="h-2 w-32 bg-slate-200/50 rounded mt-2"></div>
+          </div>
+          <div class="h-6 w-16 bg-slate-200/60 rounded-full"></div>
+        </div>
+        <div class="h-24 bg-slate-200/40 rounded-2xl mt-3"></div>
+      </div>`;
+  }
+  return out;
+}
+
+function renderCompanyUpdates7DEmpty(){
+  const title = (currentLang === "tr") ? "Son 7 günde paylaşım yok." : (currentLang==="es" ? "No hay publicaciones en los últimos 7 días." : "No posts in the last 7 days.");
+  const desc = (currentLang === "tr") ? "Takip ettiğiniz şirket yeni bir güncelleme paylaştığında burada göreceksiniz." : (currentLang==="es" ? "Cuando una empresa que sigues publique, lo verás aquí." : "When a company you follow posts an update, you’ll see it here.");
+  return `
+    <div class="bton-cp7d-card rounded-3xl border border-slate-200/70 bg-white/70 shadow-sm p-4 text-center">
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-50 border border-slate-200/70 grid place-items-center text-slate-500">
+        <i class="fa-solid fa-bullhorn"></i>
+      </div>
+      <div class="mt-3 font-extrabold text-slate-800 text-sm">${escapeHtml(title)}</div>
+      <div class="mt-1 text-xs text-slate-500 font-bold">${escapeHtml(desc)}</div>
+    </div>`;
+}
+
+function renderCompanyUpdates7DCard(u, meta){
+  try{
+    const area = u?.area || u?.entity_area || "projects";
+    const areaLower = String(area || "").toLowerCase();
+    const templateCode = u?.template_code || u?.update_code || "";
+    const label = _templateLabel(area, templateCode) || _safeText(u?.template_label || "");
+    const lblText = _safeText(label || ((currentLang === "tr") ? "Bilgi" : (currentLang === "es" ? "Información" : "Info")));
+
+    const entityTitle = (areaLower === "general")
+      ? (t("post_area_general") || (currentLang === "tr" ? "Genel" : "General"))
+      : _safeText(u?.entity_title || u?.item_title || "—");
+
+    const imgRaw = String(u?.image_url || u?.imageUrl || u?.media_url || u?.photo_url || u?.image || "").trim();
+    const hasImg = imgRaw.length > 0;
+    const imgUrl = escapeHtml(imgRaw);
+
+    const noteRaw = String(u?.note || u?.message || "");
+    const notePlain = noteRaw.replace(/\s+/g, " ").trim();
+    const hasNote = notePlain.length > 0;
+    const __noteLimit = hasImg ? 280 : 520;
+    const noteIsLong = notePlain.length > __noteLimit;
+    const notePreview = _safeText(noteIsLong ? (notePlain.slice(0, __noteLimit).trimEnd() + "…") : notePlain);
+
+    const createdAt = u?.created_at || u?.createdAt;
+    const age = createdAt ? _timeAgoI18n(createdAt) : "";
+
+    const companyName = _safeText(meta?.name || u?.company_name || u?.company_title || "Company");
+    const logo = (meta?.logo || "");
+    const verified = !!(meta?.verified);
+
+    const icon = (areaLower === "general")
+      ? "fa-bullhorn text-slate-500"
+      : (areaLower === "projects")
+        ? "fa-diagram-project text-cyan-500"
+        : (areaLower === "assets")
+          ? "fa-boxes-stacked text-emerald-500"
+          : "fa-certificate text-amber-500";
+
+    const tab = _getAreaTab(areaLower);
+    const safeCompanyId = _safeText(u?.company_id || u?.profile_id || "");
+    const focusId = (u?.entity_id == null) ? "" : String(u.entity_id);
+    const safeFocusId = _safeText(focusId);
+    return `
+      <div class="bton-cp7d-card relative w-full text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] px-3 py-3 shadow-[0_8px_22px_-18px_rgba(15,23,42,.34)] overflow-hidden">
+        <div class="absolute inset-0 opacity-70 pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
+        <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-slate-200/50 blur-2xl pointer-events-none"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-full bton-upd-bar ${_signalMeta(areaLower, templateCode).bar}"></div>
+
+        <div class="relative flex items-start gap-3">
+          ${btRenderLogoHTML(logo, companyName, "w-9 h-9", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0")}
+
+          <div class="min-w-0 flex-1 flex flex-col">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="text-sm font-extrabold text-BTrustOn-primary truncate">${companyName}</div>
+                  ${verified ? `<span class="bton-tip" data-tip="${escapeHtml(_verifiedTipText())}"><i class="fa-solid fa-circle-check text-cyan-500 text-sm"></i></span>` : ``}
+                </div>
+
+                <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
+                  <span class="inline-block w-2 h-2 rounded-full ${_signalMeta(areaLower, templateCode).bar}"></span>
+                  <i class="fa-solid ${icon}"></i>
+                  <span class="truncate font-bold">${entityTitle} — ${lblText}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0 mt-0.5">
+                <div class="text-[10px] text-slate-500 font-extrabold whitespace-nowrap bg-white/70 border border-slate-200/70 rounded-full px-2 py-0.5 shadow-sm">${age}</div>
+              </div>
+            </div>
+
+            ${hasImg ? `
+              <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] h-32 sm:h-40">
+                <div class="bton-cp7d-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}" role="button" aria-label="Open image"
+                  onclick="event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation) event.stopImmediatePropagation(); try{ if(window.openBtonImageLightbox) window.openBtonImageLightbox(this.getAttribute('data-img')); }catch(e){}; return false;">
+                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+                  <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                  <div class="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
+                  <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-2 py-1 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+                </div>
+              </div>
+            ` : ``}
+
+            <div class="mt-2 relative bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-2.5 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "line-clamp-4" : "line-clamp-6"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+            </div>
+
+          </div>
+        </div>
+      </div>
+    `;
+  }catch(e){
+    return "";
+  }
+}
+
+async function openCompanyUpdates7D(companyId, fallbackName=""){
+  try{
+    const cid = String(companyId||"").trim();
+    if(!cid) return;
+
+    const panel = document.getElementById('bton-company-posts7d');
+    const listEl = document.getElementById('bton-company-posts7d-list');
+    const titleEl = document.getElementById('bton-company-posts7d-title');
+    const subEl = document.getElementById('bton-company-posts7d-sub');
+    const logoEl = document.getElementById('bton-company-posts7d-logo');
+    const verifiedEl = document.getElementById('bton-company-posts7d-verified');
+    if(!panel || !listEl || !titleEl || !subEl || !logoEl || !verifiedEl) return;
+
+    // show + lock
+    panel.classList.remove('hidden');
+    __btonCompanyUpdates7DOpen = true;
+    __btonCompanyUpdates7DLastCid = cid;
+    _cp7dSetNoScroll(true);
+
+    // skeleton
+    listEl.innerHTML = renderCompanyUpdates7DSkeleton(4);
+    verifiedEl.classList.add('hidden');
+
+    // subtitle
+    const subFb = (currentLang === "tr")
+      ? "Son 7 gündeki tüm paylaşımlar"
+      : (currentLang === "es" ? "Todas las publicaciones de los últimos 7 días" : "All posts from the last 7 days");
+    subEl.textContent = (typeof t === "function" && (t("company_posts_last7_sub") || t("company_posts_last7_subtitle"))) || subFb;
+
+    let meta = { name: String(fallbackName||"").trim(), logo: "", verified:false };
+
+    // best-effort profile meta
+    try{
+      const r = await supabaseClient
+        .from("profiles")
+        .select("id,company_name,logo_url,company_logo_url,logo,company_logo,avatar_url,photo_url,verified,is_verified,blue_tick,verification_status")
+        .eq("id", cid)
+        .maybeSingle();
+      const row = r?.data || null;
+      if(row){
+        const name = String(row.company_name || meta.name || "").trim();
+        const logo = String(row.company_logo_url || row.logo_url || row.logo || row.company_logo || row.avatar_url || row.photo_url || "").trim();
+        const ver = !!(row.verified || row.is_verified || row.blue_tick || (String(row.verification_status||"").toLowerCase()==="approved") || (String(row.verification_status||"").toLowerCase()==="verified"));
+        meta = { name: name || meta.name || "Company", logo, verified: ver };
+      }
+    }catch(e){}
+
+    if(!meta.name){
+      meta.name = (currentLang === "tr") ? "Şirket" : (currentLang==="es" ? "Empresa" : "Company");
+    }
+
+    titleEl.textContent = meta.name;
+    verifiedEl.classList.toggle('hidden', !meta.verified);
+    _cp7dRenderLogo(logoEl, meta.name, meta.logo);
+
+    // fetch last 7d posts
+    const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    let updates = [];
+    try{
+      const { data, error } = await supabaseClient
+        .from("company_updates")
+        .select("*")
+        .eq("company_id", cid)
+        .gte("created_at", since)
+        .order("created_at", { ascending:false })
+        .limit(60);
+
+      if(error) throw error;
+      updates = data || [];
+    }catch(e){
+      console.warn("Company posts 7d fetch error:", e);
+      updates = [];
+    }
+
+    if(__btonCompanyUpdates7DLastCid !== cid) return;
+
+    // fallback meta from latest update snapshot (if profiles fetch failed / logo missing)
+    try{
+      if(updates && updates.length){
+        if(!meta.name){
+          const nm2 = String(updates[0]?.company_name || updates[0]?.company_title || "").trim();
+          if(nm2){ meta.name = nm2; titleEl.textContent = meta.name; }
+        }
+        if(!meta.logo){
+          const lu = String(updates[0]?.company_logo_url || updates[0]?.logo_url || updates[0]?.logo || updates[0]?.company_logo || updates[0]?.avatar_url || updates[0]?.photo_url || "").trim();
+          if(lu){
+            meta.logo = lu;
+            _cp7dRenderLogo(logoEl, meta.name, meta.logo);
+          }
+        }
+      }
+    }catch(_){}
+
+
+    if(!updates.length){
+      listEl.innerHTML = renderCompanyUpdates7DEmpty();
+      try { applyTranslationsWithin(panel); } catch(e) {}
+      return;
+    }
+
+    listEl.innerHTML = (updates || []).map(u => renderCompanyUpdates7DCard(u, meta)).join("");
+    try { applyTranslationsWithin(panel); } catch(e) {}
+    try { if (typeof btWireLogoFallbacks === "function") btWireLogoFallbacks(panel); } catch(e) {}
+  }catch(e){
+    console.warn("openCompanyUpdates7D failed:", e);
+  }
+}
+
+// ESC closes panel (unless image lightbox is open)
+document.addEventListener('keydown', function(e){
+  try{
+    if(e.key !== 'Escape') return;
+    const panel = document.getElementById('bton-company-posts7d');
+    if(!panel || panel.classList.contains('hidden')) return;
+
+    const imgWrap = document.getElementById('bton-img-viewer');
+    if(imgWrap && imgWrap.classList.contains('bton-open')) return;
+
+    closeCompanyUpdates7D();
+  }catch(_){}
+}, { passive:false });
+
+
+(function(){
+  if (window.openBtonImageLightbox && window.closeBtonImageLightbox) return;
+
+  function qs(id){ return document.getElementById(id); }
+
+  window.openBtonImageLightbox = function(src){
+    try{
+      const url = String(src || '').trim();
+      if(!url) return;
+
+      const wrap = qs('bton-img-viewer');
+      const img  = qs('bton-img-viewer-img');
+      if(!wrap || !img) return;
+
+      img.src = url;
+      wrap.classList.add('bton-open');
+      wrap.setAttribute('aria-hidden','false');
+
+      // prevent background scroll on mobile
+      document.documentElement.classList.add('bton-no-scroll');
+      document.body.classList.add('bton-no-scroll');
+    }catch(e){
+      console.error('openBtonImageLightbox error:', e);
+    }
+  };
+
+  window.closeBtonImageLightbox = function(ev){
+    try{
+      if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+      const wrap = qs('bton-img-viewer');
+      const img  = qs('bton-img-viewer-img');
+      if(!wrap || !img) return;
+
+      wrap.classList.remove('bton-open');
+      wrap.setAttribute('aria-hidden','true');
+      // clear after animation/paint
+      setTimeout(()=>{ img.src = ''; }, 120);
+
+      document.documentElement.classList.remove('bton-no-scroll');
+      document.body.classList.remove('bton-no-scroll');
+    }catch(e){
+      console.error('closeBtonImageLightbox error:', e);
+    }
+  };
+
+  // ESC to close
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      const wrap = qs('bton-img-viewer');
+      if(wrap && wrap.classList.contains('bton-open')){
+        window.closeBtonImageLightbox(e);
+      }
+    }
+  }, { passive:false });
+
+  // Extra safety: if someone clicks on the image itself, do not trigger underlying deep link
+  document.addEventListener('click', function(e){
+    const media = e.target && e.target.closest ? e.target.closest('.bton-upd-media') : null;
+    if(media){
+      e.preventDefault();
+      e.stopPropagation();
+      const url = media.getAttribute('data-img');
+      window.openBtonImageLightbox(url);
+    }
+  }, true);
+})();
+</script>
+<style id="bton-no-scroll-css">
+/* Prevent background scroll when lightbox is open */
+.bton-no-scroll{ overflow:hidden !important; }
+</style>
+
 </body></html>
