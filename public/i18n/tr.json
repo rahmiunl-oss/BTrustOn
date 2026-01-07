@@ -1313,5 +1313,9 @@
   "post_image_needs_db_title": "Kurulum",
   "post_image_needs_db": "Görsel eklemek için company_updates tablosuna image_url (text) kolonu ekleyin.",
   "post_image_prepared_title": "Hazır",
-  "post_image_prepared": "Görsel hazır. Paylaş’a basın."
+  "post_image_prepared": "Görsel hazır. Paylaş’a basın.",
+  "notif_update_reaction_title": "Güncelleme etkileşimi",
+  "notif_update_reaction_like": "{company} güncellemenizi beğendi.",
+  "notif_update_reaction_celebrate": "{company} güncellemenizi kutladı.",
+  "toast_self_reaction": "Kendi güncellemenize tepki veremezsiniz."
 }
