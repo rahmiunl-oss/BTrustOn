@@ -8371,6 +8371,7 @@ let existingAssetFiles = []; // Mevcut dosyalar: { url, name }
    HOME UPDATES (Last 7 days) + POST UPDATE MODAL
    ========================================================= */
 let homeUpdatesData = [];
+let __homeUpdateCompanyMeta = new Map();
 let homeUpdatesSub = null;
 let __homeUpdatesPause = false;
 let __homeUpdatesAutoPos = 0; // float px position for smooth auto-flow
@@ -9207,7 +9208,7 @@ function renderHomeUpdates(list) {
         <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-full bton-upd-bar ${_signalMeta(area, templateCode).bar}"></div>
 
         <div class="relative flex items-start gap-3">
-          ${btRenderLogoHTML(logo, companyName, "w-10 h-10", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0")}
+          ${btRenderLogoHTML(logo, companyName, "w-10 h-10", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0", meta.cb)}
 
           <div class="bton-upd-col min-w-0 flex-1 flex flex-col">
             <div class="flex items-start justify-between gap-2">
@@ -9355,6 +9356,50 @@ function _isCompanyFollowed(companyId) {
   try { return homeFollowSet.has(String(companyId)); } catch { return false; }
 }
 
+async function _hydrateHomeUpdateCompanyMeta(updates){
+  try{
+    const arr = Array.isArray(updates) ? updates : [];
+    if (!arr.length) return;
+
+    const ids = Array.from(new Set(arr.map(u => String(u?.company_id || u?.profile_id || u?.companyId || "").trim()).filter(Boolean)));
+    if (!ids.length) return;
+
+    // Batch fetch latest public meta (logo + updated_at) so feeds stay fresh across sessions
+    const batch = ids.slice(0, 200);
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("id, company_name, logo_url, verification_status, is_verified, verified, blue_tick, updated_at")
+      .in("id", batch);
+
+    if (error || !Array.isArray(data)) return;
+
+    if (typeof __homeUpdateCompanyMeta === "undefined" || !__homeUpdateCompanyMeta || typeof __homeUpdateCompanyMeta.set !== "function") {
+      __homeUpdateCompanyMeta = new Map();
+    }
+
+    data.forEach(p => {
+      const id = String(p?.id || "").trim();
+      if (!id) return;
+
+      const name = String(p?.company_name || "").trim();
+      const logo = String(p?.logo_url || "").trim();
+
+      let verified = false;
+      try {
+        if (typeof isCompanyVerified === "function") verified = !!isCompanyVerified(p);
+        else {
+          const vs = String(p?.verification_status || "").toLowerCase();
+          verified = !!(p?.is_verified || p?.verified || p?.blue_tick || vs === "approved" || vs === "verified");
+        }
+      } catch(e) { verified = false; }
+
+      const cb = String(p?.updated_at || "").trim();
+
+      __homeUpdateCompanyMeta.set(id, { name, logo, verified, cb });
+    });
+  } catch(e) {}
+}
+
 function _resolveUpdateCompanyMeta(u){
   try {
     const row = u || {};
@@ -9363,39 +9408,51 @@ function _resolveUpdateCompanyMeta(u){
     const pickLogo = (o) => (o && (o.company_logo_url || o.logo_url || o.logoUrl || o.logo || o.company_logo || o.avatar_url || o.avatarUrl || o.photo_url || o.photoUrl || "")) || "";
     const pickName = (o) => (o && (o.company_name || o.company_title || o.name || o.legal_name || o.legalName || "")) || "";
     const pickVerified = (o) => !!(o && (o.is_verified || o.verified || o.blue_tick || (String(o.verification_status||"").toLowerCase()==="approved") || (String(o.verification_status||"").toLowerCase()==="verified")));
+    const pickCb = (o) => (o && (o.updated_at || o.logo_updated_at || o.logoUpdatedAt || o.logo_updated || "")) || "";
 
     const fromRow = {
       name: pickName(row),
       logo: pickLogo(row),
       verified: pickVerified(row),
+      cb: pickCb(row),
     };
 
     // Supabase join shapes (optional)
     const joined = row.profiles || row.profile || row.company || row.companies || null;
-    const fromJoin = joined ? { name: pickName(joined), logo: pickLogo(joined), verified: pickVerified(joined) } : { name:"", logo:"", verified:false };
+    const fromJoin = joined ? { name: pickName(joined), logo: pickLogo(joined), verified: pickVerified(joined), cb: pickCb(joined) } : { name:"", logo:"", verified:false, cb:"" };
 
-    // In-memory cache (Discover list / database)
-    let fromCache = { name:"", logo:"", verified:false };
+    // Latest meta cache (batched from profiles)
+    let fromMeta = { name:"", logo:"", verified:false, cb:"" };
+    try {
+      if (cid && typeof __homeUpdateCompanyMeta !== "undefined" && __homeUpdateCompanyMeta && typeof __homeUpdateCompanyMeta.get === "function") {
+        const m = __homeUpdateCompanyMeta.get(cid);
+        if (m) fromMeta = { name: pickName(m), logo: pickLogo(m), verified: !!m.verified, cb: String(m.cb || "") };
+      }
+    } catch(e) {}
+
+    // In-memory cache (profile objects opened during session)
+    let fromCache = { name:"", logo:"", verified:false, cb:"" };
     const __tryCache = (arr) => {
       if (!cid || !Array.isArray(arr)) return false;
       const hit = arr.find(x => String(x?.id) === cid);
       if (!hit) return false;
-      fromCache = { name: pickName(hit), logo: pickLogo(hit), verified: pickVerified(hit) };
+      fromCache = { name: pickName(hit), logo: pickLogo(hit), verified: pickVerified(hit), cb: pickCb(hit) };
       return true;
     };
     try {
-      if (!__tryCache((typeof companiesData !== "undefined") ? companiesData : null)) {
-        __tryCache((typeof database !== "undefined") ? database : null);
-      }
+      __tryCache((typeof database !== "undefined") ? database : null);
     } catch(e){}
 
-    const name = (fromCache.name || fromJoin.name || fromRow.name || "").trim();
-    const logo = (fromCache.logo || fromJoin.logo || fromRow.logo || "").trim();
-    const verified = !!(fromCache.verified || fromJoin.verified || fromRow.verified);
+    const name = (fromMeta.name || fromCache.name || fromJoin.name || fromRow.name || "").trim();
+    const logo = (fromMeta.logo || fromCache.logo || fromJoin.logo || fromRow.logo || "").trim();
+    const verified = !!(fromMeta.verified || fromCache.verified || fromJoin.verified || fromRow.verified);
 
-    return { name, logo, verified };
+    // Cache-bust token: prefer profiles.updated_at (so image refreshes even if URL stays the same)
+    const cb = String(fromMeta.cb || fromCache.cb || fromJoin.cb || fromRow.cb || "").trim();
+
+    return { name, logo, verified, cb };
   } catch(e){
-    return { name: "", logo: "", verified: false };
+    return { name: "", logo: "", verified: false, cb: "" };
   }
 }
 
@@ -9734,6 +9791,7 @@ async function fetchHomeUpdates() {
     }
 
     homeUpdatesData = (data || []);
+    await _hydrateHomeUpdateCompanyMeta(homeUpdatesData);
     _updateHomeUpdatesActiveCount(homeUpdatesData);
     renderHomeUpdates(homeUpdatesData);
 
@@ -9759,7 +9817,7 @@ function subscribeHomeUpdatesRealtime() {
 
     homeUpdatesSub = supabaseClient
       .channel("home-updates")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "company_updates" }, payload => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "company_updates" }, async payload => {
         const row = payload && payload.new ? payload.new : null;
         if (!row) return;
 
@@ -9786,6 +9844,7 @@ function subscribeHomeUpdatesRealtime() {
 
         // Prepend
         homeUpdatesData = [row, ...(homeUpdatesData || [])].slice(0, 30);
+        await _hydrateHomeUpdateCompanyMeta(homeUpdatesData);
         _updateHomeUpdatesActiveCount(homeUpdatesData);
         renderHomeUpdates(homeUpdatesData);
 
@@ -12066,14 +12125,46 @@ window.__btLogoError = function(img){
     }
   }catch(e){}
 };
-function btRenderLogoHTML(url, name, sizeClass, radiusClass, extraClass){
+function btWithCb(url, cb){
+  try{
+    const u = String(url||"").trim();
+    const v = String(cb||"").trim();
+    if(!u || !v) return u;
+    if(/^data:|^blob:/i.test(u)) return u;
+    try{
+      const obj = new URL(u, window.location.origin);
+      obj.searchParams.set("cb", v);
+      return obj.toString();
+    }catch(e){
+      const parts = u.split("#");
+      const base = parts[0] || "";
+      const hash = parts[1] ? ("#" + parts[1]) : "";
+      const join = base.includes("?") ? "&" : "?";
+      return base + join + "cb=" + encodeURIComponent(v) + hash;
+    }
+  }catch(e){
+    return String(url||"");
+  }
+}
+
+// Global cache-bust token (set when your company updates its logo without changing the URL)
+window.__btonLogoBust = window.__btonLogoBust || "";
+
+function btRenderLogoHTML(url, name, sizeClass, radiusClass, extraClass, cb){
   const initials = btGetInitials(name);
-  const hasUrl = !!(url && String(url).trim());
+  const raw = String(url || "").trim();
+  const hasUrl = !!raw;
   const sc = String(sizeClass||"");
   const font = sc.includes("w-8") ? 11 : (sc.includes("w-12") ? 13 : 12);
+
+  const bust = (cb != null && String(cb).trim() !== "") ? String(cb).trim() : (window.__btonLogoBust || "");
+  const src0 = hasUrl ? btWithCb(raw, bust) : "";
+  const src = (hasUrl && typeof escapeHtml === "function") ? escapeHtml(src0) : src0;
+  const dataSrc = (hasUrl && typeof escapeHtml === "function") ? escapeHtml(raw) : raw;
+
   return `
     <div class="${(sizeClass||'w-10 h-10')} ${(radiusClass||'rounded-2xl')} bt-logo-wrap ${(extraClass||'')}" style="--bt-logo-font:${font}px;">
-      ${hasUrl ? `<img src="${url}" alt="" class="bt-logo-img" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="window.__btLogoError(this)">` : ``}
+      ${hasUrl ? `<img src="${src}" data-bt-src="${dataSrc}" alt="" class="bt-logo-img" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="window.__btLogoError(this)">` : ``}
       <div class="bt-logo-fallback ${hasUrl ? 'hidden' : ''}"><span class="bt-logo-mono">${initials}</span></div>
     </div>
   `;
@@ -12088,6 +12179,29 @@ function btWireLogoFallbacks(root){
   }catch(e){}
 }
 document.addEventListener("DOMContentLoaded", ()=>btWireLogoFallbacks(document));
+
+function btRefreshRenderedLogos(root){
+  try{
+    const bust = String(window.__btonLogoBust || "").trim();
+    if(!bust) return;
+    (root || document).querySelectorAll("img.bt-logo-img[data-bt-src]").forEach(img=>{
+      const raw = String(img.getAttribute("data-bt-src") || "").trim();
+      if(!raw) return;
+      const next = btWithCb(raw, bust);
+      if(next && img.getAttribute("src") !== next){
+        img.setAttribute("src", next);
+        img.classList.remove("hidden");
+        const wrap = img.closest(".bt-logo-wrap");
+        if(wrap){
+          const fb = wrap.querySelector(".bt-logo-fallback");
+          if(fb) fb.classList.add("hidden");
+        }
+      }
+    });
+  }catch(e){}
+}
+window.btRefreshRenderedLogos = btRefreshRenderedLogos;
+
 
 function getCompanyLogoThumb(company){
   const url = company?.logo_url;
@@ -22578,6 +22692,23 @@ async function uploadLogoDirectFile(file) {
     if (localCompany) localCompany.logo_url = publicUrl;
     if (selectedCompany && String(selectedCompany.id) === String(myCompanyIdOr(user.id))) selectedCompany.logo_url = publicUrl;
 
+    // Bust logo cache across the app (important if CDN caches same URL)
+    try { window.__btonLogoBust = String(nowTs()); } catch(e) {}
+    try { if (window.btRefreshRenderedLogos) btRefreshRenderedLogos(document); } catch(e) {}
+
+    // Refresh key UI surfaces (home updates / saved & following lists / open overlay)
+    try { if (typeof fetchHomeUpdates === "function") fetchHomeUpdates(); } catch(e) {}
+    try { if (typeof fetchNotificationsUnread === "function") fetchNotificationsUnread(); } catch(e) {}
+    try {
+      const sp = document.getElementById("saved-panel");
+      if (sp && sp.classList.contains("open")) {
+        if (typeof fetchFollowingCompanies === "function") fetchFollowingCompanies();
+        if (typeof fetchSavedCompanies === "function") fetchSavedCompanies();
+        if (typeof renderFollowingCompanies === "function") renderFollowingCompanies();
+        if (typeof renderSavedCompanies === "function") renderSavedCompanies();
+      }
+    } catch(e) {}
+
     showToast("Success", "Logo updated successfully!", "success");
 
   } catch (error) {
@@ -27905,19 +28036,43 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
 
     let meta = { name: String(fallbackName||"").trim(), logo: "", verified:false };
 
+    // Try in-memory caches first (helps when profiles select is restricted by RLS)
+    try{
+      const pickLogo = (o) => (o && (o.company_logo_url || o.logo_url || o.logoUrl || o.logo || o.company_logo || o.avatar_url || o.avatarUrl || o.photo_url || o.photoUrl || "")) || "";
+      const pickName = (o) => (o && (o.company_name || o.company_title || o.name || o.legal_name || o.legalName || "")) || "";
+      const pickVerified = (o) => !!(o && (o.is_verified || o.verified || o.blue_tick || (String(o.verification_status||"").toLowerCase()==="approved") || (String(o.verification_status||"").toLowerCase()==="verified")));
+
+      const __try = (arr) => {
+        if (!Array.isArray(arr)) return null;
+        return arr.find(x => String(x?.id) === cid) || null;
+      };
+
+      const hit = __try((typeof companiesData !== "undefined") ? companiesData : null) || __try((typeof database !== "undefined") ? database : null) || null;
+      if (hit) {
+        const nm0 = String(pickName(hit) || meta.name || "").trim();
+        const lg0 = String(pickLogo(hit) || "").trim();
+        const bust0 = String(hit.updated_at || hit.updatedAt || "").trim() || String(window.__btonLogoBust || "").trim();
+        const ver0 = pickVerified(hit);
+        meta = { name: nm0, logo: (lg0 ? btWithCb(lg0, bust0 || String(nowTs())) : ""), verified: ver0, bust: bust0 };
+      }
+    }catch(e){}
+
     // best-effort profile meta
     try{
       const r = await supabaseClient
         .from("profiles")
-        .select("id,company_name,logo_url,company_logo_url,logo,company_logo,avatar_url,photo_url,verified,is_verified,blue_tick,verification_status")
+        .select("id,company_name,logo_url,company_logo_url,logo,company_logo,avatar_url,photo_url,verified,is_verified,blue_tick,verification_status,updated_at")
         .eq("id", cid)
         .maybeSingle();
       const row = r?.data || null;
       if(row){
         const name = String(row.company_name || meta.name || "").trim();
-        const logo = String(row.company_logo_url || row.logo_url || row.logo || row.company_logo || row.avatar_url || row.photo_url || "").trim();
+
+        const logo0 = String(row.company_logo_url || row.logo_url || row.logo || row.company_logo || row.avatar_url || row.photo_url || "").trim();
+        const bust = String(row.updated_at || row.updatedAt || "").trim() || String(window.__btonLogoBust || "").trim();
+        const logo = logo0 ? btWithCb(logo0, bust || String(nowTs())) : "";
         const ver = !!(row.verified || row.is_verified || row.blue_tick || (String(row.verification_status||"").toLowerCase()==="approved") || (String(row.verification_status||"").toLowerCase()==="verified"));
-        meta = { name: name || meta.name || "Company", logo, verified: ver };
+        meta = { name: name || meta.name || "Company", logo, verified: ver, bust };
       }
     }catch(e){}
 
@@ -27958,11 +28113,12 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
           if(nm2){ meta.name = nm2; titleEl.textContent = meta.name; }
         }
         if(!meta.logo){
-          const lu = String(updates[0]?.company_logo_url || updates[0]?.logo_url || updates[0]?.logo || updates[0]?.company_logo || updates[0]?.avatar_url || updates[0]?.photo_url || "").trim();
-          if(lu){
-            meta.logo = lu;
-            _cp7dRenderLogo(logoEl, meta.name, meta.logo);
-          }
+
+        const lu0 = String(updates[0]?.company_logo_url || updates[0]?.logo_url || updates[0]?.logo || updates[0]?.company_logo || updates[0]?.avatar_url || updates[0]?.photo_url || "").trim();
+        if(lu0){
+          meta.logo = btWithCb(lu0, (meta.bust || String(nowTs())));
+          _cp7dRenderLogo(logoEl, meta.name, meta.logo);
+        }
         }
       }
     }catch(_){}
