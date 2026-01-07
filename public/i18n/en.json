@@ -1313,5 +1313,9 @@
   "post_image_needs_db_title": "Setup",
   "post_image_needs_db": "To attach images, add an image_url column to company_updates (text).",
   "post_image_prepared_title": "Ready",
-  "post_image_prepared": "Image prepared. Click Publish to post."
+  "post_image_prepared": "Image prepared. Click Publish to post.",
+  "notif_update_reaction_title": "Update reaction",
+  "notif_update_reaction_like": "{company} liked your update.",
+  "notif_update_reaction_celebrate": "{company} celebrated your update.",
+  "toast_self_reaction": "You can’t react to your own update."
 }
