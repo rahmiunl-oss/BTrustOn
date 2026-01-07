@@ -1247,5 +1247,8 @@
   "toast_pro_active_until": "{label} • {date} tarihine kadar.",
   "notif_profile_view_msg_locked": "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro’ya geçin.",
   "notifications_profile_viewed_body_locked": "Bir şirket profilinizi inceledi. Kim olduğunu görmek için Pro’ya geçin.",
-  "notifications_profile_viewed_body_guest": "Bir misafir profilinizi inceledi."
+  "notifications_profile_viewed_body_guest": "Bir misafir profilinizi inceledi.",
+  "post_image_rules": "Her oran • 1 görsel",
+  "post_image_hint": "Opsiyonel. Akışta kompakt görünür; tıklayınca tam boy açılır (kırpma yok).",
+  "post_image_prepared": "Görsel eklendi. Akışta kompakt görünür; tıklayınca tam boy açılır."
 }
