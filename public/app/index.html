@@ -20638,11 +20638,11 @@ async function fetchNotificationsUnread() {
       return;
     }
 
-    // ✅ Respect local "dismissed" / "cleared" visibility so deleted notifications stay gone after refresh
-    const __rawNotifs = r.data || [];
-    notificationsData = (typeof _applyNotifVisibility === "function")
-      ? _applyNotifVisibility(__rawNotifs)
-      : __rawNotifs;
+    // Apply local visibility (so deleted/cleared notifs don’t come back after refresh)
+    let _list = r.data || [];
+    try { if (typeof _applyNotifVisibility === 'function') _list = _applyNotifVisibility(_list); } catch(e) {}
+
+    notificationsData = _list;
 
     // Count unread (supports boolean / 0-1 / null)
     notificationsUnreadCount = (notificationsData || []).filter(n => (
@@ -20873,6 +20873,9 @@ function deleteNotification(notifId) {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) throw new Error((t("auth_login_required") || "Login required"));
 
+      // Persist local hide immediately (covers RLS/permission issues; survives refresh)
+      try { if (typeof _dismissNotifIdLocal === 'function') _dismissNotifIdLocal(notifId); } catch(e) {}
+
       // Optimistic UI remove
       const before = Array.isArray(notificationsData) ? notificationsData : [];
       const target = before.find(n => String(n.id) === String(notifId));
@@ -20913,6 +20916,9 @@ function deleteAllNotifications() {
     try {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) throw new Error((t("auth_login_required") || "Login required"));
+
+      // Persist local clear immediately (so refresh won’t bring them back if DB delete is blocked)
+      try { _setNotifClearedAt(new Date(__REAL_DATE_NOW__()).toISOString()); _setNotifDismissedIds([]); } catch(e) {}
 
       // Try DB delete first (may be blocked by RLS and return 0 rows without error)
       const { data: deletedRows, error } = await supabaseClient
@@ -28062,120 +28068,5 @@ document.addEventListener('keydown', function(e){
 /* Prevent background scroll when lightbox is open */
 .bton-no-scroll{ overflow:hidden !important; }
 </style>
-
-
-<!-- =========================================================
-     BTrustOn – Hardening Patch (v21)
-     Goals:
-     - Prevent common "patlamasın" cases (rate-limited global error surfacing)
-     - Safer window.open for _blank (noopener/noreferrer) + block javascript: URLs
-     - Sanitize URLs used by the Updates image lightbox
-========================================================= -->
-<script id="bton-hardening-v21">
-(function(){
-  if (window.__BTON_HARDENING_V21) return;
-  window.__BTON_HARDENING_V21 = true;
-
-  // ---------- Rate-limited soft error toast ----------
-  const __btonErrState = { lastToastAt: 0, lastKey: "", seen: 0 };
-  function __btonSoftToast(title, msg){
-    try{
-      const now = Date.now();
-      const key = String(title||"") + "|" + String(msg||"");
-      if (key === __btonErrState.lastKey && (now - __btonErrState.lastToastAt) < 7000) return;
-      if ((now - __btonErrState.lastToastAt) < 4500) return;
-      __btonErrState.lastToastAt = now;
-      __btonErrState.lastKey = key;
-      __btonErrState.seen++;
-      if (typeof showToast === "function"){
-        showToast(title || "Notice", msg || "Please refresh the page.", "error");
-      }
-    }catch(e){}
-  }
-
-  // ---------- Safe URL helper (blocks javascript:) ----------
-  function __btonSanitizeUrl(raw, opts){
-    opts = opts || {};
-    const allowDataImage = opts.allowDataImage !== false;
-    try{
-      if (raw === null || raw === undefined) return "";
-      let s = String(raw).trim();
-      if (!s) return "";
-      // remove control chars
-      s = s.replace(/[\u0000-\u001F\u007F]/g, "");
-      // Disallow javascript:
-      if (/^\s*javascript:/i.test(s)) return "";
-      // Allow data images if requested
-      if (/^\s*data:/i.test(s)){
-        if (!allowDataImage) return "";
-        if (!/^\s*data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(s)) return "";
-        return s;
-      }
-      // Resolve relative URLs against current origin
-      const u = new URL(s, window.location.origin);
-      // Allow http/https/blob only
-      if (!/^(https?:|blob:)$/i.test(u.protocol)) return "";
-      return u.href;
-    }catch(e){
-      return "";
-    }
-  }
-  window.__btonSanitizeUrl = window.__btonSanitizeUrl || __btonSanitizeUrl;
-
-  // ---------- Safer window.open (only for _blank) ----------
-  try{
-    const _open = window.open;
-    window.open = function(url, target, features){
-      try{
-        const tgt = target || "_blank";
-        if (tgt === "_blank"){
-          const safe = __btonSanitizeUrl(url, { allowDataImage: false });
-          if (!safe) return null;
-          const f = (features ? (features + ",") : "") + "noopener,noreferrer";
-          return _open.call(window, safe, tgt, f);
-        }
-      }catch(e){}
-      return _open.apply(window, arguments);
-    };
-  }catch(e){}
-
-  // ---------- Patch Updates image lightbox to sanitize URL ----------
-  try{
-    if (typeof window.openBtonImageLightbox === "function" && !window.openBtonImageLightbox.__btonWrapped){
-      const _lb = window.openBtonImageLightbox;
-      const wrapped = function(raw){
-        const safe = __btonSanitizeUrl(raw, { allowDataImage: true });
-        if (!safe) return;
-        return _lb(safe);
-      };
-      wrapped.__btonWrapped = true;
-      window.openBtonImageLightbox = wrapped;
-    }
-  }catch(e){}
-
-  // ---------- Global error handlers (do not crash the app) ----------
-  try{
-    window.addEventListener("error", function(ev){
-      try{
-        const msg = (ev && ev.message) ? String(ev.message) : "Unexpected error";
-        // Ignore noisy third-party / benign errors
-        if (/ResizeObserver loop limit exceeded/i.test(msg)) return;
-        console.error("BTrustOn window.error:", ev);
-        __btonSoftToast("Something went wrong", "Some UI features may not work. Refresh if needed.");
-      }catch(e){}
-    }, true);
-
-    window.addEventListener("unhandledrejection", function(ev){
-      try{
-        const r = ev && ev.reason;
-        const msg = (r && (r.message || r.toString)) ? String(r.message || r.toString()) : "Unhandled promise rejection";
-        if (/AbortError/i.test(msg)) return; // user navigation / abort
-        console.error("BTrustOn unhandledrejection:", ev && ev.reason);
-        __btonSoftToast("Network or app error", "A request failed. Please retry or refresh.");
-      }catch(e){}
-    }, true);
-  }catch(e){}
-})();
-</script>
 
 </body></html>
