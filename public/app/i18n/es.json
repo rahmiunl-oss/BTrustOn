@@ -1250,5 +1250,7 @@
   "notifications_profile_viewed_body_guest": "Un invitado vio tu perfil.",
   "post_image_rules": "Cualquier proporción • 1 imagen",
   "post_image_hint": "Opcional. Se muestra compacta en el feed; haz clic para ver tamaño completo (sin recorte).",
-  "post_image_prepared": "Imagen adjunta. Se verá compacta en el feed; haz clic para ver tamaño completo."
+  "post_image_prepared": "Imagen adjunta. Se verá compacta en el feed; haz clic para ver tamaño completo.",
+  "ui_claim_welcome_body_fmt": "¡Felicitaciones! Tu solicitud de propiedad para {company} fue aprobada. Puedes administrar esta empresa con el usuario {username} y tu contraseña. Toca abajo para editar el perfil.",
+  "ui_your_account": "tu cuenta"
 }
