@@ -5404,7 +5404,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span data-i18n="ui_live_f35d25"></span></span>
 </div>
 </div>
-<button class="shrink-0 inline-flex items-center gap-2 bg-white border border-slate-200/70 hover:border-BTrustOn-accent text-gray-700 hover:text-BTrustOn-primary text-[11px] font-extrabold px-3 py-2 rounded-xl shadow-sm transition" id="btn-open-post-update" onclick="openPostUpdateModal()">
+<button class="shrink-0 inline-flex items-center gap-2 bg-white/90 backdrop-blur border border-slate-200/70 hover:border-BTrustOn-accent text-gray-700 hover:text-BTrustOn-primary text-[11px] font-extrabold px-3 py-2 rounded-xl shadow-sm transition" id="btn-open-post-update" onclick="openPostUpdateModal()">
 <i class="fa-solid fa-square-plus text-BTrustOn-accent"></i>
 <span data-i18n="btn_post_update">POST UPDATE</span>
 </button>
@@ -5484,6 +5484,9 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <i class="fa-solid fa-chevron-down text-gray-400 text-[10px]"></i>
 </div>
 </div>
+<button class="shrink-0 inline-flex items-center justify-center h-[38px] w-[38px] bg-white/90 backdrop-blur border border-slate-200/70 text-gray-600 text-xs font-bold rounded-lg shadow-sm hover:border-rose-300 hover:text-rose-600 focus:outline-none focus:ring-1 focus:ring-rose-200/70 transition" id="btn-clear-filters" type="button" onclick="clearHomeFilters()" title="Clear filters">
+<i class="fa-solid fa-filter-circle-xmark text-[11px]"></i>
+</button>
 </div>
 </div>
 <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16" id="card-container"></div>
@@ -25072,7 +25075,45 @@ function updateHomeFilterOptions(query) {
         renderSearchResults(query);
     }
 
-    // 5. Listeyi Sıralayan Yardımcı Fonksiyon
+    
+    // Clear all Discover filters (search + sector + country + sort)
+    function clearHomeFilters() {
+        try {
+            // Inputs
+            const searchEl = document.getElementById("search-input");
+            if (searchEl) searchEl.value = "";
+
+            const sectorEl = document.getElementById("sector-filter");
+            if (sectorEl) sectorEl.value = "all";
+
+            const countryEl = document.getElementById("country-filter");
+            if (countryEl) countryEl.value = "all";
+
+            const sortEl = document.getElementById("sort-select");
+            if (sortEl) sortEl.value = "recommended";
+
+            // State
+            try { currentSector = "all"; } catch (e) {}
+            try { currentCountryFilter = "all"; } catch (e) {}
+            try { currentSortOption = "recommended"; } catch (e) {}
+
+            // Restore full option lists
+            try { if (typeof updateHomeFilterOptions === "function") updateHomeFilterOptions(""); } catch (e) {}
+
+            // Re-render to default state
+            try {
+                if (typeof handleSearchInput === "function") handleSearchInput("");
+                else if (typeof renderShowcase === "function") renderShowcase();
+            } catch (e) {
+                try { if (typeof renderShowcase === "function") renderShowcase(); } catch (_) {}
+            }
+
+            try { if (typeof startShowcaseTimer === "function") startShowcaseTimer(); } catch (e) {}
+            try { if (typeof startGridShuffle === "function") startGridShuffle(); } catch (e) {}
+        } catch (e) {}
+    }
+
+// 5. Listeyi Sıralayan Yardımcı Fonksiyon
     function sortCompanyList(list) {
         const sorted = [...list]; // Kopyasını al
 
