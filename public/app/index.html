@@ -65,7 +65,7 @@
   }catch(e){}
 })();
 </script>
-<title>BtrustOn</title>
+<title>BTrustOn</title>
 <!-- UX STABILITY FIXES (prevents horizontal jump on refresh / scroll lock) -->
 <style id="ux-stability-fixes">
 /* Hide Profile Analytics upgrade/go pro button (removed) */
@@ -689,6 +689,75 @@ html[data-theme="dark"] .bton-profile-tabbar .upd-area-ico i{
     from{ transform: translateY(6px) scale(.985); opacity: 0; }
     to{ transform: translateY(0) scale(1); opacity: 1; }
   }
+
+  /* ============================
+     Dark mode – Reset password modal readability
+     (fix: label + input text invisible in dark theme)
+     ============================ */
+  html[data-theme="dark"] #reset-modal .bton-auth-card{
+    background: rgba(2,6,23,.88) !important;
+    border-color: rgba(148,163,184,.16) !important;
+    box-shadow: 0 28px 70px rgba(0,0,0,.58) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-body{
+    color: rgba(226,232,240,.92) !important;
+  }
+  html[data-theme="dark"] #reset-modal label{
+    color: rgba(226,232,240,.88) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-link{
+    color: rgba(226,232,240,.72) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-link:hover{
+    color: rgba(226,232,240,.92) !important;
+  }
+
+  html[data-theme="dark"] #reset-modal .bton-auth-input{
+    background: rgba(15,23,42,.72) !important;
+    border-color: rgba(148,163,184,.22) !important;
+    color: rgba(226,232,240,.95) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-input::placeholder{
+    color: rgba(148,163,184,.62) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-input:focus,
+  html[data-theme="dark"] #reset-modal .bton-auth-input:focus-visible{
+    border-color: rgba(148,163,184,.34) !important;
+    box-shadow: 0 0 0 3px rgba(148,163,184,.14) !important;
+    background: rgba(15,23,42,.84) !important;
+  }
+
+  html[data-theme="dark"] #reset-modal .bton-auth-field-icon{
+    color: rgba(148,163,184,.72) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-eye{
+    background: rgba(15,23,42,.55) !important;
+    border-color: rgba(148,163,184,.18) !important;
+    color: rgba(226,232,240,.74) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-eye:hover{
+    background: rgba(15,23,42,.72) !important;
+    border-color: rgba(148,163,184,.24) !important;
+  }
+
+  html[data-theme="dark"] #reset-modal .bton-auth-note{
+    background: rgba(15,23,42,.62) !important;
+    border-color: rgba(148,163,184,.18) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-note p{
+    color: rgba(226,232,240,.84) !important;
+  }
+
+  html[data-theme="dark"] #reset-modal .bton-auth-btn-ghost{
+    background: rgba(15,23,42,.62) !important;
+    border-color: rgba(148,163,184,.18) !important;
+    color: rgba(226,232,240,.86) !important;
+  }
+  html[data-theme="dark"] #reset-modal .bton-auth-btn-ghost:hover{
+    background: rgba(15,23,42,.78) !important;
+    border-color: rgba(148,163,184,.24) !important;
+  }
+
 </style>
 <style id="bton-apple-premium-skin">
 
@@ -21868,6 +21937,14 @@ async function fetchNotificationsUnread() {
     let _list = r.data || [];
     try { if (typeof _applyNotifVisibility === 'function') _list = _applyNotifVisibility(_list); } catch(e) {}
 
+    // Hide legacy verification i18n-marker rows (can appear as duplicates if RPC already created a plain-text notif)
+    try {
+      _list = (_list || []).filter(n => {
+        const tt = String((n && n.title) || "");
+        return !/^\[I18N:ui_verification_/.test(tt);
+      });
+    } catch(e) {}
+
     notificationsData = _list;
 
     // Count unread (supports boolean / 0-1 / null)
@@ -22309,6 +22386,11 @@ function renderInboxItems() {
           if (__pvTitle) titleResolved = __pvTitle;
         }
       } catch(e) {}
+
+      // 🚫 Hide unresolved I18N-marker notifications (usually fallback duplicates)
+      try {
+        if (typeof titleResolved === "string" && /^\[I18N:/.test(titleResolved)) return "";
+      } catch(_) {}
 
       const title = String(titleResolved || (t("ui_notification") || "Notification")).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -26949,14 +27031,17 @@ async function _notifyVerificationRequesterFallback(requestId, action, reason, c
   try {
     if (!requestId) return;
 
-    // 0) Optional RPC (if you created it). Ignore errors if missing/blocked.
+    // 0) Optional RPC (preferred). If it succeeds, stop here to avoid double notifications.
+    let rpcOk = false;
     try {
-      await supabaseClient.rpc("bton_admin_notify_verification", {
+      const { error: rpcErr } = await supabaseClient.rpc("bton_admin_notify_verification", {
         request_id: requestId,
         action: action,
         reason: (reason != null && String(reason).trim() !== "") ? String(reason).trim() : null
       });
+      if (!rpcErr) rpcOk = true;
     } catch(e) {}
+    if (rpcOk) return;
 
     // 1) Find who submitted this verification request
     const { data: row, error } = await supabaseClient
@@ -26967,7 +27052,7 @@ async function _notifyVerificationRequesterFallback(requestId, action, reason, c
 
     if (error || !row || !row.submitted_by) return;
 
-    // 2) Company name (for message params)
+    // 2) Company name (optional)
     let companyName = "";
     try {
       const cid = companyId || row.company_id;
@@ -26984,15 +27069,20 @@ async function _notifyVerificationRequesterFallback(requestId, action, reason, c
     const clean = (s) => String(s || "").replace(/\]/g, "").replace(/\n/g, " ").trim();
     const r = (reason != null && String(reason).trim() !== "") ? String(reason).trim() : null;
 
-    // Store as i18n marker so UI renders in user's language
-    const titleKey = (action === "approve") ? "ui_verification_approved_title" : "ui_verification_rejected_title";
-    let msgKey;
-    if (action === "approve") msgKey = "ui_verification_approved_msg_fmt";
-    else msgKey = r ? "ui_verification_rejected_msg_reason_fmt" : "ui_verification_rejected_msg_fmt";
+    // Fallback notification (plain text; avoid raw [I18N:*] markers showing up in UI)
+    const title = (action === "approve")
+      ? (t("ui_verification_approved_title") || "Verification request approved")
+      : (t("ui_verification_rejected_title") || "Verification request rejected");
 
-    const title = `[I18N:${titleKey}]`;
-    let msg = `[I18N:${msgKey}][company=${clean(companyName)}]`;
-    if (r) msg += `[reason=${clean(r)}]`;
+    let msg = (action === "approve")
+      ? (t("ui_verification_approved_msg_fallback") || "Your verification request was approved.")
+      : (t("ui_verification_rejected_msg_fallback") || "Your verification request was rejected. Please review your information and try again.");
+
+    // Add reason if provided (matches existing UI copy)
+    if (r) msg += ` Reason: ${clean(r)}`;
+
+    // Optional: include company name if available (kept minimal to avoid noisy duplicates)
+    // if (companyName) msg = `${clean(companyName)} — ${msg}`;
 
     await supabaseClient
       .from("notifications")
