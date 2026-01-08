@@ -209,6 +209,324 @@
 
 /* v16 hard override */
 #bton-logo-light,#bton-logo-dark{display:block !important;}
+
+    /* =========================================================
+       Post Update – Area selector premium icons (v14)
+       Goal: corporate, elegant, and distinct from LinkedIn/Twitter.
+       ========================================================= */
+    .upd-area-btn{
+      position: relative;
+      height: 44px !important;
+      border-radius: 18px !important;
+      border: 1px solid rgba(15,23,42,.10) !important;
+      background: rgba(255,255,255,.78) !important;
+      box-shadow: 0 10px 26px rgba(2,6,23,.07) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+      overflow: hidden;
+    }
+    .upd-area-btn::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:0;
+      transform: translateX(-35%);
+      background: linear-gradient(110deg, transparent 0%, rgba(var(--upd-r), var(--upd-g), var(--upd-b), .10) 40%, transparent 80%);
+      transition: opacity .18s ease, transform .38s ease;
+    }
+    .upd-area-btn:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 16px 38px rgba(2,6,23,.10) !important;
+      border-color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .24) !important;
+    }
+    .upd-area-btn:hover::before{ opacity:1; transform: translateX(35%); }
+    .upd-area-btn:active{ transform: translateY(0px); box-shadow: 0 10px 26px rgba(2,6,23,.07) !important; }
+    .upd-area-btn:focus{ outline:none; box-shadow: var(--bton-focus), 0 16px 38px rgba(2,6,23,.10) !important; }
+
+    /* Unified area tone (single premium color across General/Projects/Certificates/Assets) */
+.upd-area-btn{ --upd-r: 8; --upd-g: 145; --upd-b: 178; } /* premium steel-cyan */
+.upd-area-btn .upd-area-ico{
+      width: 26px;
+      height: 30px;
+      border-radius: 12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid rgba(15,23,42,.10);
+      background: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .10);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.70),
+        0 8px 18px rgba(2,6,23,.06);
+      transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+    }
+    .upd-area-btn .upd-area-ico i{
+      font-size: 13px;
+      color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .92);
+      transition: color .16s ease, transform .16s ease;
+    }
+    .upd-area-btn:hover .upd-area-ico{
+      background: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .14);
+      border-color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .22);
+    }
+    .upd-area-btn:hover .upd-area-ico i{
+      color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .98);
+      transform: translateY(-0.25px);
+    }
+
+    .upd-area-btn.is-active{
+      border-color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .32) !important;
+      background: linear-gradient(180deg, rgba(var(--upd-r), var(--upd-g), var(--upd-b), .08), rgba(255,255,255,.78)) !important;
+      box-shadow: 0 18px 46px rgba(2,6,23,.12) !important;
+    }
+    .upd-area-btn.is-active .upd-area-ico{
+      background: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .18);
+      border-color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .30);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.80),
+        0 14px 30px rgba(2,6,23,.10);
+    }
+    .upd-area-btn.is-active .upd-area-ico i{
+      color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .92);
+    }
+
+    html[data-theme="dark"] .upd-area-btn{
+      border-color: rgba(148,163,184,.18) !important;
+      background: rgba(2,6,23,.55) !important;
+      box-shadow: 0 18px 44px rgba(0,0,0,.40) !important;
+    }
+    html[data-theme="dark"] .upd-area-btn:hover{
+      border-color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .28) !important;
+      box-shadow: 0 22px 56px rgba(0,0,0,.46) !important;
+    }
+    html[data-theme="dark"] .upd-area-btn::before{
+      background: linear-gradient(110deg, transparent 0%, rgba(var(--upd-r), var(--upd-g), var(--upd-b), .12) 40%, transparent 80%);
+    }
+    html[data-theme="dark"] .upd-area-btn .upd-area-ico{
+      border-color: rgba(148,163,184,.16);
+      background: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    html[data-theme="dark"] .upd-area-btn .upd-area-ico i{
+      color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .92);
+    }
+    html[data-theme="dark"] .upd-area-btn:hover .upd-area-ico i{
+      color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .98);
+    }
+    html[data-theme="dark"] .upd-area-btn.is-active{
+      background: linear-gradient(180deg, rgba(var(--upd-r), var(--upd-g), var(--upd-b), .14), rgba(2,6,23,.62)) !important;
+    }
+    html[data-theme="dark"] .upd-area-btn.is-active .upd-area-ico{
+      background: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .22);
+      border-color: rgba(var(--upd-r), var(--upd-g), var(--upd-b), .30);
+    }
+    html[data-theme="dark"] .upd-area-btn.is-active .upd-area-ico i{
+      color: rgba(255,255,255,.95);
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .upd-area-btn, .upd-area-btn::before, .upd-area-btn .upd-area-ico, .upd-area-btn .upd-area-ico i{ transition: none !important; }
+      .upd-area-btn:hover{ transform:none !important; }
+    }
+
+
+
+    
+    /* --- Update cards: premium area chip (Home updates + 7D modal) --- */
+    .bton-upd-chip{
+      --ar: 8; --ag: 145; --ab: 178; /* unified premium tone */
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 2px 8px 2px 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--ar),var(--ag),var(--ab), .16);
+      background: linear-gradient(180deg,
+        rgba(var(--ar),var(--ag),var(--ab), .10),
+        rgba(var(--ar),var(--ag),var(--ab), .06)
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.78),
+        0 6px 16px -14px rgba(15,23,42,.35);
+      transform: translateY(-0.5px);
+      flex: 0 0 auto;
+    }
+.bton-upd-chip-ico{
+      width: 16px;
+      height: 16px;
+      border-radius: 10px;
+      display:grid;
+      place-items:center;
+      border: 1px solid rgba(var(--ar),var(--ag),var(--ab), .18);
+      background: rgba(var(--ar),var(--ag),var(--ab), .12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+      line-height: 1;
+    }
+    .bton-upd-chip-ico i{
+      font-size: 10px !important;
+      line-height: 1 !important;
+      color: rgba(var(--ar),var(--ag),var(--ab), .92) !important;
+      transform: translateY(-0.25px);
+    }
+    .bton-upd-chip-txt{
+      font-size: 8.5px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: rgba(15,23,42,.72);
+      white-space: nowrap;
+    }
+
+    .bton-upd-meta-text{
+      color: rgba(71,85,105,.92);
+    }
+    
+    .bton-upd-meta-text::before{
+      content: "·";
+      display: inline-block;
+      margin: 0 8px 0 2px;
+      color: rgba(100,116,139,.70);
+      font-weight: 800;
+    }
+    html[data-theme="dark"] .bton-upd-meta-text::before{
+      color: rgba(148,163,184,.72);
+    }
+
+html[data-theme="dark"] .bton-upd-meta-text{
+      color: rgba(226,232,240,.78);
+    }
+
+    /* --- Update cards: left rail label (silver, vertical) --- */
+    .bton-upd-rail{
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width: 26px;
+      border-right: 1px solid rgba(148,163,184,.22);
+      background: linear-gradient(180deg, rgba(248,250,252,.96), rgba(226,232,240,.68));
+      box-shadow: inset -1px 0 0 rgba(255,255,255,.55);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .bton-upd-rail-stripe{ display:none !important; }
+    .bton-upd-rail-vtxt{
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%) rotate(-90deg);
+      transform-origin: center;
+      white-space: nowrap;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      color: rgba(71,85,105,.62);
+      text-shadow: 0 1px 0 rgba(255,255,255,.55);
+      opacity: .96;
+      max-width: 200px;
+    }
+    /* Rail label tones (no stripe; color-only) */
+    .bton-upd-rail-vtxt[data-tone="progress"]{ color: rgba(29,78,216,.66); }
+    .bton-upd-rail-vtxt[data-tone="completed"]{ color: rgba(4,120,87,.66); }
+    .bton-upd-rail-vtxt[data-tone="attention"]{ color: rgba(180,83,9,.66); }
+
+    html[data-theme="dark"] .bton-upd-rail-vtxt[data-tone="progress"]{ color: rgba(147,197,253,.86); }
+    html[data-theme="dark"] .bton-upd-rail-vtxt[data-tone="completed"]{ color: rgba(110,231,183,.86); }
+    html[data-theme="dark"] .bton-upd-rail-vtxt[data-tone="attention"]{ color: rgba(253,230,138,.86); }
+
+    .bton-upd-rail::after{
+      content:"";
+      position:absolute;
+      left:-70%;
+      top:-20%;
+      width:240%;
+      height:40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+      transform: rotate(14deg) translateY(0);
+      opacity:0;
+      transition: opacity .25s ease, transform .7s ease;
+    }
+    .bton-upd-card:hover .bton-upd-rail::after,
+    .bton-cp7d-card:hover .bton-upd-rail::after{
+      opacity: 1;
+      transform: rotate(14deg) translateY(220%);
+    }
+
+    html[data-theme="dark"] .bton-upd-rail{
+      border-right-color: rgba(148,163,184,.14);
+      background: linear-gradient(180deg, rgba(11,18,32,.96), rgba(17,24,39,.78));
+      box-shadow: inset -1px 0 0 rgba(255,255,255,.04);
+    }
+    html[data-theme="dark"] .bton-upd-rail-vtxt{
+      color: rgba(226,232,240,.66);
+      text-shadow: none;
+    }
+    html[data-theme="dark"] .bton-upd-rail::after{
+      background: linear-gradient(90deg, transparent, rgba(226,232,240,.14), transparent);
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .bton-upd-rail::after{ transition:none !important; }
+      .bton-upd-card:hover .bton-upd-rail::after,
+      .bton-cp7d-card:hover .bton-upd-rail::after{ opacity:0 !important; }
+    }
+    .bton-upd-chip-sep{
+      color: rgba(148,163,184,.85);
+      font-weight: 900;
+      margin: 0 2px;
+    }
+
+    /* Dark mode */
+    html[data-theme="dark"] .bton-upd-chip{
+      border-color: rgba(var(--ar),var(--ag),var(--ab), .22);
+      background: linear-gradient(180deg,
+        rgba(var(--ar),var(--ag),var(--ab), .16),
+        rgba(var(--ar),var(--ag),var(--ab), .10)
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 10px 22px -18px rgba(0,0,0,.55);
+    }
+    html[data-theme="dark"] .bton-upd-chip-ico{
+      border-color: rgba(var(--ar),var(--ag),var(--ab), .26);
+      background: rgba(var(--ar),var(--ag),var(--ab), .18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+    }
+    html[data-theme="dark"] .bton-upd-chip-txt{
+      color: rgba(226,232,240,.86);
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .bton-upd-chip{ transition:none !important; }
+    }
+
+/* --- Profile tabbar: unify Projects/Certificates/Assets icon tone (single premium color) --- */
+.bton-profile-tabbar .upd-area-ico{
+  width: 22px;
+  height: 22px;
+  border-radius: 12px;
+  display:grid;
+  place-items:center;
+  border: 1px solid rgba(8,145,178,.18);
+  background: rgba(8,145,178,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+  flex: 0 0 auto;
+}
+.bton-profile-tabbar .upd-area-ico i{
+  font-size: 11px;
+  color: rgba(8,145,178,.92);
+  transform: translateY(-0.25px);
+}
+html[data-theme="dark"] .bton-profile-tabbar .upd-area-ico{
+  border-color: rgba(8,145,178,.26);
+  background: rgba(8,145,178,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+html[data-theme="dark"] .bton-profile-tabbar .upd-area-ico i{
+  color: rgba(125,211,252,.96); /* brighter in dark for visibility */
+}
+
 </style>
 <style id="bton-auth-premium-skin">
   /* ============================
@@ -667,7 +985,7 @@
 
   /* Cards */
   /* Slightly taller cards so the media strip can be a bit larger (keeps text readable) */
-  .bton-upd-card{ border-radius: 18px !important; height: 270px !important; }
+  .bton-upd-card{ border-radius: 18px !important; height: 292px !important; }
   .bton-upd-card > div.relative.flex{ height: 100% !important; }
   .bton-upd-col{ height: 100% !important; }
   .bton-upd-media-slot{ background: rgba(248,250,252,.70) !important; }
@@ -744,6 +1062,143 @@
     background: rgba(255,255,255,.86) !important;
     border-color: rgba(15,23,42,.10) !important;
   }
+
+/* =========================================================
+   Update Reactions (Like + Celebrate) — premium pills (v12)
+   Goals:
+   - Larger + more legible, especially in Dark Mode
+   - Subtle, corporate hover motion (lift + shimmer)
+   - Distinct from LinkedIn/Twitter (medallion geometry, not emoji)
+========================================================= */
+.bton-react-pill{
+  position: relative;
+  overflow: hidden;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 12px;
+  border-radius:9999px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.72);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  color: rgba(15,23,42,.74);
+  box-shadow: 0 12px 34px -28px rgba(15,23,42,.50);
+  backdrop-filter: blur(10px);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+/* Corporate shimmer on hover */
+.bton-react-pill::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  pointer-events:none;
+  opacity:0;
+  transform: translateX(-60%);
+  transition: transform .42s ease, opacity .18s ease;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.55) 50%, transparent 100%);
+}
+.bton-react-pill:hover::after{ opacity:.9; transform: translateX(60%); }
+
+/* Icon medallions (distinct from LinkedIn/Twitter; more corporate) */
+.bton-react-ico{
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(15,23,42,.045);
+  border: 1px solid rgba(15,23,42,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.88);
+  color: inherit;
+  flex: 0 0 auto;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.bton-react-ico svg{
+  width: 16px;
+  height: 16px;
+  display:block;
+  transition: transform .18s ease;
+}
+
+.bton-react-pill.is-on .bton-react-ico{
+  background: rgba(34,211,238,.12);
+  border-color: rgba(34,211,238,.32);
+}
+
+.bton-react-pill:hover{
+  background: rgba(255,255,255,.88);
+  border-color: rgba(15,23,42,.16);
+  transform: translateY(-1.5px);
+  box-shadow: 0 18px 44px -34px rgba(15,23,42,.55);
+  filter: saturate(1.03);
+}
+.bton-react-pill:hover .bton-react-ico{
+  transform: translateY(-0.25px) scale(1.04);
+  filter: brightness(1.02);
+}
+.bton-react-pill:hover .bton-react-ico svg{ transform: scale(1.02); }
+
+.bton-react-pill:active{ transform: translateY(-0.5px) scale(.985); }
+.bton-react-count{
+  font-variant-numeric: tabular-nums;
+  color: rgba(15,23,42,.58);
+  min-width: 10px;
+  text-align: center;
+}
+
+.bton-react-pill.is-on{
+  background: rgba(34,211,238,.14);
+  border-color: rgba(34,211,238,.42);
+  color: rgba(15,23,42,.90);
+  box-shadow: 0 20px 48px -36px rgba(34,211,238,.55);
+}
+
+/* Dark Mode: boost visibility */
+html[data-theme="dark"] .bton-react-pill{
+  background: rgba(2,6,23,.58);
+  border-color: rgba(148,163,184,.28);
+  color: rgba(226,232,240,.92);
+  box-shadow: 0 20px 52px -44px rgba(0,0,0,.84);
+}
+html[data-theme="dark"] .bton-react-pill::after{
+  background: linear-gradient(120deg, transparent 0%, rgba(148,163,184,.26) 50%, transparent 100%);
+}
+html[data-theme="dark"] .bton-react-pill:hover{
+  background: rgba(2,6,23,.72);
+  border-color: rgba(148,163,184,.34);
+}
+html[data-theme="dark"] .bton-react-count{ color: rgba(226,232,240,.74); }
+
+html[data-theme="dark"] .bton-react-ico{
+  background: rgba(226,232,240,.08);
+  border-color: rgba(226,232,240,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+html[data-theme="dark"] .bton-react-pill.is-on{
+  background: rgba(34,211,238,.18);
+  border-color: rgba(34,211,238,.48);
+  box-shadow: 0 22px 58px -46px rgba(34,211,238,.58);
+}
+html[data-theme="dark"] .bton-react-pill.is-on .bton-react-ico{
+  background: rgba(34,211,238,.16);
+  border-color: rgba(34,211,238,.44);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .bton-react-pill,
+  .bton-react-ico,
+  .bton-react-ico svg{ transition: none !important; }
+  .bton-react-pill:hover{ transform:none !important; }
+  .bton-react-pill::after{ display:none !important; }
+}
+
 
   /* Compact media strip for updates (keeps the feed horizontal + lightweight) */
   .bton-upd-media{
@@ -1674,7 +2129,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* --- Navbar: mini icon wrapper (My Company) --- */
     .bton-nav-mini-ic{
-      width: 30px;
+      width: 26px;
       height: 30px;
       border-radius: 9999px;
       display: grid;
@@ -2068,7 +2523,73 @@ html{ scroll-padding-top: calc(var(--bton-nav-h) + 22px); }
       box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 0 18px rgba(239,68,68,.55) !important;
     }
 
-    /* Saved search: more product-like */
+    
+    /* --- Notifications: BTrustOn signature icons (distinct from LinkedIn/Twitter) --- */
+    .bton-notif-ico{
+      width: 40px; height: 40px;
+      border-radius: 16px;
+      display: grid; place-items: center;
+      flex: none;
+      border: 1px solid rgba(15,23,42,.10);
+      background:
+        radial-gradient(120% 120% at 25% 20%, rgba(255,255,255,.95), rgba(255,255,255,.55)),
+        radial-gradient(70% 70% at 80% 85%, rgba(6,182,212,.18), transparent 60%),
+        linear-gradient(135deg, rgba(15,23,42,.05), rgba(15,23,42,.02));
+      box-shadow: 0 12px 28px rgba(2,6,23,.10);
+      color: rgba(8,145,178,.95);
+    }
+    .bton-notif-ico svg{ width: 19px; height: 19px; display:block; }
+    .bton-notif-ico--like{
+      color: rgba(6,182,212,.98);
+      background:
+        radial-gradient(120% 120% at 25% 20%, rgba(255,255,255,.96), rgba(255,255,255,.52)),
+        radial-gradient(70% 70% at 85% 85%, rgba(6,182,212,.22), transparent 60%),
+        linear-gradient(135deg, rgba(6,182,212,.10), rgba(15,23,42,.02));
+      border-color: rgba(6,182,212,.22);
+    }
+    .bton-notif-ico--celebrate{
+      color: rgba(99,102,241,.98);
+      background:
+        radial-gradient(120% 120% at 25% 20%, rgba(255,255,255,.96), rgba(255,255,255,.52)),
+        radial-gradient(70% 70% at 85% 85%, rgba(99,102,241,.20), transparent 60%),
+        linear-gradient(135deg, rgba(99,102,241,.10), rgba(15,23,42,.02));
+      border-color: rgba(99,102,241,.22);
+    }
+    .bton-notif-ico--view{
+      color: rgba(34,197,94,.92);
+      background:
+        radial-gradient(120% 120% at 25% 20%, rgba(255,255,255,.96), rgba(255,255,255,.52)),
+        radial-gradient(70% 70% at 85% 85%, rgba(34,197,94,.16), transparent 60%),
+        linear-gradient(135deg, rgba(34,197,94,.08), rgba(15,23,42,.02));
+      border-color: rgba(34,197,94,.18);
+    }
+    .bton-notif-ico--pulse{
+      color: rgba(245,158,11,.92);
+      background:
+        radial-gradient(120% 120% at 25% 20%, rgba(255,255,255,.96), rgba(255,255,255,.52)),
+        radial-gradient(70% 70% at 85% 85%, rgba(245,158,11,.16), transparent 60%),
+        linear-gradient(135deg, rgba(245,158,11,.08), rgba(15,23,42,.02));
+      border-color: rgba(245,158,11,.18);
+    }
+    html[data-theme="dark"] .bton-notif-ico{
+      border-color: rgba(148,163,184,.18);
+      background:
+        radial-gradient(120% 120% at 20% 15%, rgba(255,255,255,.10), rgba(255,255,255,.04)),
+        radial-gradient(70% 70% at 85% 85%, rgba(6,182,212,.16), transparent 60%),
+        linear-gradient(135deg, rgba(2,6,23,.70), rgba(15,23,42,.60));
+      box-shadow: 0 16px 40px rgba(0,0,0,.40);
+    }
+    html[data-theme="dark"] .bton-notif-ico--like{ border-color: rgba(6,182,212,.22); }
+    html[data-theme="dark"] .bton-notif-ico--celebrate{ border-color: rgba(99,102,241,.22); }
+    html[data-theme="dark"] .bton-notif-ico--view{ border-color: rgba(34,197,94,.20); }
+    html[data-theme="dark"] .bton-notif-ico--pulse{ border-color: rgba(245,158,11,.20); }
+
+    /* Notification cards: subtle category tint (very light) */
+    .bton-notif-card--react.bton-notif-card--like{ border-color: rgba(6,182,212,.18) !important; }
+    .bton-notif-card--react.bton-notif-card--celebrate{ border-color: rgba(99,102,241,.18) !important; }
+    .bton-notif-card--react.bton-notif-card--like:hover{ border-color: rgba(6,182,212,.28) !important; }
+    .bton-notif-card--react.bton-notif-card--celebrate:hover{ border-color: rgba(99,102,241,.28) !important; }
+/* Saved search: more product-like */
     #saved-search{
       color: rgba(255,255,255,.92) !important;
       caret-color: var(--bton-accent);
@@ -5110,7 +5631,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <div class="mt-5 grid md:grid-cols-3 gap-3">
 <div class="rounded-xl border border-gray-100 bg-white/80 p-4">
 <div class="flex items-center gap-2 mb-1">
-<i class="fa-solid fa-bullhorn text-indigo-600 text-sm"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-bullhorn"></i></span>
 <div class="text-[11px] font-extrabold text-slate-900" data-i18n="how_feature_updates_title">Company Updates</div>
 </div>
 <div class="text-[11px] text-gray-500 leading-snug" data-i18n="how_feature_updates_desc">Structured posts keep profiles active and easier to evaluate.</div>
@@ -5699,19 +6220,19 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <div class="sm:col-span-8 space-y-8">
 <div class="bton-profile-tabbar border-b border-slate-200/70 flex gap-1 text-xs font-bold text-gray-500 overflow-x-auto no-scrollbar">
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-BTrustOn-accent bg-slate-50/50 transition whitespace-nowrap" id="tab-overview" onclick="switchProfileTab('overview')">
-<i class="fa-solid fa-building text-[11px]"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-building"></i></span>
 <span data-i18n="tab_overview">OVERVIEW</span>
 </button>
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-slate-50/40 transition whitespace-nowrap" id="tab-projects" onclick="switchProfileTab('projects')">
-<i class="fa-solid fa-diagram-project text-[11px]"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-diagram-project"></i></span>
 <span data-i18n="tab_projects">PROJECTS</span>
 </button>
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-slate-50/40 transition whitespace-nowrap" id="tab-certs" onclick="switchProfileTab('certs')">
-<i class="fa-solid fa-certificate text-[11px]"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-certificate"></i></span>
 <span data-i18n="tab_certs">CERTIFICATES</span>
 </button>
 <button class="flex items-center gap-2 px-6 py-3 rounded-t-xl border-b-2 border-transparent hover:bg-slate-50/40 transition whitespace-nowrap" id="tab-assets" onclick="switchProfileTab('assets')">
-<i class="fa-solid fa-boxes-stacked text-[11px]"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-cubes"></i></span>
 <span data-i18n="tab_assets">ASSETS</span>
 </button>
 </div>
@@ -5822,7 +6343,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <div class="rounded-2xl border border-[rgba(15,23,42,.08)] bg-white/70 backdrop-blur px-5 py-4 shadow-sm">
 <div class="flex items-start gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-slate-50/80 border border-slate-200 text-slate-700 shadow-sm items-center justify-center shrink-0">
-<i class="fa-solid fa-boxes-stacked text-[13px] opacity-90"></i>
+<i class="fa-solid fa-cubes text-[13px] opacity-90"></i>
 </span>
 <div class="min-w-0">
 <div class="text-[13px] font-extrabold text-slate-800" data-i18n="ui_no_assets_found_73e934">No assets found</div>
@@ -6808,19 +7329,19 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider mb-2" data-i18n="post_choose_area">Select area</div>
 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 <button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="general" type="button">
-<i class="fa-solid fa-bullhorn text-slate-500"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-bullhorn"></i></span>
 <span data-i18n="post_area_general">General</span>
 </button>
 <button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="projects" type="button">
-<i class="fa-solid fa-diagram-project text-cyan-500"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-diagram-project"></i></span>
 <span data-i18n="post_area_projects">Projects</span>
 </button>
 <button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="certificates" type="button">
-<i class="fa-solid fa-certificate text-amber-500"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-certificate"></i></span>
 <span data-i18n="post_area_certs">Certificates</span>
 </button>
 <button class="upd-area-btn px-3 py-2 rounded-xl border border-slate-200/70 bg-white hover:border-BTrustOn-accent text-xs font-bold text-gray-700 transition flex items-center justify-center gap-2" data-area="assets" type="button">
-<i class="fa-solid fa-boxes-stacked text-emerald-500"></i>
+<span class="upd-area-ico"><i class="fa-solid fa-cubes"></i></span>
 <span data-i18n="post_area_assets">Assets</span>
 </button>
 </div>
@@ -6884,7 +7405,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
       <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
       <img id="upd-image-preview" alt="" class="absolute inset-0 w-full h-full object-contain">
       <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"></div>
-      <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-1 rounded-full bg-white/85 border border-white/70 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+      <div class="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 text-[8.5px] leading-none font-extrabold px-1.5 py-0.5 rounded-full bg-white/85 border border-white/70 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
     </div>
   </div>
   <div class="mt-1 text-[10px] text-gray-400" data-i18n="post_image_hint">Optional. Shown compact in the feed; click to view full size (no manual crop).</div>
@@ -8305,6 +8826,17 @@ function loadI18n(lang) {
     const __i18nCtrl = new AbortController();
   const __i18nTmr = setTimeout(() => { try { __i18nCtrl.abort(); } catch(e){} }, 6000);
 
+
+  // If opened as a local file (file://), browsers block fetching relative JSON via CORS.
+  // In that case, skip remote i18n fetch and fall back to built-in strings.
+  try{
+    if (typeof location !== "undefined" && String(location.protocol||"") === "file:") {
+      translations[L] = translations[L] || {};
+      __i18nLoad[L] = null;
+      return Promise.resolve(translations[L]);
+    }
+  }catch(e){}
+
   __i18nLoad[L] = fetch(endpoint, { cache: "no-store", signal: __i18nCtrl.signal })
     .finally(() => { try { clearTimeout(__i18nTmr); } catch(e){} })
     .then((r) => (r.ok ? r.json() : {}))
@@ -8757,7 +9289,8 @@ function renderHomeUpdatesSkeleton(count = 6) {
   empty.classList.add("hidden");
 
   const cards = Array.from({ length: count }).map(() => `
-    <div class="bton-upd-card snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] rounded-2xl px-4 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] overflow-hidden">
+    <div class="bton-upd-card snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] rounded-2xl pr-4 pl-10 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] overflow-hidden relative">
+      <div class="bton-upd-rail"><div class="bton-upd-rail-vtxt" data-tone="info">&nbsp;</div></div>
       <div class="animate-pulse">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-xl bg-gray-100"></div>
@@ -9157,8 +9690,8 @@ function renderHomeUpdates(list) {
     const templateCode = u.template_code || u.update_code || "";
     const label = _templateLabel(area, templateCode) || _safeText(u.template_label || "");
     const lblText = _safeText(label || ((currentLang === "tr") ? "Bilgi" : (currentLang === "es" ? "Información" : "Info")));
-
-    // Image first (so note preview length can adapt when there's no image)
+    const railText = lblText;
+// Image first (so note preview length can adapt when there's no image)
     const imgRaw = String(u.image_url || u.imageUrl || u.media_url || u.photo_url || u.image || "").trim();
     const hasImg = imgRaw.length > 0;
     const imgUrl = escapeHtml(imgRaw);
@@ -9175,13 +9708,23 @@ function renderHomeUpdates(list) {
     const verified = !!(meta.verified || u.is_verified || u.verified || u.blue_tick);
 
 
-    const icon = (area === "general")
-      ? "fa-bullhorn text-slate-500"
-      : (area === "projects")
-        ? "fa-diagram-project text-cyan-500"
-        : (area === "assets")
-          ? "fa-boxes-stacked text-emerald-500"
-          : "fa-certificate text-amber-500";
+    const iconName = (areaLower === "general")
+      ? "fa-bullhorn"
+      : (areaLower === "projects")
+        ? "fa-diagram-project"
+        : (areaLower === "assets")
+          ? "fa-cubes"
+          : "fa-certificate";
+
+    const areaLabel = (areaLower === "general")
+      ? (t("post_area_general") || (currentLang === "tr" ? "Genel" : (currentLang === "es" ? "General" : "General")))
+      : (areaLower === "projects")
+        ? (t("post_area_projects") || (currentLang === "tr" ? "Projeler" : (currentLang === "es" ? "Proyectos" : "Projects")))
+        : (areaLower === "assets")
+          ? (t("post_area_assets") || (currentLang === "tr" ? "Envanter" : (currentLang === "es" ? "Activos" : "Assets")))
+          : (t("post_area_certs") || (currentLang === "tr" ? "Sertifikalar" : (currentLang === "es" ? "Certificados" : "Certificates")));
+
+    const metaInlineText = (areaLower === "general") ? "" : entityTitle;
 
     const tab = _getAreaTab(area);
     const safeCompanyId = _safeText(u.company_id || u.profile_id || "");
@@ -9190,13 +9733,23 @@ function renderHomeUpdates(list) {
     const focusId = (u.entity_id == null) ? "" : String(u.entity_id);
     const safeFocusId = _safeText(focusId);
 
+    const safePostId = _safeText(String(u?.id || ""));
+    try{ btonCachePostOwnerCompany(safePostId, (u?.company_id || u?.companyId || (u?.company && (u.company.id || u.company.company_id)))); }catch(e){}
+    const __rx = (typeof btonGetPostReactionSnapshot === "function") ? btonGetPostReactionSnapshot(safePostId) : null;
+    const likeCount = (__rx && __rx.counts) ? (__rx.counts.like || 0) : 0;
+    const celebrateCount = (__rx && __rx.counts) ? (__rx.counts.celebrate || 0) : 0;
+    const myLike = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("like"));
+    const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("celebrate"));
+
     return `
-      <button onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
-        class="bton-upd-card group relative snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] px-4 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
+      <div role="button" tabindex="0" data-post-id="${safePostId}" onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true });}"
+        class="bton-upd-card group relative snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] pr-4 pl-10 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
 
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
         <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-slate-200/50 blur-2xl pointer-events-none"></div>
-        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-full bton-upd-bar ${_signalMeta(area, templateCode).bar}"></div>
+        <div class="bton-upd-rail">
+          <div class="bton-upd-rail-vtxt" data-tone="${_signalMeta(area, templateCode).tone}">${railText}</div>
+        </div>
 
         <div class="relative flex items-start gap-3">
           ${btRenderLogoHTML(logo, companyName, "w-10 h-10", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0", meta.cb)}
@@ -9210,9 +9763,11 @@ function renderHomeUpdates(list) {
                 </div>
 
                 <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
-                  <span class="inline-block w-2 h-2 rounded-full ${_signalMeta(area, templateCode).bar}"></span>
-                  <i class="fa-solid ${icon}"></i>
-                  <span class="truncate font-bold">${entityTitle} — ${lblText}</span>
+                  <span class="bton-upd-chip" data-area="${areaLower}">
+                    <span class="bton-upd-chip-ico"><i class="fa-solid ${iconName}"></i></span>
+                    <span class="bton-upd-chip-txt">${areaLabel}</span>
+                  </span>
+                  ${metaInlineText ? `<span class="truncate font-bold bton-upd-meta-text">${metaInlineText}</span>` : ``}
                 </div>
               </div>
 
@@ -9224,30 +9779,54 @@ function renderHomeUpdates(list) {
                         
 
             ${hasImg ? `
-              <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)]" style="height:110px">
+              <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)]" style="height:92px">
                 <div class="bton-upd-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}">
                   <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
                   <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
                   <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
                   <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
-                  <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-2 py-1 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+                  <div class="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 text-[8.5px] leading-none font-bold rounded-full px-1.5 py-0.5 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
                 </div>
               </div>
             ` : ``}
 
-            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 78 : 170}px">
+            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 64 : 156}px">
               ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "clamp-4" : "line-clamp-8"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
               ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-1 right-2 text-[10px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
             </div>
 
 
-            <div class="mt-auto pt-2 flex items-center justify-end"><span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700 opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">
+            <div class="mt-auto pt-2 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button type="button"
+                  class="bton-react-pill ${myCelebrate ? "is-on" : ""}"
+                  data-post-id="${safePostId}"
+                  data-reaction="celebrate"
+                  title="${escapeHtml(btonReactionTitle("celebrate"))}"
+                  aria-label="${escapeHtml(btonReactionTitle("celebrate"))}"
+                  onclick="btonToggleUpdateReaction(event,'${safePostId}','celebrate')">
+                  ${btonReactGlyph("celebrate")}
+                  <span class="bton-react-count ${celebrateCount>0 ? "" : "hidden"}" data-react-count>${celebrateCount}</span>
+                </button>
+                <button type="button"
+                  class="bton-react-pill ${myLike ? "is-on" : ""}"
+                  data-post-id="${safePostId}"
+                  data-reaction="like"
+                  title="${escapeHtml(btonReactionTitle("like"))}"
+                  aria-label="${escapeHtml(btonReactionTitle("like"))}"
+                  onclick="btonToggleUpdateReaction(event,'${safePostId}','like')">
+                  ${btonReactGlyph("like")}
+                  <span class="bton-react-count ${likeCount>0 ? "" : "hidden"}" data-react-count>${likeCount}</span>
+                </button>
+              </div>
+              <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700 opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">
                 <span data-i18n="updates_view">View</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </span></div>
+              </span>
+            </div>
           </div>
         </div>
-      </button>
+      </div>
     `;
   }).join("");
 
@@ -9288,6 +9867,275 @@ function renderHomeUpdates(list) {
 
     startHomeUpdatesAutoScroll();
   });
+}
+
+
+/* =========================================================
+   BTrustOn — Update reactions (Like + Celebrate)
+   Expected Supabase table:
+     public.post_reactions(post_id uuid, reactor_company_id uuid, reaction text, created_at timestamptz default now())
+   Recommended unique index:
+     unique(post_id, reactor_company_id, reaction)
+========================================================= */
+let __btonPostReactCache = Object.create(null); // postId -> { counts:{like:number,celebrate:number}, mine:Set<string> }
+let __btonReactMyCompanyId = null;
+
+function btonGetPostReactionSnapshot(postId){
+  const pid = String(postId || "").trim();
+
+
+  if (!pid) return { counts:{ like:0, celebrate:0 }, mine: new Set() };
+  const hit = __btonPostReactCache[pid];
+  if (hit) return hit;
+  const obj = { counts:{ like:0, celebrate:0 }, mine: new Set() };
+  __btonPostReactCache[pid] = obj;
+  return obj;
+}
+
+async function btonGetMyReactorCompanyId(){
+  try{
+    if (__btonReactMyCompanyId) return __btonReactMyCompanyId;
+    const user = await _getAuthUserSafe();
+    if (!user || !user.id) return null;
+    const p = (typeof btonGetMyCompanyProfileFresh === "function") ? await btonGetMyCompanyProfileFresh(false) : null;
+    const cid = String((p && p.id) ? p.id : (typeof myCompanyIdOr === "function" ? myCompanyIdOr(user.id) : user.id));
+    if (cid && cid !== "null" && cid !== "undefined") __btonReactMyCompanyId = cid;
+    return __btonReactMyCompanyId;
+  }catch(e){ return null; }
+}
+
+const btonSvgReactLike = `
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.9" opacity=".26"/>
+    <path d="M7.9 12.5 10.7 15.3 16.4 9.6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M6.5 8.3h.01" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" opacity=".34"/>
+  </svg>`;
+
+const btonSvgReactCelebrate = `
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.9" opacity=".24"/>
+    <path d="M12 6l1.25 3.6 3.75 1.15-3.75 1.15L12 15.5l-1.25-3.6L7 10.75l3.75-1.15L12 6Z" fill="currentColor" opacity=".92"/>
+    <path d="M18 6.2l.55 1.55L20.1 8.3l-1.55.55L18 10.4l-.55-1.55L15.9 8.3l1.55-.55L18 6.2Z" fill="currentColor" opacity=".52"/>
+  </svg>`;
+
+function btonReactGlyph(kind){
+  const k = String(kind||"").toLowerCase();
+  const svg = (k === "like") ? btonSvgReactLike : btonSvgReactCelebrate;
+  const cls = (k === "like") ? "bton-react-ico bton-react-ico--like" : "bton-react-ico bton-react-ico--celebrate";
+  return `<span class="${cls}" aria-hidden="true">${svg}</span>`;
+}
+
+function btonReactionTitle(code){
+  const c = String(code || "").toLowerCase();
+  if (c === "like") return (currentLang==="tr") ? "Beğen" : (currentLang==="es" ? "Me gusta" : "Like");
+  return (currentLang==="tr") ? "Tebrik" : (currentLang==="es" ? "Felicitar" : "Celebrate");
+}
+
+async function btonHydrateUpdateReactions(updates){
+  try{
+    const arr = Array.isArray(updates) ? updates : [];
+    if (!arr.length) return;
+
+    const postIds = Array.from(new Set(arr.map(x => x && x.id ? String(x.id) : "").filter(Boolean)));
+    if (!postIds.length) return;
+
+    // Ensure base cache objects exist
+    postIds.forEach(pid => { btonGetPostReactionSnapshot(pid); });
+
+    const myCid = await btonGetMyReactorCompanyId(); // optional (for active state)
+
+    const { data, error } = await supabaseClient
+      .from("post_reactions")
+      .select("post_id,reaction,reactor_company_id")
+      .in("post_id", postIds)
+      .limit(1500);
+
+    if (error){
+      const msg = String(error.message || error.details || "");
+      const low = msg.toLowerCase();
+      // If the table isn't created yet, silently ignore.
+      if (low.includes("does not exist") || low.includes("relation") || low.includes("schema cache")) return;
+      console.warn("post_reactions fetch error:", error);
+      return;
+    }
+
+    // Reset counts for these posts then re-aggregate
+    postIds.forEach(pid => {
+      const st = btonGetPostReactionSnapshot(pid);
+      st.counts.like = 0;
+      st.counts.celebrate = 0;
+      st.mine = new Set();
+    });
+
+    (data || []).forEach(r => {
+      const pid = String(r.post_id || "").trim();
+      if (!pid) return;
+      const reaction = String(r.reaction || "").trim().toLowerCase();
+      const st = btonGetPostReactionSnapshot(pid);
+
+      if (reaction === "like") st.counts.like = (st.counts.like || 0) + 1;
+      if (reaction === "celebrate" || reaction === "tebrik") st.counts.celebrate = (st.counts.celebrate || 0) + 1;
+
+      if (myCid && r.reactor_company_id && String(r.reactor_company_id) === String(myCid)){
+        if (reaction === "like") st.mine.add("like");
+        if (reaction === "celebrate" || reaction === "tebrik") st.mine.add("celebrate");
+      }
+    });
+
+    // Attach snapshots to rows (optional, useful for debugging)
+    arr.forEach(u => {
+      if (!u || !u.id) return;
+      const st = btonGetPostReactionSnapshot(String(u.id));
+      u.__react_counts = { like: st.counts.like || 0, celebrate: st.counts.celebrate || 0 };
+      u.__my_reacts = Array.from(st.mine || []);
+    });
+  }catch(e){
+    console.warn("btonHydrateUpdateReactions failed:", e);
+  }
+}
+
+function btonApplyUpdateReactionUI(postId){
+  try{
+    const pid = String(postId || "").trim();
+    if (!pid) return;
+    const st = btonGetPostReactionSnapshot(pid);
+
+    const likeN = st.counts.like || 0;
+    const celN  = st.counts.celebrate || 0;
+    const myLike = !!(st.mine && st.mine.has && st.mine.has("like"));
+    const myCel  = !!(st.mine && st.mine.has && st.mine.has("celebrate"));
+
+    document.querySelectorAll(`.bton-react-pill[data-post-id="${pid}"][data-reaction="like"]`).forEach(btn => {
+      btn.classList.toggle("is-on", myLike);
+      const c = btn.querySelector("[data-react-count]");
+      if (c){ c.textContent = String(likeN); c.classList.toggle("hidden", likeN <= 0); }
+      btn.setAttribute("title", btonReactionTitle("like"));
+      btn.setAttribute("aria-label", btonReactionTitle("like"));
+    });
+
+    document.querySelectorAll(`.bton-react-pill[data-post-id="${pid}"][data-reaction="celebrate"]`).forEach(btn => {
+      btn.classList.toggle("is-on", myCel);
+      const c = btn.querySelector("[data-react-count]");
+      if (c){ c.textContent = String(celN); c.classList.toggle("hidden", celN <= 0); }
+      btn.setAttribute("title", btonReactionTitle("celebrate"));
+      btn.setAttribute("aria-label", btonReactionTitle("celebrate"));
+    });
+  }catch(e){}
+}
+
+
+/* --- Prevent self-reactions (company reacting to its own update) --- */
+window.__btonPostOwnerCompany = window.__btonPostOwnerCompany || new Map();
+
+function btonCachePostOwnerCompany(postId, companyId){
+  try{
+    const pid = String(postId||"").trim();
+    const cid = String(companyId||"").trim();
+    if (pid && cid) window.__btonPostOwnerCompany.set(pid, cid);
+  }catch(e){}
+}
+
+async function btonGetPostOwnerCompanyId(postId){
+  try{
+    const pid = String(postId||"").trim();
+    if (!pid) return null;
+
+    const cache = window.__btonPostOwnerCompany;
+    if (cache && cache.get){
+      const v = cache.get(pid);
+      if (v) return v;
+    }
+
+    // Fallback: fetch owner company for this post once
+    const { data, error } = await supabaseClient
+      .from("company_updates")
+      .select("company_id")
+      .eq("id", pid)
+      .maybeSingle();
+
+    if (!error && data && data.company_id){
+      const cid = String(data.company_id);
+      if (cache && cache.set) cache.set(pid, cid);
+      return cid;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function btonToggleUpdateReaction(ev, postId, reaction){
+  try{
+    if (ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    }
+
+    const user = await _getAuthUserSafe();
+    if (!user || !user.id){
+      showToast(_i18n("toast_login_required","Please sign in."));
+      try{ openLoginModal(); }catch(e){}
+      return;
+    }
+
+    const myCid = await btonGetMyReactorCompanyId();
+    if (!myCid){
+      showToast("Error", (currentLang==="tr") ? "Şirket kimliği bulunamadı." : "Company id missing.", "error");
+      return;
+    }
+
+    const pid = String(postId || "").trim();
+    const r = String(reaction || "").trim().toLowerCase();
+
+    // Block reacting to your own update (client-side)
+    const ownerCid = await btonGetPostOwnerCompanyId(pid);
+    if (ownerCid && String(ownerCid) === String(myCid)){
+      showToast(_i18n("toast_self_reaction","You can’t react to your own update."));
+      return;
+    }
+
+    const st = btonGetPostReactionSnapshot(pid);
+    if (!st.counts) st.counts = { like:0, celebrate:0 };
+    if (!st.mine || !st.mine.has) st.mine = new Set();
+
+    const isOn = st.mine.has(r);
+
+    // Optimistic UI
+    if (isOn){
+      st.mine.delete(r);
+      st.counts[r] = Math.max(0, (st.counts[r] || 0) - 1);
+    } else {
+      st.mine.add(r);
+      st.counts[r] = (st.counts[r] || 0) + 1;
+    }
+    btonApplyUpdateReactionUI(pid);
+
+    // Persist
+    if (isOn){
+      const { error } = await supabaseClient
+        .from("post_reactions")
+        .delete()
+        .eq("post_id", pid)
+        .eq("reactor_company_id", myCid)
+        .eq("reaction", r);
+      if (error) throw error;
+    } else {
+      const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
+      const { error } = await supabaseClient
+        .from("post_reactions")
+        .upsert([payload], { onConflict: "post_id,reactor_company_id,reaction" });
+      if (error) throw error;
+    }
+  }catch(e){
+    // Re-sync this post from server
+    try{
+      const pid = String(postId || "").trim();
+      await btonHydrateUpdateReactions([{ id: pid }]);
+      btonApplyUpdateReactionUI(pid);
+    }catch(_){}
+
+    console.warn("Reaction toggle failed:", e);
+    showToast("Error", (currentLang==="tr") ? "Tepki kaydedilemedi." : "Could not save reaction.", "error");
+  }
 }
 
 function _setHomeUpdatesFilterUI(mode) {
@@ -9357,10 +10205,25 @@ async function _hydrateHomeUpdateCompanyMeta(updates){
 
     // Batch fetch latest public meta (logo + updated_at) so feeds stay fresh across sessions
     const batch = ids.slice(0, 200);
-    const { data, error } = await supabaseClient
-      .from("profiles")
-      .select("id, company_name, logo_url, verification_status, is_verified, verified, blue_tick, updated_at")
-      .in("id", batch);
+    // Try rich select first; fall back if some columns don't exist in this DB schema
+    let data = null;
+    let error = null;
+
+    {
+      const r1 = await supabaseClient
+        .from("profiles")
+        .select("id, company_name, logo_url, verification_status, is_verified, verified, blue_tick, updated_at")
+        .in("id", batch);
+      data = r1.data; error = r1.error;
+    }
+
+    if (error) {
+      const r2 = await supabaseClient
+        .from("profiles")
+        .select("id, company_name, logo_url, updated_at")
+        .in("id", batch);
+      data = r2.data; error = r2.error;
+    }
 
     if (error || !Array.isArray(data)) return;
 
@@ -9630,11 +10493,27 @@ try {
       // Best-effort: ensure verified tick is accurate (pull from profiles if allowed)
       if (!snapVerified) {
         try {
-          const { data: p, error: pe } = await supabaseClient
-            .from("profiles")
-            .select("id, verification_status")
-            .eq("id", cid)
-            .maybeSingle();
+          // Try rich verified signal; fall back if column doesn't exist
+          let p = null;
+          let pe = null;
+
+          {
+            const r1 = await supabaseClient
+              .from("profiles")
+              .select("id, verification_status")
+              .eq("id", cid)
+              .maybeSingle();
+            p = r1.data; pe = r1.error;
+          }
+
+          if (pe) {
+            const r2 = await supabaseClient
+              .from("profiles")
+              .select("id")
+              .eq("id", cid)
+              .maybeSingle();
+            p = r2.data; pe = r2.error;
+          }
           if (!pe && p && (typeof isCompanyVerified === "function")) {
             if (isCompanyVerified(p)) snapVerified = true;
           }
@@ -9783,6 +10662,7 @@ async function fetchHomeUpdates() {
 
     homeUpdatesData = (data || []);
     await _hydrateHomeUpdateCompanyMeta(homeUpdatesData);
+    try { await btonHydrateUpdateReactions(homeUpdatesData); } catch(e) {}
     _updateHomeUpdatesActiveCount(homeUpdatesData);
     renderHomeUpdates(homeUpdatesData);
 
@@ -9836,6 +10716,7 @@ function subscribeHomeUpdatesRealtime() {
         // Prepend
         homeUpdatesData = [row, ...(homeUpdatesData || [])].slice(0, 30);
         await _hydrateHomeUpdateCompanyMeta(homeUpdatesData);
+      try { await btonHydrateUpdateReactions([row]); } catch(e) {}
         _updateHomeUpdatesActiveCount(homeUpdatesData);
         renderHomeUpdates(homeUpdatesData);
 
@@ -10315,6 +11196,7 @@ async function openPostUpdateModal() {
     const active = (area === __updArea);
     btn.classList.toggle("border-BTrustOn-accent", active);
     btn.classList.toggle("bg-slate-50/60", active);
+    btn.classList.toggle("is-active", active);
   });
 
   // reset selects
@@ -10345,6 +11227,7 @@ async function openPostUpdateModal() {
         const act = (a2 === __updArea);
         b2.classList.toggle("border-BTrustOn-accent", act);
         b2.classList.toggle("bg-slate-50/60", act);
+        b2.classList.toggle("is-active", act);
       });
       _populateUpdateEntitySelect(__updArea);
       _populateUpdateSignalSelect();
@@ -10427,18 +11310,21 @@ function _renderMyRecentUpdatesList(rows){
     const title = escapeHtml(u.entity_title || "");
     const tmpl = escapeHtml(_templateLabel(area, u.template_code || ""));
     const note = (u.note ? escapeHtml(u.note) : "");
-    const icon = (area === "general")
-      ? "fa-bullhorn text-slate-500"
-      : (area === "projects")
-        ? "fa-diagram-project text-cyan-500"
-        : (area === "assets")
-          ? "fa-boxes-stacked text-emerald-500"
-          : "fa-certificate text-amber-500";
+    const areaLower = String(area || "projects").toLowerCase();
+    const iconName = (areaLower === "general")
+      ? "fa-bullhorn"
+      : (areaLower === "projects")
+        ? "fa-diagram-project"
+        : (areaLower === "assets")
+          ? "fa-cubes"
+          : "fa-certificate";
 
     return `
       <div class="group flex items-start gap-3 p-3 rounded-2xl border border-gray-100 bg-white hover:shadow-sm transition">
-        <div class="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 grid place-items-center shrink-0">
-          <i class="fa-solid ${icon}"></i>
+        <div class="bton-upd-chip" data-area="${areaLower}" style="padding:6px; border-radius:16px;">
+          <span class="bton-upd-chip-ico" style="width:26px;height:26px;border-radius:16px;">
+            <i class="fa-solid ${iconName}"></i>
+          </span>
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between gap-3">
@@ -10595,6 +11481,7 @@ document.addEventListener("click", (e) => {
     const active = (a === __updArea);
     b.classList.toggle("border-BTrustOn-accent", active);
     b.classList.toggle("bg-slate-50/60", active);
+    b.classList.toggle("is-active", active);
   });
 
   _populateUpdateEntitySelect(__updArea);
@@ -13159,7 +14046,7 @@ function renderAssetsCards(company, isMyProfile){
           <div class="min-w-0">
             <div class="flex items-start gap-3">
               <div class="w-9 h-9 rounded-2xl bg-slate-50/80 border border-slate-200 text-slate-700 shadow-sm flex items-center justify-center shrink-0 transition group-hover:border-cyan-200/70 group-hover:bg-white">
-                <i class="fa-solid fa-boxes-stacked text-[13px] opacity-90"></i>
+                <i class="fa-solid fa-cubes text-[13px] opacity-90"></i>
               </div>
               <div class="min-w-0">
                 <div class="text-[14px] font-extrabold text-slate-800 leading-snug break-words line-clamp-2 min-h-[2.6rem]">${_safeText(_assetName(a) || "Asset")}</div>
@@ -14363,11 +15250,34 @@ try {
       // That prevented claim UI from updating for directory entries with empty emails.
       // We now refresh claim-related fields for any profile.
 
-      const { data } = await supabaseClient
-        .from("profiles")
-        .select("owner_user_id, claimed_at, verification_status, is_listed")
-        .eq("id", obj.id)
-        .maybeSingle();
+      // Pull claim-related fields; fall back if some columns don't exist in this DB schema
+      let data = null;
+      {
+        const r1 = await supabaseClient
+          .from("profiles")
+          .select("owner_user_id, claimed_at, verification_status, is_listed")
+          .eq("id", obj.id)
+          .maybeSingle();
+        data = r1.data;
+
+        if (r1.error) {
+          const r2 = await supabaseClient
+            .from("profiles")
+            .select("owner_user_id, claimed_at, is_listed")
+            .eq("id", obj.id)
+            .maybeSingle();
+          data = r2.data;
+
+          if (r2.error) {
+            const r3 = await supabaseClient
+              .from("profiles")
+              .select("owner_user_id, claimed_at")
+              .eq("id", obj.id)
+              .maybeSingle();
+            data = r3.data;
+          }
+        }
+      }
       if (!data) return;
       obj.owner_user_id = data.owner_user_id || null;
       obj.claimed_at = data.claimed_at || null;
@@ -20087,6 +20997,22 @@ async function fetchFollowingCompanies() {
               .in("id", ids);
             profs = r3.data; pe = r3.error;
           }
+
+          if (pe) {
+            const r4 = await supabaseClient
+              .from("profiles")
+              .select("id, company_name, logo_url, company_type, city, country, country_code, updated_at")
+              .in("id", ids);
+            profs = r4.data; pe = r4.error;
+          }
+
+          if (pe) {
+            const r5 = await supabaseClient
+              .from("profiles")
+              .select("id, company_name, logo_url, company_type, city, country, country_code")
+              .in("id", ids);
+            profs = r5.data; pe = r5.error;
+          }
         }
 
         if (!pe && Array.isArray(profs) && profs.length) {
@@ -21318,9 +22244,12 @@ function renderInboxItems() {
         (parsedTitle && parsedTitle.key === "notif_follow_update_title") ||
         (parsedMsg && parsedMsg.key === "notif_follow_update_msg");
 
+      const __kind = (typeof _detectNotifKind === "function") ? _detectNotifKind(titleResolved, msgResolved, n, parsedTitle, parsedMsg) : "default";
+      const __reactCls = (__kind === "reaction_like") ? " bton-notif-card--react bton-notif-card--like" : (__kind === "reaction_celebrate" ? " bton-notif-card--react bton-notif-card--celebrate" : "");
+
 
       const card = document.createElement("div");
-      card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-slate-200/70 transition-all duration-200 cursor-pointer group`;
+      card.className = `relative p-4 mb-2 rounded-xl border ${isUnread ? "bg-white shadow-sm border-rose-100" : "bg-white/60 border-transparent opacity-90"} hover:border-slate-200/70 transition-all duration-200 cursor-pointer group${__reactCls}`;
       card.onclick = () => {
         if (isUnread) markNotificationRead(n.id);
         if (action === 'UPGRADE') { try { openUpgradeModal(); } catch(e) {} }
@@ -21365,9 +22294,7 @@ function renderInboxItems() {
           <i class="fa-solid fa-trash text-[11px]"></i>
         </button>
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 grid place-items-center shrink-0 text-rose-600">
-            <i class="fa-solid fa-bell"></i>
-          </div>
+          ${_notifIconHTML(__kind)}
           <div class="min-w-0 flex-1">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -25668,6 +26595,83 @@ function _renderNotifI18n(text="", fallback="") {
   return fallback || "";
 }
 
+/* --- Notification kind + icon (signature glyphs) --- */
+function _detectNotifKind(titleText="", msgText="", n=null, parsedTitle=null, parsedMsg=null) {
+  const t0 = String(titleText || "");
+  const m0 = String(msgText || "");
+  const k1 = String((n && n.message_i18n_key) || "");
+  const k2 = String((n && n.title_i18n_key) || "");
+  const pkM = String((parsedMsg && parsedMsg.key) || "");
+  const pkT = String((parsedTitle && parsedTitle.key) || "");
+  const blob = (t0 + " " + m0 + " " + k1 + " " + k2 + " " + pkM + " " + pkT).toLowerCase();
+
+  // Follow update
+  if (k2 === "notif_follow_update_title" || k1 === "notif_follow_update_msg" || pkT === "notif_follow_update_title" || pkM === "notif_follow_update_msg") {
+    return "follow_update";
+  }
+
+  // Profile views
+  if (/\bprofile\s+viewed\b/.test(blob) || /viewed\s+your\s+profile/.test(blob) || /profilinizi\s+görüntüledi/.test(blob) || /vio\s+tu\s+perfil/.test(blob)) {
+    return "profile_view";
+  }
+
+  // Reactions (future-proof with i18n keys)
+  if (k1 === "notif_update_reaction_like" || pkM === "notif_update_reaction_like") return "reaction_like";
+  if (k1 === "notif_update_reaction_celebrate" || pkM === "notif_update_reaction_celebrate") return "reaction_celebrate";
+
+  // Reactions (string heuristics, supports TR/EN/ES)
+  const looksUpdate = (blob.includes("güncelle") || blob.includes("update") || blob.includes("actualiz"));
+  if (looksUpdate) {
+    if (blob.includes("kutla") || blob.includes("celebrat") || blob.includes("felicit") || blob.includes("celebró") || blob.includes("celebro")) return "reaction_celebrate";
+    if (blob.includes("beğen") || blob.includes("begend") || blob.includes("liked") || blob.includes("me gusta") || blob.includes("like")) return "reaction_like";
+  }
+
+  return "default";
+}
+
+function _notifIconHTML(kind="default") {
+  const k = String(kind || "default");
+  // Icon glyphs: minimal, geometric, trust-forward (unique to BTrustOn)
+  const svgLike = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.8" opacity=".28"/>
+      <path d="M7.8 12.4 10.6 15.2 16.4 9.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M6.2 8.2h.01" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" opacity=".35"/>
+    </svg>`;
+  const svgCelebrate = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.8" opacity=".26"/>
+      <path d="M12 6l1.25 3.6 3.75 1.15-3.75 1.15L12 15.5l-1.25-3.6L7 10.75l3.75-1.15L12 6Z" fill="currentColor" opacity=".92"/>
+      <path d="M18 6.2l.55 1.55L20.1 8.3l-1.55.55L18 10.4l-.55-1.55L15.9 8.3l1.55-.55L18 6.2Z" fill="currentColor" opacity=".55"/>
+    </svg>`;
+  const svgView = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2.2 12s3.7-7 9.8-7 9.8 7 9.8 7-3.7 7-9.8 7-9.8-7-9.8-7Z" stroke="currentColor" stroke-width="1.8" opacity=".9"/>
+      <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" fill="currentColor" opacity=".20"/>
+      <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" fill="currentColor" opacity=".65"/>
+    </svg>`;
+  const svgPulse = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.8" opacity=".22"/>
+      <path d="M6.2 12h3.2l1.2-3.1 2.2 6.2 1.4-3.1h3.8" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  const svgDefault = `
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.8" opacity=".24"/>
+      <path d="M12 7.5c2.1 0 3.8 1.7 3.8 3.8v1.1c0 .5.2 1 .6 1.4l.6.6c.3.3.1.8-.3.8H7.3c-.4 0-.6-.5-.3-.8l.6-.6c.4-.4.6-.9.6-1.4v-1.1c0-2.1 1.7-3.8 3.8-3.8Z" fill="currentColor" opacity=".72"/>
+      <path d="M10.5 16.8a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>
+    </svg>`;
+
+  let cls = "bton-notif-ico";
+  let glyph = svgDefault;
+  if (k === "reaction_like") { cls += " bton-notif-ico--like"; glyph = svgLike; }
+  else if (k === "reaction_celebrate") { cls += " bton-notif-ico--celebrate"; glyph = svgCelebrate; }
+  else if (k === "profile_view") { cls += " bton-notif-ico--view"; glyph = svgView; }
+  else if (k === "follow_update") { cls += " bton-notif-ico--pulse"; glyph = svgPulse; }
+
+  return `<div class="${cls}" aria-hidden="true">${glyph}</div>`;
+}
+
 
 function computeProTrialEnd(nowDate, createdAtISO=null) {
   // ✅ Current pricing: everyone gets a 3-month free Pro trial (no card required).
@@ -27906,8 +28910,8 @@ function renderCompanyUpdates7DCard(u, meta){
     const templateCode = u?.template_code || u?.update_code || "";
     const label = _templateLabel(area, templateCode) || _safeText(u?.template_label || "");
     const lblText = _safeText(label || ((currentLang === "tr") ? "Bilgi" : (currentLang === "es" ? "Información" : "Info")));
-
-    const entityTitle = (areaLower === "general")
+    const railText = lblText;
+const entityTitle = (areaLower === "general")
       ? (t("post_area_general") || (currentLang === "tr" ? "Genel" : "General"))
       : _safeText(u?.entity_title || u?.item_title || "—");
 
@@ -27929,23 +28933,42 @@ function renderCompanyUpdates7DCard(u, meta){
     const logo = (meta?.logo || "");
     const verified = !!(meta?.verified);
 
-    const icon = (areaLower === "general")
-      ? "fa-bullhorn text-slate-500"
+    const iconName = (areaLower === "general")
+      ? "fa-bullhorn"
       : (areaLower === "projects")
-        ? "fa-diagram-project text-cyan-500"
+        ? "fa-diagram-project"
         : (areaLower === "assets")
-          ? "fa-boxes-stacked text-emerald-500"
-          : "fa-certificate text-amber-500";
+          ? "fa-cubes"
+          : "fa-certificate";
+
+    const areaLabel = (areaLower === "general")
+      ? (t("post_area_general") || (currentLang === "tr" ? "Genel" : (currentLang === "es" ? "General" : "General")))
+      : (areaLower === "projects")
+        ? (t("post_area_projects") || (currentLang === "tr" ? "Projeler" : (currentLang === "es" ? "Proyectos" : "Projects")))
+        : (areaLower === "assets")
+          ? (t("post_area_assets") || (currentLang === "tr" ? "Envanter" : (currentLang === "es" ? "Activos" : "Assets")))
+          : (t("post_area_certs") || (currentLang === "tr" ? "Sertifikalar" : (currentLang === "es" ? "Certificados" : "Certificates")));
+
+    const metaInlineText = (areaLower === "general") ? "" : entityTitle;
 
     const tab = _getAreaTab(areaLower);
     const safeCompanyId = _safeText(u?.company_id || u?.profile_id || "");
     const focusId = (u?.entity_id == null) ? "" : String(u.entity_id);
     const safeFocusId = _safeText(focusId);
+const safePostId = _safeText(String(u?.id || ""));
+    try{ btonCachePostOwnerCompany(safePostId, (u?.company_id || u?.companyId || (u?.company && (u.company.id || u.company.company_id)))); }catch(e){}
+const __rx = (typeof btonGetPostReactionSnapshot === "function") ? btonGetPostReactionSnapshot(safePostId) : null;
+const likeCount = (__rx && __rx.counts) ? (__rx.counts.like || 0) : 0;
+const celebrateCount = (__rx && __rx.counts) ? (__rx.counts.celebrate || 0) : 0;
+const myLike = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("like"));
+const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("celebrate"));
     return `
-      <div class="bton-cp7d-card relative w-full text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] px-3 py-3 shadow-[0_8px_22px_-18px_rgba(15,23,42,.34)] overflow-hidden">
+      <div class="bton-cp7d-card relative w-full text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] pr-3 pl-10 py-3 shadow-[0_8px_22px_-18px_rgba(15,23,42,.34)] overflow-hidden">
         <div class="absolute inset-0 opacity-70 pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
         <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-slate-200/50 blur-2xl pointer-events-none"></div>
-        <div class="absolute left-0 top-0 bottom-0 w-[3px] rounded-full bton-upd-bar ${_signalMeta(areaLower, templateCode).bar}"></div>
+        <div class="bton-upd-rail">
+          <div class="bton-upd-rail-vtxt" data-tone="${_signalMeta(areaLower, templateCode).tone}">${railText}</div>
+        </div>
 
         <div class="relative flex items-start gap-3">
           ${btRenderLogoHTML(logo, companyName, "w-9 h-9", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0")}
@@ -27959,9 +28982,11 @@ function renderCompanyUpdates7DCard(u, meta){
                 </div>
 
                 <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
-                  <span class="inline-block w-2 h-2 rounded-full ${_signalMeta(areaLower, templateCode).bar}"></span>
-                  <i class="fa-solid ${icon}"></i>
-                  <span class="truncate font-bold">${entityTitle} — ${lblText}</span>
+                  <span class="bton-upd-chip" data-area="${areaLower}">
+                    <span class="bton-upd-chip-ico"><i class="fa-solid ${iconName}"></i></span>
+                    <span class="bton-upd-chip-txt">${areaLabel}</span>
+                  </span>
+                  ${metaInlineText ? `<span class="truncate font-bold bton-upd-meta-text">${metaInlineText}</span>` : ``}
                 </div>
               </div>
 
@@ -27971,14 +28996,14 @@ function renderCompanyUpdates7DCard(u, meta){
             </div>
 
             ${hasImg ? `
-              <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] h-32 sm:h-40">
+              <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] h-32 sm:h-36">
                 <div class="bton-cp7d-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}" role="button" aria-label="Open image"
                   onclick="event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation) event.stopImmediatePropagation(); try{ if(window.openBtonImageLightbox) window.openBtonImageLightbox(this.getAttribute('data-img')); }catch(e){}; return false;">
                   <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
                   <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
                   <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
                   <div class="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
-                  <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-2 py-1 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+                  <div class="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 text-[8.5px] leading-none font-bold rounded-full px-1.5 py-0.5 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
                 </div>
               </div>
             ` : ``}
@@ -27986,6 +29011,32 @@ function renderCompanyUpdates7DCard(u, meta){
             <div class="mt-2 relative bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-2.5 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
               ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "line-clamp-4" : "line-clamp-6"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
             </div>
+<div class="mt-2 flex items-center justify-between gap-2">
+  <div class="flex items-center gap-2">
+    <button type="button"
+      class="bton-react-pill ${myCelebrate ? "is-on" : ""}"
+      data-post-id="${safePostId}"
+      data-reaction="celebrate"
+      title="${escapeHtml(btonReactionTitle("celebrate"))}"
+      aria-label="${escapeHtml(btonReactionTitle("celebrate"))}"
+      onclick="btonToggleUpdateReaction(event,'${safePostId}','celebrate')">
+      ${btonReactGlyph("celebrate")}
+      <span class="bton-react-count ${celebrateCount>0 ? "" : "hidden"}" data-react-count>${celebrateCount}</span>
+    </button>
+    <button type="button"
+      class="bton-react-pill ${myLike ? "is-on" : ""}"
+      data-post-id="${safePostId}"
+      data-reaction="like"
+      title="${escapeHtml(btonReactionTitle("like"))}"
+      aria-label="${escapeHtml(btonReactionTitle("like"))}"
+      onclick="btonToggleUpdateReaction(event,'${safePostId}','like')">
+      ${btonReactGlyph("like")}
+      <span class="bton-react-count ${likeCount>0 ? "" : "hidden"}" data-react-count>${likeCount}</span>
+    </button>
+  </div>
+
+  
+</div>
 
           </div>
         </div>
@@ -28050,11 +29101,28 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
 
     // best-effort profile meta
     try{
-      const r = await supabaseClient
+      let r = await supabaseClient
         .from("profiles")
         .select("id,company_name,logo_url,company_logo_url,logo,company_logo,avatar_url,photo_url,verified,is_verified,blue_tick,verification_status,updated_at")
         .eq("id", cid)
         .maybeSingle();
+
+      // Fallback if some columns don't exist in this DB schema
+      if (r && r.error) {
+        r = await supabaseClient
+          .from("profiles")
+          .select("id,company_name,logo_url,company_logo_url,updated_at")
+          .eq("id", cid)
+          .maybeSingle();
+      }
+      if (r && r.error) {
+        r = await supabaseClient
+          .from("profiles")
+          .select("id,company_name,logo_url")
+          .eq("id", cid)
+          .maybeSingle();
+      }
+
       const row = r?.data || null;
       if(row){
         const name = String(row.company_name || meta.name || "").trim();
@@ -28072,6 +29140,14 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
     }
 
     titleEl.textContent = meta.name;
+    // Make company header clickable (without showing a "View" label)
+    try{
+      titleEl.style.cursor = "pointer";
+      logoEl.style.cursor = "pointer";
+      const __open = () => { try{ if(typeof openProfile === "function") openProfile(cid); }catch(e){} };
+      titleEl.onclick = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} __open(); };
+      logoEl.onclick  = (ev) => { try{ ev.preventDefault(); ev.stopPropagation(); }catch(e){} __open(); };
+    }catch(e){}
     verifiedEl.classList.toggle('hidden', !meta.verified);
     _cp7dRenderLogo(logoEl, meta.name, meta.logo);
 
@@ -28089,6 +29165,7 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
 
       if(error) throw error;
       updates = data || [];
+      try { await btonHydrateUpdateReactions(updates); } catch(e) {}
     }catch(e){
       console.warn("Company posts 7d fetch error:", e);
       updates = [];
