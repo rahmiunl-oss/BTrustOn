@@ -26712,22 +26712,188 @@ async function adminApproveClaim(claimId) {
   }
 }
 
-async function adminRejectClaim(claimId) {
-  const ok = (typeof uiConfirm === "function")
-    ? await uiConfirm(tOr("ui_confirm_reject_claim","Reject this claim request?"))
-    : confirm(tOr("ui_confirm_reject_claim","Reject this claim request?"));
-  if (!ok) return;
+// --- Claim Reject (with reason + notify requester) ---
+let __pendingRejectClaimId = null;
 
+function openRejectClaimModal(claimId) {
+  __pendingRejectClaimId = claimId;
+  const modal = document.getElementById("reject-claim-modal");
+  const ta = document.getElementById("reject-claim-reason");
+  const title = document.getElementById("reject-claim-title");
+  const subtitle = document.getElementById("reject-claim-subtitle");
+  const btnOk = document.getElementById("reject-claim-ok");
+  const btnCancel = document.getElementById("reject-claim-cancel");
+
+  if (!modal || !ta || !btnOk || !btnCancel) {
+    // Fallback: native prompt
+    const reason = prompt(tOr("ui_reject_reason_prompt","Rejection reason (optional). This will be sent to the requester:"), "") || "";
+    _doRejectClaim(claimId, reason);
+    return;
+  }
+
+  // i18n-ish labels
   try {
-    const { error } = await supabaseClient.rpc("bton_admin_reject_claim", { claim_id: claimId, decision_notes: null });
-    if (error) throw error;
+    title.textContent = tOr("ui_reject_claim_title","Reject claim");
+    subtitle.textContent = tOr("ui_reject_claim_subtitle","Write a short reason (optional). This will be sent to the requester.");
+    ta.placeholder = tOr("ui_reject_reason_placeholder","Reason (optional)");
+    btnCancel.textContent = tOr("ui_cancel","Cancel");
+    btnOk.textContent = tOr("ui_reject","Reject");
+  } catch(e) {}
+
+  ta.value = "";
+  modal.classList.remove("hidden");
+  setTimeout(() => { try { ta.focus(); } catch(e) {} }, 50);
+}
+
+function closeRejectClaimModal() {
+  const modal = document.getElementById("reject-claim-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+}
+
+async function _rpcRejectClaim(claimId, reason) {
+  const r = (reason != null && String(reason).trim() !== "") ? String(reason).trim() : null;
+
+  const payloads = [
+    { claim_id: claimId, decision_notes: r },
+    { p_claim_id: claimId, p_decision_notes: r },
+    { claim_id: claimId, p_decision_notes: r },
+    { p_claim_id: claimId, decision_notes: r },
+    { claim_id: claimId, note: r },
+    { claim_id: claimId } // last resort (older signature)
+  ];
+
+  let lastErr = null;
+  for (const payload of payloads) {
+    try {
+      const { error } = await supabaseClient.rpc("bton_admin_reject_claim", payload);
+      if (!error) return { ok: true };
+      lastErr = error;
+
+      // If the error looks like "unknown parameter"/signature mismatch, try next payload.
+      const msg = String(error.message || "").toLowerCase();
+      const code = String(error.code || "");
+      const isSig =
+        code.startsWith("PGRST") ||
+        msg.includes("could not find the function") ||
+        msg.includes("function") && msg.includes("does not exist") ||
+        msg.includes("unexpected") ||
+        msg.includes("schema cache") ||
+        msg.includes("parameters") ||
+        msg.includes("best candidate");
+      if (isSig) continue;
+
+      // Otherwise break (permissions, etc.)
+      break;
+    } catch (e) {
+      lastErr = e;
+      break;
+    }
+  }
+  return { ok: false, error: lastErr };
+}
+
+async function _notifyRequesterFallback(claimId, reason) {
+  try {
+    const r = (reason != null && String(reason).trim() !== "") ? String(reason).trim() : null;
+    const { data: row, error } = await supabaseClient
+      .from("company_claim_requests")
+      .select("id, company_id, requester_user_id")
+      .eq("id", claimId)
+      .maybeSingle();
+
+    if (error || !row || !row.requester_user_id) return;
+
+    const msg = r
+      ? `Your claim request was rejected. Reason: ${r}`
+      : `Your claim request was rejected.`;
+
+    await supabaseClient
+      .from("notifications")
+      .insert([{
+        recipient_user_id: row.requester_user_id,
+        title: "Claim rejected",
+        message: msg,
+        is_read: false
+      }]);
+  } catch (e) {
+    // ignore (may be blocked by RLS)
+  }
+}
+
+async function _doRejectClaim(claimId, reason) {
+  try {
+    const ok = (typeof uiConfirm === "function")
+      ? await uiConfirm(tOr("ui_confirm_reject_claim","Reject this claim request?"), { title: tOr("ui_confirm","Confirm"), okText: tOr("ui_yes","Yes"), cancelText: tOr("ui_no","No"), variant: "danger" })
+      : confirm(tOr("ui_confirm_reject_claim","Reject this claim request?"));
+    if (!ok) return;
+
+    const res = await _rpcRejectClaim(claimId, reason);
+    if (!res.ok) throw res.error;
+
+    // If backend didn't create notification, best-effort fallback insert (won't hurt if blocked)
+    await _notifyRequesterFallback(claimId, reason);
+
     showToast("OK", tOr("ui_claim_rejected","Claim rejected."), "brand");
     loadAdminClaims();
   } catch (e) {
-    console.error(e);
-    showToast("Error", tOr("ui_action_failed","Action failed."), "error");
+    console.error("adminRejectClaim error:", e);
+    const msg = (e && e.message) ? String(e.message) : tOr("ui_action_failed","Action failed.");
+    showToast("Error", msg, "error");
   }
 }
+
+async function adminRejectClaim(claimId) {
+  openRejectClaimModal(claimId);
+}
+
+// Wire modal buttons
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("reject-claim-modal");
+  const btnX = document.getElementById("reject-claim-x");
+  const btnCancel = document.getElementById("reject-claim-cancel");
+  const btnOk = document.getElementById("reject-claim-ok");
+  const ta = document.getElementById("reject-claim-reason");
+
+  const close = () => { try { closeRejectClaimModal(); } catch(e) {} };
+
+  if (btnX) btnX.addEventListener("click", close);
+  if (btnCancel) btnCancel.addEventListener("click", close);
+
+  if (modal) {
+    // click outside closes
+    modal.addEventListener("mousedown", (ev) => {
+      try {
+        if (ev.target === modal.firstElementChild) close();
+      } catch(e) {}
+    });
+  }
+
+  if (btnOk) {
+    btnOk.addEventListener("click", async () => {
+      const cid = __pendingRejectClaimId;
+      const reason = ta ? ta.value : "";
+      close();
+      if (!cid) return;
+      await _doRejectClaim(cid, reason);
+    });
+  }
+
+  if (ta) {
+    ta.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") { ev.preventDefault(); close(); }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
+        ev.preventDefault();
+        const cid = __pendingRejectClaimId;
+        const reason = ta.value;
+        close();
+        if (!cid) return;
+        _doRejectClaim(cid, reason);
+      }
+    });
+  }
+});
+
 
 
 async function processVerification(requestId, userId, action) {
@@ -29576,5 +29742,39 @@ document.addEventListener('keydown', function(e){
 /* Prevent background scroll when lightbox is open */
 .bton-no-scroll{ overflow:hidden !important; }
 </style>
+
+
+<!-- Reject Claim Modal (with reason) -->
+<div id="reject-claim-modal" class="fixed inset-0 z-[9999] hidden">
+  <div class="absolute inset-0 bg-black/40"></div>
+  <div class="relative mx-auto mt-24 w-[92%] max-w-md rounded-2xl border border-slate-200/70 bg-white p-5 shadow-2xl dark:border-slate-700/60 dark:bg-slate-900">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="h-9 w-9 rounded-xl bg-rose-600/10 text-rose-600 flex items-center justify-center">
+          <i class="fa-solid fa-ban"></i>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-slate-900 dark:text-white" id="reject-claim-title">Reject claim</div>
+          <div class="text-xs text-slate-500 dark:text-slate-300" id="reject-claim-subtitle">Write a short reason (optional). This will be sent to the requester.</div>
+        </div>
+      </div>
+      <button id="reject-claim-x" class="h-9 w-9 rounded-xl border border-slate-200/70 text-slate-600 hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <textarea id="reject-claim-reason" class="mt-4 w-full h-28 resize-none rounded-xl border border-slate-200/70 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40 dark:border-slate-700/60 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
+      placeholder="Reason (optional)"></textarea>
+
+    <div class="mt-4 flex items-center justify-end gap-2">
+      <button id="reject-claim-cancel" class="h-10 rounded-xl border border-slate-200/70 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700/60 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+        Cancel
+      </button>
+      <button id="reject-claim-ok" class="h-10 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white hover:bg-rose-700">
+        Reject
+      </button>
+    </div>
+  </div>
+</div>
 
 </body></html>
