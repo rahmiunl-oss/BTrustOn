@@ -1252,5 +1252,10 @@
   "post_image_hint": "Optional. Shown compact in the feed; click to view full size (no crop).",
   "post_image_prepared": "Image attached. It will show compact in the feed; click to view full size.",
   "ui_claim_welcome_body_fmt": "Congratulations! Your ownership request for {company} has been approved. You can manage this company with {username} username and your password. Tap below to edit the profile.",
-  "ui_your_account": "your account"
+  "ui_your_account": "your account",
+  "ui_verification_approved_title": "Verification approved",
+  "ui_verification_approved_msg_fmt": "Your verification request for {company} has been approved.",
+  "ui_verification_rejected_title": "Verification rejected",
+  "ui_verification_rejected_msg_fmt": "Your verification request for {company} was rejected.",
+  "ui_verification_rejected_msg_reason_fmt": "Your verification request for {company} was rejected. Reason: {reason}"
 }
