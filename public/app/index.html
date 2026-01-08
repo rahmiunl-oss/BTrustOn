@@ -18634,10 +18634,23 @@ function deleteCert(certId, certName) {
     });
 }
   </script>
+<!-- ✅ Project viewer tuning: smaller cover + larger description -->
+<style id="bton-project-viewer-tuning">
+  /* Keep the modal card within the viewport, and let the body scroll */
+  #pv-card{ max-height: 88vh; display:flex; flex-direction:column; }
+  #pv-body{ overflow-y:auto; }
+  /* Comfortable reading */
+  #pv-desc{ line-height: 1.75; }
+  /* Dark mode text contrast (your app uses data-theme) */
+  html[data-theme="dark"] #pv-desc{ color: rgba(226,232,240,.86) !important; }
+  html[data-theme="dark"] #pv-meta,
+  html[data-theme="dark"] #pv-gallery-info{ color: rgba(148,163,184,.72) !important; }
+</style>
+
 <!-- ✅ PROJECT VIEWER MODAL (click any project card) -->
 <div class="hidden fixed inset-0 z-[99990]" id="project-viewer">
 <div class="absolute inset-0 bg-slate-900/60" onclick="closeProjectViewer()"></div>
-<div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-slate-200/70 overflow-hidden">
+<div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-slate-200/70 overflow-hidden max-h-[88vh] flex flex-col" id="pv-card">
 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 <div>
 <div class="text-sm font-extrabold text-BTrustOn-primary" id="pv-title"></div>
@@ -18647,11 +18660,11 @@ function deleteCert(certId, certName) {
 <i class="fa-solid fa-xmark"></i>
 </button>
 </div>
-<div class="p-5">
+<div class="p-5 flex-1 overflow-y-auto" id="pv-body">
 <button class="w-full rounded-xl overflow-hidden border border-slate-200/70 bg-slate-50 focus:outline-none" id="pv-cover-btn">
-<img alt="" class="w-full h-[320px] object-cover" id="pv-cover"/>
+<img alt="" class="w-full h-[210px] sm:h-[230px] md:h-[260px] object-cover" id="pv-cover"/>
 </button>
-<div class="text-sm text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere" id="pv-desc"></div>
+<div class="text-[15px] md:text-base text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere leading-relaxed" id="pv-desc"></div>
 <div class="mt-4 flex items-center justify-between">
 <div class="text-[11px] text-gray-400" id="pv-gallery-info"></div>
 <button class="hidden px-4 py-2 rounded-lg bg-BTrustOn-primary text-white text-xs font-bold hover:bg-BTrustOn-accent transition" id="pv-open-gallery" onclick="openProjectViewerGallery()">
