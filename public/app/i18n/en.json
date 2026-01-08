@@ -1250,5 +1250,7 @@
   "notifications_profile_viewed_body_guest": "A guest viewed your profile.",
   "post_image_rules": "Any ratio • 1 image",
   "post_image_hint": "Optional. Shown compact in the feed; click to view full size (no crop).",
-  "post_image_prepared": "Image attached. It will show compact in the feed; click to view full size."
+  "post_image_prepared": "Image attached. It will show compact in the feed; click to view full size.",
+  "ui_claim_welcome_body_fmt": "Congratulations! Your ownership request for {company} has been approved. You can manage this company with {username} username and your password. Tap below to edit the profile.",
+  "ui_your_account": "your account"
 }
