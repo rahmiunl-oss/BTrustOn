@@ -8073,9 +8073,74 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 #attachment-canvas{ background: transparent; }
 #attachment-img{ -webkit-user-drag: none; user-select: none; max-width: none; max-height: none; }
 
+
+
+/* =========================================================
+   Inbox Tabs — Single row + compact sizing (no wrap)
+   - Keeps INBOX / SENT / NOTIFICATIONS on one line
+   - Only NOTIFICATIONS truncates when space is tight
+   ========================================================= */
+.bton-inbox-tabs-bar{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;          /* tighter than gap-6 (24px) */
+  flex-wrap: nowrap !important;  /* keep tabs on one row */
+}
+
+/* Keep INBOX/SENT natural width; let NOTIFICATIONS take remaining space */
+#btn-tab-inbox,
+#btn-tab-sent{ flex: 0 0 auto !important; }
+
+#btn-tab-notif{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;       /* allow label to shrink + ellipsis */
+}
+
+/* Buttons must allow children to shrink */
+.bton-inbox-tabs-bar > button{
+  white-space: nowrap !important;
+  min-width: 0 !important;
+}
+
+/* Truncate ONLY the NOTIFICATIONS label */
+#btn-tab-notif span[data-i18n]{
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Ensure INBOX/SENT never show ellipsis (they're short anyway) */
+#btn-tab-inbox span[data-i18n],
+#btn-tab-sent span[data-i18n]{
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Compact mode for narrower panels */
+@media (max-width: 980px){
+  .bton-inbox-tabs-bar{ gap: 8px !important; }
+  .bton-inbox-tabs-bar > button{
+    gap: 6px !important;
+    padding-bottom: 10px !important; /* slightly tighter than pb-3 */
+    font-size: 11px !important;
+  }
+}
+
+/* Even tighter: hide icons to save space */
+@media (max-width: 740px){
+  #btn-tab-inbox i,
+  #btn-tab-sent i,
+  #btn-tab-notif i{ display: none !important; }
+  .bton-inbox-tabs-bar > button{ gap: 0 !important; }
+}
+
 </style>
 <style id="mobile-inbox-tabs-wrap">
-/* MOBILE INBOX TABS (clean, 1-row, text-only) */
+/* MOBILE INBOX TABS (clean, 1-row, compact) */
 @media (max-width: 520px){
   .bton-inbox-tabs-bar{
     display: grid !important;
@@ -8090,20 +8155,30 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
     font-size: 11px !important;
     line-height: 1.05 !important;
     white-space: nowrap !important;
+    min-width: 0 !important;
+    gap: 0 !important;
   }
-  /* remove extra icons on mobile for a cleaner look */
+  /* hide icons to save space */
+  #btn-tab-inbox i,
   #btn-tab-sent i,
   #btn-tab-notif i{
     display: none !important;
   }
-  /* remove flex gaps when icons are hidden */
-  #btn-tab-inbox, #btn-tab-sent, #btn-tab-notif{
-    gap: 0 !important;
-  }
+
+  /* truncate long label (NOTIFICATIONS) instead of wrapping */
+#btn-tab-notif span[data-i18n]{
+  display: inline-block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
   #btn-tab-notif #notif-tab-badge{
     margin-left: 6px !important;
   }
 }
+
 
 /* === BTrustOn Premium UX (Empty states + Tooltips + Active signal) === */
 .bton-tip{ position:relative; display:inline-flex; align-items:center; }
@@ -10212,7 +10287,7 @@ async function _hydrateHomeUpdateCompanyMeta(updates){
     {
       const r1 = await supabaseClient
         .from("profiles")
-        .select("id, company_name, logo_url, verification_status, is_verified, verified, blue_tick, updated_at")
+        .select("*")
         .in("id", batch);
       data = r1.data; error = r1.error;
     }
@@ -10220,7 +10295,7 @@ async function _hydrateHomeUpdateCompanyMeta(updates){
     if (error) {
       const r2 = await supabaseClient
         .from("profiles")
-        .select("id, company_name, logo_url, updated_at")
+        .select("*")
         .in("id", batch);
       data = r2.data; error = r2.error;
     }
@@ -10236,7 +10311,7 @@ async function _hydrateHomeUpdateCompanyMeta(updates){
       if (!id) return;
 
       const name = String(p?.company_name || "").trim();
-      const logo = String(p?.logo_url || "").trim();
+      const logo = String((p?.logo_url || p?.company_logo_url || p?.company_logo || p?.avatar_url || p?.photo_url || "")).trim();
 
       let verified = false;
       try {
@@ -14814,6 +14889,13 @@ const r1 = await supabaseClient.rpc('track_profile_view', args);
     }
 
     if (error) {
+      // Unique constraint (already tracked): treat as OK to avoid console noise
+      const eCode = String(error.code || "");
+      const eMsg = String(error.message || "").toLowerCase();
+      if (eCode === "23505" || eMsg.includes("duplicate key") || eMsg.includes("already exists") || eMsg.includes("unique constraint")) {
+        try { localStorage.setItem(storageKey, "true"); } catch(e) {}
+        return;
+      }
       console.warn('trackProfileView upsert failed:', error);
       return;
     }
@@ -29103,7 +29185,7 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
     try{
       let r = await supabaseClient
         .from("profiles")
-        .select("id,company_name,logo_url,company_logo_url,logo,company_logo,avatar_url,photo_url,verified,is_verified,blue_tick,verification_status,updated_at")
+        .select("*")
         .eq("id", cid)
         .maybeSingle();
 
@@ -29111,14 +29193,14 @@ async function openCompanyUpdates7D(companyId, fallbackName=""){
       if (r && r.error) {
         r = await supabaseClient
           .from("profiles")
-          .select("id,company_name,logo_url,company_logo_url,updated_at")
+          .select("*")
           .eq("id", cid)
           .maybeSingle();
       }
       if (r && r.error) {
         r = await supabaseClient
           .from("profiles")
-          .select("id,company_name,logo_url")
+          .select("*")
           .eq("id", cid)
           .maybeSingle();
       }
