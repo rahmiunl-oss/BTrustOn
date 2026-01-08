@@ -8875,7 +8875,7 @@ function btonDbg(...args){ try { if (BTON_DEBUG) console.log("[BTrustOn]", ...ar
 // =======================
 // i18n JSON Loader (Tolgee Export via /i18n/*.json)
 // =======================
-const I18N_VERSION = "updated35";
+const I18N_VERSION = "updated36";
 
 // Add languages here and drop the corresponding file into /i18n/<lang>.json
 const I18N_ENDPOINTS = {
@@ -19010,6 +19010,7 @@ async function checkUserAndOpenProfile(forceOpen = false) {
     try { if (typeof subscribeToMessages === "function") subscribeToMessages(); } catch(e){ console.warn("subscribeToMessages:", e); }
     try { if (typeof fetchNotificationsUnread === "function") fetchNotificationsUnread(); } catch(e){ console.warn("fetchNotificationsUnread:", e); }
     try { if (typeof subscribeNotifications === "function") subscribeNotifications(); } catch(e){ console.warn("subscribeNotifications:", e); }
+    try { if (typeof subscribeClaimWelcomeEvents === "function") subscribeClaimWelcomeEvents(); } catch(e){ console.warn("subscribeClaimWelcomeEvents:", e); }
     try { if (typeof subscribeProfilesRealtimeForLists === "function") subscribeProfilesRealtimeForLists(); } catch(e) {}
 
   }
@@ -21965,6 +21966,23 @@ function subscribeNotifications() {
                 else dot.classList.add("hidden");
               }
             } catch (e) {}
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'claim_welcome_events',
+            filter: `user_id=eq.${user.id}`,
+          },
+          async () => {
+            try {
+              if (window.__BTON_CLAIM_WELCOME_SHOWN) return;
+              if (typeof checkAndTriggerClaimWelcome === "function") {
+                await checkAndTriggerClaimWelcome();
+              }
+            } catch(e) {}
           }
         )
         .subscribe();
@@ -26442,20 +26460,23 @@ async function __markClaimWelcomeShown(userId, companyId) {
   } catch(e) {}
 }
 
-function openClaimWelcomeModal(companyId, companyName) {
+function openClaimWelcomeModal(companyId, companyName, username) {
   try {
     window.__claimWelcome.companyId = String(companyId || "");
     window.__claimWelcome.companyName = String(companyName || "");
+    window.__claimWelcome.username = String(username || "");
 
     const nameEl = document.getElementById("claim-welcome-company-name");
     if (nameEl) nameEl.textContent = window.__claimWelcome.companyName || "—";
 
     const bodyEl = document.getElementById("claim-welcome-body");
     if (bodyEl) {
+      const uname = String(window.__claimWelcome.username || "").trim();
+      const usernameSafe = uname || tOr("ui_your_account","your account");
       bodyEl.textContent = _tFmtOr(
         "ui_claim_welcome_body_fmt",
-        { company: window.__claimWelcome.companyName || "" },
-        `Congratulations! Your ownership request for ${window.__claimWelcome.companyName || "this company"} has been approved. You can now edit the company profile.`
+        { company: window.__claimWelcome.companyName || "", username: usernameSafe },
+        `Congratulations! Your ownership request for ${window.__claimWelcome.companyName || "this company"} has been approved. You can manage this company with ${usernameSafe} username and your password.`
       );
     }
 
@@ -26463,6 +26484,9 @@ function openClaimWelcomeModal(companyId, companyName) {
     if (!m) return;
     const isClosed = m.classList.contains("opacity-0") || m.classList.contains("pointer-events-none");
     if (isClosed) toggleModal("modal-claim-welcome");
+
+    try { window.__BTON_CLAIM_WELCOME_SHOWN = true; } catch(e) {}
+    try { if (typeof stopClaimWelcomePoll === "function") stopClaimWelcomePoll(); } catch(e) {}
   } catch(e) {
     console.error(e);
   }
@@ -26584,11 +26608,111 @@ async function checkAndTriggerClaimWelcome() {
     // Keep primary company pointing to claimed company
     try { localStorage.setItem("BTrustOn_my_company_id", companyId); } catch(e) {}
 
-    openClaimWelcomeModal(companyId, companyName);
+    const username = (user && user.email) ? String(user.email) : tOr("ui_your_account","your account");
+
+    openClaimWelcomeModal(companyId, companyName, username);
   } catch(e) {
     // silent
   }
 }
+
+// --- CLAIM WELCOME REALTIME (INSTANT) + POLLING FALLBACK ---
+let claimWelcomeChannel = null;
+let claimWelcomeUserId = null;
+let __claimWelcomePollTimer = null;
+
+function stopClaimWelcomePoll() {
+  try { if (__claimWelcomePollTimer) clearInterval(__claimWelcomePollTimer); } catch(e) {}
+  __claimWelcomePollTimer = null;
+}
+
+function startClaimWelcomePoll() {
+  try {
+    if (window.__BTON_CLAIM_WELCOME_SHOWN) return;
+    if (__claimWelcomePollTimer) return;
+
+    let ticks = 0;
+    const maxTicks = 90; // ~18 minutes at 12s
+
+    __claimWelcomePollTimer = setInterval(async () => {
+      try {
+        ticks++;
+        if (window.__BTON_CLAIM_WELCOME_SHOWN) { stopClaimWelcomePoll(); return; }
+        if (ticks > maxTicks) { stopClaimWelcomePoll(); return; }
+
+        if (typeof checkAndTriggerClaimWelcome === "function") {
+          await checkAndTriggerClaimWelcome();
+        }
+      } catch(e) {}
+    }, 12000);
+  } catch(e) {}
+}
+
+function subscribeClaimWelcomeEvents() {
+  // Guard against double-subscribe (iOS can fire INITIAL_SESSION + DOMContentLoaded quickly)
+  try {
+    if (window.__BTON_CLAIM_WELCOME_SUB_LOCK) return;
+    window.__BTON_CLAIM_WELCOME_SUB_LOCK = true;
+    setTimeout(() => { try { window.__BTON_CLAIM_WELCOME_SUB_LOCK = false; } catch(e) {} }, 800);
+  } catch(e) {}
+
+  supabaseClient.auth.getUser().then(({ data: { user } }) => {
+    try {
+      if (!user) {
+        try { if (claimWelcomeChannel) { supabaseClient.removeChannel(claimWelcomeChannel); } } catch(e) {}
+        claimWelcomeChannel = null;
+        claimWelcomeUserId = null;
+        stopClaimWelcomePoll();
+        return;
+      }
+
+      // Already subscribed for this user
+      if (claimWelcomeChannel && claimWelcomeUserId === user.id) {
+        startClaimWelcomePoll();
+        return;
+      }
+
+      // Remove any previous channel
+      try { if (claimWelcomeChannel) supabaseClient.removeChannel(claimWelcomeChannel); } catch(e) {}
+      claimWelcomeChannel = null;
+      claimWelcomeUserId = user.id;
+
+      const ch = supabaseClient
+        .channel('realtime-claim-welcome-' + user.id)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'claim_welcome_events',
+            filter: `user_id=eq.${user.id}`,
+          },
+          async () => {
+            try {
+              if (window.__BTON_CLAIM_WELCOME_SHOWN) return;
+              if (typeof checkAndTriggerClaimWelcome === "function") {
+                await checkAndTriggerClaimWelcome();
+              }
+            } catch(e) {}
+          }
+        )
+        .subscribe();
+
+      try {
+        claimWelcomeChannel = (typeof btonSetChannel === "function") ? btonSetChannel('claim_welcome:' + user.id, ch) : ch;
+      } catch(e) {
+        claimWelcomeChannel = ch;
+      }
+
+      // Polling fallback (for projects without Realtime replication on this table)
+      startClaimWelcomePoll();
+    } catch(e) {
+      // Polling fallback
+      startClaimWelcomePoll();
+    }
+  });
+}
+
 
 
 // Admin: list + approve/reject claim requests
