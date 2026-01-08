@@ -1252,5 +1252,10 @@
   "post_image_hint": "Opcional. Se muestra compacta en el feed; haz clic para ver tamaño completo (sin recorte).",
   "post_image_prepared": "Imagen adjunta. Se verá compacta en el feed; haz clic para ver tamaño completo.",
   "ui_claim_welcome_body_fmt": "¡Felicitaciones! Tu solicitud de propiedad para {company} fue aprobada. Puedes administrar esta empresa con el usuario {username} y tu contraseña. Toca abajo para editar el perfil.",
-  "ui_your_account": "tu cuenta"
+  "ui_your_account": "tu cuenta",
+  "ui_verification_approved_title": "Verificación aprobada",
+  "ui_verification_approved_msg_fmt": "Tu solicitud de verificación para {company} fue aprobada.",
+  "ui_verification_rejected_title": "Verificación rechazada",
+  "ui_verification_rejected_msg_fmt": "Tu solicitud de verificación para {company} fue rechazada.",
+  "ui_verification_rejected_msg_reason_fmt": "Tu solicitud de verificación para {company} fue rechazada. Motivo: {reason}"
 }
