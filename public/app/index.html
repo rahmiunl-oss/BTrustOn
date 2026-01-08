@@ -16893,19 +16893,102 @@ function btonHideWelcomeModal() {
   } catch(e) {}
 }
 
-function btonWelcomeCta() {
-  // Close modal and take user to the top of Profile Editor (no tab jump)
-  try { btonHideWelcomeModal(); } catch(e) {}
-  try {
-    // Prefer scrolling to the editor hero/top
-    const hero = document.querySelector('#view-editor .bton-editor-hero');
-    if (hero && hero.scrollIntoView) {
-      hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+window.btonWelcomeCta = function () {
+  // Close modal, open MY profile, then switch to editor.
+  try { if (typeof btonHideWelcomeModal === "function") btonHideWelcomeModal(); } catch (e) {}
+
+  const getLS = (k) => {
+    try { return (localStorage.getItem(k) || "").trim(); } catch (e) { return ""; }
+  };
+
+  let myId = getLS("BTrustOn_my_company_id") || getLS("BTrustOn_just_joined_uid");
+
+  const run = async () => {
+    // If still missing, resolve from session (claim-ready)
+    if (!myId) {
+      try {
+        const sess = await supabaseClient.auth.getSession();
+        const authId = sess?.data?.session?.user?.id || "";
+
+        if (authId && typeof _fetchMyCompanyProfile === "function") {
+          const p = await _fetchMyCompanyProfile(authId);
+          if (p && p.id) {
+            myId = String(p.id);
+            try { localStorage.setItem("BTrustOn_my_company_id", myId); } catch (_) {}
+          }
+        }
+
+        if (!myId && authId) {
+          myId = String(authId);
+          try { localStorage.setItem("BTrustOn_my_company_id", myId); } catch (_) {}
+        }
+      } catch (e) {}
+    }
+
+    if (!myId) {
+      try {
+        showToast(
+          "Error",
+          (currentLang === "tr" ? "Şirket ID bulunamadı. Lütfen sayfayı yenileyin." : "Company ID not found. Please refresh."),
+          "error"
+        );
+      } catch (e) {}
       return;
     }
-  } catch(e) {}
-  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) {}
-}
+
+    // Open my profile first (ensures selectedCompany is set)
+    try {
+      if (typeof openProfile === "function") {
+        await openProfile(myId, { tab: "overview" });
+      } else {
+        try { window.location.hash = `#company=${encodeURIComponent(myId)}`; } catch (_) {}
+      }
+    } catch (e) {}
+
+    const tryEdit = () => {
+      try {
+        if (typeof editMyProfile === "function") { editMyProfile(); return true; }
+        if (typeof showEditorView === "function") { showEditorView(); return true; }
+      } catch (e) {}
+      return false;
+    };
+
+    let ok = tryEdit();
+
+    if (!ok) {
+      let n = 0;
+      const t = setInterval(() => {
+        n++;
+        // Ensure my id persists during join race
+        try {
+          const cur = getLS("BTrustOn_my_company_id");
+          if (!cur && myId) { try { localStorage.setItem("BTrustOn_my_company_id", String(myId)); } catch (_) {} }
+        } catch (_) {}
+
+        if (tryEdit() || n >= 10) {
+          clearInterval(t);
+          setTimeout(() => {
+            try {
+              const hero = document.querySelector("#view-editor .bton-editor-hero") || document.querySelector("#view-editor");
+              if (hero && hero.scrollIntoView) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+            } catch (_) {}
+          }, 80);
+        }
+      }, 150);
+    } else {
+      setTimeout(() => {
+        try {
+          const hero = document.querySelector("#view-editor .bton-editor-hero") || document.querySelector("#view-editor");
+          if (hero && hero.scrollIntoView) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (_) {}
+      }, 80);
+    }
+  };
+
+  // Fire-and-forget so the click handler stays snappy
+  run();
+};
 
 function btonMaybeShowWelcomeModal(source) {
   try {
@@ -18536,22 +18619,48 @@ function validateJoinPasswords(force) {
     const v1 = p1.value || "";
     const v2 = p2.value || "";
 
-    // Don't show error while confirm is empty unless forced (on submit).
-    const shouldShow = !!force || (v2 && v1 !== v2);
+    const mismatch = v1 !== v2;
+    const confirmEmpty = !v2;
+
+    let show = false;
+    let msg = "";
+
+    // While typing: don't show error until confirm has something.
+    // On submit (force): require confirm + show mismatch only if actually mismatching.
+    if (force && confirmEmpty) {
+      show = true;
+      msg = TT(
+        "join_password_confirm_required",
+        (currentLang === "tr"
+          ? "Lütfen şifreyi tekrar yazın."
+          : (currentLang === "es"
+              ? "Por favor, confirma la contraseña."
+              : "Please confirm your password."))
+      );
+    } else if (mismatch && (force || v2)) {
+      show = true;
+      msg = TT(
+        "join_password_mismatch",
+        (currentLang === "tr"
+          ? "Şifreler eşleşmiyor."
+          : (currentLang === "es"
+              ? "Las contraseñas no coinciden."
+              : "Passwords do not match."))
+      );
+    }
 
     if (err) {
-      if (!shouldShow) {
+      if (!show) {
         err.classList.add("hidden");
         err.textContent = "";
       } else {
-        err.textContent = TT(
-          "join_password_mismatch",
-          (currentLang === "tr" ? "Şifreler eşleşmiyor." : (currentLang === "es" ? "Las contraseñas no coinciden." : "Passwords do not match."))
-        );
+        err.textContent = msg;
         err.classList.remove("hidden");
       }
     }
-    return v1 === v2;
+
+    if (force && confirmEmpty) return false;
+    return !mismatch;
   } catch (e) {
     return true;
   }
@@ -26370,22 +26479,74 @@ function closeClaimWelcomeModal() {
 
 async function goEditClaimedCompanyFromWelcome() {
   try {
-    const cid = String(window.__claimWelcome.companyId || "").trim();
-    if (!cid) return;
+    // 1) Company/Profile id: prefer claim welcome payload, fallback to my_company_id
+    const cid = String(window.__claimWelcome?.companyId || localStorage.getItem("BTrustOn_my_company_id") || "").trim();
+    if (!cid) {
+      console.warn("Welcome CTA: companyId bulunamadı.");
+      return;
+    }
 
-    closeClaimWelcomeModal();
+    // 2) Modal'ı kapat (hangi modal fonksiyonu varsa)
+    try {
+      if (typeof closeClaimWelcomeModal === "function") closeClaimWelcomeModal();
+      else if (typeof btonHideWelcomeModal === "function") btonHideWelcomeModal();
+      else {
+        const el =
+          document.getElementById("claim-welcome-modal") ||
+          document.getElementById("claimWelcomeModal") ||
+          document.getElementById("welcome-modal") ||
+          document.getElementById("welcomeModal");
+        if (el) el.classList.add("hidden");
+      }
+    } catch (_) {}
 
-    // Ensure "my company" points to the claimed company (UI permission checks rely on this)
-    try { localStorage.setItem("BTrustOn_my_company_id", cid); } catch(e) {}
+    // 3) my_company_id'yi garantiye al
+    try { localStorage.setItem("BTrustOn_my_company_id", cid); } catch (_) {}
 
-    try { await openProfile(cid, { tab: "overview" }); } catch(e) { try { openProfile(cid, { tab: "overview" }); } catch(_) {} }
+    // 4) Önce profili aç (selectedCompany'nin dolmasını tetikler)
+    if (typeof openProfile === "function") {
+      try {
+        await openProfile(cid, { tab: "overview" });
+      } catch (e1) {
+        try { await openProfile(cid); } catch (e2) {
+          console.warn("Welcome CTA: openProfile çağrısı başarısız.", e2);
+        }
+      }
+    }
 
-    // Open editor after profile loads
-    try { setTimeout(() => { try { editMyProfile(); } catch(e) {} }, 140); } catch(e) {}
-  } catch(e) {
-    console.error(e);
+    // 5) Retry: selectedCompany hazır olana kadar dene, sonra edit aç
+    let attempts = 0;
+    const maxAttempts = 12; // ~1.8sn
+    const tryEdit = () => {
+      const sc = (typeof selectedCompany !== "undefined") ? selectedCompany : null;
+
+      if (sc && String(sc.id || "") === cid) {
+        if (typeof editMyProfile === "function") editMyProfile();
+        // Edit ekranında üste al
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        console.log("Welcome CTA: Editor opened after " + attempts + " retries.");
+        return;
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(tryEdit, 150);
+      } else {
+        console.warn("Welcome CTA: selectedCompany still not ready after retries.");
+        // Son çare: profili tekrar açmayı dene / user-check akışını tetikle
+        try {
+          if (typeof checkUserAndOpenProfile === "function") checkUserAndOpenProfile(true);
+          else if (typeof openProfile === "function") Promise.resolve(openProfile(cid)).finally(() => setTimeout(tryEdit, 250));
+        } catch (_) {}
+      }
+    };
+
+    setTimeout(tryEdit, 150);
+  } catch (e) {
+    console.error("Welcome CTA Error:", e);
   }
 }
+
 
 async function checkAndTriggerClaimWelcome() {
   try {
