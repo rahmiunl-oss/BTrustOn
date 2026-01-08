@@ -42,6 +42,14 @@
   ensureSafeStorage("localStorage");
   ensureSafeStorage("sessionStorage");
 })();
+
+/* BTrustOn – Pre-detect Supabase recovery links early (prevents auto-route restore behind reset UI) */
+try {
+  if (typeof window.__BTON_RECOVERY_ACTIVE === "undefined") {
+    var __bton_raw = String((window.location.hash||"") + (window.location.search||""));
+    window.__BTON_RECOVERY_ACTIVE = /type=recovery/i.test(__bton_raw);
+  }
+} catch(e) {}
 </script>
 <script type="application/ld+json">
 {
@@ -19037,6 +19045,8 @@ if (profile.email === ADMIN_EMAIL) {
 // --- YENİ EKLENECEK FONKSİYON BİTİŞ ---
 /* --- DÜZELTİLMİŞ: checkUserAndOpenProfile --- */
 async function checkUserAndOpenProfile(forceOpen = false) {
+  // 🔒 Recovery-mode: do NOT auto-open any account/profile behind the reset UI.
+  try { if (window.__BTON_RECOVERY_ACTIVE) return; } catch(e) {}
   // ✅ Guard: prevent double-run on iOS Safari (DOMContentLoaded + INITIAL_SESSION can fire back-to-back)
   // This page is heavy; running this twice can crash Safari and show “page had a problem repeatedly”.
   if (!forceOpen) {
@@ -19272,7 +19282,8 @@ async function restoreInitialRoute(opts = {}) {
   // - On INITIAL BOOT we may restore the last visited company route (nice UX on refresh).
   // - On browser Back/Forward (popstate/hashchange) we must NOT auto-restore last_route,
   //   otherwise Back from a profile keeps reopening the same profile and never returns Home.
-  const allowLastRoute = !!(opts && opts.allowLastRoute);
+  let allowLastRoute = !!(opts && opts.allowLastRoute);
+  try { if (window.__BTON_RECOVERY_ACTIVE) allowLastRoute = false; } catch(e) {}
   const companyId = companyFromHash || (allowLastRoute ? _getCompanyIdFromLastRoute() : null);
   if (companyId) {
     // ✅ Boot route flags (avoid double-render + iOS reload crash)
@@ -19419,7 +19430,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch(e) {}
 
     // Session check (refresh user UI / My Company button etc.)
-    try { checkUserAndOpenProfile(); } catch(e){ console.error("checkUserAndOpenProfile:", e); }
+    try {
+      if (!window.__BTON_RECOVERY_ACTIVE) checkUserAndOpenProfile();
+    } catch(e){ console.error("checkUserAndOpenProfile:", e); }
 
     try { if (typeof refreshHeroCTA === "function") setTimeout(refreshHeroCTA, 120); } catch(e) {}
     try { if (typeof refreshPricingSection === "function") setTimeout(refreshPricingSection, 160); } catch(e) {}
