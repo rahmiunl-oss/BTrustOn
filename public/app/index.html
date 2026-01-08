@@ -26945,6 +26945,70 @@ async function _notifyRequesterFallback(claimId, reason) {
   }
 }
 
+async function _notifyVerificationRequesterFallback(requestId, action, reason, companyId) {
+  try {
+    if (!requestId) return;
+
+    // 0) Optional RPC (if you created it). Ignore errors if missing/blocked.
+    try {
+      await supabaseClient.rpc("bton_admin_notify_verification", {
+        request_id: requestId,
+        action: action,
+        reason: (reason != null && String(reason).trim() !== "") ? String(reason).trim() : null
+      });
+    } catch(e) {}
+
+    // 1) Find who submitted this verification request
+    const { data: row, error } = await supabaseClient
+      .from("verification_requests")
+      .select("id, company_id, submitted_by")
+      .eq("id", requestId)
+      .maybeSingle();
+
+    if (error || !row || !row.submitted_by) return;
+
+    // 2) Company name (for message params)
+    let companyName = "";
+    try {
+      const cid = companyId || row.company_id;
+      if (cid) {
+        const { data: p } = await supabaseClient
+          .from("profiles")
+          .select("company_name")
+          .eq("id", cid)
+          .maybeSingle();
+        companyName = (p && p.company_name) ? String(p.company_name) : "";
+      }
+    } catch(e) {}
+
+    const clean = (s) => String(s || "").replace(/\]/g, "").replace(/\n/g, " ").trim();
+    const r = (reason != null && String(reason).trim() !== "") ? String(reason).trim() : null;
+
+    // Store as i18n marker so UI renders in user's language
+    const titleKey = (action === "approve") ? "ui_verification_approved_title" : "ui_verification_rejected_title";
+    let msgKey;
+    if (action === "approve") msgKey = "ui_verification_approved_msg_fmt";
+    else msgKey = r ? "ui_verification_rejected_msg_reason_fmt" : "ui_verification_rejected_msg_fmt";
+
+    const title = `[I18N:${titleKey}]`;
+    let msg = `[I18N:${msgKey}][company=${clean(companyName)}]`;
+    if (r) msg += `[reason=${clean(r)}]`;
+
+    await supabaseClient
+      .from("notifications")
+      .insert([{
+        recipient_user_id: row.submitted_by,
+        title: title,
+        message: msg,
+        is_read: false
+      }]);
+  } catch (e) {
+    // ignore (may be blocked by RLS)
+  }
+}
+
+
+
 async function _doRejectClaim(claimId, reason) {
   try {
     const ok = (typeof uiConfirm === "function")
@@ -27034,6 +27098,9 @@ async function processVerification(requestId, userId, action) {
       reviewed_at: nowDate().toISOString()
     };
 
+    let decisionNotes = null;
+
+
     if (action === 'approve') {
         const now = nowDate();
         const { endDate } = computeProTrialEnd(now, null);
@@ -27051,18 +27118,20 @@ async function processVerification(requestId, userId, action) {
             verification_rejected_at: null
         };
         requestUpdates.decision_notes = null;
+        decisionNotes = null;
 
     } else {
         const reason = prompt(
             (t("ui_reject_reason_prompt") || "Reject reason (optional):\nTell the company what to fix (e.g., wrong registration number, missing state, invalid link)."),
             (t("ui_verification_request_rejected") || "Your verification request was rejected. Please review your information and try again.")
         );
-        profileUpdates = {
+                decisionNotes = reason ? reason.trim() : null;
+profileUpdates = {
             verification_status: 'rejected',
-            verification_reject_reason: reason ? reason.trim() : null,
+            verification_reject_reason: decisionNotes,
             verification_rejected_at: nowDate().toISOString()
         };
-        requestUpdates.decision_notes = reason ? reason.trim() : null;
+        requestUpdates.decision_notes = decisionNotes;
     }
 
     // Update profile
@@ -27088,6 +27157,13 @@ async function processVerification(requestId, userId, action) {
       }
     } catch(e) {
       console.warn("verification_requests update skipped:", e);
+    }
+
+    // Notify requester (best-effort)
+    try {
+      await _notifyVerificationRequesterFallback(requestId, action, decisionNotes, userId);
+    } catch(e) {
+      console.warn("verification notify skipped:", e);
     }
 
     showToast("Success", `Company ${action}d successfully.`, "success");
