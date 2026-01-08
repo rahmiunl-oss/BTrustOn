@@ -16189,8 +16189,13 @@ try {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
               const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
   const cover = p.cover_url || coverPlaceholder;
+              // ✅ Robust id + date handling (mobile-safe)
+              const pidSafe = String(p.id || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+              const __tsPv = Date.parse((p && p.project_date) ? p.project_date : "");
+              const __locPv = (currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US"));
+              const dateLabel = isFinite(__tsPv) ? new Date(__tsPv).toLocaleDateString(__locPv,{year:'numeric',month:'short',day:'2-digit'}) : "—";
               // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
-              let cardClickAction = `onclick="openProjectViewer(${p.id})"`;
+              let cardClickAction = `onclick="openProjectViewer('${pidSafe}')"`;
               let cursorClass = "cursor-pointer";
               let galleryBadge = "";
 
@@ -16205,10 +16210,10 @@ try {
 
               const actionBtns = isMyProfile ? `
                 <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                    <button onclick="event.stopPropagation(); openProjectModal(${p.id})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
+                    <button onclick="event.stopPropagation(); openProjectModal('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
-                    <button onclick="event.stopPropagation(); deleteProject(${p.id})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
+                    <button onclick="event.stopPropagation(); deleteProject('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
                         <i class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
@@ -16244,7 +16249,7 @@ try {
                             </span>
                             <span class="inline-flex items-center gap-1.5">
                               <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
-                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
+                              <span>${dateLabel}</span>
                             </span>
                         </div>
                     </div>
@@ -18425,7 +18430,7 @@ function openProjectModal(projectId = null) {
     currentEditingProjectId = projectId;
     if(title) title.textContent = (t("ui_edit_project") || "Edit Project");
     
-    const proj = selectedCompany.projects.find(p => p.id === projectId);
+    const proj = (selectedCompany.projects || []).find(p => String(p.id) === String(projectId));
     if (proj) {
         document.getElementById("proj-title").value = proj.title || "";
         document.getElementById("proj-loc").value = proj.loc || "";
@@ -18486,7 +18491,7 @@ async function saveProject() {
     let currentProjects = [...(selectedCompany.projects || [])];
     let existingData = {};
     if (currentEditingProjectId) {
-        existingData = currentProjects.find(p => p.id === currentEditingProjectId) || {};
+        existingData = currentProjects.find(p => String(p.id) === String(currentEditingProjectId)) || {};
     }
 
     // --- KAPAK FOTOĞRAFI MANTIĞI ---
@@ -18534,7 +18539,7 @@ async function saveProject() {
     };
 
     if (currentEditingProjectId) {
-        const index = currentProjects.findIndex(p => p.id === currentEditingProjectId);
+        const index = currentProjects.findIndex(p => String(p.id) === String(currentEditingProjectId));
         if (index > -1) currentProjects[index] = projObj;
     } else {
         currentProjects.push(projObj);
@@ -18572,7 +18577,7 @@ async function saveProject() {
 function deleteProject(projectId) {
     openDeleteModal(_deleteConfirmMsg("project"), async () => {
         try {
-            let currentProjects = (selectedCompany.projects || []).filter(p => p.id !== projectId);
+            let currentProjects = (selectedCompany.projects || []).filter(p => String(p.id) !== String(projectId));
             
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("No session.");
@@ -28922,7 +28927,10 @@ function openProjectViewer(projectId){
 
   if(tEl) tEl.textContent = title;
   if(mEl) {
-    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'}) : "");
+    const __tsNice = Date.parse(p.project_date || "");
+    const nice = isFinite(__tsNice)
+      ? new Date(__tsNice).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'})
+      : "";
     if (loc && nice) mEl.textContent = `📍 ${loc}  •  📅 ${nice}`;
     else if (loc) mEl.textContent = `📍 ${loc}`;
     else if (nice) mEl.textContent = `📅 ${nice}`;
