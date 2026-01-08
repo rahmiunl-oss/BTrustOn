@@ -1250,5 +1250,7 @@
   "notifications_profile_viewed_body_guest": "Bir misafir profilinizi inceledi.",
   "post_image_rules": "Her oran • 1 görsel",
   "post_image_hint": "Opsiyonel. Akışta kompakt görünür; tıklayınca tam boy açılır (kırpma yok).",
-  "post_image_prepared": "Görsel eklendi. Akışta kompakt görünür; tıklayınca tam boy açılır."
+  "post_image_prepared": "Görsel eklendi. Akışta kompakt görünür; tıklayınca tam boy açılır.",
+   "ui_claim_welcome_body_fmt": "Tebrikler! {company} sahiplik talebiniz onaylandı. Bu şirketi {username} kullanıcı adı ve mevcut şifrenizle yönetebilirsiniz. Aşağıdan profil düzenlemeye geçebilirsiniz.",
+  "ui_your_account": "hesabınız"
 }
