@@ -16141,152 +16141,28 @@ try {
 // Keep current tab when re-opening the same company (e.g., viewing a certificate/doc)
   const sameCompany = window.__profileActiveCompanyId && String(window.__profileActiveCompanyId) === String(company.id);
   const desiredTab = (__tabRequested ? __tabRequested : ((sameCompany && window.__profileActiveTab) ? window.__profileActiveTab : "overview"));
+
+  // --- LAZY TAB RENDER (Mobile Safari crash fix) ---
+  // Reset lazy-render flags per company open BEFORE switching tabs (switchProfileTab triggers lazy render).
+  try {
+    window.__profileIsMine = !!isMyProfile;
+    window.__profileTabRendered = window.__profileTabRendered || {};
+    window.__profileTabRendered[String(company.id)] = {}; // reset per open
+
+    const __pl = document.getElementById("p-projects-list"); if (__pl) __pl.innerHTML = "";
+    const __cl = document.getElementById("p-certs-list");   if (__cl) __cl.innerHTML = "";
+    const __ag = document.getElementById("p-assets-grid");  if (__ag) __ag.innerHTML = "";
+    const __ae = document.getElementById("p-assets-empty"); if (__ae) __ae.classList.add("hidden");
+  } catch(e) {}
+
   switchProfileTab(desiredTab);
+
   window.__profileActiveCompanyId = company.id;
 
   
-  // --- PROJELER (TIKLANABİLİR KART + GİZLİ BUTONLAR) ---
-  const projList = document.getElementById("p-projects-list");
-  window.__projectsCache = (company.projects || []);
-  if (projList) {
-      projList.innerHTML = "";
+  // (Projects / Certificates / Assets render lazily when their tab is opened.)
 
-      // Sort render order by Project Date (fallback: created id)
-      const sortMode = (document.getElementById("proj-sort")?.value) || "newest";
-      const projectsArr = Array.isArray(company.projects) ? [...company.projects] : [];
-      const getDateTS = (p) => {
-        const ts = Date.parse((p && p.project_date) ? p.project_date : "");
-        if (Number.isFinite(ts)) return ts;
-        const fallback = Number(p && p.id) || 0;
-        return fallback;
-      };
-      if (sortMode === "oldest") projectsArr.sort((a,b)=> getDateTS(a) - getDateTS(b));
-      else if (sortMode === "az") projectsArr.sort((a,b)=> String(a?.title||"").toLowerCase().localeCompare(String(b?.title||"").toLowerCase()));
-      else projectsArr.sort((a,b)=> getDateTS(b) - getDateTS(a));
-
-
-      // Keep a sorted cache for the Project Viewer
-      window.__projectsCache = projectsArr;
-      if (!company.projects || company.projects.length === 0) {
-          const emptyTitle = (typeof t === "function") ? t("no_projects_found_title") : "No projects found";
-          const emptyDesc  = (typeof t === "function") ? t("no_projects_found_desc")  : "This company hasn’t listed any projects yet.";
-          projList.innerHTML = `
-            <div class="col-span-full">
-              <div class="rounded-2xl border border-dashed border-[rgba(15,23,42,.14)] bg-gradient-to-b from-white/70 to-slate-50/60 p-6">
-                <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-white border border-[rgba(15,23,42,.10)] shadow-sm flex items-center justify-center text-slate-500 shrink-0">
-                    <i class="fa-solid fa-diagram-project"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-[12px] font-extrabold text-slate-700 tracking-wide">${emptyTitle}</div>
-                    <div class="mt-1 text-[11px] text-slate-500 font-semibold">${emptyDesc}</div>
-                  </div>
-                </div>
-              </div>
-            </div>`;
-      } else {
-          projectsArr.forEach(p => {
-              const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
-              const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
-  const cover = p.cover_url || coverPlaceholder;
-              // ✅ Robust id + date handling (mobile-safe)
-              const pidSafe = String(p.id || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-              const __tsPv = Date.parse((p && p.project_date) ? p.project_date : "");
-              const __locPv = (currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US"));
-              const dateLabel = isFinite(__tsPv) ? new Date(__tsPv).toLocaleDateString(__locPv,{year:'numeric',month:'short',day:'2-digit'}) : "—";
-              // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
-              let cardClickAction = `onclick="openProjectViewer('${pidSafe}')"`;
-              let cursorClass = "cursor-pointer";
-              let galleryBadge = "";
-
-              if (hasGallery) {
-                  // Sol üstte küçük "foto sayısı" etiketi
-                  galleryBadge = `
-                    <div class="absolute top-3 left-3 bg-black/45 text-white text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
-                         <i class="fa-solid fa-camera"></i> ${p.gallery_urls.length}
-                    </div>
-                  `;
-              }
-
-              const actionBtns = isMyProfile ? `
-                <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                    <button onclick="event.stopPropagation(); openProjectModal('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
-                        <i class="fa-solid fa-pen text-xs"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); deleteProject('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
-                        <i class="fa-solid fa-trash text-xs"></i>
-                    </button>
-                </div>
-              ` : "";
-
-              const card = document.createElement("div");
-              try{ card.id = _btonEntityDomId('project', p.id); }catch(e){}
-              card.className = "group relative bg-white/80 backdrop-blur border border-[rgba(15,23,42,.08)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full";
-              
-              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
-              card.dataset.hay = hay;
-              card.dataset.pid = String(p.id || "");
-              card.dataset.title = p.title || "";
-              card.dataset.created = String(p.id || "");
-
-              card.dataset.pdate = String(p.project_date || "");
-
-              card.innerHTML = `
-                <div class="bton-accent-line z-30"></div>
-                <div class="relative h-48 overflow-hidden bg-gray-100 shrink-0 ${cursorClass} group/img" ${cardClickAction}>
-                    <img src="${cover}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700">
-                    
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-90"></div>
-                    
-                    ${galleryBadge}
-                    
-                    <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
-                        <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
-                        <div class="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300 font-medium">
-                            <span class="inline-flex items-center gap-1.5 min-w-0">
-                              <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
-                              <span class="truncate min-w-0">${p.loc || (t("ui_unknown_location") || "Unknown Location")}</span>
-                            </span>
-                            <span class="inline-flex items-center gap-1.5">
-                              <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
-                              <span>${dateLabel}</span>
-                            </span>
-                        </div>
-                    </div>
-                    
-                    ${actionBtns}
-                </div>
-
-                <div class="p-5 flex flex-col flex-1">
-                    <p class="text-sm text-gray-600 leading-relaxed whitespace-normal break-words line-clamp-4">
-                        ${p.desc || (t("ui_no_description") || "No description provided.")}
-                    </p>
-                </div>
-              `;
-              projList.appendChild(card);
-          });
-      }
-  }
-
-  
-  // Sertifikalar
-  renderCertificates(company);
-
-  // --- ASSETS (Cards + Viewer) ---
-  try {
-    // Reset UI controls each time we open a profile
-    const s = document.getElementById("asset-search");
-    const f = document.getElementById("asset-filter-status");
-    const so = document.getElementById("asset-sort");
-    if (s) s.value = "";
-    if (f) f.value = "all";
-    if (so) so.value = "newest";
-    window.__assetUI = { query: "", status: "all", sort: "newest" };
-  } catch(e) {}
-
-  renderAssetsCards(company, isMyProfile);
-
-  // 👇 GÜNCELLENMİŞ ANALİTİK YÖNETİMİ (GİZLİLİK AYARLI) 👇
+// 👇 GÜNCELLENMİŞ ANALİTİK YÖNETİMİ (GİZLİLİK AYARLI) 👇
   
   // 1. Ziyaret Sayacı: Herkes için çalışır (Arka planda kaydeder)
   trackProfileView(company.id);
@@ -17930,7 +17806,183 @@ function toggleModal(id) {
       toggleModal("modal-quote");
     }
 
-    function switchProfileTab(tab) {
+    
+    /* =========================================================
+       Mobile Safari crash fix (v1)
+       Problem: iOS Safari may crash ("A problem repeatedly occurred")
+       when we render/decode many large images while opening a profile,
+       even if those images are inside hidden tabs (Projects/Assets/etc).
+       Solution: render heavy tab content lazily on first tab open.
+    ========================================================= */
+
+    function btonIsMyProfileId(companyId){
+      try {
+        const myId = localStorage.getItem("BTrustOn_my_company_id");
+        return !!(myId && String(myId) === String(companyId));
+      } catch(e){ return false; }
+    }
+
+    function btonResetAssetsTabUI(){
+      try {
+        const s = document.getElementById("asset-search");
+        const f = document.getElementById("asset-filter-status");
+        const so = document.getElementById("asset-sort");
+        if (s) s.value = "";
+        if (f) f.value = "all";
+        if (so) so.value = "newest";
+        window.__assetUI = { query: "", status: "all", sort: "newest" };
+      } catch(e) {}
+    }
+
+    function renderProjectsCards(company, isMyProfile){
+      const projList = document.getElementById("p-projects-list");
+      window.__projectsCache = (company && company.projects) ? (company.projects || []) : [];
+      if (!projList) return;
+
+      projList.innerHTML = "";
+
+      // Sort render order by Project Date (fallback: created id)
+      const sortMode = (document.getElementById("proj-sort")?.value) || "newest";
+      const projectsArr = Array.isArray(company?.projects) ? [...company.projects] : [];
+      const getDateTS = (p) => {
+        const ts = Date.parse((p && p.project_date) ? p.project_date : "");
+        if (Number.isFinite(ts)) return ts;
+        const fallback = Number(p && p.id) || 0;
+        return fallback;
+      };
+      if (sortMode === "oldest") projectsArr.sort((a,b)=> getDateTS(a) - getDateTS(b));
+      else if (sortMode === "az") projectsArr.sort((a,b)=> String(a?.title||"").toLowerCase().localeCompare(String(b?.title||"").toLowerCase()));
+      else projectsArr.sort((a,b)=> getDateTS(b) - getDateTS(a));
+
+      // Keep a sorted cache for the Project Viewer
+      window.__projectsCache = projectsArr;
+
+      if (!projectsArr.length) {
+        const emptyTitle = (typeof t === "function") ? t("no_projects_found_title") : "No projects found";
+        const emptyDesc  = (typeof t === "function") ? t("no_projects_found_desc")  : "This company hasn’t listed any projects yet.";
+        projList.innerHTML = `
+          <div class="col-span-full">
+            <div class="rounded-2xl border border-dashed border-[rgba(15,23,42,.14)] bg-gradient-to-b from-white/70 to-slate-50/60 p-6">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white border border-[rgba(15,23,42,.10)] shadow-sm flex items-center justify-center text-slate-500 shrink-0">
+                  <i class="fa-solid fa-diagram-project"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[12px] font-extrabold text-slate-700 tracking-wide">${emptyTitle}</div>
+                  <div class="mt-1 text-[11px] text-slate-500 font-semibold">${emptyDesc}</div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      projectsArr.forEach(p => {
+        const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
+        const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
+        const cover = p.cover_url || coverPlaceholder;
+
+        // ✅ Robust id + date handling (mobile-safe)
+        const pidSafe = String(p.id || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+        const __tsPv = Date.parse((p && p.project_date) ? p.project_date : "");
+        const __locPv = (currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US"));
+        const dateLabel = isFinite(__tsPv) ? new Date(__tsPv).toLocaleDateString(__locPv,{year:'numeric',month:'short',day:'2-digit'}) : "—";
+
+        // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
+        let cardClickAction = `onclick="openProjectViewer('${pidSafe}')"`;
+        let cursorClass = "cursor-pointer";
+        let galleryBadge = "";
+
+        if (hasGallery) {
+          galleryBadge = `
+            <div class="absolute top-3 left-3 bg-black/45 text-white text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
+              <i class="fa-solid fa-camera"></i> ${p.gallery_urls.length}
+            </div>
+          `;
+        }
+
+        const actionBtns = isMyProfile ? `
+          <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            <button onclick="event.stopPropagation(); openProjectModal('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
+              <i class="fa-solid fa-pen text-xs"></i>
+            </button>
+            <button onclick="event.stopPropagation(); deleteProject('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
+              <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+          </div>
+        ` : "";
+
+        const card = document.createElement("div");
+        try{ card.id = _btonEntityDomId('project', p.id); }catch(e){}
+        card.className = "group relative bg-white/80 backdrop-blur border border-[rgba(15,23,42,.08)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full";
+
+        const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
+        card.dataset.hay = hay;
+        card.dataset.pid = String(p.id || "");
+        card.dataset.title = p.title || "";
+        card.dataset.created = String(p.id || "");
+        card.dataset.pdate = String(p.project_date || "");
+
+        card.innerHTML = `
+          <div class="bton-accent-line z-30"></div>
+          <div class="relative h-48 overflow-hidden bg-gray-100 shrink-0 ${cursorClass} group/img" ${cardClickAction}>
+            <img src="${cover}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700" loading="lazy" decoding="async">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-90"></div>
+            ${galleryBadge}
+            <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
+              <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
+              <div class="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300 font-medium">
+                <span class="inline-flex items-center gap-1.5 min-w-0">
+                  <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+                  <span class="truncate min-w-0">${p.loc || (t("ui_unknown_location") || "Unknown Location")}</span>
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                  <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
+                  <span>${dateLabel}</span>
+                </span>
+              </div>
+            </div>
+            ${actionBtns}
+          </div>
+
+          <div class="p-5 flex flex-col flex-1">
+            <p class="text-sm text-gray-600 leading-relaxed whitespace-normal break-words line-clamp-4">
+              ${p.desc || (t("ui_no_description") || "No description provided.")}
+            </p>
+          </div>
+        `;
+        projList.appendChild(card);
+      });
+    }
+
+    function btonEnsureProfileTabContent(tab, ctx){
+      try {
+        const company = (ctx && ctx.company) ? ctx.company : ((typeof selectedCompany !== "undefined") ? selectedCompany : null);
+        if (!company || !company.id) return;
+
+        const id = String(company.id);
+        window.__profileTabRendered = window.__profileTabRendered || {};
+        const st = window.__profileTabRendered[id] = window.__profileTabRendered[id] || {};
+
+        const isMyProfile = (ctx && typeof ctx.isMyProfile === "boolean")
+          ? ctx.isMyProfile
+          : (!!window.__profileIsMine || btonIsMyProfileId(company.id));
+
+        if (tab === "projects" && !st.projects) {
+          renderProjectsCards(company, isMyProfile);
+          st.projects = true;
+        } else if (tab === "certs" && !st.certs) {
+          try { renderCertificates(company); } catch(e) {}
+          st.certs = true;
+        } else if (tab === "assets" && !st.assets) {
+          btonResetAssetsTabUI();
+          try { renderAssetsCards(company, isMyProfile); } catch(e) {}
+          st.assets = true;
+        }
+      } catch(e) {}
+    }
+
+function switchProfileTab(tab) {
       const tabs = ["overview", "projects", "certs", "assets"];
       tabs.forEach((tName) => {
         const btn = document.getElementById(`tab-${tName}`);
@@ -17955,6 +18007,8 @@ function toggleModal(id) {
           content.classList.add("hidden-view");
         }
       });
+  try { btonEnsureProfileTabContent(tab); } catch(e) {}
+
     
 
       try { window.__profileActiveTab = tab; } catch(e) {}
