@@ -30128,3 +30128,201 @@ document.addEventListener('keydown', function(e){
 </div>
 
 </body></html>
+<!-- =========================================================
+ BTrustOn – Mobile Profile Crash Guard (v2)
+ - Prevents iOS/Safari "Something went wrong" + infinite skeleton
+ - Fixes certificates field when stored as string/object (not array)
+ - Ensures skeleton always clears and shows Retry / Home actions
+========================================================= -->
+<script>
+(function(){
+  function _esc(s){
+    return String(s||"").replace(/[&<>"']/g, function(ch){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);
+    });
+  }
+  function btonAsArray(v){
+    if (Array.isArray(v)) return v;
+    if (v == null) return [];
+    if (typeof v === "string"){
+      const s = v.trim();
+      if (!s) return [];
+      if ((s[0] === "[" && s[s.length-1] === "]") || (s[0] === "{" && s[s.length-1] === "}")){
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) return parsed;
+          if (parsed && typeof parsed === "object") return [parsed];
+        } catch(e){}
+      }
+      return s.split(/[;\n,]+/).map(x=>x.trim()).filter(Boolean).map(name=>({ id:-1, name, issuer:"", expiry_date:null, file_url:null }));
+    }
+    if (typeof v === "object") return [v];
+    return [];
+  }
+
+  function _goHome(){
+    try { localStorage.removeItem("BTrustOn_last_route"); } catch(e){}
+    try { if (history && history.replaceState) history.replaceState(null, "", window.location.pathname + window.location.search); } catch(e){}
+    try { window.location.hash = ""; } catch(e){}
+    try { if (typeof showMainView === "function") showMainView(); } catch(e){}
+    // fallback: show dashboard view directly
+    try {
+      const vd = document.getElementById("view-dashboard");
+      const vp = document.getElementById("view-profile");
+      if (vd) vd.classList.remove("hidden-view");
+      if (vp) vp.classList.add("hidden-view");
+    } catch(e){}
+  }
+
+  function showProfileLoadError(msg, companyId){
+    try { if (typeof hideProfileSkeleton === "function") hideProfileSkeleton(); } catch(e){}
+    // break reopen loop
+    try { localStorage.removeItem("BTrustOn_last_route"); } catch(e){}
+
+    const vp = document.getElementById("view-profile") || document.body;
+    let box = document.getElementById("profile-load-error");
+    if (!box){
+      box = document.createElement("div");
+      box.id = "profile-load-error";
+      box.style.cssText = "position:relative; padding:16px; margin:12px; border-radius:16px; border:1px solid rgba(148,163,184,.35); background:rgba(255,255,255,.92);";
+      try {
+        const isDark = document.documentElement && document.documentElement.getAttribute("data-theme")==="dark";
+        if (isDark) box.style.cssText += "background:rgba(2,6,23,.72); border-color: rgba(51,65,85,.6);";
+      } catch(e){}
+      vp.prepend(box);
+    }
+    const isTR = (typeof currentLang !== "undefined" && currentLang === "tr");
+    const title = isTR ? "Profil yüklenemedi" : "Profile didn’t load";
+    const hint  = isTR ? "Tekrar deneyin. Devam ederse bu şirket kaydında veri formatı hatası olabilir." : "Tap retry. If it keeps happening, this company record may have a data format issue.";
+    const detail = (msg ? ("<div style='margin-top:8px; font-size:12px; opacity:.8; word-break:break-word'>" + _esc(msg) + "</div>") : "");
+
+    box.innerHTML = ""
+      + "<div style='display:flex; gap:12px; align-items:flex-start; justify-content:space-between;'>"
+      + "  <div style='min-width:0;'>"
+      + "    <div style='font-weight:700; font-size:14px;'>" + _esc(title) + "</div>"
+      + "    <div style='margin-top:6px; font-size:13px; opacity:.9;'>" + _esc(hint) + "</div>"
+      + detail
+      + "  </div>"
+      + "  <div style='display:flex; gap:8px; flex:0 0 auto;'>"
+      + "    <button id='btn-retry-profile' style='padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.45); background:rgba(255,255,255,.9); font-weight:700; font-size:13px;'>"
+      + (isTR ? "Tekrar dene" : "Retry")
+      + "    </button>"
+      + "    <button id='btn-home-profile' style='padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.45); background:rgba(255,255,255,.9); font-weight:700; font-size:13px;'>"
+      + (isTR ? "Ana sayfa" : "Home")
+      + "    </button>"
+      + "  </div>"
+      + "</div>";
+
+    try {
+      const isDark = document.documentElement && document.documentElement.getAttribute("data-theme")==="dark";
+      if (isDark){
+        const btn1 = document.getElementById("btn-retry-profile");
+        const btn2 = document.getElementById("btn-home-profile");
+        if (btn1) btn1.style.cssText += "background:rgba(15,23,42,.9); border-color:rgba(51,65,85,.75); color:rgba(226,232,240,.92);";
+        if (btn2) btn2.style.cssText += "background:rgba(15,23,42,.9); border-color:rgba(51,65,85,.75); color:rgba(226,232,240,.92);";
+      }
+    } catch(e){}
+
+    const btn = document.getElementById("btn-retry-profile");
+    if (btn){
+      btn.onclick = function(){
+        try { box.remove(); } catch(e) { try { box.innerHTML=""; } catch(_){} }
+        try {
+          if (companyId) {
+            const tab = (window.__profileActiveTab || "overview");
+            openProfile(companyId, { tab, preserveTab: true });
+          } else {
+            window.location.reload();
+          }
+        } catch(e){}
+      };
+    }
+    const btnHome = document.getElementById("btn-home-profile");
+    if (btnHome){
+      btnHome.onclick = function(){
+        try { box.remove(); } catch(e) {}
+        _goHome();
+      };
+    }
+  }
+
+  // Patch renderCertificates: accept string/object JSON safely
+  if (typeof window.renderCertificates === "function" && !window.__btonPatchedRenderCertificates){
+    const _orig = window.renderCertificates;
+    window.renderCertificates = function(company){
+      try {
+        if (company && !Array.isArray(company.certificates)) {
+          company.certificates = btonAsArray(company.certificates);
+        }
+      } catch(e){}
+      return _orig(company);
+    };
+    window.__btonPatchedRenderCertificates = true;
+  }
+
+  // Wrap openProfile: always clear skeleton + show retry on failure
+  if (typeof window.openProfile === "function" && !window.__btonPatchedOpenProfile){
+    const _rawOpen = window.openProfile;
+    window.__btonProfileLoadSeq = 0;
+
+    window.openProfile = async function(companyId, opts){
+      const seq = ++window.__btonProfileLoadSeq;
+      const cid = (companyId != null) ? String(companyId) : "";
+
+      const timer = setTimeout(function(){
+        try{
+          if (seq === window.__btonProfileLoadSeq){
+            const sk = document.getElementById("profile-skeleton");
+            const visible = !!(sk && !sk.classList.contains("hidden"));
+            if (visible) showProfileLoadError("Timeout", cid);
+          }
+        }catch(e){}
+      }, 12000);
+
+      try {
+        const res = await _rawOpen(companyId, opts || {});
+        return res;
+      } catch(e){
+        try { showProfileLoadError(e && (e.message || e.details) ? (e.message || e.details) : String(e||"Error"), cid); } catch(_) {}
+        throw e;
+      } finally {
+        clearTimeout(timer);
+        try{
+          if (seq === window.__btonProfileLoadSeq){
+            if (typeof hideProfileSkeleton === "function") hideProfileSkeleton();
+          }
+        }catch(e){}
+      }
+    };
+
+    window.__btonPatchedOpenProfile = true;
+  }
+
+  // If an error occurs while skeleton is visible, show retry UI
+  if (!window.__btonProfileGlobalErrorHook){
+    window.__btonProfileGlobalErrorHook = true;
+
+    window.addEventListener("unhandledrejection", function(ev){
+      try{
+        const sk = document.getElementById("profile-skeleton");
+        const visible = !!(sk && !sk.classList.contains("hidden"));
+        if (visible){
+          const cid = (window.__BTON_BOOT_COMPANY_ID || window.__profileActiveCompanyId || "");
+          showProfileLoadError(ev?.reason?.message || "Unhandled rejection", cid ? String(cid) : "");
+        }
+      }catch(e){}
+    });
+
+    window.addEventListener("error", function(ev){
+      try{
+        const sk = document.getElementById("profile-skeleton");
+        const visible = !!(sk && !sk.classList.contains("hidden"));
+        if (visible){
+          const cid = (window.__BTON_BOOT_COMPANY_ID || window.__profileActiveCompanyId || "");
+          showProfileLoadError(ev?.error?.message || "Script error", cid ? String(cid) : "");
+        }
+      }catch(e){}
+    });
+  }
+})();
+</script>
