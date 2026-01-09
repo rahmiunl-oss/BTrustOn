@@ -50,6 +50,39 @@ try {
     window.__BTON_RECOVERY_ACTIVE = /type=recovery/i.test(__bton_raw);
   }
 } catch(e) {}
+
+/* BTrustOn – Hard recovery: /app?recover=1 (or ?fresh=1) clears last route + home state so you can always return Home */
+(function(){
+  try{
+    var sp = new URLSearchParams(window.location.search || "");
+    if (sp.get("recover") === "1" || sp.get("fresh") === "1"){
+      try{ localStorage.removeItem("BTrustOn_last_route"); }catch(_){ }
+      try{ localStorage.removeItem("BTrustOn_home_state"); }catch(_){ }
+      try{ sessionStorage.clear(); }catch(_){ }
+      try{ window.location.hash = ""; }catch(_){ }
+      // remove the flags from URL to avoid repeating
+      try{
+        var u = new URL(window.location.href);
+        u.searchParams.delete("recover");
+        u.searchParams.delete("fresh");
+        history.replaceState(history.state, "", u.pathname + (u.search || "") + (u.hash || ""));
+      }catch(_){ }
+    }
+  }catch(e){}
+})();
+
+/* BTrustOn – Mobile debug console: /app?debug=1 opens an on-screen console (works on iPhone, no Mac needed) */
+(function(){
+  try{
+    var sp = new URLSearchParams(window.location.search || "");
+    if (sp.get("debug") === "1"){
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/eruda";
+      s.onload = function(){ try{ eruda.init(); }catch(_){} };
+      document.head.appendChild(s);
+    }
+  }catch(e){}
+})();
 </script>
 <script type="application/ld+json">
 {
@@ -1377,9 +1410,93 @@ html[data-theme="dark"] .bton-react-pill.is-on .bton-react-ico{
   border-right: 0 !important;
   padding-left: calc(16px + env(safe-area-inset-left)) !important;
   padding-right: calc(16px + env(safe-area-inset-right)) !important;
+  /* Reduce heavy GPU effects on iOS */
+  box-shadow: none !important;
+}
+
+/* Mobile stability: reduce blur layers in updates area */
+#home-updates-filter,
+#btn-open-post-update,
+#home-updates .bton-react-pill{
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Mobile: remove edge fade layers (large gradients can be expensive on iOS) */
+.bton-updates-wrap::before,
+.bton-updates-wrap::after{
+  display: none !important;
 }
 }
 
+
+
+
+/* =========================================================
+   Updates Feed modal (View all updates)
+========================================================= */
+#modal-updates-feed .bton-upd-card{
+  min-width: 100% !important;
+  max-width: 100% !important;
+}
+#modal-updates-feed .bton-upd-media-slot{
+  height: 180px !important;
+}
+#modal-updates-feed .bton-upd-note{
+  height: auto !important;
+}
+#modal-updates-feed #updates-feed-scroll{
+  overscroll-behavior: contain;
+}
+
+html[data-theme="dark"] #modal-updates-feed .bton-uf-panel{
+  background: rgba(2,6,23,.92) !important;
+  border-color: rgba(148,163,184,.18) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-uf-head{
+  background: rgba(2,6,23,.72) !important;
+  border-color: rgba(148,163,184,.14) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-uf-filter{
+  background: rgba(2,6,23,.55) !important;
+  border-color: rgba(148,163,184,.18) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-uf-filter button{
+  color: rgba(226,232,240,.90) !important;
+}
+html[data-theme="dark"] #modal-updates-feed #updates-feed-count{
+  color: rgba(148,163,184,.88) !important;
+}
+
+
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card{
+  background: rgba(15,23,42,.55) !important;
+  border-color: rgba(148,163,184,.18) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .text-BTrustOn-primary{
+  color: rgba(241,245,249,.92) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .text-gray-500,
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .text-slate-500{
+  color: rgba(148,163,184,.92) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bton-upd-note{
+  background: rgba(2,6,23,.55) !important;
+  border-color: rgba(148,163,184,.18) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bton-upd-note > div{
+  color: rgba(226,232,240,.90) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bton-upd-chip{
+  background: rgba(2,6,23,.35) !important;
+  border-color: rgba(148,163,184,.18) !important;
+  color: rgba(226,232,240,.88) !important;
+}
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bg-white\/70,
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bg-white\/85,
+html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bg-white\/80{
+  background-color: rgba(2,6,23,.35) !important;
+}
 
 /* =========================================================
    Followed Update → Company posts panel (Last 7 days)
@@ -5487,6 +5604,10 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <span data-i18n="updates_filter_followed">Only followed</span>
 </button>
 </div>
+<button class="md:hidden inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700 hover:text-slate-700 underline underline-offset-4 whitespace-nowrap" id="btn-open-updates-feed" type="button" onclick="openUpdatesFeedModal()">
+  <i class="fa-regular fa-rectangle-list text-[11px]"></i>
+  <span data-i18n="updates_view_all">View all</span>
+</button>
 <span class="bton-hide-mobile text-[11px] text-gray-400 hidden md:inline" id="home-updates-active-wrap"><span data-i18n="ui_53fe08">•</span><span data-i18n="updates_active_label">Most active:</span> <span class="font-extrabold text-gray-500" id="home-updates-active-count">0</span></span>
 <span class="bton-hide-mobile inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold hidden" id="home-updates-dot">
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span data-i18n="ui_live_f35d25"></span></span>
@@ -7520,6 +7641,65 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 </div>
 </div>
 </div>
+
+<div class="modal opacity-0 pointer-events-none fixed inset-0 z-[115000] flex items-center justify-center" id="modal-updates-feed">
+  <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onclick="closeUpdatesFeedModal()"></div>
+
+  <div class="bton-uf-panel relative w-full h-full md:h-[92vh] md:max-w-3xl md:mx-auto bg-white/95 backdrop-blur-xl shadow-2xl border border-white/60 md:rounded-3xl overflow-hidden flex flex-col">
+    <div class="bton-uf-head sticky top-0 z-10 bg-white/85 backdrop-blur border-b border-slate-100 px-4 py-3 flex items-center justify-between gap-3" style="padding-top:calc(12px + env(safe-area-inset-top));">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <i class="fa-solid fa-bolt text-cyan-500 text-sm"></i>
+          <div class="text-sm font-extrabold text-BTrustOn-primary truncate" data-i18n="updates_title">Company Updates</div>
+          <span class="text-[10px] font-bold text-slate-400 whitespace-nowrap" id="updates-feed-count"></span>
+        </div>
+        <div class="mt-0.5 text-[11px] text-slate-500" data-i18n="updates_feed_sub">Last 7 days • newest first</div>
+      </div>
+
+      <button class="shrink-0 h-9 w-9 rounded-xl border border-slate-200/70 bg-white/80 text-slate-600 hover:text-red-600 hover:border-rose-200 transition" onclick="closeUpdatesFeedModal()" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="px-4 pt-3 pb-2 flex items-center justify-between gap-2">
+      <div class="bton-uf-filter inline-flex items-center rounded-full border border-slate-200/70 bg-white/80 backdrop-blur px-1 py-1 shadow-sm" id="updates-feed-filter">
+        <button class="px-3 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-feed-filter-all" type="button" onclick="setUpdatesFeedFilter('all')">
+          <span data-i18n="updates_filter_all">All updates</span>
+        </button>
+        <button class="px-3 py-1 rounded-full text-[11px] font-extrabold transition" id="upd-feed-filter-followed" type="button" onclick="setUpdatesFeedFilter('followed')">
+          <span data-i18n="updates_filter_followed">Only followed</span>
+        </button>
+      </div>
+
+      <button class="shrink-0 inline-flex items-center gap-2 h-9 px-3 rounded-xl border border-slate-200/70 bg-white/80 text-[11px] font-extrabold text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition" type="button" onclick="refreshUpdatesFeed()">
+        <i class="fa-solid fa-rotate-right text-[11px]"></i>
+        <span data-i18n="refresh">Refresh</span>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-4 pb-6" id="updates-feed-scroll" style="padding-bottom:calc(24px + env(safe-area-inset-bottom));">
+      <div class="space-y-3" id="updates-feed-list"></div>
+
+      <div class="hidden mt-4" id="updates-feed-empty">
+        <div class="bton-empty-card bton-empty-card--soft">
+          <div class="bton-empty-ic"><i class="fa-regular fa-newspaper"></i></div>
+          <div class="min-w-0">
+            <div class="bton-empty-title" data-i18n="updates_empty_title">No company updates in 7 days</div>
+            <div class="bton-empty-desc"><span data-i18n="updates_empty">No company updates posted in the last 7 days.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center justify-center" id="updates-feed-more-wrap">
+        <button class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200/70 bg-white/80 hover:bg-slate-50 text-[11px] font-extrabold text-slate-700 transition" id="btn-updates-feed-more" type="button" onclick="loadUpdatesFeedMore()">
+          <i class="fa-solid fa-chevron-down text-[10px]"></i>
+          <span data-i18n="updates_load_more">Load more</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-[100]" id="modal-about">
 <div class="modal-overlay absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" onclick="toggleModal('modal-about')"></div>
 <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[90vh] animate-fade-in flex flex-col border border-white/60">
@@ -9063,6 +9243,7 @@ let homeUpdatesData = [];
 let __homeUpdateCompanyMeta = new Map();
 let homeUpdatesSub = null;
 let __homeUpdatesPause = false;
+let __homeUpdatesInView = true;
 let __homeUpdatesAutoPos = 0; // float px position for smooth auto-flow
 let __homeUpdatesLoopWidth = 0;
 let __homeUpdatesBaseHTML = "";
@@ -9730,7 +9911,7 @@ function startHomeUpdatesAutoScroll() {
   const tick = (ts) => {
     __homeUpdatesRAF = requestAnimationFrame(tick);
 
-    const canAuto = !document.hidden && !__homeUpdatesPause && (Date.now() >= (__homeUpdatesHoldUntil || 0));
+    const canAuto = !document.hidden && !__homeUpdatesPause && (Date.now() >= (__homeUpdatesHoldUntil || 0)) && (__homeUpdatesInView !== false);
     setAutoMode(canAuto);
     if (!canAuto) return;
 
@@ -9764,6 +9945,31 @@ function startHomeUpdatesAutoScroll() {
   __homeUpdatesRAF = requestAnimationFrame(tick);
 }
 
+
+function setupHomeUpdatesVisibilityPause() {
+  const rail = document.getElementById("home-updates");
+  if (!rail) return;
+  if (rail.__btonVisBound) return;
+  rail.__btonVisBound = true;
+
+  try {
+    const io = new IntersectionObserver((entries) => {
+      const e = (entries && entries[0]) ? entries[0] : null;
+      const visible = !!(e && e.isIntersecting && (e.intersectionRatio || 0) > 0.04);
+      __homeUpdatesInView = visible;
+
+      // If not visible, prevent auto-flow from fighting scroll / view transitions
+      if (!visible) {
+        __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil || 0, Date.now() + 1400);
+      }
+    }, { root: null, threshold: [0, 0.05, 0.15, 0.35] });
+
+    io.observe(rail);
+    rail.__btonVisIO = io;
+  } catch (e) {
+    __homeUpdatesInView = true; // fallback
+  }
+}
 
 function setupHomeUpdatesNav() {
   const rail = document.getElementById("home-updates");
@@ -9832,15 +10038,36 @@ function renderHomeUpdates(list) {
   const empty = document.getElementById("home-updates-empty");
   if (!wrap || !empty) return;
 
-  const updates = Array.isArray(list) ? list : [];
-  if (updates.length === 0) {
+  const raw = Array.isArray(list) ? list : [];
+  const total = raw.length;
+
+  // ✅ Mobile performance + readability: keep the homepage rail as a "vitrine" (cap items),
+  // and use "View all" for the full list. This avoids huge DOM duplication on iOS Safari.
+  const isMobile = (() => {
+    try { return !!(window.matchMedia && window.matchMedia("(max-width: 767px)").matches); } catch(e) { return (window.innerWidth || 0) < 768; }
+  })();
+  const cap = isMobile ? 10 : 18;
+  const updates = raw.slice(0, cap);
+  if (total === 0) {
     wrap.innerHTML = "";
     empty.classList.remove("hidden");
     _updateHomeUpdatesActiveCount([]);
+  try { const vb = document.getElementById("btn-open-updates-feed"); if (vb) vb.classList.add("hidden"); } catch(e) {}
+
     return;
   }
 
   empty.classList.add("hidden");
+
+  // Show "View all" on mobile only when there are more updates than the rail cap
+  try {
+    const vb = document.getElementById("btn-open-updates-feed");
+    if (vb) {
+      if (total > cap) vb.classList.remove("hidden");
+      else vb.classList.add("hidden");
+    }
+  } catch(e) {}
+
 
     // Build base HTML once
   __homeUpdatesBaseHTML = updates.map(u => {
@@ -9999,6 +10226,27 @@ function renderHomeUpdates(list) {
   // Render base once
   wrap.innerHTML = __homeUpdatesBaseHTML;
 
+  // 📱 Mobile stability: avoid duplicating cards + avoid auto-scroll RAF.
+  // iOS Safari can crash ("page had a problem repeatedly") when we clone a heavy card shelf many times.
+  const __isMobileUpdates = (() => {
+    try { return window.matchMedia && window.matchMedia("(max-width: 640px)").matches; } catch(e) {}
+    try { return (window.innerWidth || 0) <= 640; } catch(e) {}
+    return false;
+  })();
+
+  if (__isMobileUpdates) {
+    try { __homeUpdatesLoopHTML = ""; __homeUpdatesLoopWidth = 0; } catch(e) {}
+    try { if (__homeUpdatesRAF) cancelAnimationFrame(__homeUpdatesRAF); } catch(e) {}
+    __homeUpdatesRAF = null;
+    __homeUpdatesHoldUntil = 0;
+    __homeUpdatesIgnoreScrollUntil = Date.now() + 900;
+    try { wrap.scrollLeft = 0; __homeUpdatesAutoPos = 0; } catch(e) {}
+    // Apply translations after DOM is built
+    try { applyTranslationsWithin(wrap); } catch(e) {}
+    try { const dot = document.getElementById("home-updates-dot"); if (dot) applyTranslationsWithin(dot); } catch(e) {}
+    return;
+  }
+
   // ✅ Continuous flow + arrow nav: build a "cycle" long enough to overflow, then duplicate once for a seamless loop
   requestAnimationFrame(() => {
     const cw = wrap.clientWidth || 0;
@@ -10033,6 +10281,412 @@ function renderHomeUpdates(list) {
 
     startHomeUpdatesAutoScroll();
   });
+}
+
+
+
+/* =========================================================
+   Updates Feed modal (View all updates)
+   - Homepage rail = "vitrine" (capped on mobile)
+   - Modal = full list + pagination
+========================================================= */
+
+let __updatesFeedOpen = false;
+let __updatesFeedLoading = false;
+let __updatesFeedDone = false;
+let __updatesFeedCursor = null;
+let __updatesFeedItems = [];
+const __updatesFeedPageSize = 15;
+
+function _isModalOpen(id){
+  const m = document.getElementById(id);
+  if (!m) return false;
+  return !(m.classList.contains("opacity-0") || m.classList.contains("pointer-events-none"));
+}
+
+function openUpdatesFeedModal(){
+  try{
+    const id = "modal-updates-feed";
+    const m = document.getElementById(id);
+    if (!m) return;
+
+    if (!_isModalOpen(id)) toggleModal(id);
+    __updatesFeedOpen = true;
+
+    // Pause homepage auto-flow while feed is open
+    try { __homeUpdatesPause = true; } catch(e) {}
+
+    // Bind infinite scroll once
+    try {
+      const sc = document.getElementById("updates-feed-scroll");
+      if (sc && !sc.__btonBound){
+        sc.__btonBound = true;
+        sc.addEventListener("scroll", function(){
+          try{
+            if (__updatesFeedLoading || __updatesFeedDone) return;
+            if ((sc.scrollTop + sc.clientHeight) >= (sc.scrollHeight - 900)){
+              loadUpdatesFeedMore();
+            }
+          } catch(e){}
+        }, { passive:true });
+      }
+    } catch(e) {}
+
+    // Sync filter UI with homepage state
+    try { _setUpdatesFeedFilterUI(homeUpdatesFilter || "all"); } catch(e) {}
+
+    // Load list
+    refreshUpdatesFeed();
+  } catch(e){
+    console.warn("openUpdatesFeedModal:", e);
+  }
+}
+
+function closeUpdatesFeedModal(){
+  try{
+    const id = "modal-updates-feed";
+    if (_isModalOpen(id)) toggleModal(id);
+  } catch(e) {}
+
+  __updatesFeedOpen = false;
+
+  // Resume homepage flow gently
+  try{
+    __homeUpdatesPause = false;
+    __homeUpdatesHoldUntil = Math.max(__homeUpdatesHoldUntil || 0, Date.now() + 900);
+  } catch(e) {}
+}
+
+function _setUpdatesFeedFilterUI(mode){
+  const allBtn = document.getElementById("upd-feed-filter-all");
+  const folBtn = document.getElementById("upd-feed-filter-followed");
+  const m = String(mode || "all").toLowerCase();
+
+  const setOn = (btn, on) => {
+    if (!btn) return;
+    btn.classList.toggle("bg-BTrustOn-primary", !!on);
+    btn.classList.toggle("text-white", !!on);
+    btn.classList.toggle("shadow-sm", !!on);
+    btn.classList.toggle("text-gray-600", !on);
+  };
+
+  setOn(allBtn, m !== "followed");
+  setOn(folBtn, m === "followed");
+}
+
+function setUpdatesFeedFilter(mode){
+  const next = (String(mode || "all").toLowerCase() === "followed") ? "followed" : "all";
+
+  // Keep homepage + modal in sync
+  try { setHomeUpdatesFilter(next); } catch(e) { homeUpdatesFilter = next; }
+  try { _setUpdatesFeedFilterUI(homeUpdatesFilter); } catch(e) {}
+
+  refreshUpdatesFeed();
+}
+
+function refreshUpdatesFeed(){
+  __updatesFeedDone = false;
+  __updatesFeedCursor = null;
+  __updatesFeedItems = [];
+
+  const list = document.getElementById("updates-feed-list");
+  const empty = document.getElementById("updates-feed-empty");
+  const moreBtn = document.getElementById("btn-updates-feed-more");
+  const countEl = document.getElementById("updates-feed-count");
+  if (list) list.innerHTML = "";
+  if (empty) empty.classList.add("hidden");
+  if (moreBtn) moreBtn.classList.add("hidden");
+  if (countEl) countEl.textContent = "";
+
+  renderUpdatesFeedSkeleton(6);
+  loadUpdatesFeedMore(true);
+}
+
+function renderUpdatesFeedSkeleton(count = 6){
+  const list = document.getElementById("updates-feed-list");
+  if (!list) return;
+
+  const cards = Array.from({ length: count }).map(() => `
+    <div class="rounded-2xl border border-slate-200/70 bg-white/70 backdrop-blur-xl shadow-sm p-4 overflow-hidden">
+      <div class="flex items-start gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-slate-200/60 animate-pulse shrink-0"></div>
+        <div class="flex-1 min-w-0">
+          <div class="h-3 w-44 bg-slate-200/60 rounded-full animate-pulse"></div>
+          <div class="mt-2 h-2 w-60 bg-slate-200/50 rounded-full animate-pulse"></div>
+          <div class="mt-4 h-28 w-full bg-slate-200/40 rounded-2xl animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  list.innerHTML = cards;
+}
+
+async function loadUpdatesFeedMore(isFresh = false){
+  if (__updatesFeedLoading || __updatesFeedDone) return;
+  __updatesFeedLoading = true;
+
+  const listEl = document.getElementById("updates-feed-list");
+  const emptyEl = document.getElementById("updates-feed-empty");
+  const moreBtn = document.getElementById("btn-updates-feed-more");
+  if (moreBtn) moreBtn.classList.add("hidden");
+
+  try{
+    const now = new Date();
+    const since = new Date(now.getTime() - 7*24*60*60*1000);
+
+    // Auth (followed filter)
+    const user = await _getAuthUserSafe();
+    __authUserId = user?.id || null;
+    if (__authUserId) await _ensureHomeFollowSet(__authUserId);
+
+    let followedIds = null;
+
+    if (homeUpdatesFilter === "followed"){
+      if (!__authUserId){
+        showToast(_i18n("updates_signin_to_filter","Sign in to see only followed updates."), "info");
+        homeUpdatesFilter = "all";
+        try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
+        try { _setUpdatesFeedFilterUI(homeUpdatesFilter); } catch(e) {}
+      } else {
+        followedIds = Array.from(homeFollowSet || []);
+        if (!followedIds || followedIds.length === 0){
+          __updatesFeedDone = true;
+          if (listEl) listEl.innerHTML = "";
+          if (emptyEl) emptyEl.classList.remove("hidden");
+          return;
+        }
+      }
+    }
+
+    let q = supabaseClient
+      .from("company_updates")
+      .select("*")
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(__updatesFeedPageSize);
+
+    if (homeUpdatesFilter === "followed" && followedIds && followedIds.length){
+      q = q.in("company_id", followedIds);
+    }
+    if (__updatesFeedCursor){
+      q = q.lt("created_at", __updatesFeedCursor);
+    }
+
+    const { data, error } = await q;
+    if (error){
+      console.warn("Updates feed fetch error:", error);
+      if (isFresh && listEl) listEl.innerHTML = "";
+      if (emptyEl) emptyEl.classList.remove("hidden");
+      return;
+    }
+
+    const rows = Array.isArray(data) ? data : [];
+
+    if (isFresh){
+      __updatesFeedItems = [];
+      if (listEl) listEl.innerHTML = "";
+    }
+
+    if (rows.length === 0){
+      __updatesFeedDone = true;
+      if ((__updatesFeedItems || []).length === 0){
+        if (emptyEl) emptyEl.classList.remove("hidden");
+      }
+      return;
+    }
+
+    if (emptyEl) emptyEl.classList.add("hidden");
+
+    // Hydrate meta + reactions so logos + counts appear
+    try { await _hydrateHomeUpdateCompanyMeta(rows); } catch(e) {}
+    try { await btonHydrateUpdateReactions(rows); } catch(e) {}
+
+    __updatesFeedItems = [...(__updatesFeedItems || []), ...rows];
+    __updatesFeedCursor = rows[rows.length - 1]?.created_at || __updatesFeedCursor;
+
+    renderUpdatesFeedItems(rows, { append: true });
+
+    // Count hint (loaded so far)
+    try{
+      const c = document.getElementById("updates-feed-count");
+      if (c){
+        const n = (__updatesFeedItems || []).length;
+        c.textContent = n ? `(${n})` : "";
+      }
+    } catch(e) {}
+
+    // "Load more" if likely more
+    if (moreBtn){
+      if (rows.length >= __updatesFeedPageSize) moreBtn.classList.remove("hidden");
+      else moreBtn.classList.add("hidden");
+    }
+  } finally {
+    __updatesFeedLoading = false;
+  }
+}
+
+function renderUpdatesFeedItems(rows, opts = { append: true }){
+  const listEl = document.getElementById("updates-feed-list");
+  if (!listEl) return;
+
+  const html = (Array.isArray(rows) ? rows : []).map(u => {
+    const meta = _resolveUpdateCompanyMeta(u);
+    const companyName = _safeText(meta.name || (u.company_name || u.company_title || "Company"));
+    const logo = (meta.logo || "");
+
+    const area = u.area || u.entity_area || "projects";
+    const areaLower = String(area || "").toLowerCase();
+
+    const entityTitle = (areaLower === "general")
+      ? _i18n("post_area_general", (currentLang === "tr" ? "Genel" : "General"))
+      : _safeText(u.entity_title || u.item_title || "—");
+
+    const templateCode = u.template_code || u.update_code || "";
+    const label = _templateLabel(area, templateCode) || _safeText(u.template_label || "");
+    const lblText = _safeText(label || (currentLang === "tr" ? "Bilgi" : (currentLang === "es" ? "Información" : "Info")));
+    const railText = lblText;
+
+    const imgRaw = String(u.image_url || u.imageUrl || u.media_url || u.photo_url || u.image || "").trim();
+    const hasImg = imgRaw.length > 0;
+    const imgUrl = escapeHtml(imgRaw);
+
+    const noteRaw = String(u.note || u.message || "");
+    const notePlain = noteRaw.replace(/\s+/g, " ").trim();
+    const hasNote = notePlain.length > 0;
+    const __noteLimit = hasImg ? 420 : 820;
+    const noteIsLong = notePlain.length > __noteLimit;
+    const notePreview = _safeText(noteIsLong ? (notePlain.slice(0, __noteLimit).trimEnd() + "…") : notePlain);
+
+    const createdAt = u.created_at || u.createdAt;
+    const age = createdAt ? _timeAgoI18n(createdAt) : "";
+
+    const verified = !!(meta.verified || u.is_verified || u.verified || u.blue_tick);
+
+    const iconName = (areaLower === "general")
+      ? "fa-bullhorn"
+      : (areaLower === "projects")
+        ? "fa-diagram-project"
+        : (areaLower === "assets")
+          ? "fa-cubes"
+          : "fa-certificate";
+
+    const areaLabel = (areaLower === "general")
+      ? _i18n("post_area_general", (currentLang === "tr" ? "Genel" : (currentLang === "es" ? "General" : "General")))
+      : (areaLower === "projects")
+        ? _i18n("post_area_projects", (currentLang === "tr" ? "Projeler" : (currentLang === "es" ? "Proyectos" : "Projects")))
+        : (areaLower === "assets")
+          ? _i18n("post_area_assets", (currentLang === "tr" ? "Envanter" : (currentLang === "es" ? "Activos" : "Assets")))
+          : _i18n("post_area_certs", (currentLang === "tr" ? "Sertifikalar" : (currentLang === "es" ? "Certificados" : "Certificates")));
+
+    const tab = _getAreaTab(area);
+    const safeCompanyId = _safeText(u.company_id || u.profile_id || "");
+    const focusId = (u.entity_id == null) ? "" : String(u.entity_id);
+    const safeFocusId = _safeText(focusId);
+
+    const safePostId = _safeText(String(u?.id || ""));
+    try { btonCachePostOwnerCompany(safePostId, (u?.company_id || u?.companyId || (u?.company && (u.company.id || u.company.company_id)))); } catch(e){}
+
+    const __rx = (typeof btonGetPostReactionSnapshot === "function") ? btonGetPostReactionSnapshot(safePostId) : null;
+    const likeCount = (__rx && __rx.counts) ? (__rx.counts.like || 0) : 0;
+    const celebrateCount = (__rx && __rx.counts) ? (__rx.counts.celebrate || 0) : 0;
+    const myLike = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("like"));
+    const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("celebrate"));
+
+    return `
+      <div role="button" tabindex="0"
+        onclick="closeUpdatesFeedModal(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); closeUpdatesFeedModal(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true });}"
+        class="bton-upd-card group relative text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] pr-4 pl-10 py-4 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
+
+        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
+
+        <div class="bton-upd-rail">
+          <div class="bton-upd-rail-vtxt" data-tone="${_signalMeta(area, templateCode).tone}">${railText}</div>
+        </div>
+
+        <div class="relative flex items-start gap-3">
+          ${btRenderLogoHTML(logo, companyName, "w-11 h-11", "rounded-2xl", "bg-white/80 backdrop-blur border border-slate-200/70 ring-1 ring-white/60 shadow-sm shrink-0", meta.cb)}
+
+          <div class="bton-upd-col min-w-0 flex-1 flex flex-col">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="text-[13px] font-extrabold text-BTrustOn-primary truncate">${companyName}</div>
+                  ${verified ? `<span class="bton-tip" data-tip="${escapeHtml(_verifiedTipText())}"><i class="fa-solid fa-circle-check text-cyan-500 text-sm"></i></span>` : ``}
+                </div>
+
+                <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-500 min-w-0">
+                  <span class="bton-upd-chip" data-area="${areaLower}">
+                    <span class="bton-upd-chip-ico"><i class="fa-solid ${iconName}"></i></span>
+                    <span class="bton-upd-chip-txt">${areaLabel}</span>
+                  </span>
+                  ${(areaLower === "general") ? `` : `<span class="truncate font-bold bton-upd-meta-text">${entityTitle}</span>`}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0 mt-0.5">
+                <div class="text-[10px] text-slate-500 font-extrabold whitespace-nowrap bg-white/70 border border-slate-200/70 rounded-full px-2 py-0.5 shadow-sm">${age}</div>
+              </div>
+            </div>
+
+            ${hasImg ? `
+              <div class="mt-3 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)]">
+                <div class="bton-upd-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}">
+                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+                  <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                  <div class="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
+                  <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[9px] leading-none font-bold rounded-full px-2 py-1 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
+                </div>
+              </div>
+            ` : ``}
+
+            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              ${hasNote ? `<div class="text-[13px] text-gray-700 leading-relaxed break-words line-clamp-10">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+              ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
+                <div class="absolute bottom-2 right-3 text-[11px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
+            </div>
+
+            <div class="mt-3 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button type="button"
+                  class="bton-react-pill ${myCelebrate ? "is-on" : ""}"
+                  data-post-id="${safePostId}"
+                  data-reaction="celebrate"
+                  title="${escapeHtml(btonReactionTitle("celebrate"))}"
+                  aria-label="${escapeHtml(btonReactionTitle("celebrate"))}"
+                  onclick="btonToggleUpdateReaction(event,'${safePostId}','celebrate')">
+                  ${btonReactGlyph("celebrate")}
+                  <span class="bton-react-count ${celebrateCount>0 ? "" : "hidden"}" data-react-count>${celebrateCount}</span>
+                </button>
+
+                <button type="button"
+                  class="bton-react-pill ${myLike ? "is-on" : ""}"
+                  data-post-id="${safePostId}"
+                  data-reaction="like"
+                  title="${escapeHtml(btonReactionTitle("like"))}"
+                  aria-label="${escapeHtml(btonReactionTitle("like"))}"
+                  onclick="btonToggleUpdateReaction(event,'${safePostId}','like')">
+                  ${btonReactGlyph("like")}
+                  <span class="bton-react-count ${likeCount>0 ? "" : "hidden"}" data-react-count>${likeCount}</span>
+                </button>
+              </div>
+
+              <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700">
+                <span data-i18n="updates_view">View</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (opts && opts.append) listEl.insertAdjacentHTML("beforeend", html);
+  else listEl.innerHTML = html;
+
+  try { applyTranslationsWithin(listEl); } catch(e) {}
 }
 
 
@@ -19478,6 +20132,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         try { fetchHomeUpdates(); } catch(e) {}
         try { subscribeHomeUpdatesRealtime(); } catch(e) {}
         try { setupHomeUpdatesNav(); } catch(e) {}
+          try { setupHomeUpdatesVisibilityPause(); } catch(e) {}
+        try { setupHomeUpdatesVisibilityPause(); } catch(e) {}
       } else {
         setTimeout(() => {
           try { _setHomeUpdatesFilterUI(homeUpdatesFilter); } catch(e) {}
