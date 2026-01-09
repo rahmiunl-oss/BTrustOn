@@ -14170,10 +14170,10 @@ function renderAssetsCards(company, isMyProfile){
 
     const actions = isMyProfile ? `
       <div class="flex gap-2">
-        <button onclick="event.stopPropagation(); openAssetModal(${a.id})" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-BTrustOn-primary text-slate-700 hover:text-white border border-slate-200 flex items-center justify-center transition shadow-sm" title="${t("ui_edit") || "Edit"}">
+        <button onclick="event.stopPropagation(); openAssetModal(${jsStr(a.id)})" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-BTrustOn-primary text-slate-700 hover:text-white border border-slate-200 flex items-center justify-center transition shadow-sm" title="${t("ui_edit") || "Edit"}">
           <i class="fa-solid fa-pen text-[10px]"></i>
         </button>
-        <button onclick="event.stopPropagation(); deleteAsset(${a.id})" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-100 flex items-center justify-center transition shadow-sm" title="${t("ui_delete") || "Delete"}">
+        <button onclick="event.stopPropagation(); deleteAsset(${jsStr(a.id)})" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-100 flex items-center justify-center transition shadow-sm" title="${t("ui_delete") || "Delete"}">
           <i class="fa-solid fa-trash text-[10px]"></i>
         </button>
       </div>
@@ -14181,7 +14181,7 @@ function renderAssetsCards(company, isMyProfile){
 
 
     const viewAction = !isMyProfile ? `
-      <button onclick="event.stopPropagation(); openAssetViewer(${a.id})" class="bton-view-hint inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50/50 hover:border-cyan-200 hover:text-BTrustOn-primary" title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
+      <button onclick="event.stopPropagation(); openAssetViewer(${jsStr(a.id)})" class="bton-view-hint inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50/50 hover:border-cyan-200 hover:text-BTrustOn-primary" title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
         ${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}
       </button>
     ` : ``;
@@ -16189,13 +16189,8 @@ try {
               const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
               const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
   const cover = p.cover_url || coverPlaceholder;
-              // ✅ Robust id + date handling (mobile-safe)
-              const pidSafe = String(p.id || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-              const __tsPv = Date.parse((p && p.project_date) ? p.project_date : "");
-              const __locPv = (currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US"));
-              const dateLabel = isFinite(__tsPv) ? new Date(__tsPv).toLocaleDateString(__locPv,{year:'numeric',month:'short',day:'2-digit'}) : "—";
               // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
-              let cardClickAction = `onclick="openProjectViewer('${pidSafe}')"`;
+              let cardClickAction = `onclick="openProjectViewer(${jsStr(p.id)})"`;
               let cursorClass = "cursor-pointer";
               let galleryBadge = "";
 
@@ -16210,10 +16205,10 @@ try {
 
               const actionBtns = isMyProfile ? `
                 <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                    <button onclick="event.stopPropagation(); openProjectModal('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
+                    <button onclick="event.stopPropagation(); openProjectModal(${jsStr(p.id)})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
-                    <button onclick="event.stopPropagation(); deleteProject('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
+                    <button onclick="event.stopPropagation(); deleteProject(${jsStr(p.id)})" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
                         <i class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </div>
@@ -16249,7 +16244,7 @@ try {
                             </span>
                             <span class="inline-flex items-center gap-1.5">
                               <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
-                              <span>${dateLabel}</span>
+                              <span>${(p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'}) : '—')}</span>
                             </span>
                         </div>
                     </div>
@@ -16898,6 +16893,15 @@ try {
       if (viewProfile) viewProfile.classList.add("hidden-view");
       if (viewEditor) viewEditor.classList.add("hidden-view");
       if (backBtn) backBtn.classList.add("hidden", "hidden-view");
+
+      // ✅ If we deferred directory loading on boot (deep-link), start it when user returns Home.
+      try {
+        if (window.__BTON_DEFER_INITREALDATA && typeof initRealData === "function") {
+          window.__BTON_DEFER_INITREALDATA = false;
+          setTimeout(() => { try { initRealData(); } catch(e) { console.error("initRealData:", e); } }, 60);
+        }
+      } catch(e) {}
+
 // ✅ Home landing behavior:
 // - If returning from a profile, restore scroll + filters
 // - Otherwise start at top
@@ -18430,7 +18434,7 @@ function openProjectModal(projectId = null) {
     currentEditingProjectId = projectId;
     if(title) title.textContent = (t("ui_edit_project") || "Edit Project");
     
-    const proj = (selectedCompany.projects || []).find(p => String(p.id) === String(projectId));
+    const proj = selectedCompany.projects.find(p => p.id === projectId);
     if (proj) {
         document.getElementById("proj-title").value = proj.title || "";
         document.getElementById("proj-loc").value = proj.loc || "";
@@ -18491,7 +18495,7 @@ async function saveProject() {
     let currentProjects = [...(selectedCompany.projects || [])];
     let existingData = {};
     if (currentEditingProjectId) {
-        existingData = currentProjects.find(p => String(p.id) === String(currentEditingProjectId)) || {};
+        existingData = currentProjects.find(p => p.id === currentEditingProjectId) || {};
     }
 
     // --- KAPAK FOTOĞRAFI MANTIĞI ---
@@ -18539,7 +18543,7 @@ async function saveProject() {
     };
 
     if (currentEditingProjectId) {
-        const index = currentProjects.findIndex(p => String(p.id) === String(currentEditingProjectId));
+        const index = currentProjects.findIndex(p => p.id === currentEditingProjectId);
         if (index > -1) currentProjects[index] = projObj;
     } else {
         currentProjects.push(projObj);
@@ -18577,7 +18581,7 @@ async function saveProject() {
 function deleteProject(projectId) {
     openDeleteModal(_deleteConfirmMsg("project"), async () => {
         try {
-            let currentProjects = (selectedCompany.projects || []).filter(p => String(p.id) !== String(projectId));
+            let currentProjects = (selectedCompany.projects || []).filter(p => p.id !== projectId);
             
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("No session.");
@@ -18639,23 +18643,10 @@ function deleteCert(certId, certName) {
     });
 }
   </script>
-<!-- ✅ Project viewer tuning: smaller cover + larger description -->
-<style id="bton-project-viewer-tuning">
-  /* Keep the modal card within the viewport, and let the body scroll */
-  #pv-card{ max-height: 88vh; display:flex; flex-direction:column; }
-  #pv-body{ overflow-y:auto; }
-  /* Comfortable reading */
-  #pv-desc{ line-height: 1.75; }
-  /* Dark mode text contrast (your app uses data-theme) */
-  html[data-theme="dark"] #pv-desc{ color: rgba(226,232,240,.86) !important; }
-  html[data-theme="dark"] #pv-meta,
-  html[data-theme="dark"] #pv-gallery-info{ color: rgba(148,163,184,.72) !important; }
-</style>
-
 <!-- ✅ PROJECT VIEWER MODAL (click any project card) -->
 <div class="hidden fixed inset-0 z-[99990]" id="project-viewer">
 <div class="absolute inset-0 bg-slate-900/60" onclick="closeProjectViewer()"></div>
-<div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-slate-200/70 overflow-hidden max-h-[88vh] flex flex-col" id="pv-card">
+<div class="relative max-w-4xl mx-auto mt-24 bg-white rounded-2xl shadow-2xl border border-slate-200/70 overflow-hidden">
 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
 <div>
 <div class="text-sm font-extrabold text-BTrustOn-primary" id="pv-title"></div>
@@ -18665,11 +18656,11 @@ function deleteCert(certId, certName) {
 <i class="fa-solid fa-xmark"></i>
 </button>
 </div>
-<div class="p-5 flex-1 overflow-y-auto" id="pv-body">
+<div class="p-5">
 <button class="w-full rounded-xl overflow-hidden border border-slate-200/70 bg-slate-50 focus:outline-none" id="pv-cover-btn">
-<img alt="" class="w-full h-[210px] sm:h-[230px] md:h-[260px] object-cover" id="pv-cover"/>
+<img alt="" class="w-full h-[320px] object-cover" id="pv-cover"/>
 </button>
-<div class="text-[15px] md:text-base text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere leading-relaxed" id="pv-desc"></div>
+<div class="text-sm text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere" id="pv-desc"></div>
 <div class="mt-4 flex items-center justify-between">
 <div class="text-[11px] text-gray-400" id="pv-gallery-info"></div>
 <button class="hidden px-4 py-2 rounded-lg bg-BTrustOn-primary text-white text-xs font-bold hover:bg-BTrustOn-accent transition" id="pv-open-gallery" onclick="openProjectViewerGallery()">
@@ -18688,6 +18679,11 @@ function escapeHtml(v){
           .replace(/>/g,"&gt;")
           .replace(/\"/g,"&quot;")
           .replace(/'/g,"&#39;");
+
+function jsStr(v){
+  const s = (v===null||v===undefined) ? "" : String(v);
+  return "'" + s.replace(/\\/g,"\\\\").replace(/'/g,"\\'") + "'";
+}
 }
 
 // i18n-safe translator helper (never throws)
@@ -19420,7 +19416,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Load data after view is visible (safe)
-    try { initRealData(); } catch(e){ console.error("initRealData:", e); }
+    // ✅ Mobile safety: on deep-link (#company=...) do NOT fetch & render the whole directory immediately (Safari can crash).
+    try {
+      const __bootHasCompanyRoute = /^#company=/.test(String(window.location.hash || ""));
+      if (!__bootHasCompanyRoute) {
+        initRealData();
+      } else {
+        window.__BTON_DEFER_INITREALDATA = true;
+      }
+    } catch(e){
+      try { initRealData(); } catch(_e){ console.error("initRealData:", _e); }
+    }
 
     // ✅ On company route, postpone showcase animations (reduces iOS Safari refresh crashes)
     try {
@@ -22715,7 +22721,7 @@ function renderInboxItems() {
 
     card.innerHTML = `
       <button 
-          onclick="deleteThread(${item.id}, '${safeTitle}', '${item.partner_id}', event)" 
+          onclick="deleteThread(${jsStr(item.id)}, '${safeTitle}', '${item.partner_id}', event)" 
           class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/80 text-gray-300 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 shadow-sm"
           title="Delete Thread"
       >
@@ -24228,10 +24234,33 @@ function deleteCert(certId, certName) {
 async function initRealData() {
   console.log("Supabase'den veriler çekiliyor...");
   
-  // 1. Supabase'den tüm profilleri al
-  const { data: profiles, error } = await supabaseClient
-    .from('profiles')
-    .select('*');
+  // 1. Supabase'den profilleri al (MOBILE SAFE: avoid select('*') which can be huge due to JSON columns)
+  const __isMobile = (() => { try { return window.matchMedia && window.matchMedia('(max-width: 767px)').matches; } catch(e) { return false; } })();
+  const __hardLimit = __isMobile ? 240 : 800;
+
+  let profiles = null;
+  let error = null;
+
+  // Prefer a lean column set (falls back if some columns don't exist in this DB schema)
+  const __sel1 = 'id,email,company_name,sector,company_type,city,country,address,company_size,founded_year,logo_url,website,tagline,subscription_tier,verification_status,is_listed,services,description,claimed_at,owner_user_id,updated_at,tax_id,duns_number,phone,contact_email';
+  const __sel2 = 'id,email,company_name,sector,company_type,city,country,address,company_size,founded_year,logo_url,website,tagline,subscription_tier,verification_status,services,description,claimed_at,owner_user_id,updated_at';
+  const __sel3 = 'id,email,company_name,sector,city,country,logo_url,website,tagline,subscription_tier,verification_status,services,description';
+
+  try {
+    let r = await supabaseClient.from('profiles').select(__sel1).range(0, __hardLimit-1);
+    profiles = r.data; error = r.error;
+
+    if (error) {
+      r = await supabaseClient.from('profiles').select(__sel2).range(0, __hardLimit-1);
+      profiles = r.data; error = r.error;
+    }
+    if (error) {
+      r = await supabaseClient.from('profiles').select(__sel3).range(0, __hardLimit-1);
+      profiles = r.data; error = r.error;
+    }
+  } catch(e) {
+    error = e;
+  }
 
   if (error) { console.error("Veri çekme hatası:", error); return; }
   if (!profiles) return;
@@ -28927,10 +28956,7 @@ function openProjectViewer(projectId){
 
   if(tEl) tEl.textContent = title;
   if(mEl) {
-    const __tsNice = Date.parse(p.project_date || "");
-    const nice = isFinite(__tsNice)
-      ? new Date(__tsNice).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'})
-      : "";
+    const nice = (p.project_date ? new Date(p.project_date).toLocaleDateString((currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US")),{year:'numeric',month:'short',day:'2-digit'}) : "");
     if (loc && nice) mEl.textContent = `📍 ${loc}  •  📅 ${nice}`;
     else if (loc) mEl.textContent = `📍 ${loc}`;
     else if (nice) mEl.textContent = `📅 ${nice}`;
