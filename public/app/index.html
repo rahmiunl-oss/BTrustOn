@@ -1367,6 +1367,17 @@ html[data-theme="dark"] .bton-react-pill.is-on .bton-react-ico{
 #home-updates-left, #home-updates-right{
   display: none !important;
 }
+
+/* Mobile: make Company Updates section edge-to-edge so each post is readable */
+#home-updates-card{
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  border-radius: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  padding-left: calc(16px + env(safe-area-inset-left)) !important;
+  padding-right: calc(16px + env(safe-area-inset-right)) !important;
+}
 }
 
 
@@ -5459,7 +5470,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 </header>
 <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 pb-24">
 <div class="flex flex-col gap-4 mb-5 border-b border-slate-200/70/50 pb-4">
-<div class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
+<div id="home-updates-card" class="bg-white/70 border border-white/60 rounded-2xl shadow-glass px-4 py-4">
 <div class="flex items-start justify-between gap-3 mb-3" id="home-updates-head">
 <div class="min-w-0">
 <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2">
