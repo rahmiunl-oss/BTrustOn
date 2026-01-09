@@ -5130,7 +5130,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <div class="min-w-0">
 <div class="bton-empty-title" data-i18n="empty_saved_title">No saved companies yet</div>
 <div class="bton-empty-desc" data-i18n="empty_saved_desc">No saved companies yet. Use the bookmark icon on company cards to save.</div>
-<button class="bton-empty-action" onclick="try{ toggleSavedPanel(); }catch(e){} try{ document.getElementById('search-input')?.focus(); }catch(e){}" type="button">
+<button class="bton-empty-action" onclick="browseCompaniesFromSaved()" type="button">
 <i class="fa-solid fa-magnifying-glass"></i>
 <span data-i18n="empty_browse_companies_btn">Browse companies</span>
 </button>
@@ -15452,51 +15452,6 @@ try {
   let company = database.find((c) => c.id == companyId);
   if (company) { await __refreshClaimFields(company); }
 
-  // ✅ If this company is loaded in lightweight mode, fetch full details now
-  if (company && company.__partial) {
-    try {
-      const rFull = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('id', companyId)
-        .single();
-
-      if (!rFull.error && rFull.data) {
-        const p = rFull.data;
-        company.email = p.email || company.email || "";
-        company.subscription_tier = p.subscription_tier || company.subscription_tier || "free";
-        company.verification_status = p.verification_status || company.verification_status || "none";
-        company.owner_user_id = (typeof p.owner_user_id !== "undefined") ? p.owner_user_id : company.owner_user_id;
-        company.claimed_at = (typeof p.claimed_at !== "undefined") ? p.claimed_at : company.claimed_at;
-        if (typeof p.is_listed !== "undefined") company.is_listed = p.is_listed;
-
-        company.tax_id = p.tax_id || company.tax_id || "";
-        company.duns_number = p.duns_number || company.duns_number || "";
-        company.country = p.country || company.country || "Turkey";
-        company.address = p.address || company.address || "";
-        company.name = p.company_name || company.name || "Unknown";
-        company.city = p.city || company.city || "No Location";
-        company.tagline = p.tagline || company.tagline || "";
-        company.sector = p.sector || company.sector || "construction";
-        company.desc = p.description || company.desc || "";
-        company.type_label = p.company_type || company.type_label || "Industrial Supplier";
-        company.size_label = p.company_size || company.size_label || "Size N/A";
-        company.year_label = p.founded_year || company.year_label || "";
-        company.services = p.services ? String(p.services).split(',').map(x=>x.trim()).filter(Boolean) : (company.services || []);
-        company.logo_url = p.logo_url || company.logo_url || null;
-        company.website = p.website || company.website || "";
-        company.phone = p.phone || company.phone || "";
-        company.contact_email = p.contact_email || company.contact_email || "";
-
-        company.certificates = p.certificates || [];
-        company.assets = p.assets || [];
-        company.projects = p.projects || [];
-
-        company.__partial = false;
-      }
-    } catch(e) {}
-  }
-
   // 2. Yoksa Supabase'den çek
   if (!company) {
       if (!(window.__routeRestoring === true)) {
@@ -16189,22 +16144,147 @@ try {
   switchProfileTab(desiredTab);
   window.__profileActiveCompanyId = company.id;
 
+  
+  // --- PROJELER (TIKLANABİLİR KART + GİZLİ BUTONLAR) ---
+  const projList = document.getElementById("p-projects-list");
+  window.__projectsCache = (company.projects || []);
+  if (projList) {
+      projList.innerHTML = "";
 
-  // ✅ Mobile stability: clear heavy tab containers & render lazily (prevents Safari reload crash)
-  try { const el1 = document.getElementById("p-projects-list"); if (el1) el1.innerHTML = ""; } catch(e) {}
-  try { const el2 = document.getElementById("p-certs-list"); if (el2) el2.innerHTML = ""; } catch(e) {}
-  try { const el3 = document.getElementById("p-assets-grid"); if (el3) el3.innerHTML = ""; } catch(e) {}
+      // Sort render order by Project Date (fallback: created id)
+      const sortMode = (document.getElementById("proj-sort")?.value) || "newest";
+      const projectsArr = Array.isArray(company.projects) ? [...company.projects] : [];
+      const getDateTS = (p) => {
+        const ts = Date.parse((p && p.project_date) ? p.project_date : "");
+        if (Number.isFinite(ts)) return ts;
+        const fallback = Number(p && p.id) || 0;
+        return fallback;
+      };
+      if (sortMode === "oldest") projectsArr.sort((a,b)=> getDateTS(a) - getDateTS(b));
+      else if (sortMode === "az") projectsArr.sort((a,b)=> String(a?.title||"").toLowerCase().localeCompare(String(b?.title||"").toLowerCase()));
+      else projectsArr.sort((a,b)=> getDateTS(b) - getDateTS(a));
 
-  try { window.__bton_activeProfileIsMine = isMyProfile; } catch(e) {}
-  try { window.__bton_profileRendered = { cid: String(company.id), tabs: {} }; } catch(e) {}
 
-  // Render only the requested tab now; other tabs will render when opened
+      // Keep a sorted cache for the Project Viewer
+      window.__projectsCache = projectsArr;
+      if (!company.projects || company.projects.length === 0) {
+          const emptyTitle = (typeof t === "function") ? t("no_projects_found_title") : "No projects found";
+          const emptyDesc  = (typeof t === "function") ? t("no_projects_found_desc")  : "This company hasn’t listed any projects yet.";
+          projList.innerHTML = `
+            <div class="col-span-full">
+              <div class="rounded-2xl border border-dashed border-[rgba(15,23,42,.14)] bg-gradient-to-b from-white/70 to-slate-50/60 p-6">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-[rgba(15,23,42,.10)] shadow-sm flex items-center justify-center text-slate-500 shrink-0">
+                    <i class="fa-solid fa-diagram-project"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-[12px] font-extrabold text-slate-700 tracking-wide">${emptyTitle}</div>
+                    <div class="mt-1 text-[11px] text-slate-500 font-semibold">${emptyDesc}</div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+      } else {
+          projectsArr.forEach(p => {
+              const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
+              const coverPlaceholder = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E";
+  const cover = p.cover_url || coverPlaceholder;
+              // ✅ Robust id + date handling (mobile-safe)
+              const pidSafe = String(p.id || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+              const __tsPv = Date.parse((p && p.project_date) ? p.project_date : "");
+              const __locPv = (currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US"));
+              const dateLabel = isFinite(__tsPv) ? new Date(__tsPv).toLocaleDateString(__locPv,{year:'numeric',month:'short',day:'2-digit'}) : "—";
+              // Kart artık her zaman "Detay" açar. Galeri varsa detay içinden açılır.
+              let cardClickAction = `onclick="openProjectViewer('${pidSafe}')"`;
+              let cursorClass = "cursor-pointer";
+              let galleryBadge = "";
+
+              if (hasGallery) {
+                  // Sol üstte küçük "foto sayısı" etiketi
+                  galleryBadge = `
+                    <div class="absolute top-3 left-3 bg-black/45 text-white text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
+                         <i class="fa-solid fa-camera"></i> ${p.gallery_urls.length}
+                    </div>
+                  `;
+              }
+
+              const actionBtns = isMyProfile ? `
+                <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+                    <button onclick="event.stopPropagation(); openProjectModal('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_edit_project") || "Edit Project"}">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); deleteProject('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${t("ui_delete_project") || (t("ui_delete") || "Delete Project")}">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </div>
+              ` : "";
+
+              const card = document.createElement("div");
+              try{ card.id = _btonEntityDomId('project', p.id); }catch(e){}
+              card.className = "group relative bg-white/80 backdrop-blur border border-[rgba(15,23,42,.08)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full";
+              
+              const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
+              card.dataset.hay = hay;
+              card.dataset.pid = String(p.id || "");
+              card.dataset.title = p.title || "";
+              card.dataset.created = String(p.id || "");
+
+              card.dataset.pdate = String(p.project_date || "");
+
+              card.innerHTML = `
+                <div class="bton-accent-line z-30"></div>
+                <div class="relative h-48 overflow-hidden bg-gray-100 shrink-0 ${cursorClass} group/img" ${cardClickAction}>
+                    <img src="${cover}" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-90"></div>
+                    
+                    ${galleryBadge}
+                    
+                    <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
+                        <h4 class="font-bold text-lg leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
+                        <div class="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300 font-medium">
+                            <span class="inline-flex items-center gap-1.5 min-w-0">
+                              <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
+                              <span class="truncate min-w-0">${p.loc || (t("ui_unknown_location") || "Unknown Location")}</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1.5">
+                              <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
+                              <span>${dateLabel}</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    ${actionBtns}
+                </div>
+
+                <div class="p-5 flex flex-col flex-1">
+                    <p class="text-sm text-gray-600 leading-relaxed whitespace-normal break-words line-clamp-4">
+                        ${p.desc || (t("ui_no_description") || "No description provided.")}
+                    </p>
+                </div>
+              `;
+              projList.appendChild(card);
+          });
+      }
+  }
+
+  
+  // Sertifikalar
+  renderCertificates(company);
+
+  // --- ASSETS (Cards + Viewer) ---
   try {
-    if (desiredTab === "projects" || desiredTab === "certs" || desiredTab === "assets") {
-      ensureProfileTabRendered(desiredTab, company, isMyProfile);
-    }
+    // Reset UI controls each time we open a profile
+    const s = document.getElementById("asset-search");
+    const f = document.getElementById("asset-filter-status");
+    const so = document.getElementById("asset-sort");
+    if (s) s.value = "";
+    if (f) f.value = "all";
+    if (so) so.value = "newest";
+    window.__assetUI = { query: "", status: "all", sort: "newest" };
   } catch(e) {}
 
+  renderAssetsCards(company, isMyProfile);
 
   // 👇 GÜNCELLENMİŞ ANALİTİK YÖNETİMİ (GİZLİLİK AYARLI) 👇
   
@@ -17878,213 +17958,6 @@ function toggleModal(id) {
     
 
       try { window.__profileActiveTab = tab; } catch(e) {}
-      // ✅ Lazy render heavy tabs only when opened (mobile stability)
-      try {
-        const c = (typeof selectedCompany !== "undefined") ? selectedCompany : null;
-        const mine = !!(window.__bton_activeProfileIsMine);
-        if (c && (tab === "projects" || tab === "certs" || tab === "assets")) {
-          ensureProfileTabRendered(tab, c, mine);
-        }
-      } catch(e) {}
-}
-
-
-/* =========================
-   Mobile stability: lazy render heavy profile tabs
-   - Prevents iOS Safari “page reloaded / a problem repeatedly occurred” crashes
-   - Renders Projects / Certificates / Assets only when that tab is opened
-========================= */
-function ensureProfileTabRendered(tab, company, isMyProfile){
-  try{
-    if (!company || !company.id) return;
-    const cid = String(company.id);
-    if (!window.__bton_profileRendered || window.__bton_profileRendered.cid !== cid) {
-      window.__bton_profileRendered = { cid, tabs: {} };
-    }
-    const tabs = window.__bton_profileRendered.tabs || (window.__bton_profileRendered.tabs = {});
-    if (tabs[tab]) return;
-
-    if (tab === "projects") { tabs[tab] = true; renderProjectsTab(company, isMyProfile); }
-    else if (tab === "certs") { tabs[tab] = true; renderCertsTab(company); }
-    else if (tab === "assets") { tabs[tab] = true; renderAssetsTab(company, isMyProfile); }
-  }catch(e){ console.warn("ensureProfileTabRendered:", e); }
-}
-
-function renderProjectsTab(company, isMyProfile){
-  const projList = document.getElementById("p-projects-list");
-  if (!projList) return;
-
-  // Clear old nodes to free memory on mobile
-  try { projList.innerHTML = ""; } catch(e) {}
-
-  const sortMode = (document.getElementById("proj-sort")?.value) || "newest";
-  const projectsArr = Array.isArray(company.projects) ? [...company.projects] : [];
-  const getDateTS = (p) => {
-    const ts = Date.parse((p && p.project_date) ? p.project_date : "");
-    if (Number.isFinite(ts)) return ts;
-    const fallback = Number(p && p.id) || 0;
-    return fallback;
-  };
-
-  if (sortMode === "oldest") projectsArr.sort((a,b)=> getDateTS(a) - getDateTS(b));
-  else if (sortMode === "az") projectsArr.sort((a,b)=> String(a?.title||"").toLowerCase().localeCompare(String(b?.title||"").toLowerCase()));
-  else projectsArr.sort((a,b)=> getDateTS(b) - getDateTS(a));
-
-  window.__projectsCache = projectsArr;
-
-  const emptyTitle = (typeof t === "function") ? t("no_projects_found_title") : "No projects found";
-  const emptyDesc  = (typeof t === "function") ? t("no_projects_found_desc")  : "This company hasn’t listed any projects yet.";
-
-  if (!projectsArr.length) {
-    projList.innerHTML = `
-      <div class="col-span-full">
-        <div class="rounded-2xl border border-dashed border-[rgba(15,23,42,.14)] bg-gradient-to-b from-white/70 to-slate-50/60 p-6">
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white border border-[rgba(15,23,42,.10)] shadow-sm flex items-center justify-center text-slate-500 shrink-0">
-              <i class="fa-solid fa-diagram-project"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-[12px] font-extrabold text-slate-700 tracking-wide">${emptyTitle}</div>
-              <div class="mt-1 text-[11px] text-slate-500 font-semibold">${emptyDesc}</div>
-            </div>
-          </div>
-        </div>
-      </div>`;
-    return;
-  }
-
-  const coverPlaceholder = window.__BTON_PROJECT_COVER_PLACEHOLDER || (window.__BTON_PROJECT_COVER_PLACEHOLDER =
-    "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22675%22%20viewBox%3D%220%200%201200%20675%22%3E%3Crect%20width%3D%221200%22%20height%3D%22675%22%20fill%3D%22%23f1f5f9%22/%3E%3Cpath%20d%3D%22M430%20365l130-140%20150%20185%20110-125%20210%20255H350z%22%20fill%3D%22%23e2e8f0%22/%3E%3C/svg%3E"
-  );
-
-  const isMobile = !!(window.matchMedia && window.matchMedia("(max-width: 640px)").matches);
-  const pageSize = isMobile ? 6 : 12;
-  let shown = 0;
-
-  // Load more button
-  let loadMoreWrap = document.getElementById("pv-loadmore-wrap");
-  if (loadMoreWrap) { try { loadMoreWrap.remove(); } catch(e) {} }
-
-  loadMoreWrap = document.createElement("div");
-  loadMoreWrap.id = "pv-loadmore-wrap";
-  loadMoreWrap.className = "col-span-full flex items-center justify-center py-4";
-  const loadBtn = document.createElement("button");
-  loadBtn.className = "px-4 py-2 rounded-xl bg-white border border-[rgba(15,23,42,.14)] shadow-sm text-[12px] font-extrabold text-slate-800 hover:bg-slate-50";
-  loadBtn.textContent = (typeof t === "function" ? (t("ui_load_more") || "Load more") : "Load more");
-  loadMoreWrap.appendChild(loadBtn);
-
-  function renderNextChunk(){
-    const slice = projectsArr.slice(shown, shown + pageSize);
-    slice.forEach(p => {
-      const hasGallery = p.gallery_urls && p.gallery_urls.length > 0;
-      const cover = p.cover_url || coverPlaceholder;
-
-      const pidSafe = String(p.id || "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-      const __tsPv = Date.parse((p && p.project_date) ? p.project_date : "");
-      const __locPv = (currentLang==="tr" ? "tr-TR" : (currentLang==="es" ? "es-ES" : "en-US"));
-      const dateLabel = isFinite(__tsPv) ? new Date(__tsPv).toLocaleDateString(__locPv,{year:'numeric',month:'short',day:'2-digit'}) : "—";
-
-      const galleryBadge = hasGallery ? `
-        <div class="absolute top-3 left-3 bg-black/45 text-white text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 z-10 border border-white/10 shadow-sm">
-          <i class="fa-solid fa-camera"></i> ${p.gallery_urls.length}
-        </div>` : "";
-
-      const actionBtns = isMyProfile ? `
-        <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-          <button onclick="event.stopPropagation(); openProjectModal('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-BTrustOn-accent hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${(typeof t==='function' ? (t("ui_edit_project")||"Edit Project") : "Edit Project")}">
-            <i class="fa-solid fa-pen text-xs"></i>
-          </button>
-          <button onclick="event.stopPropagation(); deleteProject('${pidSafe}')" class="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:text-red-500 hover:bg-white shadow-lg flex items-center justify-center transition transform hover:scale-105" title="${(typeof t==='function' ? (t("ui_delete_project")||t("ui_delete")||"Delete Project") : "Delete Project")}">
-            <i class="fa-solid fa-trash text-xs"></i>
-          </button>
-        </div>` : "";
-
-      const card = document.createElement("div");
-      try{ card.id = _btonEntityDomId('project', p.id); }catch(e){}
-      card.className = "group relative bg-white/80 backdrop-blur border border-[rgba(15,23,42,.08)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full";
-
-      const hay = `${p.title || ""} ${p.loc || ""} ${p.desc || ""}`.trim();
-      card.dataset.hay = hay;
-      card.dataset.pid = String(p.id || "");
-      card.dataset.title = p.title || "";
-      card.dataset.created = String(p.id || "");
-      card.dataset.pdate = String(p.project_date || "");
-
-      card.innerHTML = `
-        <div class="bton-accent-line z-30"></div>
-        <div class="relative h-44 overflow-hidden bg-gray-100 shrink-0 cursor-pointer group/img" onclick="openProjectViewer('${pidSafe}')">
-          <img src="${cover}" loading="lazy" decoding="async" referrerpolicy="no-referrer"
-               onerror="this.onerror=null;this.src='${coverPlaceholder}';"
-               class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-90"></div>
-          ${galleryBadge}
-          <div class="absolute bottom-0 left-0 p-4 w-full text-white z-10">
-            <h4 class="font-bold text-base leading-tight mb-1 shadow-sm truncate pr-2">${p.title}</h4>
-            <div class="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300 font-medium">
-              <span class="inline-flex items-center gap-1.5 min-w-0">
-                <i class="fa-solid fa-location-dot text-BTrustOn-accent"></i>
-                <span class="truncate min-w-0">${p.loc || ((typeof t==='function' ? (t("ui_unknown_location")||"Unknown Location") : "Unknown Location"))}</span>
-              </span>
-              <span class="inline-flex items-center gap-1.5">
-                <i class="fa-solid fa-calendar-days text-BTrustOn-accent"></i>
-                <span>${dateLabel}</span>
-              </span>
-            </div>
-          </div>
-          ${actionBtns}
-        </div>
-        <div class="p-5 flex flex-col flex-1">
-          <p class="text-sm text-gray-600 leading-relaxed whitespace-normal break-words line-clamp-4">
-            ${p.desc || ((typeof t==='function' ? (t("ui_no_description")||"No description provided.") : "No description provided."))}
-          </p>
-        </div>`;
-      projList.appendChild(card);
-    });
-
-    shown += slice.length;
-
-    if (shown >= projectsArr.length) {
-      try { loadMoreWrap.remove(); } catch(e) {}
-    } else {
-      if (!loadMoreWrap.isConnected) projList.appendChild(loadMoreWrap);
-    }
-
-    try { if (typeof applyTranslations === "function") applyTranslations(); } catch(e) {}
-  }
-
-  loadBtn.addEventListener("click", (e) => { try { e.preventDefault(); } catch(_) {} renderNextChunk(); }, { passive: false });
-
-  // First chunk immediately
-  renderNextChunk();
-}
-
-function renderCertsTab(company){
-  try {
-    const list = document.getElementById("p-certs-list");
-    if (list) list.innerHTML = "";
-  } catch(e){}
-  try { renderCertificates(company); } catch(e){ console.warn("renderCertificates:", e); }
-  try { if (typeof applyTranslations === "function") applyTranslations(); } catch(e) {}
-}
-
-function renderAssetsTab(company, isMyProfile){
-  try {
-    const s = document.getElementById("asset-search");
-    const f = document.getElementById("asset-filter-status");
-    const so = document.getElementById("asset-sort");
-    if (s) s.value = "";
-    if (f) f.value = "all";
-    if (so) so.value = "newest";
-    window.__assetUI = { query: "", status: "all", sort: "newest" };
-  } catch(e) {}
-
-  try {
-    const grid = document.getElementById("p-assets-grid");
-    if (grid) grid.innerHTML = "";
-  } catch(e){}
-
-  try { renderAssetsCards(company, isMyProfile); } catch(e){ console.warn("renderAssetsCards:", e); }
-  try { if (typeof applyTranslations === "function") applyTranslations(); } catch(e) {}
 }
 
     
@@ -18794,7 +18667,7 @@ function deleteCert(certId, certName) {
 </div>
 <div class="p-5 flex-1 overflow-y-auto" id="pv-body">
 <button class="w-full rounded-xl overflow-hidden border border-slate-200/70 bg-slate-50 focus:outline-none" id="pv-cover-btn">
-<img alt="" class="w-full h-[160px] sm:h-[180px] md:h-[210px] object-cover" id="pv-cover"/>
+<img alt="" class="w-full h-[210px] sm:h-[230px] md:h-[260px] object-cover" id="pv-cover"/>
 </button>
 <div class="text-[15px] md:text-base text-gray-600 mt-4 whitespace-pre-wrap break-words bton-wrap-anywhere leading-relaxed" id="pv-desc"></div>
 <div class="mt-4 flex items-center justify-between">
@@ -21237,6 +21110,39 @@ function toggleSavedPanel() {
 }
 
 
+
+function browseCompaniesFromSaved() {
+  // 1) Close the Saved panel
+  try {
+    const panel = document.getElementById("saved-panel");
+    if (panel && panel.classList.contains("open")) toggleSavedPanel();
+  } catch(e) {}
+
+  // 2) Go back to main list (Home/Discover)
+  try { window.__BTON_HOME_RESTORE_ON_NEXT_SHOW = false; } catch(e) {}
+  try { showMainView(); } catch(e) {}
+
+  // 3) Scroll + focus the main search bar
+  const focusIt = () => {
+    try {
+      const input = document.getElementById("search-input");
+      if (input) {
+        try { input.scrollIntoView({ behavior: "smooth", block: "center" }); } catch(e) {}
+        try { input.focus({ preventScroll: true }); } catch(e) { try { input.focus(); } catch(_) {} }
+        try { input.select(); } catch(e) {}
+        return;
+      }
+      const hero = document.getElementById("hero-search-wrap") || document.getElementById("hero-search");
+      if (hero && hero.scrollIntoView) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch(e) {}
+  };
+
+  // iOS Safari sometimes needs a second focus tick
+  try { focusIt(); } catch(e) {}
+  try { setTimeout(focusIt, 180); } catch(e) {}
+}
+
+
 function renderSavedPanelActive() {
   if (savedPanelTab === "following") renderFollowingCompanies();
   else renderSavedCompanies();
@@ -21603,7 +21509,7 @@ function renderFollowingCompanies() {
           <div class="min-w-0">
             <div class="bton-empty-title">${title}</div>
             <div class="bton-empty-desc">${desc}</div>
-            <button class="bton-empty-action" type="button" onclick="try{ toggleSavedPanel(); }catch(e){} try{ document.getElementById('search-input')?.focus(); }catch(e){}">
+            <button class="bton-empty-action" type="button" onclick="browseCompaniesFromSaved()">
               <i class="fa-solid fa-magnifying-glass"></i>
               <span>${(currentLang === "tr") ? "Şirketleri keşfet" : (currentLang === "es" ? "Explorar empresas" : "Browse companies")}</span>
             </button>
@@ -24351,125 +24257,94 @@ function deleteCert(certId, certName) {
     });
 }
 // --- VERİTABANINDAN GÜNCEL VERİLERİ ÇEKME ---
-/* --- GÜNCELLENMİŞ: initRealData (MOBILE SAFE + LIGHT FETCH) --- */
+/* --- GÜNCELLENMİŞ: initRealData (COUNTRY VERİSİ EKLENDİ) --- */
 async function initRealData() {
-  // ✅ Mobile stability: avoid fetching huge nested JSON (projects/assets/certs) for every profile
-  // ✅ Prevent double-run which can crash iOS Safari and trigger “page reloaded / a problem repeatedly occurred”
-  if (window.__BTON_INITREALDATA_RUNNING) return;
-  window.__BTON_INITREALDATA_RUNNING = true;
+  console.log("Supabase'den veriler çekiliyor...");
+  
+  // 1. Supabase'den tüm profilleri al
+  const { data: profiles, error } = await supabaseClient
+    .from('profiles')
+    .select('*');
 
-  try {
-    console.log("Supabase'den veriler çekiliyor...");
+  if (error) { console.error("Veri çekme hatası:", error); return; }
+  if (!profiles) return;
 
-    // 1) Pull lightweight fields only (no projects/assets/certs). Full details are fetched on-demand in openProfile().
-    let profiles = null;
-    let error = null;
-
-    try {
-      const r = await supabaseClient
-        .from('profiles')
-        .select('id,email,company_name,sector,company_type,city,country,address,company_size,founded_year,logo_url,website,tagline,description,services,subscription_tier,verification_status,owner_user_id,claimed_at,is_listed,updated_at,last_active_at,phone,contact_email,tax_id,duns_number,service_details,owner_name,owner_role,owner_linkedin,owner_photo_url');
-      profiles = r.data;
-      error = r.error;
-    } catch (e) {
-      error = e;
+  // 2. Verileri formatla
+  profiles.forEach(p => {
+// 👇👇👇 BURASI YENİ: EĞER BU PROFİL ADMİN İSE LİSTEYE EKLEME 👇👇👇
+    if (p.email === ADMIN_EMAIL) {
+        return; // Döngüyü burada kes, bu şirketi listeye alma
     }
+    // 👆👆👆 ---------------------------------------------------- 👆👆👆
+    const pId = p.id;
+    const realData = {
+      id: pId,
+      name: p.company_name || "New Company",
+      city: p.city || "Konum Yok",
+      updated_at: p.updated_at || p.updatedAt || null,
+      last_active_at: p.last_active_at || p.last_seen_at || p.last_login_at || p.last_sign_in_at || p.updated_at || null,
 
-    // Fallback (older schemas)
-    if (error) {
-      try {
-        const r2 = await supabaseClient
-          .from('profiles')
-          .select('id,email,company_name,sector,company_type,city,country,address,company_size,founded_year,logo_url,website,tagline,description,services,subscription_tier,verification_status,owner_user_id,claimed_at,is_listed,updated_at');
-        profiles = r2.data;
-        error = r2.error;
-      } catch (e2) {
-        error = e2;
-      }
-    }
+      
+      // ✅ İŞTE EKSİK OLAN SATIR BUYDU:
+      country: p.country || "Turkey",
+address: p.address || "", // ✅ BU SATIRI EKLEYİN
+      email: p.email || "", 
+      is_listed: (p.is_listed !== undefined ? p.is_listed : true),
+      subscription_tier: p.subscription_tier || "free",
+      verification_status: p.verification_status || "none",
+      tax_id: p.tax_id || "",
+      duns_number: p.duns_number || "",
 
-    if (error) { console.error("Veri çekme hatası:", error); return; }
-    if (!profiles) return;
+service_details: p.service_details || "",
+owner_name: p.owner_name,
+      owner_role: p.owner_role,
+      owner_linkedin: p.owner_linkedin,
+      owner_photo_url: p.owner_photo_url,
+      
+      sector: p.sector || "construction",
+      desc: p.description || "",
+      tagline: p.tagline || "",
+      type_label: p.company_type, 
+      size_label: p.company_size,
+      year_label: p.founded_year,
+      services: p.services ? p.services.split(',').map(s=>s.trim()) : [],
+      logo_url: p.logo_url,
+      website: p.website,
+      phone: p.phone,
+      contact_email: p.contact_email,
+      certificates: p.certificates || [],
+      projects: p.projects || [],
+      assets: p.assets || [],
+      trust: "verified",
+      meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
+    };
 
-    // 2) Format data into the in-memory directory list
-    profiles.forEach(p => {
-      // Skip admin profile
-      if (p && p.email === ADMIN_EMAIL) return;
-
-      const pId = p.id;
-      const realData = {
-        id: pId,
-        name: p.company_name || "New Company",
-        city: p.city || "Konum Yok",
-        updated_at: p.updated_at || p.updatedAt || null,
-        last_active_at: p.last_active_at || p.last_seen_at || p.last_login_at || p.last_sign_in_at || p.updated_at || null,
-
-        country: p.country || "Turkey",
-        address: p.address || "",
-        email: p.email || "",
-        is_listed: (p.is_listed !== undefined ? p.is_listed : true),
-        subscription_tier: p.subscription_tier || "free",
-        verification_status: p.verification_status || "none",
-        tax_id: p.tax_id || "",
-        duns_number: p.duns_number || "",
-
-        service_details: p.service_details || "",
-        owner_name: p.owner_name,
-        owner_role: p.owner_role,
-        owner_linkedin: p.owner_linkedin,
-        owner_photo_url: p.owner_photo_url,
-
-        sector: p.sector || "construction",
-        desc: p.description || "",
-        tagline: p.tagline || "",
-        type_label: p.company_type,
-        size_label: p.company_size,
-        year_label: p.founded_year,
-        services: p.services ? String(p.services).split(',').map(s=>s.trim()).filter(Boolean) : [],
-        logo_url: p.logo_url,
-        website: p.website,
-        phone: p.phone,
-        contact_email: p.contact_email,
-
-        // ✅ Lightweight mode: full arrays fetched per-company when needed
-        certificates: [],
-        projects: [],
-        assets: [],
-        __partial: true,
-
-        trust: "verified",
-        meta: { references: 80, delivery: 85, years: 5, financial: 80, digital: 70 }
-      };
-
-      const existingIndex = database.findIndex(c => c.id == pId);
-      if (existingIndex > -1) {
-        database[existingIndex] = { ...database[existingIndex], ...realData };
-      } else {
-        database.unshift(realData);
-      }
-    });
-
-    // 3) Refresh filters + screen
-    dedupeDatabasePreferReal();
-    updateHomeFilterOptions(document.getElementById("search-input") ? document.getElementById("search-input").value : "");
-
-    if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
-      renderShowcase();
+    const existingIndex = database.findIndex(c => c.id == pId);
+    if (existingIndex > -1) {
+      database[existingIndex] = { ...database[existingIndex], ...realData };
     } else {
+      database.unshift(realData);
+    }
+  });
+
+  // 3. Filtreleri ve Ekranı Yenile
+  dedupeDatabasePreferReal();
+  updateHomeFilterOptions(document.getElementById("search-input") ? document.getElementById("search-input").value : ""); // <-- refresh facet filters
+  
+  if (typeof isSearchActive !== 'undefined' && !isSearchActive) {
+      renderShowcase(); 
+  } else {
       const q = document.getElementById("search-input") ? document.getElementById("search-input").value : "";
       renderSearchResults(q);
-    }
-
-    // If a profile is already open, refresh it (it will fetch full details on-demand if needed)
-    if (selectedCompany) {
+  }
+  
+// Açık profil varsa güncelle
+  if (selectedCompany) {
       const updatedCompany = database.find(c => c.id === selectedCompany.id);
-      if (updatedCompany) {
-        selectedCompany = updatedCompany;
-        try { openProfile(selectedCompany.id, { preserveScroll: true, preserveTab: true, __fromRestore: true }); } catch(e) { try { openProfile(selectedCompany.id); } catch(_) {} }
+      if(updatedCompany) {
+          selectedCompany = updatedCompany;
+          openProfile(selectedCompany.id);
       }
-    }
-  } finally {
-    try { window.__BTON_INITREALDATA_RUNNING = false; } catch(e) {}
   }
 }
 // TÜMÜNÜ OKUNDU OLARAK İŞARETLE
