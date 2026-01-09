@@ -1449,6 +1449,19 @@ html[data-theme="dark"] .bton-react-pill.is-on .bton-react-ico{
   overscroll-behavior: contain;
 }
 
+/* Mobile stability: iOS Safari can crash with large backdrop-filter layers */
+@media (max-width: 768px){
+  #modal-updates-feed .backdrop-blur-sm,
+  #modal-updates-feed .backdrop-blur,
+  #modal-updates-feed [class*="backdrop-blur"]{
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  #modal-updates-feed > div.absolute{
+    background: rgba(15,23,42,.82) !important;
+  }
+}
+
 html[data-theme="dark"] #modal-updates-feed .bton-uf-panel{
   background: rgba(2,6,23,.92) !important;
   border-color: rgba(148,163,184,.18) !important;
@@ -1468,35 +1481,6 @@ html[data-theme="dark"] #modal-updates-feed #updates-feed-count{
   color: rgba(148,163,184,.88) !important;
 }
 
-
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card{
-  background: rgba(15,23,42,.55) !important;
-  border-color: rgba(148,163,184,.18) !important;
-}
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .text-BTrustOn-primary{
-  color: rgba(241,245,249,.92) !important;
-}
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .text-gray-500,
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .text-slate-500{
-  color: rgba(148,163,184,.92) !important;
-}
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bton-upd-note{
-  background: rgba(2,6,23,.55) !important;
-  border-color: rgba(148,163,184,.18) !important;
-}
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bton-upd-note > div{
-  color: rgba(226,232,240,.90) !important;
-}
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bton-upd-chip{
-  background: rgba(2,6,23,.35) !important;
-  border-color: rgba(148,163,184,.18) !important;
-  color: rgba(226,232,240,.88) !important;
-}
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bg-white\/70,
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bg-white\/85,
-html[data-theme="dark"] #modal-updates-feed .bton-upd-card .bg-white\/80{
-  background-color: rgba(2,6,23,.35) !important;
-}
 
 /* =========================================================
    Followed Update → Company posts panel (Last 7 days)
@@ -7691,7 +7675,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
       </div>
 
       <div class="mt-4 flex items-center justify-center" id="updates-feed-more-wrap">
-        <button class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200/70 bg-white/80 hover:bg-slate-50 text-[11px] font-extrabold text-slate-700 transition" id="btn-updates-feed-more" type="button" onclick="loadUpdatesFeedMore()">
+        <button class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200/70 bg-white/80 hover:bg-slate-50 text-[11px] font-extrabold text-slate-700 transition" id="btn-updates-feed-more" type="button" onclick="loadUpdatesFeedMoreSafe()">
           <i class="fa-solid fa-chevron-down text-[10px]"></i>
           <span data-i18n="updates_load_more">Load more</span>
         </button>
@@ -10052,8 +10036,6 @@ function renderHomeUpdates(list) {
     wrap.innerHTML = "";
     empty.classList.remove("hidden");
     _updateHomeUpdatesActiveCount([]);
-  try { const vb = document.getElementById("btn-open-updates-feed"); if (vb) vb.classList.add("hidden"); } catch(e) {}
-
     return;
   }
 
@@ -10310,6 +10292,9 @@ function openUpdatesFeedModal(){
     const m = document.getElementById(id);
     if (!m) return;
 
+    // Guard: avoid double-tap opening race on mobile
+    if (__updatesFeedOpen) return;
+
     if (!_isModalOpen(id)) toggleModal(id);
     __updatesFeedOpen = true;
 
@@ -10325,7 +10310,7 @@ function openUpdatesFeedModal(){
           try{
             if (__updatesFeedLoading || __updatesFeedDone) return;
             if ((sc.scrollTop + sc.clientHeight) >= (sc.scrollHeight - 900)){
-              loadUpdatesFeedMore();
+              loadUpdatesFeedMoreSafe();
             }
           } catch(e){}
         }, { passive:true });
@@ -10349,6 +10334,12 @@ function closeUpdatesFeedModal(){
   } catch(e) {}
 
   __updatesFeedOpen = false;
+
+  // Free DOM memory on mobile Safari (prevents crash loops after back/refresh)
+  try{
+    const listEl = document.getElementById("updates-feed-list");
+    if (listEl) listEl.innerHTML = "";
+  } catch(e) {}
 
   // Resume homepage flow gently
   try{
@@ -10399,7 +10390,7 @@ function refreshUpdatesFeed(){
   if (countEl) countEl.textContent = "";
 
   renderUpdatesFeedSkeleton(6);
-  loadUpdatesFeedMore(true);
+  loadUpdatesFeedMoreSafe(true);
 }
 
 function renderUpdatesFeedSkeleton(count = 6){
@@ -10523,6 +10514,25 @@ async function loadUpdatesFeedMore(isFresh = false){
     }
   } finally {
     __updatesFeedLoading = false;
+  }
+}
+
+function loadUpdatesFeedMoreSafe(isFresh = false){
+  try{
+    const p = loadUpdatesFeedMore(isFresh);
+    if (p && typeof p.catch === "function"){
+      p.catch((e) => {
+        try { console.warn("Updates feed load error:", e); } catch(_){}
+        try{
+          const listEl = document.getElementById("updates-feed-list");
+          const emptyEl = document.getElementById("updates-feed-empty");
+          if (listEl && isFresh) listEl.innerHTML = "";
+          if (emptyEl) emptyEl.classList.remove("hidden");
+        } catch(_){}
+      });
+    }
+  } catch(e){
+    try { console.warn("Updates feed load error:", e); } catch(_){}
   }
 }
 
