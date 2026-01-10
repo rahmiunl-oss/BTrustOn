@@ -5588,7 +5588,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <span data-i18n="updates_filter_followed">Only followed</span>
 </button>
 </div>
-<button class="md:hidden inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700 hover:text-slate-700 underline underline-offset-4 whitespace-nowrap" id="btn-open-updates-feed" type="button" onclick="openUpdatesFeedModal()">
+<button class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700 hover:text-slate-700 underline underline-offset-4 whitespace-nowrap" id="btn-open-updates-feed" type="button" onclick="openUpdatesFeedModal()">
   <i class="fa-regular fa-rectangle-list text-[11px]"></i>
   <span data-i18n="updates_view_all">View all</span>
 </button>
@@ -10041,11 +10041,12 @@ function renderHomeUpdates(list) {
 
   empty.classList.add("hidden");
 
-  // Show "View all" on mobile only when there are more updates than the rail cap
+  // Show "View all" whenever there is at least 1 update (desktop + mobile).
+  // On homepage rail we still cap items for performance; the full list is in the feed modal.
   try {
     const vb = document.getElementById("btn-open-updates-feed");
     if (vb) {
-      if (total > cap) vb.classList.remove("hidden");
+      if (total > 0) vb.classList.remove("hidden");
       else vb.classList.add("hidden");
     }
   } catch(e) {}
