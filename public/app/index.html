@@ -5119,6 +5119,16 @@ html[data-theme="dark"] .bton-official-badge__icon{
 html[data-theme="dark"] #bton-img-viewer .bton-title{ color: rgba(148,163,184,.85); }
 html[data-theme="dark"] #bton-img-viewer .bton-body{ background: rgba(3,7,18,.94); border-color: rgba(148,163,184,.14); }
 html[data-theme="dark"] #bton-img-viewer .bton-close{ background: rgba(15,23,42,.65); border-color: rgba(148,163,184,.18); color: rgba(226,232,240,.92); }
+
+
+/* Mobile GPU safety: avoid heavy blur/backdrop-filter */
+@media (max-width: 640px){
+  #bton-img-viewer .bton-backdrop{ backdrop-filter: none !important; }
+  /* Also avoid extra blurred duplicate images in update cards (kept for desktop only) */
+  .bton-upd-media img.blur-md,
+  .bton-cp7d-media img.blur-md{ display:none !important; }
+}
+
 </style>
 
 
@@ -7713,7 +7723,7 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
   <div id="upd-image-preview-wrap" class="hidden mt-3">
     <div class="bton-upd-media relative rounded-2xl overflow-hidden border border-slate-200/70 bg-slate-50/60 aspect-video">
       
-      <img id="upd-image-preview-bg" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+      <img id="upd-image-preview-bg" alt="" class="hidden sm:block absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
       <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
       <img id="upd-image-preview" alt="" class="absolute inset-0 w-full h-full object-contain">
       <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"></div>
@@ -10273,9 +10283,9 @@ function renderHomeUpdates(list) {
             ${hasImg ? `
               <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)]" style="height:92px">
                 <div class="bton-upd-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}">
-                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+                  <img src="${imgUrl}" alt="" class="hidden sm:block absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
                   <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
-                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                  <img loading="lazy" decoding="async" src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
                   <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
                   <div class="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 text-[8.5px] leading-none font-bold rounded-full px-1.5 py-0.5 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
                 </div>
@@ -10760,9 +10770,9 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
             ${hasImg ? `
               <div class="mt-3 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)]">
                 <div class="bton-upd-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}">
-                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+                  <img src="${imgUrl}" alt="" class="hidden sm:block absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
                   <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
-                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                  <img loading="lazy" decoding="async" src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
                   <div class="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
                   <div class="absolute bottom-2 left-2 inline-flex items-center gap-1 text-[9px] leading-none font-bold rounded-full px-2 py-1 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
                 </div>
@@ -30417,7 +30427,7 @@ function sortProjectsUI(mode){
         </button>
       </div>
       <div style="padding: 0 14px 14px 14px;">
-        <img id="bton-img-viewer-img" alt="">
+        <img id="bton-img-viewer-img" alt="" decoding="async">
       </div>
     </div>
   </div>
@@ -30645,11 +30655,10 @@ const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("cele
 
             ${hasImg ? `
               <div class="mt-2 bton-upd-media-slot relative rounded-2xl overflow-hidden ring-1 ring-slate-200/70 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] h-32 sm:h-36">
-                <div class="bton-cp7d-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}" role="button" aria-label="Open image"
-                  onclick="event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation) event.stopImmediatePropagation(); try{ if(window.openBtonImageLightbox) window.openBtonImageLightbox(this.getAttribute('data-img')); }catch(e){}; return false;">
-                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
+                <div class="bton-cp7d-media absolute inset-0 cursor-zoom-in" data-img="${imgUrl}" role="button" aria-label="Open image">
+                  <img src="${imgUrl}" alt="" class="hidden sm:block absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-80">
                   <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
-                  <img src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
+                  <img loading="lazy" decoding="async" src="${imgUrl}" alt="" class="absolute inset-0 w-full h-full object-cover">
                   <div class="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none"></div>
                   <div class="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 text-[8.5px] leading-none font-bold rounded-full px-1.5 py-0.5 bg-white/90 backdrop-blur border border-white/60 text-slate-800 shadow-sm" data-i18n="updates_photo">Photo</div>
                 </div>
@@ -30926,7 +30935,7 @@ document.addEventListener('keydown', function(e){
 
   // Extra safety: if someone clicks on the image itself, do not trigger underlying deep link
   document.addEventListener('click', function(e){
-    const media = e.target && e.target.closest ? e.target.closest('.bton-upd-media') : null;
+    const media = e.target && e.target.closest ? e.target.closest('.bton-upd-media, .bton-cp7d-media') : null;
     if(media){
       e.preventDefault();
       e.stopPropagation();
