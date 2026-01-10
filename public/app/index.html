@@ -6272,7 +6272,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
                     Submit your official tax details. Our compliance team will verify within 24h.
                 </p>
 <div class="hidden mb-4 p-3 rounded-lg text-[11px] font-bold border flex items-center gap-2" id="verify-status-alert"></div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div id="verify-edit-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
 <div class="md:col-span-2">
 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_reg_no">Registration No.</label>
 <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" id="edit-reg-no" placeholder="Registration / Entity number" type="text"/>
@@ -6287,7 +6287,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 <input class="input-field w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" id="edit-reg-url" placeholder="Official registry URL (optional)" type="text"/>
 </div>
 </div>
-<div class="mt-4 flex justify-end">
+<div id="verify-edit-actions" class="mt-4 flex justify-end">
 <button class="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-900 transition" data-i18n="ui_submit_documentation_4aed11" id="btn-verify-submit" onclick="submitVerificationRequest()" type="button">
                         SUBMIT DOCUMENTATION
                     </button>
@@ -6578,7 +6578,7 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 </div>
 </div>
 <div class="hidden mb-3 p-2 rounded-lg text-[10px] font-bold border flex items-center gap-2" id="widget-status-alert"></div>
-<div class="space-y-3">
+<div id="verify-widget-fields" class="space-y-3">
 <div>
 <label class="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1" data-i18n="lbl_reg_no">Registration No.</label>
 <input class="w-full border border-slate-200/70 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition" id="widget-reg-no" placeholder="Registration / Entity number" type="text"/>
@@ -24759,7 +24759,7 @@ async function uploadOwnerPhotoDirectFile(file) {
     if (localCompany) localCompany.owner_photo_url = publicUrl;
     if (selectedCompany && String(selectedCompany.id) === String(myCompanyIdOr(user.id))) selectedCompany.owner_photo_url = publicUrl;
 
-    showToast("Success", "Contact photo updated!", "success");
+    showToast("Success", _i18n("toast_contact_photo_updated","Contact photo updated!"), "success");
   } catch (error) {
     console.error(error);
     showToast("Error", "Upload failed: " + (error.message || "Unknown error"), "error");
@@ -27003,14 +27003,14 @@ function updateVerificationUI(status) {
     // --- EDİTÖR TARAFI ---
     const editAlert = document.getElementById("verify-status-alert");
     // Editördeki inputların olduğu kapsayıcı (.grid)
-    const editInputBox = document.querySelector("#verify-form-view .grid"); 
+    const editInputBox = document.getElementById("verify-edit-fields"); 
     // Editördeki butonun olduğu kapsayıcı (.mt-4)
-    const editBtnBox = document.querySelector("#verify-form-view .mt-4");
+    const editBtnBox = document.getElementById("verify-edit-actions");
 
     // --- WIDGET (PROFİL) TARAFI ---
     const widgetAlert = document.getElementById("widget-status-alert");
     // Widget'taki inputlar ve butonun olduğu kapsayıcı (.space-y-3)
-    const widgetMainBox = document.querySelector("#widget-form-view .space-y-3");
+    const widgetMainBox = document.getElementById("verify-widget-fields");
     // Widget butonu (Pending durumunda sadece butonu gizlemek için lazım)
     const widgetBtn = document.getElementById("btn-widget-submit");
 
