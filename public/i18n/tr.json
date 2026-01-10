@@ -1317,5 +1317,8 @@
   "notif_update_reaction_title": "Güncelleme etkileşimi",
   "notif_update_reaction_like": "{company} güncellemenizi beğendi.",
   "notif_update_reaction_celebrate": "{company} güncellemenizi kutladı.",
-  "toast_self_reaction": "Kendi güncellemenize tepki veremezsiniz."
+  "toast_self_reaction": "Kendi güncellemenize tepki veremezsiniz.",
+  "updates_view_all": "Tümünü gör",
+  "updates_feed_sub": "Son 7 gün • en yeni önce",
+  "toast_contact_photo_updated": "İletişim fotoğrafı güncellendi!"
 }
