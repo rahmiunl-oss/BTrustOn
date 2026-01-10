@@ -5302,6 +5302,18 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
 .bton-cc-meta-dot{ opacity: .75 !important; }
 </style>
 
+<style id="bton-asset-right-stack-up-v1">
+/* =========================================================
+   BTrustOn — Asset card right column micro-polish
+   Goal: lift Qty + Attachment preview slightly upward for a cleaner look
+   (no wrapping, no layout break)
+   ========================================================= */
+.bton-asset-right-stack-up{ margin-top: -8px !important; }
+@media (max-width: 420px){
+  .bton-asset-right-stack-up{ margin-top: -4px !important; }
+}
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -14961,7 +14973,9 @@ function renderAssetsCards(company, isMyProfile){
 
 
     const viewAction = !isMyProfile ? `
-      <button onclick="event.stopPropagation(); openAssetViewer(${a.id})" class="bton-view-hint inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[11px] font-extrabold text-slate-700 hover:bg-slate-50/50 hover:border-cyan-200 hover:text-BTrustOn-primary" title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
+      <button onclick="event.stopPropagation(); openAssetViewer(${a.id})"
+        class="bton-asset-view absolute left-5 bottom-5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-white/85 border border-slate-200 text-[11px] font-extrabold text-slate-700 shadow-sm backdrop-blur hover:bg-slate-50/70 hover:border-cyan-200 hover:text-BTrustOn-primary transition"
+        title="${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}">
         ${t("ui_view") || (currentLang === "tr" ? "Görüntüle" : "View")}
       </button>
     ` : ``;
@@ -14976,41 +14990,46 @@ function renderAssetsCards(company, isMyProfile){
 
 	    card.innerHTML = `
       <div class="bton-accent-line"></div>
+      ${viewAction}
       <div class="p-5">
-        <div class="flex items-start justify-between gap-4">
+        <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-3 items-start">
+          <!-- Row 1: Header (left) + Status (right) -->
           <div class="min-w-0">
             <div class="flex items-start gap-3">
               <div class="w-9 h-9 rounded-2xl bg-slate-50/80 border border-slate-200 text-slate-700 shadow-sm flex items-center justify-center shrink-0 transition group-hover:border-cyan-200/70 group-hover:bg-white">
                 <i class="fa-solid fa-cubes text-[13px] opacity-90"></i>
               </div>
               <div class="min-w-0">
-                <div class="text-[14px] font-extrabold text-slate-800 leading-snug break-words line-clamp-2 min-h-[2.6rem]">${_safeText(_assetName(a) || "Asset")}</div>
-                ${locText ? '<div class="mt-1 text-[11px] text-slate-500 break-words line-clamp-1"><i class="fa-solid fa-location-dot text-[10px] mr-1 text-slate-400"></i>' + _safeText(locText) + '</div>' : ''}
+                <div class="text-[14px] font-extrabold text-slate-800 leading-snug break-words line-clamp-2">${_safeText(_assetName(a) || "Asset")}</div>
+                ${locText ? '<div class="mt-0.5 text-[11px] text-slate-500 leading-tight break-words line-clamp-1"><i class="fa-solid fa-location-dot text-[10px] mr-1 text-slate-400"></i>' + _safeText(locText) + '</div>' : ''}
               </div>
-            </div>
-
-            <div class="mt-4 rounded-xl bg-slate-50/70 border border-slate-200/70 px-3 py-2.5">
-              <div class="flex items-center justify-between gap-2">
-              <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("th_specs") || "Specs"}</div>
-              ${__fileKindBadge}
-              </div>
-              <div class="mt-1 text-[12px] text-slate-700 font-medium leading-snug whitespace-normal break-words line-clamp-2">${_safeText(specText)}</div>
             </div>
           </div>
 
           <div class="flex flex-col items-end gap-2 shrink-0">
             <div class="flex items-center gap-2">${getStatusBadge(a.status)}</div>
-            ${viewAction}
-            <div class="flex items-start gap-2">
-              <div class="flex flex-col items-end gap-2">
-                <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200 text-[11px] font-extrabold text-slate-800">
+          </div>
+
+          <!-- Row 2: Specs (left) + Qty / Attachment / Actions (right) -->
+          <div class="min-w-0">
+            <div class="rounded-xl bg-slate-50/70 border border-slate-200/70 px-3 py-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("th_specs") || "Specs"}</div>
+                ${__fileKindBadge}
+              </div>
+              <div class="mt-1 text-[12px] text-slate-700 font-medium leading-snug whitespace-normal break-words line-clamp-2">${_safeText(specText)}</div>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2 shrink-0">
+            <div class="flex flex-col items-end gap-2">
+              <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-slate-200 text-[11px] font-extrabold text-slate-800">
                 <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">${t("ui_qty") || "Qty"}</span>
                 <span>${(a.qty ?? "-")}</span>
               </span>
-                ${attachmentPreviewInline}
-              </div>
-              ${actions}
+              ${attachmentPreviewInline}
             </div>
+            ${actions}
           </div>
         </div>
       </div>
@@ -15466,7 +15485,9 @@ function renderCertificates(company) {
     }
 
     // File kind badge (PDF / IMG / DOC…)
-    const __kind = fileUrl ? _assetFileKind({ file_url: fileUrl, file_name: cert.file_name || "" }) : "";
+    // File kind badge (PDF / DOC…). Hide IMG because the thumbnail already communicates it.
+    const __kindRaw = fileUrl ? _assetFileKind({ file_url: fileUrl, file_name: cert.file_name || "" }) : "";
+    const __kind = (__kindRaw && String(__kindRaw).toUpperCase() === "IMG") ? "" : __kindRaw;
     const fileTypeBadge = __kind ? `
       <span class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 bg-white/70 text-slate-600 text-[9px] font-extrabold uppercase tracking-wide">${__kind}</span>`
       : "";
@@ -15496,30 +15517,9 @@ function renderCertificates(company) {
       ? `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400">
            <i class="fa-regular fa-calendar"></i>
            Exp: <span class="font-bold text-gray-600">${date}</span>
-           ${typeof daysLeft === "number" ? `<span class="text-gray-300">•</span><span class="font-bold ${daysLeft < 0 ? "text-red-600" : (daysLeft <= 30 ? "text-amber-700" : "text-emerald-700")}">${(daysLeft < 0 ? (t("ui_days_ago") || "{n}d ago") : (t("ui_days_left") || "{n}d left")).replace("{n}", Math.abs(daysLeft))}</span>` : ``}
+           
          </span>`
       : `<span class="inline-flex items-center gap-2 text-[10px] text-gray-400"><i class="fa-regular fa-calendar"></i> ${t("ui_expiry") || "Expiry"}: <span class="font-bold text-gray-600">${t("ui_not_provided") || "Not provided"}</span></span>`;
-
-    // Issued micro timestamp (small, helpful)
-    const _lblIssued = (typeof t === "function" ? t("ui_issued") : null) || (currentLang === "tr" ? "Düzenlendi" : (currentLang === "es" ? "Emitido" : "Issued"));
-
-    let __issuedTs = Date.parse(cert.created_at || "");
-    if (!Number.isFinite(__issuedTs)) {
-      const __idn = Number(cert.id);
-      if (Number.isFinite(__idn) && __idn > 100000000000) __issuedTs = __idn; // ms timestamp ids
-    }
-
-    const __fmtDate = (ts) => {
-      try {
-        const loc = (currentLang === "tr") ? "tr-TR" : (currentLang === "es" ? "es-ES" : "en-US");
-        return new Date(ts).toLocaleDateString(loc, { year: "numeric", month: "2-digit", day: "2-digit" });
-      } catch(e) { return ""; }
-    };
-
-    const issuedTxt = Number.isFinite(__issuedTs) ? __fmtDate(__issuedTs) : "";
-    const stampHtml = issuedTxt
-      ? `<div class="mt-2 text-[10px] text-gray-400 font-semibold">${_lblIssued}: <span class="font-bold text-gray-600">${issuedTxt}</span></div>`
-      : "";
 
     // Actions
     const viewBtn = fileUrl
@@ -15558,7 +15558,6 @@ const card = document.createElement("div");
           </div>
           <div class="text-[11px] text-gray-500 font-semibold truncate mt-0.5">${issuer}</div>
           <div class="mt-2">${meta}</div>
-          ${stampHtml}
         </div>
       </div>
 
