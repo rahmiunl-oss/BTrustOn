@@ -5198,6 +5198,110 @@ html[data-theme="dark"] #view-message .border-slate-200\/70{
 }
 </style>
 
+
+<style id="bton-company-card-meta-premium-v2">
+/* =========================================================
+   BTrustOn — Company card meta row (References / Certificates / Assets)
+   Goal: more premium look WITHOUT changing layout (stays 1 row)
+   Fix: ultra-compact so TR labels fit (no cut-off)
+   ========================================================= */
+.bton-cc-meta{
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  gap: 6px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  color: rgba(100,116,139,.92) !important;
+}
+.bton-cc-meta-btn{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 0 !important;           /* keep width tight */
+  border-radius: 9999px !important;
+  transition: background-color .15s ease, color .15s ease !important;
+}
+.bton-cc-meta-btn:hover{
+  background: rgba(2,132,199,.05) !important;
+}
+.bton-cc-meta-dot{
+  color: rgba(148,163,184,.70) !important;
+  font-size: 10px !important;
+  margin: 0 1px !important;
+}
+.bton-cc-meta-num{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 12px !important;
+  padding: 0 4px !important;
+  border-radius: 9999px !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0)) ,
+    rgba(15,23,42,.06) !important;
+  color: rgba(15,23,42,.75) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(148,163,184,.28),
+    inset 0 1px 0 rgba(255,255,255,.40) !important;
+}
+
+html[data-theme="dark"] .bton-cc-meta{
+  color: rgba(148,163,184,.86) !important;
+}
+html[data-theme="dark"] .bton-cc-meta-btn:hover{
+  background: rgba(56,189,248,.07) !important;
+}
+html[data-theme="dark"] .bton-cc-meta-dot{
+  color: rgba(148,163,184,.45) !important;
+}
+html[data-theme="dark"] .bton-cc-meta-num{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)) ,
+    rgba(226,232,240,.10) !important;
+  color: rgba(226,232,240,.92) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(148,163,184,.16),
+    inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+</style>
+
+
+<style id="bton-company-card-meta-micro-v1">
+/* Micro polish (no layout change): better hover, focus ring, slightly nicer separators */
+.bton-cc-meta-btn{ position: relative !important; -webkit-tap-highlight-color: transparent; }
+.bton-cc-meta-btn::before{
+  content:"";
+  position:absolute;
+  inset:-4px -6px;           /* bigger hit-area visually, no reflow */
+  border-radius:9999px;
+  background: transparent;
+  transition: background-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  pointer-events:none;
+}
+.bton-cc-meta-btn > *{ position: relative; }
+.bton-cc-meta-btn:hover::before{
+  background: rgba(2,132,199,.06);
+}
+html[data-theme="dark"] .bton-cc-meta-btn:hover::before{
+  background: rgba(56,189,248,.08);
+}
+.bton-cc-meta-btn:active::before{
+  transform: scale(.985);
+}
+.bton-cc-meta-btn:focus-visible::before{
+  box-shadow: 0 0 0 2px rgba(2,132,199,.25);
+}
+html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
+  box-shadow: 0 0 0 2px rgba(56,189,248,.28);
+}
+
+/* Slightly softer dot */
+.bton-cc-meta-dot{ opacity: .75 !important; }
+</style>
+
 </head>
 <body class="bg-gray-50 text-BTrustOn-text font-sans antialiased relative">
 <!-- SAVED COMPANIES OVERLAY + PANEL -->
@@ -25301,36 +25405,36 @@ const safeCompanyVerifiedAttr2 = (company.verification_status === "approved" || 
                     `).join("")}
                   </div>
 
-                  <div class="flex items-center gap-3 pt-1 text-[11px] font-semibold text-slate-600">
+                  <div class="bton-cc-meta flex items-center gap-3 pt-1 text-[11px] font-semibold text-slate-600">
                     <button type="button"
-                      class="inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
+                      class="bton-cc-meta-btn inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
                       title="${t("card_meta_references") || "References"}"
                       aria-label="${t("card_meta_references") || "References"}"
                       onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'projects'});">
                       <span>${t("card_meta_references") || "References"}</span>
-                      <span class="font-extrabold text-slate-900">${refCount}</span>
+                      <span class="bton-cc-meta-num font-extrabold text-slate-900">${refCount}</span>
                     </button>
 
-                    <span class="text-slate-300 select-none" aria-hidden="true">•</span>
+                    <span class="bton-cc-meta-dot text-slate-300 select-none" aria-hidden="true">•</span>
 
                     <button type="button"
-                      class="inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
+                      class="bton-cc-meta-btn inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
                       title="${t("card_meta_certificates") || "Certificates"}"
                       aria-label="${t("card_meta_certificates") || "Certificates"}"
                       onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'certs'});">
                       <span>${t("card_meta_certificates") || "Certificates"}</span>
-                      <span class="font-extrabold text-slate-900">${certCount}</span>
+                      <span class="bton-cc-meta-num font-extrabold text-slate-900">${certCount}</span>
                     </button>
 
-                    <span class="text-slate-300 select-none" aria-hidden="true">•</span>
+                    <span class="bton-cc-meta-dot text-slate-300 select-none" aria-hidden="true">•</span>
 
                     <button type="button"
-                      class="inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
+                      class="bton-cc-meta-btn inline-flex items-center gap-1 hover:text-BTrustOn-accent transition whitespace-nowrap"
                       title="${t("card_meta_assets") || "Assets"}"
                       aria-label="${t("card_meta_assets") || "Assets"}"
                       onclick="event.stopPropagation(); openProfile('${company.id}', {tab:'assets'});">
                       <span>${t("card_meta_assets") || "Assets"}</span>
-                      <span class="font-extrabold text-slate-900">${assetCount}</span>
+                      <span class="bton-cc-meta-num font-extrabold text-slate-900">${assetCount}</span>
                     </button>
                   </div>
               </div>
