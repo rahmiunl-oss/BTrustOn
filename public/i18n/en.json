@@ -1317,5 +1317,8 @@
   "notif_update_reaction_title": "Update reaction",
   "notif_update_reaction_like": "{company} liked your update.",
   "notif_update_reaction_celebrate": "{company} celebrated your update.",
-  "toast_self_reaction": "You can’t react to your own update."
+  "toast_self_reaction": "You can’t react to your own update.",
+  "updates_view_all": "View all",
+  "updates_feed_sub": "Last 7 days • newest first",
+  "toast_contact_photo_updated": "Contact photo updated!"
 }
