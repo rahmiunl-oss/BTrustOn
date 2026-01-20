@@ -1162,7 +1162,7 @@ html[data-theme="dark"] .bton-profile-tabbar .upd-area-ico i{
     #btn-open-post-update:hover, #btn-open-post-update:active{ transform: none !important; }
   }
 
-  @media (max-width: 640px){ .bton-upd-card{ height: 282px !important; } }
+  @media (max-width: 640px){ #home-updates .bton-upd-card{ height: 310px !important; } }
 
   .bton-upd-card:focus-visible{
     outline:none;
@@ -1438,12 +1438,23 @@ html[data-theme="dark"] .bton-react-pill.is-on .bton-react-ico{
 #modal-updates-feed .bton-upd-card{
   min-width: 100% !important;
   max-width: 100% !important;
+  height: auto !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
 }
+#modal-updates-feed .bton-upd-card > div.relative.flex{
+  height: auto !important;
+}
+#modal-updates-feed .bton-upd-col{
+  height: auto !important;
+}
+
 #modal-updates-feed .bton-upd-media-slot{
-  height: 180px !important;
+  height: 150px !important;
 }
 #modal-updates-feed .bton-upd-note{
   height: auto !important;
+  padding: 12px !important;
 }
 #modal-updates-feed #updates-feed-scroll{
   overscroll-behavior: contain;
@@ -1805,6 +1816,11 @@ document.addEventListener("DOMContentLoaded", () => {
     .line-clamp-4,
     .line-clamp-5,
     .line-clamp-6,
+    .line-clamp-7,
+    .line-clamp-8,
+    .line-clamp-9,
+    .line-clamp-10,
+    .line-clamp-12,
     .clamp-4{
       display: -webkit-box;
       -webkit-box-orient: vertical;
@@ -1819,7 +1835,16 @@ document.addEventListener("DOMContentLoaded", () => {
     .line-clamp-5{ -webkit-line-clamp: 5; }
     .line-clamp-6{ -webkit-line-clamp: 6; }
 
-    /* Hover hint for clickable cards */
+    
+    .line-clamp-7{ -webkit-line-clamp: 7; }
+    .line-clamp-8{ -webkit-line-clamp: 8; }
+    .line-clamp-9{ -webkit-line-clamp: 9; }
+    .line-clamp-10{ -webkit-line-clamp: 10; }
+    .line-clamp-12{ -webkit-line-clamp: 12; }
+
+    /* Post Update textarea: slightly smaller type when an image is attached */
+    #upd-note.bton-upd-ta-img{ font-size: 12px !important; line-height: 1.45 !important; }
+/* Hover hint for clickable cards */
     .bton-view-hint{
       opacity: 0;
       transform: translateY(4px);
@@ -7699,7 +7724,7 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider" data-i18n="field_note">Additional Notes</div>
 <div class="text-[10px] text-gray-400"><span id="upd-note-count">0</span>/160</div>
 </div>
-<textarea class="w-full border border-slate-200/70 rounded-xl p-3 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none" id="upd-note" maxlength="160" placeholder="" rows="3"></textarea>
+<textarea class="w-full border border-slate-200/70 rounded-xl p-3 text-[13px] leading-relaxed text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none min-h-[96px] max-h-[240px] overflow-y-auto" id="upd-note" maxlength="160" placeholder="" rows="4"></textarea>
 <div class="mt-1 text-[10px] text-gray-400" data-i18n="post_note_hint">Max 160 characters</div>
 </div>
 
@@ -10247,7 +10272,7 @@ function renderHomeUpdates(list) {
       <div role="button" tabindex="0" data-post-id="${safePostId}" onclick="openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true });}"
         class="bton-upd-card group relative snap-start min-w-[320px] sm:min-w-[360px] md:min-w-[420px] text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] pr-4 pl-10 py-4 shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
 
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
+        <div class="absolute inset-0 opacity-0 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
         <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-slate-200/50 blur-2xl pointer-events-none"></div>
         <div class="bton-upd-rail">
           <div class="bton-upd-rail-vtxt" data-tone="${_signalMeta(area, templateCode).tone}">${railText}</div>
@@ -10292,8 +10317,8 @@ function renderHomeUpdates(list) {
               </div>
             ` : ``}
 
-            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 64 : 156}px">
-              ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "clamp-4" : "line-clamp-8"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 96 : 172}px">
+              ${hasNote ? `<div class="${hasImg ? "text-[11px]" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "line-clamp-5" : "line-clamp-6"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
               ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-1 right-2 text-[10px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
             </div>
@@ -10731,12 +10756,10 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
     const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("celebrate"));
 
     return `
-      <div role="button" tabindex="0"
-        onclick="closeUpdatesFeedModal(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); closeUpdatesFeedModal(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true });}"
-        class="bton-upd-card group relative text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] pr-4 pl-10 py-4 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
+      <div
+        class="bton-upd-card relative text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] pr-4 pl-10 py-3 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] overflow-hidden">
 
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
+        <div class="absolute inset-0 opacity-0 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
 
         <div class="bton-upd-rail">
           <div class="bton-upd-rail-vtxt" data-tone="${_signalMeta(area, templateCode).tone}">${railText}</div>
@@ -10780,12 +10803,12 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
             ` : ``}
 
             <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-              ${hasNote ? `<div class="text-[13px] text-gray-700 leading-relaxed break-words line-clamp-10">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+              ${hasNote ? `<div class="${hasImg ? "text-[12px]" : "text-[13px]"} text-gray-700 leading-relaxed break-words whitespace-pre-wrap">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
               ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-2 right-3 text-[11px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
             </div>
 
-            <div class="mt-3 flex items-center justify-between gap-2">
+            <div class="mt-2 flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
                 <button type="button"
                   class="bton-react-pill ${myCelebrate ? "is-on" : ""}"
@@ -10809,10 +10832,6 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
                   <span class="bton-react-count ${likeCount>0 ? "" : "hidden"}" data-react-count>${likeCount}</span>
                 </button>
               </div>
-
-              <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700">
-                <span data-i18n="updates_view">View</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </span>
             </div>
           </div>
         </div>
@@ -12017,6 +12036,8 @@ function _resetUpdateImageUI(){
     const img = document.getElementById("upd-image-preview");
     const bg = document.getElementById("upd-image-preview-bg");
     const rm = document.getElementById("upd-image-remove");
+    const ta = document.getElementById("upd-note");
+    if (ta) ta.classList.remove("bton-upd-ta-img");
     if (img) img.src = "";
     if (bg) bg.src = "";
     if (wrap) wrap.classList.add("hidden");
@@ -12054,6 +12075,15 @@ function handleUpdateImagePicked(input){
     if (bg)  bg.src  = __updImageObjUrl;
     if (wrap) wrap.classList.remove("hidden");
     if (rm) rm.classList.remove("hidden");
+
+    try {
+      const ta = document.getElementById("upd-note");
+      if (ta) {
+        ta.classList.add("bton-upd-ta-img");
+        // re-grow to avoid clipping when layout changes
+        if (typeof ta.oninput === 'function') ta.oninput();
+      }
+    } catch(e) {}
 
     try {
       showToast(
@@ -12169,7 +12199,9 @@ async function openPostUpdateModal() {
     note.value = "";
     note.placeholder = _i18n("post_note_ph", "Add a short note (optional)…");
     if (cnt) cnt.textContent = "0";
-    note.oninput = () => { if (cnt) cnt.textContent = String(note.value.length || 0); };
+    const __grow = () => { try { note.style.height = 'auto'; note.style.height = Math.min(note.scrollHeight || 0, 240) + 'px'; } catch(e) {} };
+    note.oninput = () => { if (cnt) cnt.textContent = String(note.value.length || 0); __grow(); };
+    try { setTimeout(__grow, 0); } catch(e) {}
   }
 
   // reset optional image
