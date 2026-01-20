@@ -26828,21 +26828,51 @@ function toggleVerifyVisibility(mode) {
     // Editör Elementleri
     const editLock = document.getElementById("verify-locked-view");
     const editForm = document.getElementById("verify-form-view");
-    
+
     // Profil Widget Elementleri
     const widgetLock = document.getElementById("widget-locked-view");
     const widgetForm = document.getElementById("widget-form-view");
 
+    // Helper: prevent HTML5 validation errors from hidden Pro-only fields
+    const setFormInputsEnabled = (rootEl, enabled) => {
+        if (!rootEl) return;
+        const els = rootEl.querySelectorAll('input, select, textarea, button');
+        els.forEach(el => {
+            try {
+                if (!enabled) {
+                    // Disabled fields are excluded from constraint validation
+                    if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+                        try { el.required = false; } catch(_) {}
+                    }
+                    el.disabled = true;
+                } else {
+                    el.disabled = false;
+                }
+            } catch(_) {}
+        });
+    };
+
     if (mode === 'unlocked') {
-        if(editLock) editLock.classList.add("hidden");
-        if(editForm) editForm.classList.remove("hidden");
-        if(widgetLock) widgetLock.classList.add("hidden");
-        if(widgetForm) widgetForm.classList.remove("hidden");
+        if (editLock) editLock.classList.add("hidden");
+        if (editForm) editForm.classList.remove("hidden");
+        if (widgetLock) widgetLock.classList.add("hidden");
+        if (widgetForm) widgetForm.classList.remove("hidden");
+
+        // Enable inputs again; required rules will be applied by updateRegistryVerificationUI()
+        setFormInputsEnabled(editForm, true);
+        setFormInputsEnabled(widgetForm, true);
+
+        try { if (typeof updateRegistryVerificationUI === 'function') updateRegistryVerificationUI(); } catch(_) {}
     } else {
-        if(editLock) editLock.classList.remove("hidden");
-        if(editForm) editForm.classList.add("hidden");
-        if(widgetLock) widgetLock.classList.remove("hidden");
-        if(widgetForm) widgetForm.classList.add("hidden");
+        if (editLock) editLock.classList.remove("hidden");
+        if (editForm) editForm.classList.add("hidden");
+        if (widgetLock) widgetLock.classList.remove("hidden");
+        if (widgetForm) widgetForm.classList.add("hidden");
+
+        // Disable hidden Pro-only forms so profile Save doesn't trigger
+        // "An invalid form control is not focusable"
+        setFormInputsEnabled(editForm, false);
+        setFormInputsEnabled(widgetForm, false);
     }
 }
 
@@ -26969,14 +26999,19 @@ function updateRegistryVerificationUI() {
     try { eReg.placeholder = rule.regPlaceholder || eReg.placeholder; } catch(_) {}
   }
   if (eHelp) eHelp.textContent = rule.help || "";
+  // If the Pro verification form is locked/hidden, do NOT require hidden inputs (prevents browser validation error)
+  const __editVerifyForm = document.getElementById("verify-form-view");
+  const __editorVerifyVisible = !!(__editVerifyForm && !__editVerifyForm.classList.contains("hidden"));
+
   if (eRegionWrap) {
-    if (rule.showRegion) eRegionWrap.classList.remove("hidden");
+    if (rule.showRegion && __editorVerifyVisible) eRegionWrap.classList.remove("hidden");
     else eRegionWrap.classList.add("hidden");
   }
   if (eRegionLabel) eRegionLabel.textContent = rule.regionLabel || "State / Region";
   if (eRegionInput) {
     try { eRegionInput.placeholder = rule.regionPlaceholder || eRegionInput.placeholder; } catch(_) {}
-    try { eRegionInput.required = !!rule.regionRequired; } catch(_) {}
+    // Required only when visible
+    try { eRegionInput.required = !!(rule.showRegion && rule.regionRequired && __editorVerifyVisible); } catch(_) {}
   }
 
   // Registry link placeholders (i18n)
