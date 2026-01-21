@@ -1257,5 +1257,9 @@
   "ui_verification_approved_msg_fmt": "Tu solicitud de verificación para {company} fue aprobada.",
   "ui_verification_rejected_title": "Verificación rechazada",
   "ui_verification_rejected_msg_fmt": "Tu solicitud de verificación para {company} fue rechazada.",
-  "ui_verification_rejected_msg_reason_fmt": "Tu solicitud de verificación para {company} fue rechazada. Motivo: {reason}"
+  "ui_verification_rejected_msg_reason_fmt": "Tu solicitud de verificación para {company} fue rechazada. Motivo: {reason}",
+  "notif_update_reaction_title": "Interacción de actualización",
+  "notif_update_reaction_like": "A {company} le gustó tu actualización.",
+  "notif_update_reaction_celebrate": "{company} celebró tu actualización."
+  
 }
