@@ -1251,11 +1251,14 @@
   "post_image_rules": "Her oran • 1 görsel",
   "post_image_hint": "Opsiyonel. Akışta kompakt görünür; tıklayınca tam boy açılır (kırpma yok).",
   "post_image_prepared": "Görsel eklendi. Akışta kompakt görünür; tıklayınca tam boy açılır.",
-   "ui_claim_welcome_body_fmt": "Tebrikler! {company} sahiplik talebiniz onaylandı. Bu şirketi {username} kullanıcı adı ve mevcut şifrenizle yönetebilirsiniz. Aşağıdan profil düzenlemeye geçebilirsiniz.",
+  "ui_claim_welcome_body_fmt": "Tebrikler! {company} sahiplik talebiniz onaylandı. Bu şirketi {username} kullanıcı adı ve mevcut şifrenizle yönetebilirsiniz. Aşağıdan profil düzenlemeye geçebilirsiniz.",
   "ui_your_account": "hesabınız",
-  "ui_verification_approved_title": "Verificación aprobada",
-  "ui_verification_approved_msg_fmt": "Tu solicitud de verificación para {company} fue aprobada.",
-  "ui_verification_rejected_title": "Verificación rechazada",
-  "ui_verification_rejected_msg_fmt": "Tu solicitud de verificación para {company} fue rechazada.",
-  "ui_verification_rejected_msg_reason_fmt": "Tu solicitud de verificación para {company} fue rechazada. Motivo: {reason}"
+  "ui_verification_approved_title": "Doğrulama onaylandı",
+  "ui_verification_approved_msg_fmt": "{company} için yaptığın doğrulama başvurusu onaylandı.",
+  "ui_verification_rejected_title": "Doğrulama reddedildi",
+  "ui_verification_rejected_msg_fmt": "{company} için yaptığın doğrulama başvurusu reddedildi.",
+  "ui_verification_rejected_msg_reason_fmt": "{company} için yaptığın doğrulama başvurusu reddedildi. Sebep: {reason}",
+  "notif_update_reaction_title": "Güncelleme etkileşimi",
+  "notif_update_reaction_like": "{company} güncellemenizi beğendi.",
+  "notif_update_reaction_celebrate": "{company} güncellemenizi kutladı."
 }
