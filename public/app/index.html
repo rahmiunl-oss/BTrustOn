@@ -11075,7 +11075,7 @@ async function btonToggleUpdateReaction(ev, postId, reaction){
       const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
       const { error } = await supabaseClient
         .from("post_reactions")
-        .upsert([payload], { onConflict: "post_id,reactor_company_id,reaction" });
+        .upsert([payload], { onConflict: "post_id,reactor_company_id,reaction", ignoreDuplicates: true });
       if (error) throw error;
     }
   }catch(e){
