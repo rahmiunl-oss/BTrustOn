@@ -22840,37 +22840,202 @@ function subscribeToMessages() {
 // --- Notifications: fetch + realtime subscribe ---
 // --- Notifications fetch + realtime subscribe ---
 
+/* --- NOTIFICATIONS: fetch + i18n-safe actor enrichment --- */
+window.__BTON_NOTIF_ACTOR_CACHE = window.__BTON_NOTIF_ACTOR_CACHE || { byProfileId: new Map(), byOwnerUserId: new Map() };
+
+function _btonNormNotifVars(v){
+  try{
+    if (typeof _normNotifVars === "function") return _normNotifVars(v);
+    if (!v) return {};
+    if (typeof v === "string"){
+      const s = v.trim();
+      if (!s) return {};
+      if (s[0] === "{" || s[0] === "[") return JSON.parse(s);
+      return {};
+    }
+    if (typeof v === "object") return v;
+  }catch(e){}
+  return {};
+}
+
+function _btonFirstNonEmpty(obj, keys){
+  try{
+    if (!obj || typeof obj !== "object") return "";
+    for (const k of keys){
+      const v = obj[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+      if (v != null && (typeof v === "number" || typeof v === "boolean")) return String(v);
+    }
+  }catch(e){}
+  return "";
+}
+
+async function _btonEnrichNotifActors(list){
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) return arr;
+
+  const cache = window.__BTON_NOTIF_ACTOR_CACHE;
+  const byProfileId = cache.byProfileId;
+  const byOwnerUserId = cache.byOwnerUserId;
+
+  const idKeys = ["actor_company_id","reactor_company_id","from_company_id","viewer_company_id","company_id","profile_id","cid","companyId","profileId"];
+  const nameKeys = ["company","company_name","companyName","actor_company","actor_company_name"];
+
+  const needProfileIds = new Set();
+  const needOwnerIds = new Set();
+
+  // 1) Collect lookups & pre-fill obvious names
+  for (const n of arr){
+    try{
+      if (!n || n.__actor_company_name) continue;
+
+      const mv = _btonNormNotifVars(n.message_i18n_vars);
+      const tv = _btonNormNotifVars(n.title_i18n_vars);
+      const vars = Object.assign({}, tv || {}, mv || {});
+
+      const explicitName = _btonFirstNonEmpty(vars, nameKeys);
+      if (explicitName){
+        n.__actor_company_name = explicitName;
+        continue;
+      }
+
+      const cid = _btonFirstNonEmpty(vars, idKeys);
+      if (cid){
+        if (!byProfileId.has(cid)) needProfileIds.add(cid);
+      }
+
+      const aid = (n.actor_id != null) ? String(n.actor_id).trim() : "";
+      if (aid){
+        if (!byProfileId.has(aid)) needProfileIds.add(aid);   // actor_id might be profile id
+        if (!byOwnerUserId.has(aid)) needOwnerIds.add(aid);   // ...or owner_user_id
+      }
+    }catch(e){}
+  }
+
+  // 2) Batch fetch profiles by id (profile/company id)
+  async function _fetchProfilesById(ids){
+    const out = new Map();
+    const a = Array.from(ids).filter(Boolean);
+    if (!a.length) return out;
+
+    for (let i=0; i<a.length; i+=50){
+      const batch = a.slice(i, i+50);
+      try{
+        const { data, error } = await supabaseClient
+          .from("profiles")
+          .select("id,company_name")
+          .in("id", batch);
+
+        if (!error && Array.isArray(data)){
+          data.forEach(r => {
+            if (r && r.id && r.company_name) out.set(String(r.id), String(r.company_name));
+          });
+        }
+      }catch(e){}
+    }
+    return out;
+  }
+
+  // 3) Batch fetch profiles by owner_user_id (auth user id)
+  async function _fetchProfilesByOwner(ids){
+    const out = new Map();
+    const a = Array.from(ids).filter(Boolean);
+    if (!a.length) return out;
+
+    for (let i=0; i<a.length; i+=50){
+      const batch = a.slice(i, i+50);
+      try{
+        const { data, error } = await supabaseClient
+          .from("profiles")
+          .select("owner_user_id,company_name")
+          .in("owner_user_id", batch);
+
+        if (!error && Array.isArray(data)){
+          data.forEach(r => {
+            if (r && r.owner_user_id && r.company_name) out.set(String(r.owner_user_id), String(r.company_name));
+          });
+        }
+      }catch(e){}
+    }
+    return out;
+  }
+
+  try{
+    if (typeof supabaseClient !== "undefined" && supabaseClient && supabaseClient.from){
+      const mp1 = await _fetchProfilesById(needProfileIds);
+      mp1.forEach((v,k) => { try{ if (!byProfileId.has(k)) byProfileId.set(k,v); }catch(e){} });
+
+      const mp2 = await _fetchProfilesByOwner(needOwnerIds);
+      mp2.forEach((v,k) => { try{ if (!byOwnerUserId.has(k)) byOwnerUserId.set(k,v); }catch(e){} });
+    }
+  }catch(e){}
+
+  // 4) Second pass: assign __actor_company_name where possible
+  for (const n of arr){
+    try{
+      if (!n || n.__actor_company_name) continue;
+
+      const mv = _btonNormNotifVars(n.message_i18n_vars);
+      const tv = _btonNormNotifVars(n.title_i18n_vars);
+      const vars = Object.assign({}, tv || {}, mv || {});
+
+      const cid = _btonFirstNonEmpty(vars, idKeys);
+      if (cid && byProfileId.has(cid)){
+        n.__actor_company_name = byProfileId.get(cid);
+        continue;
+      }
+
+      const aid = (n.actor_id != null) ? String(n.actor_id).trim() : "";
+      if (aid){
+        if (byProfileId.has(aid)) { n.__actor_company_name = byProfileId.get(aid); continue; }
+        if (byOwnerUserId.has(aid)) { n.__actor_company_name = byOwnerUserId.get(aid); continue; }
+      }
+    }catch(e){}
+  }
+
+  return arr;
+}
+
 async function fetchNotificationsUnread() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // ✅ Schema-safe: do NOT request optional columns like actor_id / updated_at / i18n keys.
-    // We only fetch columns that are very likely to exist in your notifications table.
-    let r = await supabaseClient
-      .from('notifications')
-      .select('id,title,message,created_at,is_read,recipient_user_id')
-      .eq('recipient_user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    // Try to fetch i18n columns too (needed to fill {company} placeholders).
+    const baseSel = "id,title,message,created_at,is_read";
+    const selWithRecipient = baseSel + ",recipient_user_id";
+    const selExtended = selWithRecipient + ",actor_id,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars";
+    const selExtendedNoRecipient = baseSel + ",actor_id,title_i18n_key,title_i18n_vars,message_i18n_key,message_i18n_vars";
+
+    async function _q(selectCols, withRecipient){
+      let q = supabaseClient.from("notifications").select(selectCols);
+      if (withRecipient) q = q.eq("recipient_user_id", user.id);
+      return q.order("created_at", { ascending: false }).limit(50);
+    }
+
+    let r = await _q(selExtended, true);
 
     // Fallback: some schemas might not have recipient_user_id (older versions)
-    if (r?.error && String(r.error.message || '').toLowerCase().includes('recipient_user_id')) {
-      r = await supabaseClient
-        .from('notifications')
-        .select('id,title,message,created_at,is_read')
-        .order('created_at', { ascending: false })
-        .limit(50);
+    if (r?.error && String(r.error.message || "").toLowerCase().includes("recipient_user_id")) {
+      r = await _q(selExtendedNoRecipient, false);
+    }
+
+    // Fallback: some schemas might not have i18n columns (older versions)
+    if (r?.error && /column\s+.*does\s+not\s+exist|Could\s+not\s+find/i.test(String(r.error.message || ""))) {
+      r = await _q(selWithRecipient, true);
+      if (r?.error && String(r.error.message || "").toLowerCase().includes("recipient_user_id")) {
+        r = await _q(baseSel, false);
+      }
     }
 
     if (r?.error) {
-      console.error('Notifications fetch error:', r.error);
+      console.error("Notifications fetch error:", r.error);
       return;
     }
 
     // Apply local visibility (so deleted/cleared notifs don’t come back after refresh)
     let _list = r.data || [];
-    try { if (typeof _applyNotifVisibility === 'function') _list = _applyNotifVisibility(_list); } catch(e) {}
+    try { if (typeof _applyNotifVisibility === "function") _list = _applyNotifVisibility(_list); } catch(e) {}
 
     // Hide legacy verification i18n-marker rows (can appear as duplicates if RPC already created a plain-text notif)
     try {
@@ -22879,6 +23044,9 @@ async function fetchNotificationsUnread() {
         return !/^\[I18N:ui_verification_/.test(tt);
       });
     } catch(e) {}
+
+    // ✅ Enrich actor company names once (so i18n templates can show "{company}" reliably)
+    try { _list = await _btonEnrichNotifActors(_list); } catch(e) {}
 
     notificationsData = _list;
 
@@ -22894,7 +23062,7 @@ async function fetchNotificationsUnread() {
       updateBadges((inboxUnreadCount || 0) + (notificationsUnreadCount || 0));
     }
   } catch (e) {
-    console.warn('Notifications fetch exception:', e);
+    console.warn("Notifications fetch exception:", e);
   }
 }
 
@@ -23508,24 +23676,58 @@ try {
       return m ? String(m[1]).trim() : "";
     })();
 
-    const __rxVars = { company: __rxCompany || (notifParams && notifParams.company) || "" };
+    // Prefer explicit company name from vars, otherwise use actor enrichment.
+    const __rxCompanyName = String(__rxCompany || (notifParams && (notifParams.company || notifParams.company_name)) || "").trim();
+
+    // Language-aware fallback *for templates* (Spanish "like" template usually already contains leading "A").
+    const __tplFallback =
+      (currentLang === "tr") ? "Bir şirket"
+      : (currentLang === "es") ? (__isUpdateReactionLike ? "una empresa" : "Una empresa")
+      : "A company";
+
+    const __rxVars = { company: __rxCompanyName || __tplFallback };
+
+    function __tp(k1, k2){
+      try{
+        if (typeof tP !== "function") return "";
+        const out = tP(k1, __rxVars) || (k2 ? tP(k2, __rxVars) : "");
+        return (typeof out === "string") ? out : "";
+      }catch(e){ return ""; }
+    }
+
+    // If a translation exists but does NOT include the company text (e.g., template accidentally missing {company}),
+    // fall back to our safe hardcoded strings so the subject is never blank.
+    function __preferCompany(out){
+      try{
+        const s = String(out || "");
+        if (!s) return "";
+        const subj = String(__rxVars.company || "").trim();
+        if (!subj) return "";
+        const isReactionSentence =
+          /^\s*(celebrated\s+your\s+update|liked\s+your\s+update|güncellemenizi\s+(?:kutladı|beğendi)|celebró\s+tu\s+actualización|le\s+gustó\s+tu\s+actualización)\b/i.test(s.trim());
+        if (isReactionSentence && subj && s.toLowerCase().indexOf(subj.toLowerCase()) === -1) return "";
+        return s;
+      }catch(e){ return ""; }
+    }
 
     if (__isUpdateReactionLike) {
+      const __i18n = __preferCompany(__tp("notif_update_reaction_like", "notifications_update_reaction_like"));
       msgResolved =
-        (typeof tP === "function" && (tP("notif_update_reaction_like", __rxVars) || tP("notifications_update_reaction_like", __rxVars)))
+        __i18n
         || (currentLang === "tr"
-              ? `${__rxVars.company || "Bir şirket"} güncellemenizi beğendi.`
+              ? `${__rxCompanyName || "Bir şirket"} güncellemenizi beğendi.`
               : (currentLang === "es"
-                  ? `A ${__rxVars.company || "una empresa"} le gustó tu actualización.`
-                  : `${__rxVars.company || "A company"} liked your update.`));
+                  ? `A ${__rxCompanyName || "una empresa"} le gustó tu actualización.`
+                  : `${__rxCompanyName || "A company"} liked your update.`));
     } else if (__isUpdateReactionCelebrate) {
+      const __i18n = __preferCompany(__tp("notif_update_reaction_celebrate", "notifications_update_reaction_celebrate"));
       msgResolved =
-        (typeof tP === "function" && (tP("notif_update_reaction_celebrate", __rxVars) || tP("notifications_update_reaction_celebrate", __rxVars)))
+        __i18n
         || (currentLang === "tr"
-              ? `${__rxVars.company || "Bir şirket"} güncellemenizi kutladı.`
+              ? `${__rxCompanyName || "Bir şirket"} güncellemenizi kutladı.`
               : (currentLang === "es"
-                  ? `${__rxVars.company || "Una empresa"} celebró tu actualización.`
-                  : `${__rxVars.company || "A company"} celebrated your update.`));
+                  ? `${__rxCompanyName || "Una empresa"} celebró tu actualización.`
+                  : `${__rxCompanyName || "A company"} celebrated your update.`));
     }
   }
 } catch(e) {}
