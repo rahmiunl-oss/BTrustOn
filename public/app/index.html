@@ -10927,8 +10927,8 @@ async function btonHydrateUpdateReactions(updates){
       if (reaction === "celebrate" || reaction === "tebrik") st.counts.celebrate = (st.counts.celebrate || 0) + 1;
 
       if (myCid && r.reactor_company_id && String(r.reactor_company_id) === String(myCid)){
-        // enforce single active reaction locally (like OR celebrate)
-        st.mine = new Set();
+        // allow multiple reactions (like AND/OR celebrate)
+        if (!st.mine || !(st.mine instanceof Set)) st.mine = new Set();
         if (reaction === "like") st.mine.add("like");
         if (reaction === "celebrate" || reaction === "tebrik") st.mine.add("celebrate");
       }
@@ -11049,48 +11049,61 @@ async function btonToggleUpdateReaction(ev, postId, reaction){
     if (!st.counts) st.counts = { like:0, celebrate:0 };
     if (!st.mine || !st.mine.has) st.mine = new Set();
 
-    // We enforce: 1 company -> max 1 reaction per post (like OR celebrate)
-    const cur = (st.mine.has("like") ? "like" : (st.mine.has("celebrate") ? "celebrate" : null));
-    const turningOff = (cur === r);
+    // Allow BOTH reactions independently (Like AND/OR Celebrate)
+    // Determine server-truth for this specific reaction to avoid counter inflation across sessions.
+    let exists = false;
+    try{
+      const { data: ex, error: exErr } = await supabaseClient
+        .from("post_reactions")
+        .select("reaction")
+        .eq("post_id", pid)
+        .eq("reactor_company_id", myCid)
+        .eq("reaction", r)
+        .maybeSingle();
+      if (exErr) throw exErr;
+      exists = !!ex;
+    }catch(_){
+      // fall back to cache if select fails
+      exists = !!(st.mine && st.mine.has && st.mine.has(r));
+    }
 
-    // Optimistic UI
+    const turningOff = !!exists;
+
+    // Optimistic UI for this reaction only
     if (turningOff){
       st.mine.delete(r);
       st.counts[r] = Math.max(0, (st.counts[r] || 0) - 1);
+      btonApplyUpdateReactionUI(pid);
+
+      const { error: delErr } = await supabaseClient
+        .from("post_reactions")
+        .delete()
+        .eq("post_id", pid)
+        .eq("reactor_company_id", myCid)
+        .eq("reaction", r);
+      if (delErr) throw delErr;
+
+      // best-effort retract (server trigger recommended)
+      try { await btonAttemptRetractReactionNotification(pid, myCid, r); } catch(e) {}
     } else {
-      // if switching from other reaction, remove it first
-      if (cur && cur !== r){
-        st.mine.delete(cur);
-        st.counts[cur] = Math.max(0, (st.counts[cur] || 0) - 1);
-      }
       st.mine.add(r);
       st.counts[r] = (st.counts[r] || 0) + 1;
-    }
-    btonApplyUpdateReactionUI(pid);
+      btonApplyUpdateReactionUI(pid);
 
-    // Persist (no UPDATE needed): delete existing row first, then insert if turning on
-    // This guarantees the counter cannot be inflated across sessions.
-    const { error: delErr } = await supabaseClient
-      .from("post_reactions")
-      .delete()
-      .eq("post_id", pid)
-      .eq("reactor_company_id", myCid);
+      const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
+      const { error: insErr } = await supabaseClient
+        .from("post_reactions")
+        .insert([payload]);
 
-    if (delErr) throw delErr;
-
-    // If user turned it off, also retract its notification (best-effort; server trigger recommended)
-    if (turningOff){
-      try { await btonAttemptRetractReactionNotification(pid, myCid, r); } catch(e) {}
-      return;
+      // If a fast double-click/race happens, treat unique violation as success
+      if (insErr && String(insErr.code||"") !== "23505") throw insErr;
     }
 
-    // Turn on (or switch) -> insert new reaction
-    const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
-    const { error: insErr } = await supabaseClient
-      .from("post_reactions")
-      .insert([payload]);
-
-    if (insErr) throw insErr;
+    // Re-sync this post from server for accurate counts/state
+    try{
+      await btonHydrateUpdateReactions([{ id: pid }]);
+      btonApplyUpdateReactionUI(pid);
+    }catch(_){ }
 
   }catch(e){
     // Re-sync this post from server
