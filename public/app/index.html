@@ -23294,15 +23294,32 @@ function renderInboxItems() {
         /invitad/i.test(String(msgRaw||""));
 
 // ✅ Detect update reaction notifications (like / celebrate) even if DB text is Turkish/English/Spanish
+const __rxBlob = (String(titleRaw||"") + " " + String(msgRaw||"")).toLowerCase();
+const __rxLooksUpdate = (__rxBlob.includes("güncelle") || __rxBlob.includes("guncelle") || __rxBlob.includes("update") || __rxBlob.includes("actualiz"));
+const __rxLooksCelebrate = __rxLooksUpdate && (
+  __rxBlob.includes("kutla") || __rxBlob.includes("tebrik") ||
+  __rxBlob.includes("celebrat") || __rxBlob.includes("congratul") ||
+  __rxBlob.includes("felicit") || __rxBlob.includes("celebró") || __rxBlob.includes("celebro")
+);
+const __rxLooksLike = __rxLooksUpdate && (
+  __rxBlob.includes("beğen") || __rxBlob.includes("begend") ||
+  __rxBlob.includes("liked") || __rxBlob.includes("me gusta") || __rxBlob.includes("gustó") ||
+  __rxBlob.includes("like")
+);
+
 const __isUpdateReactionLike =
-  /\bgüncellemenizi\s+beğendi\b/i.test(String(msgRaw||"")) ||
+  /\bgüncelleme(?:nizi|ni)\s+beğend/i.test(String(msgRaw||"")) ||
   /\bliked\s+your\s+update\b/i.test(String(msgRaw||"")) ||
   /\ble\s+gustó\s+tu\s+actualización\b/i.test(String(msgRaw||"")) ||
-  /\ba\s+.+\s+le\s+gustó\s+tu\s+actualización\b/i.test(String(msgRaw||""));
+  /\ba\s+.+\s+le\s+gustó\s+tu\s+actualización\b/i.test(String(msgRaw||"")) ||
+  __rxLooksLike;
+
 const __isUpdateReactionCelebrate =
-  /\bgüncellemenizi\s+kutladı\b/i.test(String(msgRaw||"")) ||
+  /\bgüncelleme(?:nizi|ni)\s+(?:kutlad[ıi]|tebrik\s+ett[ıi])\b/i.test(String(msgRaw||"")) ||
   /\bcelebrated\s+your\s+update\b/i.test(String(msgRaw||"")) ||
-  /\bcelebró\s+tu\s+actualización\b/i.test(String(msgRaw||""));
+  /\bcelebró\s+tu\s+actualización\b/i.test(String(msgRaw||"")) ||
+  __rxLooksCelebrate;
+
 const __isUpdateReactionNotif = (__isUpdateReactionLike || __isUpdateReactionCelebrate);
 
 
