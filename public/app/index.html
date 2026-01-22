@@ -6062,7 +6062,7 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
 <div>
 <div class="flex items-center gap-2">
 <h3 class="text-sm font-extrabold mb-0" data-i18n="pricing_plan_pro">Pro</h3>
-<span class="text-[10px] font-extrabold bg-amber-400 text-slate-900 px-2 py-1 rounded-full" data-i18n="badge_trial">3-MO FREE</span>
+<span class="text-[10px] font-extrabold bg-amber-400 text-slate-900 px-2 py-1 rounded-full" data-i18n="badge_trial">6-MO BETA</span>
 </div>
 <p class="text-xs bton-pro-muted mt-1" data-i18n="price_pro_tag">For suppliers who want to win more work.</p>
 </div>
@@ -6076,7 +6076,7 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
 <div class="mt-2 inline-flex items-center gap-2 rounded-full bton-pro-pill-apple px-3 py-1.5">
 <i class="fa-solid fa-lock text-[10px] bton-pro-icon"></i>
 <span class="text-[11px] bton-pro-muted">
-<span data-i18n="price_trial_note">3 months free trial</span>
+<span data-i18n="price_trial_note">6 months beta access</span>
 <span class="opacity-50" data-i18n="ui_53fe08"> • </span>
 <span data-i18n="price_no_card">No card required</span>
 </span>
@@ -8329,7 +8329,7 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
 <div class="min-w-0">
 <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider leading-tight" data-i18n="upgrade_offer_title">Offer</div>
 <div class="text-[11px] font-semibold text-slate-700 leading-snug mt-0.5" data-i18n="upgrade_offer_line" id="upgrade-offer-text">
-                3 months free trial • No card required • Then $19/month.
+                6 months beta access • No card required • Then $19/month.
               </div>
 </div>
 </div>
@@ -28372,7 +28372,7 @@ profileUpdates = {
 ========================= */
 const PRO_MONTHLY_PRICE_USD = 19;                  // ✅ change if needed
 const PRO_EARLY_BIRD_END_UTC = "2026-12-31T23:59:59Z";
-const PRO_TRIAL_MONTHS_EARLY = 3;                  // early adopters
+const PRO_TRIAL_MONTHS_EARLY = 6;                  // beta period                  // early adopters
 const PRO_TRIAL_DAYS_DEFAULT = 30;                 // new signups after early-bird
 const PRO_PAYMENT_URL = "https://buy.stripe.com/REPLACE_ME"; // ✅ replace with Stripe/checkout link
 
@@ -28519,17 +28519,18 @@ function _notifIconHTML(kind="default") {
 
 
 function computeProTrialEnd(nowDate, createdAtISO=null) {
-  // ✅ Current pricing: everyone gets a 3-month free Pro trial (no card required).
+  // ✅ Beta: 6 months free Pro access (no card required).
   const now = nowDate instanceof Date ? nowDate : new Date(nowDate);
   const endDate = new Date(now);
-  endDate.setMonth(now.getMonth() + 3);
+  endDate.setMonth(now.getMonth() + 6);
 
-  const trialNote = _i18n("price_trial_note", "3 months free trial");
+  const trialNote = _i18n("price_trial_note", "6 months beta access");
   const noCard = _i18n("price_no_card", "No card required");
   const label = `${trialNote} • ${noCard}`;
 
   return { endDate, label };
 }
+
 
 
 function openProPayment() {
@@ -28954,8 +28955,8 @@ async function enforceProLifecycle(profileRow) {
         await _maybeSendLifecycleNotification(
           profileRow.id,
           `PRO_TRIAL_10D_${endKey}`,
-          "Pro trial ending soon",
-          `Your Pro trial ends on ${trialEnd.toLocaleDateString()}. Upgrade to keep unlimited features.`
+          "Pro beta ending soon",
+          `Your Pro beta ends on ${trialEnd.toLocaleDateString()}. We\'ll share upgrade options soon.`
         );
       }
 
@@ -28963,8 +28964,8 @@ async function enforceProLifecycle(profileRow) {
         await _maybeSendLifecycleNotification(
           profileRow.id,
           `PRO_TRIAL_1D_${endKey}`,
-          "Pro trial ends tomorrow",
-          `Your Pro trial ends on ${trialEnd.toLocaleDateString()}. Upgrade now to avoid losing Pro features.`
+          "Pro beta ends tomorrow",
+          `Your Pro beta ends on ${trialEnd.toLocaleDateString()}. We\'ll share upgrade options soon.`
         );
       }
 
@@ -28979,7 +28980,7 @@ async function enforceProLifecycle(profileRow) {
         await _maybeSendLifecycleNotification(
           profileRow.id,
           `PRO_TRIAL_ENDED_${endKey}`,
-          "Pro trial ended",
+          "Pro beta ended",
           `Your Pro trial ended on ${trialEnd.toLocaleDateString()}. You are now on the Free plan (your verification badge stays). Upgrade to restore unlimited features.`
         );
 
