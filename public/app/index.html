@@ -1440,10 +1440,7 @@ html[data-theme="dark"] .bton-react-pill.is-on .bton-react-ico{
   max-width: 100% !important;
 }
 #modal-updates-feed .bton-upd-media-slot{
-  height: 220px !important;
-}
-@media (max-width: 640px){
-  #modal-updates-feed .bton-upd-media-slot{ height: 200px !important; }
+  height: 180px !important;
 }
 #modal-updates-feed .bton-upd-note{
   height: auto !important;
@@ -7702,7 +7699,7 @@ html[data-theme="dark"] .bton-cc-meta-btn:focus-visible::before{
 <div class="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider" data-i18n="field_note">Additional Notes</div>
 <div class="text-[10px] text-gray-400"><span id="upd-note-count">0</span>/160</div>
 </div>
-<textarea class="w-full border border-slate-200/70 rounded-xl p-3 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none min-h-[108px] leading-relaxed" id="upd-note" maxlength="160" placeholder="" rows="4"></textarea>
+<textarea class="w-full border border-slate-200/70 rounded-xl p-3 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-BTrustOn-accent resize-none" id="upd-note" maxlength="160" placeholder="" rows="3"></textarea>
 <div class="mt-1 text-[10px] text-gray-400" data-i18n="post_note_hint">Max 160 characters</div>
 </div>
 
@@ -10295,8 +10292,8 @@ function renderHomeUpdates(list) {
               </div>
             ` : ``}
 
-            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 92 : 156}px">
-              ${hasNote ? `<div class="${hasImg ? "text-[11.5px]" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "line-clamp-5" : "line-clamp-8"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]" style="height:${hasImg ? 64 : 156}px">
+              ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "clamp-4" : "line-clamp-8"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
               ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
                 <div class="absolute bottom-1 right-2 text-[10px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
             </div>
@@ -10694,7 +10691,10 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
     const noteRaw = String(u.note || u.message || "");
     const notePlain = noteRaw.replace(/\s+/g, " ").trim();
     const hasNote = notePlain.length > 0;
-    const notePreview = _safeText(notePlain);
+    const __noteLimit = hasImg ? 420 : 820;
+    const noteIsLong = notePlain.length > __noteLimit;
+    const notePreview = _safeText(noteIsLong ? (notePlain.slice(0, __noteLimit).trimEnd() + "…") : notePlain);
+
     const createdAt = u.created_at || u.createdAt;
     const age = createdAt ? _timeAgoI18n(createdAt) : "";
 
@@ -10731,7 +10731,10 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
     const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("celebrate"));
 
     return `
-      <div class="bton-upd-card cursor-default group relative text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] pr-4 pl-10 py-4 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
+      <div role="button" tabindex="0"
+        onclick="closeUpdatesFeedModal(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true })"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); closeUpdatesFeedModal(); openProfile('${safeCompanyId}', { tab: '${tab}', focus: '${safeFocusId}', preserveScroll: true });}"
+        class="bton-upd-card group relative text-left bg-white/70 backdrop-blur-xl border border-[rgba(15,23,42,.08)] hover:border-[rgba(15,23,42,.14)] pr-4 pl-10 py-4 rounded-2xl shadow-[0_10px_30px_-18px_rgba(15,23,42,.35)] hover:shadow-[0_20px_45px_-25px_rgba(15,23,42,.45)] hover:-translate-y-0.5 transition-all overflow-hidden">
 
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none bg-gradient-to-br from-white via-white to-slate-50/70"></div>
 
@@ -10776,9 +10779,11 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
               </div>
             ` : ``}
 
-            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-              ${hasNote ? `<div class="${hasImg ? "text-[12px]" : "text-[13px]"} text-gray-700 leading-relaxed break-words">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
-</div>
+            <div class="mt-3 relative bton-upd-note bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              ${hasNote ? `<div class="text-[13px] text-gray-700 leading-relaxed break-words line-clamp-10">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+              ${noteIsLong ? `<div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none"></div>
+                <div class="absolute bottom-2 right-3 text-[11px] font-extrabold text-cyan-700 pointer-events-none" data-i18n="updates_more_in_profile">More in profile</div>` : ``}
+            </div>
 
             <div class="mt-3 flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
@@ -10805,7 +10810,9 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
                 </button>
               </div>
 
-              
+              <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-cyan-700">
+                <span data-i18n="updates_view">View</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </span>
             </div>
           </div>
         </div>
@@ -11068,9 +11075,6 @@ async function btonToggleUpdateReaction(ev, postId, reaction){
         .eq("reactor_company_id", myCid)
         .eq("reaction", r);
       if (error) throw error;
-
-      // ✅ If the user withdrew a reaction, retract its notification (best-effort; server trigger recommended)
-      try { await btonAttemptRetractReactionNotification(pid, myCid, r); } catch(e) {}
     } else {
       const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
       const { error } = await supabaseClient
@@ -22786,148 +22790,6 @@ function subscribeToMessages() {
 // --- Notifications: fetch + realtime subscribe ---
 // --- Notifications fetch + realtime subscribe ---
 
-
-/* =========================================================
-   BTrustOn — Notification actor hydration (reactions, profile views, etc.)
-   Goal: show real actor company name instead of "A company"
-   Works with notifications that include company_id / actor_company_id in i18n vars or [I18N:...] markers.
-========================================================= */
-let __btonNotifActorHydrateTimer = null;
-function btonScheduleNotifActorHydration(){
-  try{
-    if (__btonNotifActorHydrateTimer) clearTimeout(__btonNotifActorHydrateTimer);
-    __btonNotifActorHydrateTimer = setTimeout(async () => {
-      try{
-        if (typeof btonHydrateNotificationActors === "function") {
-          await btonHydrateNotificationActors(notificationsData || []);
-          if (typeof renderInboxItems === "function") renderInboxItems();
-        }
-      }catch(e){}
-    }, 120);
-  }catch(e){}
-}
-
-function _btonExtractNotifActorCompanyId(n){
-  try{
-    if (!n) return null;
-
-    const tryKeys = (obj) => {
-      if (!obj || typeof obj !== "object") return null;
-      const keys = [
-        "actor_company_id","actorCompanyId","reactor_company_id","reactorCompanyId",
-        "company_id","companyId","cid","profile_id","profileId"
-      ];
-      for (const k of keys){
-        const v = obj[k];
-        if (v && typeof v === "string" && _looksLikeUuid(v)) return String(v).trim();
-      }
-      // Some legacy rows store UUID inside "company"
-      const v2 = obj.company;
-      if (v2 && typeof v2 === "string" && _looksLikeUuid(v2)) return String(v2).trim();
-      return null;
-    };
-
-    // 1) Prefer explicit vars (if present in realtime payload)
-    let mv = null, tv = null;
-    try { mv = (typeof _normNotifVars === "function") ? _normNotifVars(n.message_i18n_vars) : (n.message_i18n_vars || null); } catch(e) {}
-    try { tv = (typeof _normNotifVars === "function") ? _normNotifVars(n.title_i18n_vars) : (n.title_i18n_vars || null); } catch(e) {}
-    let out = tryKeys(mv) || tryKeys(tv);
-    if (out) return out;
-
-    // 2) Parse [I18N:...] markers from text
-    try {
-      const pm = (typeof _parseNotifI18n === "function") ? _parseNotifI18n(n.message || "") : null;
-      const pt = (typeof _parseNotifI18n === "function") ? _parseNotifI18n(n.title || "") : null;
-      out = tryKeys(pm && pm.params) || tryKeys(pt && pt.params);
-      if (out) return out;
-    } catch(e) {}
-
-    return null;
-  }catch(e){ return null; }
-}
-
-async function btonHydrateNotificationActors(list){
-  try{
-    const arr = Array.isArray(list) ? list : [];
-    if (!arr.length) return;
-
-    // Gather actor company ids we can resolve
-    const ids = [];
-    arr.forEach(n => {
-      const cid = _btonExtractNotifActorCompanyId(n);
-      if (cid){
-        n.__actor_company_id = cid;
-        ids.push(cid);
-      }
-    });
-
-    const uniq = Array.from(new Set(ids)).slice(0, 200);
-    if (!uniq.length) return;
-
-    // Fetch actor company names (best-effort; RLS might restrict)
-    let data = null, error = null;
-    try{
-      const r1 = await supabaseClient.from("profiles").select("*").in("id", uniq);
-      data = r1.data; error = r1.error;
-    }catch(e){
-      error = e;
-    }
-    if (error || !Array.isArray(data)) return;
-
-    const map = new Map();
-    data.forEach(p => {
-      const id = String(p && p.id ? p.id : "").trim();
-      if (!id) return;
-      const name = String(
-        (p.company_name || p.name || p.company_title || p.legal_name || p.title || p.full_name || p.display_name || "")
-      ).trim();
-      if (name) map.set(id, name);
-    });
-
-    if (!map.size) return;
-
-    arr.forEach(n => {
-      const cid = String(n && (n.__actor_company_id || _btonExtractNotifActorCompanyId(n)) || "").trim();
-      if (!cid) return;
-      const nm = map.get(cid);
-      if (nm) n.__actor_company_name = nm;
-    });
-  }catch(e){}
-}
-
-/* Best-effort client-side retract (server trigger is recommended for guaranteed cleanup) */
-async function btonAttemptRetractReactionNotification(postId, actorCompanyId, reaction){
-  try{
-    const pid = String(postId||"").trim();
-    const cid = String(actorCompanyId||"").trim();
-    const r = String(reaction||"").trim().toLowerCase();
-    if (!pid || !cid || (r !== "like" && r !== "celebrate" && r !== "tebrik")) return;
-
-    const key = (r === "like") ? "notif_update_reaction_like" : "notif_update_reaction_celebrate";
-
-    // Patterns for i18n-marker rows (works if your notifications message contains post_id + company_id markers)
-    const p1 = `%[I18N:${key}]%[post_id=${pid}]%[company_id=${cid}]%`;
-    const p2 = `%[I18N:${key}]%[company_id=${cid}]%[post_id=${pid}]%`;
-    const p3 = `%[I18N:${key}]%[post_id=${pid}]%[reactor_company_id=${cid}]%`;
-    const p4 = `%[I18N:${key}]%[post_id=${pid}]%[actor_company_id=${cid}]%`;
-
-    const { error } = await supabaseClient
-      .from("notifications")
-      .delete()
-      .or(`message.ilike.${p1},message.ilike.${p2},message.ilike.${p3},message.ilike.${p4}`);
-
-    // Ignore errors (RLS may block delete)
-    if (error) {
-      const msg = String(error.message || error.details || "").toLowerCase();
-      if (!msg.includes("permission") && !msg.includes("rls")) {
-        // keep quiet to avoid noisy UX
-        console.warn("Retract reaction notification (best-effort) failed:", error);
-      }
-    }
-  }catch(e){}
-}
-
-
 async function fetchNotificationsUnread() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -22969,9 +22831,6 @@ async function fetchNotificationsUnread() {
     } catch(e) {}
 
     notificationsData = _list;
-
-    // ✅ Hydrate actor company names for notifications (reactions, profile views, etc.)
-    try { await btonHydrateNotificationActors(notificationsData || []); } catch(e) {}
 
     // Count unread (supports boolean / 0-1 / null)
     notificationsUnreadCount = (notificationsData || []).filter(n => (
@@ -23054,9 +22913,6 @@ function subscribeNotifications() {
               created_at: n.created_at || nowDate().toISOString(),
               is_read: n.is_read
             });
-            // ✅ Hydrate actor company names (so reaction notifications don't show 'A company')
-            try { btonScheduleNotifActorHydration(); } catch(e) {}
-
 
             if (typeof renderInboxItems === "function") {
               renderInboxItems();
@@ -30828,8 +30684,8 @@ const myCelebrate = !!(__rx && __rx.mine && __rx.mine.has && __rx.mine.has("cele
               </div>
             ` : ``}
 
-            <div class="mt-2 relative bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-              ${hasNote ? `<div class="${hasImg ? "text-[11.5px]" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "line-clamp-5" : "line-clamp-6"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
+            <div class="mt-2 relative bg-white/85 border border-[rgba(15,23,42,.10)] rounded-2xl p-2.5 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              ${hasNote ? `<div class="${hasImg ? "text-xs" : "text-[13px]"} text-gray-600 ${hasImg ? "leading-snug" : "leading-relaxed"} break-words ${hasImg ? "line-clamp-4" : "line-clamp-6"}">${notePreview}</div>` : `<div class="text-xs text-gray-300 italic">&nbsp;</div>`}
             </div>
 <div class="mt-2 flex items-center justify-between gap-2">
   <div class="flex items-center gap-2">
