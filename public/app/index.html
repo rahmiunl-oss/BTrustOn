@@ -10825,7 +10825,7 @@ function renderUpdatesFeedItems(rows, opts = { append: true }){
    Expected Supabase table:
      public.post_reactions(post_id uuid, reactor_company_id uuid, reaction text, created_at timestamptz default now())
    Recommended unique index:
-     unique(post_id, reactor_company_id, reaction)
+     unique(post_id, reactor_company_id)
 ========================================================= */
 let __btonPostReactCache = Object.create(null); // postId -> { counts:{like:number,celebrate:number}, mine:Set<string> }
 let __btonReactMyCompanyId = null;
@@ -10927,6 +10927,8 @@ async function btonHydrateUpdateReactions(updates){
       if (reaction === "celebrate" || reaction === "tebrik") st.counts.celebrate = (st.counts.celebrate || 0) + 1;
 
       if (myCid && r.reactor_company_id && String(r.reactor_company_id) === String(myCid)){
+        // enforce single active reaction locally (like OR celebrate)
+        st.mine = new Set();
         if (reaction === "like") st.mine.add("like");
         if (reaction === "celebrate" || reaction === "tebrik") st.mine.add("celebrate");
       }
@@ -11047,37 +11049,49 @@ async function btonToggleUpdateReaction(ev, postId, reaction){
     if (!st.counts) st.counts = { like:0, celebrate:0 };
     if (!st.mine || !st.mine.has) st.mine = new Set();
 
-    const isOn = st.mine.has(r);
+    // We enforce: 1 company -> max 1 reaction per post (like OR celebrate)
+    const cur = (st.mine.has("like") ? "like" : (st.mine.has("celebrate") ? "celebrate" : null));
+    const turningOff = (cur === r);
 
     // Optimistic UI
-    if (isOn){
+    if (turningOff){
       st.mine.delete(r);
       st.counts[r] = Math.max(0, (st.counts[r] || 0) - 1);
     } else {
+      // if switching from other reaction, remove it first
+      if (cur && cur !== r){
+        st.mine.delete(cur);
+        st.counts[cur] = Math.max(0, (st.counts[cur] || 0) - 1);
+      }
       st.mine.add(r);
       st.counts[r] = (st.counts[r] || 0) + 1;
     }
     btonApplyUpdateReactionUI(pid);
 
-    // Persist
-    if (isOn){
-      const { error } = await supabaseClient
-        .from("post_reactions")
-        .delete()
-        .eq("post_id", pid)
-        .eq("reactor_company_id", myCid)
-        .eq("reaction", r);
-      if (error) throw error;
+    // Persist (no UPDATE needed): delete existing row first, then insert if turning on
+    // This guarantees the counter cannot be inflated across sessions.
+    const { error: delErr } = await supabaseClient
+      .from("post_reactions")
+      .delete()
+      .eq("post_id", pid)
+      .eq("reactor_company_id", myCid);
 
-      // ✅ If the user withdrew a reaction, retract its notification (best-effort; server trigger recommended)
+    if (delErr) throw delErr;
+
+    // If user turned it off, also retract its notification (best-effort; server trigger recommended)
+    if (turningOff){
       try { await btonAttemptRetractReactionNotification(pid, myCid, r); } catch(e) {}
-    } else {
-      const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
-      const { error } = await supabaseClient
-        .from("post_reactions")
-        .upsert([payload], { onConflict: "post_id,reactor_company_id,reaction", ignoreDuplicates: true });
-      if (error) throw error;
+      return;
     }
+
+    // Turn on (or switch) -> insert new reaction
+    const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
+    const { error: insErr } = await supabaseClient
+      .from("post_reactions")
+      .insert([payload]);
+
+    if (insErr) throw insErr;
+
   }catch(e){
     // Re-sync this post from server
     try{
