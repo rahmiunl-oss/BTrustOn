@@ -11068,6 +11068,9 @@ async function btonToggleUpdateReaction(ev, postId, reaction){
         .eq("reactor_company_id", myCid)
         .eq("reaction", r);
       if (error) throw error;
+
+      // ✅ If the user withdrew a reaction, retract its notification (best-effort; server trigger recommended)
+      try { await btonAttemptRetractReactionNotification(pid, myCid, r); } catch(e) {}
     } else {
       const payload = { post_id: pid, reactor_company_id: myCid, reaction: r };
       const { error } = await supabaseClient
@@ -22783,6 +22786,148 @@ function subscribeToMessages() {
 // --- Notifications: fetch + realtime subscribe ---
 // --- Notifications fetch + realtime subscribe ---
 
+
+/* =========================================================
+   BTrustOn — Notification actor hydration (reactions, profile views, etc.)
+   Goal: show real actor company name instead of "A company"
+   Works with notifications that include company_id / actor_company_id in i18n vars or [I18N:...] markers.
+========================================================= */
+let __btonNotifActorHydrateTimer = null;
+function btonScheduleNotifActorHydration(){
+  try{
+    if (__btonNotifActorHydrateTimer) clearTimeout(__btonNotifActorHydrateTimer);
+    __btonNotifActorHydrateTimer = setTimeout(async () => {
+      try{
+        if (typeof btonHydrateNotificationActors === "function") {
+          await btonHydrateNotificationActors(notificationsData || []);
+          if (typeof renderInboxItems === "function") renderInboxItems();
+        }
+      }catch(e){}
+    }, 120);
+  }catch(e){}
+}
+
+function _btonExtractNotifActorCompanyId(n){
+  try{
+    if (!n) return null;
+
+    const tryKeys = (obj) => {
+      if (!obj || typeof obj !== "object") return null;
+      const keys = [
+        "actor_company_id","actorCompanyId","reactor_company_id","reactorCompanyId",
+        "company_id","companyId","cid","profile_id","profileId"
+      ];
+      for (const k of keys){
+        const v = obj[k];
+        if (v && typeof v === "string" && _looksLikeUuid(v)) return String(v).trim();
+      }
+      // Some legacy rows store UUID inside "company"
+      const v2 = obj.company;
+      if (v2 && typeof v2 === "string" && _looksLikeUuid(v2)) return String(v2).trim();
+      return null;
+    };
+
+    // 1) Prefer explicit vars (if present in realtime payload)
+    let mv = null, tv = null;
+    try { mv = (typeof _normNotifVars === "function") ? _normNotifVars(n.message_i18n_vars) : (n.message_i18n_vars || null); } catch(e) {}
+    try { tv = (typeof _normNotifVars === "function") ? _normNotifVars(n.title_i18n_vars) : (n.title_i18n_vars || null); } catch(e) {}
+    let out = tryKeys(mv) || tryKeys(tv);
+    if (out) return out;
+
+    // 2) Parse [I18N:...] markers from text
+    try {
+      const pm = (typeof _parseNotifI18n === "function") ? _parseNotifI18n(n.message || "") : null;
+      const pt = (typeof _parseNotifI18n === "function") ? _parseNotifI18n(n.title || "") : null;
+      out = tryKeys(pm && pm.params) || tryKeys(pt && pt.params);
+      if (out) return out;
+    } catch(e) {}
+
+    return null;
+  }catch(e){ return null; }
+}
+
+async function btonHydrateNotificationActors(list){
+  try{
+    const arr = Array.isArray(list) ? list : [];
+    if (!arr.length) return;
+
+    // Gather actor company ids we can resolve
+    const ids = [];
+    arr.forEach(n => {
+      const cid = _btonExtractNotifActorCompanyId(n);
+      if (cid){
+        n.__actor_company_id = cid;
+        ids.push(cid);
+      }
+    });
+
+    const uniq = Array.from(new Set(ids)).slice(0, 200);
+    if (!uniq.length) return;
+
+    // Fetch actor company names (best-effort; RLS might restrict)
+    let data = null, error = null;
+    try{
+      const r1 = await supabaseClient.from("profiles").select("*").in("id", uniq);
+      data = r1.data; error = r1.error;
+    }catch(e){
+      error = e;
+    }
+    if (error || !Array.isArray(data)) return;
+
+    const map = new Map();
+    data.forEach(p => {
+      const id = String(p && p.id ? p.id : "").trim();
+      if (!id) return;
+      const name = String(
+        (p.company_name || p.name || p.company_title || p.legal_name || p.title || p.full_name || p.display_name || "")
+      ).trim();
+      if (name) map.set(id, name);
+    });
+
+    if (!map.size) return;
+
+    arr.forEach(n => {
+      const cid = String(n && (n.__actor_company_id || _btonExtractNotifActorCompanyId(n)) || "").trim();
+      if (!cid) return;
+      const nm = map.get(cid);
+      if (nm) n.__actor_company_name = nm;
+    });
+  }catch(e){}
+}
+
+/* Best-effort client-side retract (server trigger is recommended for guaranteed cleanup) */
+async function btonAttemptRetractReactionNotification(postId, actorCompanyId, reaction){
+  try{
+    const pid = String(postId||"").trim();
+    const cid = String(actorCompanyId||"").trim();
+    const r = String(reaction||"").trim().toLowerCase();
+    if (!pid || !cid || (r !== "like" && r !== "celebrate" && r !== "tebrik")) return;
+
+    const key = (r === "like") ? "notif_update_reaction_like" : "notif_update_reaction_celebrate";
+
+    // Patterns for i18n-marker rows (works if your notifications message contains post_id + company_id markers)
+    const p1 = `%[I18N:${key}]%[post_id=${pid}]%[company_id=${cid}]%`;
+    const p2 = `%[I18N:${key}]%[company_id=${cid}]%[post_id=${pid}]%`;
+    const p3 = `%[I18N:${key}]%[post_id=${pid}]%[reactor_company_id=${cid}]%`;
+    const p4 = `%[I18N:${key}]%[post_id=${pid}]%[actor_company_id=${cid}]%`;
+
+    const { error } = await supabaseClient
+      .from("notifications")
+      .delete()
+      .or(`message.ilike.${p1},message.ilike.${p2},message.ilike.${p3},message.ilike.${p4}`);
+
+    // Ignore errors (RLS may block delete)
+    if (error) {
+      const msg = String(error.message || error.details || "").toLowerCase();
+      if (!msg.includes("permission") && !msg.includes("rls")) {
+        // keep quiet to avoid noisy UX
+        console.warn("Retract reaction notification (best-effort) failed:", error);
+      }
+    }
+  }catch(e){}
+}
+
+
 async function fetchNotificationsUnread() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -22824,6 +22969,9 @@ async function fetchNotificationsUnread() {
     } catch(e) {}
 
     notificationsData = _list;
+
+    // ✅ Hydrate actor company names for notifications (reactions, profile views, etc.)
+    try { await btonHydrateNotificationActors(notificationsData || []); } catch(e) {}
 
     // Count unread (supports boolean / 0-1 / null)
     notificationsUnreadCount = (notificationsData || []).filter(n => (
@@ -22906,6 +23054,9 @@ function subscribeNotifications() {
               created_at: n.created_at || nowDate().toISOString(),
               is_read: n.is_read
             });
+            // ✅ Hydrate actor company names (so reaction notifications don't show 'A company')
+            try { btonScheduleNotifActorHydration(); } catch(e) {}
+
 
             if (typeof renderInboxItems === "function") {
               renderInboxItems();
